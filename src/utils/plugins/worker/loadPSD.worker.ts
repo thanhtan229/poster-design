@@ -23,6 +23,11 @@
 import { processPSD2Page } from '@/utils/plugins/psd'
 
 onmessage = async (e) => {
-  const data = await processPSD2Page(e.data)
-  self.postMessage({ data })
+  // [TINIX] report parse failures instead of never answering (the page used to spin forever)
+  try {
+    const data = await processPSD2Page(e.data)
+    self.postMessage({ data })
+  } catch (err: any) {
+    self.postMessage({ error: typeof err === 'string' ? err : err?.message || String(err) })
+  }
 }

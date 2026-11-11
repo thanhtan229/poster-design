@@ -47,6 +47,8 @@
 import { reactive, onMounted, nextTick, onBeforeMount, ref, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { loadLibraryFonts, matchPsdFont } from '@/utils/tinix/psd-font-map' // [TINIX]
+import { fitPointText } from '@/utils/tinix/psd-fit' // [TINIX]
 import RightClickMenu from '@/components/business/right-click-menu/RcMenu.vue'
 import Moveable from '@/components/business/moveable/Moveable.vue'
 import shortcuts from '@/mixins/shortcuts'
@@ -135,12 +137,33 @@ const types: any = {
 
 async function loadPSD(file: File) {
   // const { compositeBuffer, psdFile } = await myWorker.start(file)
-  const { data }: any = await myWorker.start(file)
+  const { data, error }: any = await myWorker.start(file)
   // const data = await processPSD2Page(file)
+  // [TINIX] the psd.js parser cannot read some files saved by recent Photoshop versions
+  if (error || !data) {
+    console.error('[tinix:psd] parse failed:', error)
+    ElMessage({ type: 'error', duration: 0, showClose: true, message: 'Không đọc được file PSD này: bộ đọc PSD hiện tại (psd.js) chưa hỗ trợ dữ liệu chữ của file. Chi tiết lỗi xem trong Console (F12).' })
+    return
+  }
+  // [TINIX] set the page size first: widgets added while the page is still the default 1920px get clamped to it
+  pageStore.setDPage(Object.assign(pageStore.dPage, { width: data.width, height: data.height }))
+  const library = await loadLibraryFonts() // [TINIX] map PSD fonts → library fonts
+  const substituted = new Map<string, string>()
 
   for (let i = 0; i < data.clouds.length; i++) {
     const x: any = data.clouds[i]
     const rawData = JSON.parse(JSON.stringify(types[x.type])) || {}
+    // [TINIX] text: use the closest library font instead of the default 站酷快乐体
+    if (x.type === 'text' && x.psdFont) {
+      const m = matchPsdFont(x.psdFont, library)
+      if (m) {
+        rawData.fontClass = m.fontClass
+        x.fontWeight = m.fontWeight
+        x.fontStyle = m.fontStyle
+        if (!m.exact) substituted.set(x.psdFont, m.fontClass.alias)
+      }
+      if (x.psdPointText) await fitPointText(x, rawData.fontClass, data.width) // [TINIX] no unwanted wrapping
+    }
     delete x.type
     x.src && (x.imgUrl = createBase64(x.src, { width: x.width, height: x.height })) && delete x.src
     widgetStore.addWidget(Object.assign(rawData, x))
@@ -148,6 +171,11 @@ async function loadPSD(file: File) {
 
   const { width, height, background: bg } = data
   pageStore.setDPage(Object.assign(pageStore.dPage, { width, height, backgroundColor: bg.color, backgroundImage: createBase64(bg.image, { width, height }) }))
+  // [TINIX] tell the user which PSD fonts were replaced
+  if (substituted.size) {
+    const list = [...substituted].map(([from, to]) => `${from} → ${to}`).join('; ')
+    ElMessage({ type: 'info', duration: 8000, showClose: true, message: `Font không có trong kho, đã thay bằng font gần giống: ${list}` })
+  }
   await loadDone()
 }
 

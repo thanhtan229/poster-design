@@ -30,3 +30,6 @@ pnpm-debug.log*
 
 # [TINIX] local run logs
 .runtime/
+
+# [TINIX] PSD files for local import testing
+/psd-test/

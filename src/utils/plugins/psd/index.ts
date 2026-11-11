@@ -3,6 +3,7 @@ import { RGBA2HexA } from './color/color'
 const colorer = { RGBA2HexA }
 
 import * as helper from './helper'
+import { psdFontSize, psdLetterSpacing, psdLineHeight, psdApplyCaps, psdTextGeometry } from '@/utils/tinix/psd-text' // [TINIX]
 export const createBase64 = helper.createBase64
 
 export const CLOUD_TYPE = {
@@ -61,13 +62,20 @@ function toCloudTextConfig(data: any, layer: any) {
 
   const { objectEffects, typeTool } = layer.adjustments
   const { StyleRun } = typeTool.engineData.EngineDict
+  // [TINIX] real size = raw FontSize × layer scale; also tracking / caps / leading
+  const sheet0 = StyleRun.RunArray[0]?.StyleSheet?.StyleSheetData || {}
+  // [TINIX] vertical scale drives the font size (text can be scaled non-uniformly); BoxBounds = paragraph box
+  const shape0 = typeTool.engineData.EngineDict?.Rendered?.Shapes?.Children?.[0]
+  const isPointText = Number(shape0?.ShapeType ?? 0) === 0
+  const geo = psdTextGeometry(typeTool.transform, isPointText ? null : shape0?.Cookie?.Photoshop?.BoxBounds)
+  const layerScale = geo.scaleY
 
   let point = 0
   const texts = StyleRun.RunArray.map((text: any, index: number) => {
     const length = StyleRun.RunLengthArray[index]
     const props: { text: string; fontSize: number; color?: string } = {
-      text: data.text.value.substr(point, length),
-      fontSize: text.StyleSheet.StyleSheetData.FontSize,
+      text: psdApplyCaps(data.text.value.substr(point, length), text.StyleSheet.StyleSheetData), // [TINIX]
+      fontSize: psdFontSize(text.StyleSheet.StyleSheetData.FontSize, layerScale, data.height), // [TINIX]
     }
     const { FillColor } = text.StyleSheet.StyleSheetData
     if (FillColor) {
@@ -104,18 +112,26 @@ function toCloudTextConfig(data: any, layer: any) {
 
   return {
     type: CLOUD_TYPE.text,
-    width: data.width + 2,
-    height: data.height,
-    top: data.top,
-    left: data.left,
-    text: data.text.value,
+    // [TINIX] paragraph text: real text box (unrotated, rotated back via `rotate`); point text: PSD pixel bounds
+    width: geo.rect ? geo.rect.width : data.width + 2,
+    height: geo.rect ? geo.rect.height : data.height,
+    top: geo.rect ? geo.rect.top : data.top,
+    left: geo.rect ? geo.rect.left : data.left,
+    rotate: geo.angle ? `${geo.angle}deg` : '', // [TINIX] the original computed the angle but never applied it
+    text: psdApplyCaps(data.text.value, sheet0), // [TINIX] All Caps
     opacity: data.opacity,
     textAlign: data.text.font.alignment[0],
     // fontFamily: typeTool
     //   .fonts()
     //   .map((font: string) => font.slice(1).replace('\u0000', '')),
-    fontFamily: typeTool.fonts()[0].slice(1).replace('\u0000', ''),
-    fontSize: data.text.font.sizes ? data.text.font.sizes[0] : data.height,
+    // [TINIX] font actually used by the first style run (fonts()[0] is not always it); mapped to the library in Psd.vue
+    fontFamily: String(typeTool.fonts()[Number(sheet0.Font) || 0] || typeTool.fonts()[0] || '').replace(/^\W/, '').replace(/\u0000/g, ''),
+    psdFont: String(typeTool.fonts()[Number(sheet0.Font) || 0] || '').replace(/^\W/, '').replace(/\u0000/g, ''), // [TINIX]
+    fontSize: psdFontSize(sheet0.FontSize ?? (data.text.font.sizes ? data.text.font.sizes[0] : 0), layerScale, data.height), // [TINIX]
+    letterSpacing: psdLetterSpacing(sheet0.Tracking), // [TINIX]
+    // [TINIX] ShapeType 0 = point text (never wraps in Photoshop); 1 = paragraph box
+    psdPointText: isPointText,
+    lineHeight: psdLineHeight(sheet0, data.text.value), // [TINIX]
     color: colorer.RGBA2HexA(...toRGBAColor(data.text.font.colors[0])),
     textDecoration: StyleRun.RunArray[0].StyleSheet.StyleSheetData.Underline ? 'underline' : '',
     writingMode: typeTool.obj.textData.Ornt.value === 'Hrzn' ? WRITING_MODE.h : WRITING_MODE.v,
@@ -125,7 +141,10 @@ function toCloudTextConfig(data: any, layer: any) {
     strokes,
     shadows,
     angle,
-    transform: toTransformMatrix(typeTool.transform),
+    // [TINIX] widgets do `style.transform = params.transform` then append `rotate(...)`:
+    // an object here became "[object Object]rotate(...)" (invalid CSS, rotation lost). Scale is already in fontSize.
+    transform: '',
+    psdTransform: toTransformMatrix(typeTool.transform), // [TINIX] kept for reference
   }
 }
 
