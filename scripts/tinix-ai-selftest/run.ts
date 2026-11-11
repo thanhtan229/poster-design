@@ -47,6 +47,16 @@ async function main() {
   const f = await findFont({ image: img })
   console.log('find font ok: top =', f.items[0].candidates.map((c) => `${c.value}(${c.score})`).join(', '), '; not in library =', f.items[0].notInLibrary.join(', '))
 
+  // 3b) rebuild from a reference: two images, z-order, invalid type → shape, font role fallback
+  answers = [JSON.stringify({ background: '#f4ece1', regions: [
+    { type: 'text', bbox: { x: 0.1, y: 0.1, w: 0.8, h: 0.1 }, role: 'title', text: 'Mùa yêu', fontFamily: 'Playfair Display', fontSize: 0.07, z: 5 },
+    { type: 'photo', bbox: { x: 0.1, y: 0.25, w: 0.8, h: 0.5 }, z: 1 },
+    { type: 'weird', bbox: { x: 0.05, y: 0.05, w: 0.9, h: 0.002 }, color: '#aa8855', z: 0 },
+    { type: 'text', bbox: { x: 0.1, y: 0.8, w: 0.8, h: 0.05 }, role: 'signature', text: 'Tinix Studio', fontFamily: 'Nope', fontSize: 0.03, z: 6 },
+  ] })]
+  const rb: any = await (require('../../service/src/tinix/ai/tasks') as any).rebuildFromReference({ reference: img, photo: img, lang: 'vi' })
+  console.log('rebuild ok:', rb.regions.map((r: any) => `${r.type}${r.fontClass ? '/' + r.fontClass.value : ''}`).join(' → '), '; images sent =', lastRequest.body.messages[1].content.filter((c: any) => c.type === 'image_url').length, '; bg =', rb.background)
+
   // 4) tag fonts (text model): only the untagged font
   answers = [JSON.stringify({ fonts: [{ family: 'ZCOOL', category: 'display', tags: ['vui tươi'] }] })]
   const t = await tagFonts({})

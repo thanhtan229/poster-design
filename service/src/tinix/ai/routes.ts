@@ -4,6 +4,7 @@
  *   POST /api/tinix/ai/suggest-text   { image, width, height, lang }
  *   POST /api/tinix/ai/rewrite-text   { image, layers: [{uuid, text}], lang }
  *   POST /api/tinix/ai/find-font      { image }
+ *   POST /api/tinix/ai/rebuild        { reference, photo?, lang }  (Dựng theo mẫu)
  *   POST /api/tinix/ai/tag-fonts      { all? }
  *   GET  /api/tinix/ai/jobs?limit=&kind=
  *   GET  /api/tinix/ai/usage?month=YYYY-MM
@@ -16,7 +17,7 @@ import { getRequestUser } from '../../utils/auth'
 import { getAiSettings } from '../../db/settings'
 import { getTinixAiSettings, saveTinixAiSettings } from './settings'
 import { listJobs, monthUsage } from './cost-log'
-import { suggestText, rewriteText, findFont, tagFonts } from './tasks'
+import { suggestText, rewriteText, findFont, tagFonts, rebuildFromReference } from './tasks'
 
 const router = express.Router()
 const PREFIX = '/api/tinix/ai'
@@ -40,6 +41,7 @@ const handle = (fn: (body: any, req: any) => Promise<any>) => async (req: any, r
 router.post(`${PREFIX}/suggest-text`, requireLogin, handle((b) => suggestText({ image: b.image, width: Number(b.width) || 0, height: Number(b.height) || 0, lang: b.lang })))
 router.post(`${PREFIX}/rewrite-text`, requireLogin, handle((b) => rewriteText({ image: b.image, layers: Array.isArray(b.layers) ? b.layers : [], lang: b.lang })))
 router.post(`${PREFIX}/find-font`, requireLogin, handle((b) => findFont({ image: b.image })))
+router.post(`${PREFIX}/rebuild`, requireLogin, handle((b) => rebuildFromReference({ reference: b.reference, photo: b.photo, lang: b.lang })))
 router.post(`${PREFIX}/tag-fonts`, requireLogin, handle((b) => tagFonts({ all: !!b.all })))
 router.get(`${PREFIX}/jobs`, requireLogin, handle(async (_b, req) => ({ list: listJobs(Number(req.query.limit) || 30, req.query.kind ? String(req.query.kind) : undefined) })))
 router.get(`${PREFIX}/usage`, requireLogin, handle(async (_b, req) => ({ ...monthUsage(req.query.month ? String(req.query.month) : undefined), limit_vnd: getTinixAiSettings().monthly_limit_vnd })))

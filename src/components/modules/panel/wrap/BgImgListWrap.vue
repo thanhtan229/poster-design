@@ -17,7 +17,7 @@
         </imageTip>
       </div>
       <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> 拼命加载中</div>
-      <div v-show="state.loadDone" class="loading">全部加载完毕</div>
+      <div v-show="state.loadDone" class="loading">Đã tải hết</div>
     </ul>
   </div>
 </template>

@@ -277,9 +277,9 @@ TinixPoster/                             ← D:\___TOOLS\__TINIX\TinixPoster (nh
 |---|---|---|
 | 0 (1–2 ngày) | Chạy ổn định trên Windows, tạo tài khoản admin, đổi AUTH_SECRET, chỉ nghe localhost, commit git nhánh `tinix` | Mở editor, tạo & lưu 1 thiết kế, xuất JPG |
 | 1 | ✅ Nạp **46 font có tiếng Việt** (Google Fonts/OFL) bằng `npm run tinix:fonts`; ✅ kiểm tra hiển thị & xuất ảnh dấu tiếng Việt (14 font, đạt); ⏳ nhập 5–10 mẫu PSD của bạn (cần đăng nhập admin — xem TINIX.md); ✅ migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
-| 2 | `chatVision` + cost-log + **Gợi ý chữ** end-to-end + tab Lịch sử | Luồng A chạy trọn |
-| 3 | **Sửa chữ** + **Tìm font** + AI gắn tag font | Luồng B, C chạy trọn; dùng thật cho công việc |
-| 4+ | Giai đoạn 2: Dựng theo mẫu (Canvix Magic Layers); dịch giao diện tiếng Việt | — |
+| 2 | ✅ `callVisionJSON` + nhật ký chi phí + **Gợi ý chữ** + tab Lịch sử & Cài đặt AI | Luồng A chạy trọn (đã kiểm tra bằng `npm run tinix:test-ai`; cần API key để chạy thật) |
+| 3 | ✅ **Sửa chữ** + **Tìm font** + AI gắn tag font | Luồng B, C chạy trọn (cần API key để chạy thật) |
+| 4+ | ✅ Dựng theo mẫu (prompt riêng, không chép Canvix) · ✅ nhập PSD bằng ag-psd · ⏳ Việt hóa phần còn lại (bảng thuộc tính, trang Quản trị) · ⏳ Tauri (tùy chọn) | — |
 
 **Kiểm tra quan trọng ở tuần 1:** xuất ảnh dùng Puppeteer (Chromium) ở server → font phải được Chromium tải được; nếu ảnh xuất mất dấu tiếng Việt thì kiểm tra file woff có đủ ký tự Việt (nhiều font Trung Quốc trong kho mẫu không có).
 

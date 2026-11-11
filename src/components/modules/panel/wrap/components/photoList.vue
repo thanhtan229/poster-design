@@ -33,7 +33,7 @@
       </div>
     </div>
     <div v-if="!props.isDone" v-show="state.loading" class="loading"><i class="el-icon-loading" /> 拼命加载中</div>
-    <div v-else class="loading">全部加载完毕</div>
+    <div v-else class="loading">Đã tải hết</div>
   </ul>
 </template>
 

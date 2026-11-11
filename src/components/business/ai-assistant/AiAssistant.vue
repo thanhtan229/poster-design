@@ -16,6 +16,7 @@
       <el-tab-pane label="Gợi ý chữ" name="suggest" lazy><TinixSuggestTab /></el-tab-pane>
       <el-tab-pane label="Sửa chữ" name="rewrite" lazy><TinixRewriteTab /></el-tab-pane>
       <el-tab-pane label="Tìm font" name="font" lazy><TinixFontTab /></el-tab-pane>
+      <el-tab-pane label="Dựng theo mẫu" name="rebuild" lazy><TinixRebuildTab /></el-tab-pane>
       <!-- 文案生成 -->
       <el-tab-pane label="Viết chữ" name="text">
         <div class="ai-row">
@@ -99,6 +100,7 @@ import { TAiColorItem } from '@/api/ai'
 import TinixSuggestTab from './TinixSuggestTab.vue'
 import TinixRewriteTab from './TinixRewriteTab.vue'
 import TinixFontTab from './TinixFontTab.vue'
+import TinixRebuildTab from './TinixRebuildTab.vue'
 import TinixHistoryTab from './TinixHistoryTab.vue'
 import TinixSettingsTab from './TinixSettingsTab.vue'
 

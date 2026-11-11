@@ -41,7 +41,7 @@
         </div>
       </el-space>
       <div v-show="state.loading" class="loading"><i class="el-icon-loading" /> 拼命加载中</div>
-      <div v-show="state.loadDone" :style="state.list.length <= 0 ? 'padding-top: 4rem' : ''" class="loading">全部加载完毕</div>
+      <div v-show="state.loadDone" :style="state.list.length <= 0 ? 'padding-top: 4rem' : ''" class="loading">Đã tải hết</div>
     </ul>
   </div>
 </template>

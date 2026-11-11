@@ -154,6 +154,73 @@ export async function findFont(input: { image: string }) {
   return { items, jobId, model }
 }
 
+// ───────────────────────── Dựng theo mẫu ─────────────────────────
+const ROLES = ['title', 'subtitle', 'body', 'date', 'hashtag', 'signature', 'other'] as const
+const ROLE_TO_PART: Record<string, PartKey> = { title: 'title', subtitle: 'subtitle', body: 'body', date: 'subtitle', hashtag: 'hashtag', signature: 'signature', other: 'body' }
+
+export async function rebuildFromReference(input: { reference: string; photo?: string; lang?: string }) {
+  const lang = input.lang === 'en' ? 'en' : 'vi'
+  const fonts = libraryFonts(lang === 'vi')
+  if (!fonts.length) throw new Error('Kho font trống — chạy "npm run tinix:fonts" trước.')
+  const reference = await prepareImage(input.reference, 1280)
+  const photo = input.photo ? await prepareImage(input.photo, 768) : ''
+  const images = photo ? [reference, photo] : [reference]
+  const studio = getTinixAiSettings().studio_name
+
+  const bbox = (b: any, path: string) => {
+    const o = obj(b, path)
+    const x = num01(o.x, `${path}.x`), y = num01(o.y, `${path}.y`)
+    return { x, y, w: Math.max(0.005, Math.min(1 - x, num01(o.w, `${path}.w`))), h: Math.max(0.005, Math.min(1 - y, num01(o.h, `${path}.h`))) }
+  }
+
+  const { data, jobId, model } = await callVisionJSON({
+    kind: 'rebuild',
+    system: P.REBUILD_SYSTEM,
+    text: P.rebuildUser({ lang, hasPhoto: !!photo, studio, fonts: fontListForPrompt(fonts) }),
+    images,
+    temperature: 0.6,
+    timeoutMs: 150000,
+    inputSummary: { lang, hasPhoto: !!photo },
+    validate: (v) => {
+      const o = obj(v, 'root')
+      const regions = arr(o.regions, 'regions', 1, 25).map((r: any, i: number) => {
+        const p = `regions[${i}]`
+        const type = oneOf(r.type, ['text', 'photo', 'shape'] as const, 'shape')
+        const base = { type, bbox: bbox(r.bbox, `${p}.bbox`), z: Number.isFinite(Number(r.z)) ? Number(r.z) : i }
+        if (type === 'text') {
+          return {
+            ...base,
+            role: oneOf(r.role, ROLES, 'other'),
+            text: str(r.text, `${p}.text`, { max: 600 }),
+            fontFamily: str(r.fontFamily, `${p}.fontFamily`, { optional: true, max: 80 }),
+            fontSize: Math.min(0.4, Math.max(0.006, Number(r.fontSize) || 0.03)),
+            weight: Math.min(900, Math.max(100, Math.round((Number(r.weight) || 400) / 100) * 100)),
+            italic: bool(r.italic),
+            uppercase: bool(r.uppercase),
+            letterSpacing: Math.min(200, Math.max(-20, Number(r.letterSpacing) || 0)),
+            lineHeight: Math.min(3, Math.max(0.8, Number(r.lineHeight) || 1.2)),
+            align: oneOf(r.align, ['left', 'center', 'right'] as const, 'center'),
+            color: color(r.color, '#222222'),
+          }
+        }
+        if (type === 'shape') return { ...base, shape: oneOf(r.shape, ['rect', 'rounded', 'ellipse', 'line'] as const, 'rect'), color: color(r.color, '#dddddd'), opacity: Math.min(1, Math.max(0.05, Number(r.opacity) || 1)) }
+        return base
+      })
+      if (!regions.some((r: any) => r.type === 'text')) throw new Error('regions: không có khối chữ nào')
+      return { background: color(o.background, '#ffffff'), regions, notes: str(o.notes, 'notes', { optional: true, max: 400 }) }
+    },
+  })
+
+  for (const r of data.regions as any[]) {
+    if (r.type !== 'text') continue
+    const f = pickFont(r.fontFamily, ROLE_TO_PART[r.role] || 'body', fonts)
+    r.fontClass = f ? fontClass(f) : null
+    r.fontFamily = f ? f.value : r.fontFamily
+  }
+  data.regions.sort((a: any, b: any) => a.z - b.z)
+  return { ...data, jobId, model }
+}
+
 // ───────────────────────── AI gắn tag font ─────────────────────────
 export async function tagFonts(input: { all?: boolean }) {
   const fonts = libraryFonts(false).filter((f) => input.all || !f.tags.length || !f.category)

@@ -66,6 +66,35 @@ Trả về JSON:
 traits viết tiếng Việt, ngắn gọn. bbox theo tỉ lệ 0..1.`
 }
 
+export const REBUILD_SYSTEM = `Bạn là art director dựng lại BỐ CỤC và PHONG CÁCH của một thiết kế mẫu thành các lớp chỉnh sửa được.
+Ảnh 1 là THIẾT KẾ MẪU (chỉ học bố cục, nhịp chữ, kiểu font, màu, khoảng trắng — KHÔNG chép nội dung, KHÔNG chép logo/hình minh hoạ).
+Ảnh 2 (nếu có) là ẢNH/TRANG CỦA KHÁCH: nội dung chữ mới phải hợp với ảnh này.
+Hãy phân tích ảnh 1 thành các vùng:
+- "text": mỗi khối chữ (gộp các dòng cùng kiểu thành một khối, dùng \\n để xuống dòng). Viết NỘI DUNG MỚI có độ dài và số dòng tương đương, đúng vai trò (tiêu đề, phụ đề, nội dung, ngày tháng, hashtag, chữ ký…).
+- "photo": vùng đặt ảnh (để khách thả ảnh vào).
+- "shape": khối màu đơn giản (hình chữ nhật, bo góc, elip, đường kẻ) làm nền/khung/gạch trang trí.
+Bỏ qua hình minh hoạ phức tạp. Toạ độ bbox là tỉ lệ 0..1 theo ảnh 1, x,y là góc trên-trái. fontSize là chiều cao chữ hoa ÷ chiều cao ảnh 1.
+CHỈ chọn font trong danh sách được cung cấp. Tối đa 25 vùng. Chỉ trả về MỘT đối tượng JSON.`
+
+export function rebuildUser(p: { lang: string; hasPhoto: boolean; studio: string; fonts: string }) {
+  return `Ngôn ngữ cho chữ mới: ${langName(p.lang)}. ${p.hasPhoto ? 'Ảnh 2 là ảnh của khách.' : 'Không có ảnh 2: viết nội dung chung cho chủ đề cưới/tình yêu.'}
+Tên studio (nếu mẫu có chữ ký/thương hiệu): ${p.studio || '(không có)'}.
+Danh sách font (tên | nhóm | cảm giác):
+${p.fonts}
+
+Trả về JSON:
+{"background":"#RRGGBB",
+ "regions":[
+  {"type":"text","bbox":{"x":0.1,"y":0.1,"w":0.8,"h":0.1},"role":"title|subtitle|body|date|hashtag|signature|other",
+   "text":"NỘI DUNG MỚI","fontFamily":"<tên font>","fontSize":0.06,"weight":400,"italic":false,"uppercase":false,
+   "letterSpacing":0,"lineHeight":1.2,"align":"left|center|right","color":"#RRGGBB","z":10},
+  {"type":"photo","bbox":{...},"z":1},
+  {"type":"shape","bbox":{...},"shape":"rect|rounded|ellipse|line","color":"#RRGGBB","opacity":1,"z":0}
+ ],
+ "notes":"1 câu: phần nào chỉ là xấp xỉ"}
+letterSpacing là % cỡ chữ (vd 20 = giãn rộng). z: số lớn nằm trên.`
+}
+
 export const TAG_FONTS_SYSTEM = `Bạn là chuyên gia typography. Phân loại font theo tên (bạn biết các font phổ biến của Google Fonts và font Trung/Việt).
 Chỉ trả về MỘT đối tượng JSON.`
 

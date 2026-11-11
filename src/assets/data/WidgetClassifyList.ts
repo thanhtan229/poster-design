@@ -18,26 +18,26 @@ export type TWidgetClassifyData = {
 
 export default [
   {
-    name: '模板',
+    name: 'Mẫu', // [TINIX] 模板
     icon: 'icon-moban',
     show: false,
     component: 'temp-list-wrap',
   },
   {
-    name: '素材',
+    name: 'Chất liệu', // [TINIX] 素材
     icon: 'icon-sucai',
     show: false,
     component: 'graph-list-wrap',
   },
   {
-    name: '文字',
+    name: 'Chữ', // [TINIX] 文字
     icon: 'icon-wenzi',
     show: false,
     style: { fontWeight: 600 },
     component: 'text-list-wrap',
   },
   {
-    name: '照片',
+    name: 'Ảnh', // [TINIX] 照片
     icon: 'icon-gallery',
     show: false,
     component: 'photo-list-wrap',
@@ -49,13 +49,13 @@ export default [
   //   component: 'bg-img-list-wrap',
   // },
   {
-    name: '工具箱',
+    name: 'Công cụ', // [TINIX] 工具箱
     icon: 'icon-zujian01',
     show: false,
     component: 'tools-list-wrap',
   },
   {
-    name: '我的',
+    name: 'Của tôi', // [TINIX] 我的
     icon: 'icon-shangchuan',
     show: false,
     component: 'user-wrap',
