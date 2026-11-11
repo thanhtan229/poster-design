@@ -142,7 +142,7 @@ async function loadPSD(file: File) {
   // [TINIX] the psd.js parser cannot read some files saved by recent Photoshop versions
   if (error || !data) {
     console.error('[tinix:psd] parse failed:', error)
-    ElMessage({ type: 'error', duration: 0, showClose: true, message: 'Không đọc được file PSD này: bộ đọc PSD hiện tại (psd.js) chưa hỗ trợ dữ liệu chữ của file. Chi tiết lỗi xem trong Console (F12).' })
+    ElMessage({ type: 'error', duration: 0, showClose: true, message: 'Không đọc được file PSD này: cả hai bộ đọc PSD (ag-psd và psd.js) đều báo lỗi. Chi tiết xem trong Console (F12).' })
     return
   }
   // [TINIX] set the page size first: widgets added while the page is still the default 1920px get clamped to it
@@ -158,8 +158,8 @@ async function loadPSD(file: File) {
       const m = matchPsdFont(x.psdFont, library)
       if (m) {
         rawData.fontClass = m.fontClass
-        x.fontWeight = m.fontWeight
-        x.fontStyle = m.fontStyle
+        x.fontWeight = m.fontWeight || x.fontWeight // keep faux bold when the name has no weight
+        x.fontStyle = m.fontStyle || x.fontStyle
         if (!m.exact) substituted.set(x.psdFont, m.fontClass.alias)
       }
       if (x.psdPointText) await fitPointText(x, rawData.fontClass, data.width) // [TINIX] no unwanted wrapping

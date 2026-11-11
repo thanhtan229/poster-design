@@ -6,6 +6,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 ## Stack
 - Frontend (thư mục gốc): Vue 3 + Vite 5 + Pinia + Element Plus, TypeScript. Editor dùng DOM (widget `wText`, `wImage`, `wSvg`, `wGroup`, `wQrcode` trong `src/components/modules/widgets/`). Cổng 5173.
 - Service (`service/`): Node.js + Express + better-sqlite3 (`service/data/poster.db`) + Puppeteer (xuất ảnh) + sharp. Cổng 7001. Route khai báo ở `service/src/control/api.ts` (tiền tố `/api`) và `router.ts`.
+- Nhập PSD: `ag-psd` trong web worker (`src/utils/tinix/psd-ag.ts`), `psd.js` dự phòng.
 - AI có sẵn: `service/src/service/ai.ts` (endpoint tương thích OpenAI, cấu hình ở bảng `ai_settings` qua trang admin).
 
 ## Chạy

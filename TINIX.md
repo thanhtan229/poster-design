@@ -17,7 +17,8 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/components/business/login-dialog/index.vue`, `ChangePassword.vue` | Nhãn, placeholder, thông báo → `t('tinix.login.*' / 'tinix.password.*')`; lỗi server qua `viServerMsg()` | Việt hóa |
 | `src/views/Psd.vue` | Thông báo admin → tiếng Việt; đặt khổ trang **trước** khi thêm widget; ánh xạ font PSD → kho (`matchPsdFont`) + báo font bị thay; nới khung point text (`fitPointText`); báo lỗi khi không đọc được PSD | Việt hóa; sửa nhập PSD |
 | `src/utils/plugins/psd/index.ts` | Cỡ chữ × hệ số phóng dọc; Tracking → giãn chữ; All Caps; Leading → giãn dòng; tên font đúng style run (bỏ `.slice(1)` cắt mất chữ đầu); paragraph text dùng BoxBounds + ma trận → khung + `rotate`; `transform: ''` (object cũ làm hỏng CSS xoay) | Nhập PSD đúng như Photoshop |
-| `src/utils/plugins/worker/loadPSD.worker.ts` | `try/catch`, gửi `{ error }` về | Trước đây lỗi đọc PSD làm trang quay vòng mãi |
+| `src/utils/plugins/worker/loadPSD.worker.ts` | Đọc bằng **ag-psd** trước (`processPsdWithAg`), lỗi thì thử `psd.js`; luôn gửi `{ data }` hoặc `{ error }` về | psd.js không đọc được PSD đời mới; trước đây lỗi làm trang quay vòng mãi |
+| `package.json` | Thêm phụ thuộc `ag-psd` (MIT) | Bộ đọc PSD mới |
 | `.gitignore` | Ignore `/psd-test/` | File PSD thử nghiệm cục bộ |
 
 ## File mới (không đụng file gốc)
@@ -36,6 +37,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/utils/tinix/psd-text.ts` | Tính cỡ chữ, giãn chữ, giãn dòng, All Caps, hình học khung + góc xoay từ dữ liệu PSD (chạy trong worker) |
 | `src/utils/tinix/psd-font-map.ts` | Ánh xạ tên font Photoshop → font trong kho: trùng tên → tiền tố → đoán nhóm (script/rounded/display/serif/sans) → Montserrat; đọc độ đậm/nghiêng từ tên |
 | `src/utils/tinix/psd-fit.ts` | Đo chữ bằng font thay thế, nới khung point text để không bị xuống dòng sai |
+| `src/utils/tinix/psd-ag.ts` | Bộ chuyển PSD → trang dựa trên ag-psd (chữ + ảnh từng lớp + nền), cùng định dạng đầu ra với bộ cũ; khởi tạo canvas cho worker (`OffscreenCanvas`/`ImageData`) |
 | `scripts/tinix-psd-dump.cjs` | In thông tin lớp chữ của file PSD để gỡ lỗi: `node scripts/tinix-psd-dump.cjs "psd-test/x.psd"` |
 | `CLAUDE.md`, `MVP-SPEC.md`, `TINIX.md` | Tài liệu |
 
@@ -48,13 +50,14 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
   2. Mở http://127.0.0.1:5173/psd (hoặc trang admin → nút nhập PSD).
   3. Chọn file `.psd` → chờ phân tích → chỉnh nếu cần → lưu thành mẫu (上传模板).
   4. Lớp chữ thành widget chữ chỉnh được. Font không có trong kho được thay bằng font gần giống — app hiện thông báo "PSD font → font thay thế". Muốn đúng font gốc: thêm font đó (có giấy phép) vào kho rồi nhập lại.
-  5. Giới hạn: hiệu ứng chữ phức tạp (warp, chữ theo đường cong), mask và smart object không được giữ nguyên; một số file PSD lưu bằng Photoshop đời mới bị bộ đọc `psd.js` từ chối (app báo lỗi).
+  5. Giới hạn: hiệu ứng chữ phức tạp (warp, chữ theo đường cong), mask và smart object không được giữ nguyên; layer style (đổ màu, viền, bóng, nổi 3D) không được giữ.
 - **Trang admin:** http://127.0.0.1:5173/admin (quản lý font, mẫu, cấu hình AI).
 
 ## Lỗi đã biết của repo gốc
 
 - Mẫu chỉ hiện/xuất được khi `templates.state = 1`.
-- `psd.js` 3.9 (thư viện đọc PSD, ngừng phát triển) ném lỗi `throw "e"` với dữ liệu chữ dạng khóa số (`_0`, `_99`…) của một số file Photoshop mới. Hướng xử lý sau: thay bằng `ag-psd`.
+- `psd.js` 3.9 ném lỗi `throw "e"` với dữ liệu chữ của một số file Photoshop mới → đã chuyển sang **ag-psd** (psd.js chỉ còn làm dự phòng).
+- Layer style (Color Overlay, Stroke, Bevel, Drop Shadow…) **không được vẽ lại**: ảnh/chữ dùng màu gốc của lớp (vd. mũi tên xám trong PSD có thể hiện màu khác).
 - Xuất ảnh quá giờ (`截图超时`): service không còn bị tắt (nhờ `process-guard`), nhưng request đó không nhận được phản hồi lỗi — hàng đợi `queueRun` gốc không chuyển lỗi về. Xử lý sau nếu gặp thường xuyên.
 - Service biên dịch bằng **TypeScript 3.9** → không dùng cú pháp mới (labeled tuple, `satisfies`, …) trong `service/`.
 - File tĩnh trong `/static` bị gắn `Content-Type: application/json` (middleware gốc) — trình duyệt vẫn nạp font/ảnh bình thường.

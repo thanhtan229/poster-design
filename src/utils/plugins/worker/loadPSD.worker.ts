@@ -21,13 +21,22 @@
 // }
 
 import { processPSD2Page } from '@/utils/plugins/psd'
+import { processPsdWithAg } from '@/utils/tinix/psd-ag' // [TINIX]
+
+const errText = (err: any) => (typeof err === 'string' ? err : err?.message || String(err))
 
 onmessage = async (e) => {
-  // [TINIX] report parse failures instead of never answering (the page used to spin forever)
+  // [TINIX] ag-psd first (reads recent Photoshop files); psd.js as fallback; always answer
   try {
-    const data = await processPSD2Page(e.data)
-    self.postMessage({ data })
-  } catch (err: any) {
-    self.postMessage({ error: typeof err === 'string' ? err : err?.message || String(err) })
+    const data = await processPsdWithAg(e.data)
+    self.postMessage({ data, parser: 'ag-psd' })
+  } catch (agErr: any) {
+    console.warn('[tinix:psd] ag-psd failed, trying psd.js:', errText(agErr))
+    try {
+      const data = await processPSD2Page(e.data)
+      self.postMessage({ data, parser: 'psd.js' })
+    } catch (err: any) {
+      self.postMessage({ error: `ag-psd: ${errText(agErr)} | psd.js: ${errText(err)}` })
+    }
   }
 }

@@ -19,6 +19,7 @@
     "@palxp/color-picker": "workspace:*",
     "@palxp/image-extraction": "workspace:*",
     "@scena/guides": "^0.18.1",
+    "ag-psd": "^34.1.0",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "cropperjs": "^1.6.1",
