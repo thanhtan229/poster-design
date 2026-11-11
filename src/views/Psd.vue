@@ -102,7 +102,7 @@ const zoomControlRef = ref<typeof zoomControl | null>()
 try {
   const user = JSON.parse(localStorage.getItem('xp_user') || 'null')
   if (!user || user.role !== 1) {
-    ElMessage.warning('导入 PSD 仅对管理员开放，请使用管理员账号登录')
+    ElMessage.warning('Chỉ tài khoản quản trị mới nhập được PSD. Hãy đăng nhập bằng tài khoản admin.') // [TINIX]
     setTimeout(() => (window.location.href = './'), 600)
   }
 } catch (e) {

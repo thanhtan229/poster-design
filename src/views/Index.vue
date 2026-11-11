@@ -25,10 +25,11 @@
             <div :class="['operation-item', { disable: !redoable }]" @click="redoable ? handleHistory('redo') : ''"><i class="iconfont icon-redo" /></div>
           </div>
           <el-divider direction="vertical" />
-          <Folder @select="dealWith" ref="ref1"> <div class="operation-item"><i class="icon sd-wenjian" /> <span class="text" >文件</span></div> </Folder>
-          <Helper @select="dealWith"> <div class="operation-item"><i class="icon sd-bangzhu" /> <span class="text" >帮助</span></div> </Helper>
+          <!-- [TINIX] nhãn header Việt hóa qua $t('tinix.menu.*') — xem src/languages/modules/vi -->
+          <Folder @select="dealWith" ref="ref1"> <div class="operation-item"><i class="icon sd-wenjian" /> <span class="text" >{{ $t('tinix.menu.file') }}</span></div> </Folder>
+          <Helper @select="dealWith"> <div class="operation-item"><i class="icon sd-bangzhu" /> <span class="text" >{{ $t('tinix.menu.help') }}</span></div> </Helper>
           <el-divider direction="vertical" />
-          <div class="operation-item" @click="openAiAssistant"><i class="icon sd-AIkoutu" /> <span class="text">AI 助手</span></div>
+          <div class="operation-item" @click="openAiAssistant"><i class="icon sd-AIkoutu" /> <span class="text">{{ $t('tinix.menu.ai') }}</span></div>
           <!-- <el-tooltip effect="dark" :show-after="300" :offset="0" content="标尺" placement="bottom">
             <i style="font-size: 20px" class="icon sd-biaochi operation-item" @click="changeLineGuides" />
           </el-tooltip> -->
@@ -40,13 +41,13 @@
           <template v-if="loginUser">
             <span class="user-name">{{ loginUser.account }}</span>
             <el-divider direction="vertical" />
-            <div class="operation-item" @click="openChangePassword"><span class="text">修改密码</span></div>
+            <div class="operation-item" @click="openChangePassword"><span class="text">{{ $t('tinix.menu.changePassword') }}</span></div>
             <el-divider direction="vertical" />
-            <div v-if="loginUser.role === 1" class="operation-item" @click="jump2admin"><span class="text">后台管理</span></div>
+            <div v-if="loginUser.role === 1" class="operation-item" @click="jump2admin"><span class="text">{{ $t('tinix.menu.admin') }}</span></div>
             <el-divider v-if="loginUser.role === 1" direction="vertical" />
-            <div class="operation-item" @click="logout"><span class="text">退出</span></div>
+            <div class="operation-item" @click="logout"><span class="text">{{ $t('tinix.menu.logout') }}</span></div>
           </template>
-          <el-button v-else size="large" type="primary" plain @click="openLogin">登录 / 注册</el-button>
+          <el-button v-else size="large" type="primary" plain @click="openLogin">{{ $t('tinix.menu.login') }}</el-button>
         </HeaderOptions>
       </div>
     </div>
@@ -75,7 +76,7 @@
       :percent="state.downloadPercent"
       :text="state.downloadText"
       :msg="state.downloadMsg"
-      cancelText="取消"
+      :cancelText="$t('tinix.menu.cancel')"
       @cancel="downloadCancel"
       @done="state.downloadPercent = 0"
     />

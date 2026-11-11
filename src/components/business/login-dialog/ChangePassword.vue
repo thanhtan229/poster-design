@@ -8,18 +8,18 @@
  * (at your option) any later version.
 -->
 <template>
-  <el-dialog v-model="visible" title="修改密码" width="360px" :append-to-body="true" @closed="reset">
+  <el-dialog v-model="visible" :title="$t('tinix.password.title')" width="360px" :append-to-body="true" @closed="reset">
     <el-form @submit.prevent>
       <el-form-item>
-        <el-input v-model="form.oldPassword" type="password" placeholder="原密码" show-password @keyup.enter="submit" />
+        <el-input v-model="form.oldPassword" type="password" :placeholder="$t('tinix.password.old')" show-password @keyup.enter="submit" />
       </el-form-item>
       <el-form-item>
-        <el-input v-model="form.newPassword" type="password" placeholder="新密码（至少 6 位）" show-password @keyup.enter="submit" />
+        <el-input v-model="form.newPassword" type="password" :placeholder="$t('tinix.password.new')" show-password @keyup.enter="submit" />
       </el-form-item>
       <el-form-item>
-        <el-input v-model="form.confirmPassword" type="password" placeholder="确认新密码" show-password @keyup.enter="submit" />
+        <el-input v-model="form.confirmPassword" type="password" :placeholder="$t('tinix.password.confirm')" show-password @keyup.enter="submit" />
       </el-form-item>
-      <el-button type="primary" style="width: 100%" :loading="loading" @click="submit">确认修改</el-button>
+      <el-button type="primary" style="width: 100%" :loading="loading" @click="submit">{{ $t('tinix.password.submit') }}</el-button>
     </el-form>
   </el-dialog>
 </template>
@@ -39,6 +39,10 @@ import { reactive, ref } from 'vue'
 import { ElMessage, ElForm, ElFormItem } from 'element-plus'
 import { LocalStorageKey } from '@/config'
 import * as adminApi from '@/api/admin'
+import { useI18n } from 'vue-i18n' // [TINIX]
+import { viServerMsg } from '@/utils/tinix/server-msg' // [TINIX]
+
+const { t } = useI18n() // [TINIX]
 
 export type ChangePasswordResult = { oldPassword: string; newPassword: string }
 
@@ -71,29 +75,29 @@ function settle(success: boolean) {
 
 async function submit() {
   if (!form.oldPassword || !form.newPassword) {
-    ElMessage.warning('请填写原密码和新密码')
+    ElMessage.warning(t('tinix.password.missing'))
     return
   }
   if (form.newPassword.length < 6) {
-    ElMessage.warning('新密码至少 6 位')
+    ElMessage.warning(t('tinix.password.tooShort'))
     return
   }
   if (form.newPassword !== form.confirmPassword) {
-    ElMessage.warning('两次输入的新密码不一致')
+    ElMessage.warning(t('tinix.password.mismatch'))
     return
   }
   loading.value = true
   try {
     const res: any = await adminApi.changePassword({ oldPassword: form.oldPassword, newPassword: form.newPassword })
     if (res?.code === 200) {
-      ElMessage.success('密码修改成功，请重新登录')
+      ElMessage.success(t('tinix.password.success'))
       localStorage.removeItem(LocalStorageKey.tokenKey)
       settle(true)
     } else {
-      ElMessage.error(res?.msg || '修改失败')
+      ElMessage.error(viServerMsg(res?.msg) || t('tinix.password.failed'))
     }
   } catch (e: any) {
-    ElMessage.error(e?.message || '网络错误')
+    ElMessage.error(viServerMsg(e?.message) || t('tinix.networkError'))
   } finally {
     loading.value = false
   }

@@ -9,15 +9,18 @@ import { createI18n } from 'vue-i18n'
 
 import zh from './modules/zh'
 import en from './modules/en'
+import vi from './modules/vi' // [TINIX]
 
 const i18n = createI18n({
   // Use Composition API, Set to false
   allowComposition: true,
   legacy: false,
   locale: getBrowserLang(),
+  fallbackLocale: 'vi', // [TINIX]
   messages: {
     zh,
     en,
+    vi, // [TINIX]
   },
 })
 
@@ -26,6 +29,8 @@ const i18n = createI18n({
  * @returns {String}
  */
 export function getBrowserLang() {
+  // [TINIX] TinixPoster luôn dùng tiếng Việt (bỏ dòng này để quay lại tự nhận theo trình duyệt)
+  if (true) return 'vi'
   let browserLang = navigator.language ? navigator.language : navigator.browserLanguage
   let defaultBrowserLang = ''
   if (['cn', 'zh', 'zh-cn'].includes(browserLang.toLowerCase())) {

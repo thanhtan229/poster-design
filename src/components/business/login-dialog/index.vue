@@ -8,20 +8,20 @@
  * (at your option) any later version.
 -->
 <template>
-  <el-dialog v-model="visible" title="账号登录" width="360px" :append-to-body="true" @closed="reset">
+  <el-dialog v-model="visible" :title="$t('tinix.login.title')" width="360px" :append-to-body="true" @closed="reset">
     <el-tabs v-model="mode">
-      <el-tab-pane label="登录" name="login" />
-      <el-tab-pane label="注册" name="register" />
+      <el-tab-pane :label="$t('tinix.login.tabLogin')" name="login" />
+      <el-tab-pane :label="$t('tinix.login.tabRegister')" name="register" />
     </el-tabs>
     <el-form @submit.prevent>
       <el-form-item>
-        <el-input v-model="form.account" placeholder="账号" @keyup.enter="submit" />
+        <el-input v-model="form.account" :placeholder="$t('tinix.login.account')" @keyup.enter="submit" />
       </el-form-item>
       <el-form-item>
-        <el-input v-model="form.password" type="password" placeholder="密码（注册至少 6 位）" show-password @keyup.enter="submit" />
+        <el-input v-model="form.password" type="password" :placeholder="$t('tinix.login.password')" show-password @keyup.enter="submit" />
       </el-form-item>
       <el-button type="primary" style="width: 100%" :loading="loading" @click="submit">
-        {{ mode === 'login' ? '登录' : '注册并登录' }}
+        {{ mode === 'login' ? $t('tinix.login.submitLogin') : $t('tinix.login.submitRegister') }}
       </el-button>
     </el-form>
   </el-dialog>
@@ -42,6 +42,10 @@ import { reactive, ref } from 'vue'
 import { ElMessage, ElTabs, ElTabPane, ElForm, ElFormItem } from 'element-plus'
 import { LocalStorageKey } from '@/config'
 import * as adminApi from '@/api/admin'
+import { useI18n } from 'vue-i18n' // [TINIX]
+import { viServerMsg } from '@/utils/tinix/server-msg' // [TINIX]
+
+const { t } = useI18n() // [TINIX]
 
 export type LoginResult = { account: string; role: number }
 
@@ -77,7 +81,7 @@ function settle(result: LoginResult) {
 
 async function submit() {
   if (!form.account || !form.password) {
-    ElMessage.warning('请填写账号和密码')
+    ElMessage.warning(t('tinix.login.missing'))
     return
   }
   loading.value = true
@@ -89,10 +93,10 @@ async function submit() {
       localStorage.setItem(LocalStorageKey.tokenKey, res.token)
       settle({ account: res.account, role: res.role })
     } else {
-      ElMessage.error(res?.msg || '操作失败')
+      ElMessage.error(viServerMsg(res?.msg) || t('tinix.login.failed'))
     }
   } catch (e: any) {
-    ElMessage.error(e?.message || '网络错误')
+    ElMessage.error(viServerMsg(e?.message) || t('tinix.networkError'))
   } finally {
     loading.value = false
   }
