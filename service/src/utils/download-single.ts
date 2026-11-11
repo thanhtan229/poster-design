@@ -21,8 +21,8 @@ const { executablePath } = require('../configs.ts')
 const forceTimeOut = 60 // 强制超时时间，单位：秒
 // 4K规格，总计约830万像素 3840 * 2160 2K规格，总计约830万像素 2048 * 1080
 // const maxPXs = 8294400 
-const maxPXs = 4211840 // 超出此规格会触发限制器降低dpr，节省服务器资源
-const maximum = 5000 // 最大宽高限制，超过截断以防止服务崩溃
+const maxPXs = 40000000 // [TINIX] was 4211840: single local user → keep print resolution (above this the dpr is lowered)
+const maximum = 10000 // [TINIX] was 5000 (max width/height, larger is clipped)
 
 export const saveScreenshot = async (url: string, { path, width, height, thumbPath, size = 0, quality = 0, prevent, ua, devices, scale, wait }: any) => {
   return new Promise(async (resolve: Function, reject: Function) => {
@@ -66,8 +66,8 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
       return w*h < maxPXs ? 1 : +(1/(w*h) * maxPXs).toFixed(2)
     }
     page.setViewport({
-      width: Number(width) > maximum ? 5000 : Number(width),
-      height: Number(height) > maximum ? 5000 : Number(height),
+      width: Number(width) > maximum ? maximum : Number(width),
+      height: Number(height) > maximum ? maximum : Number(height),
       deviceScaleFactor: !isNaN(scale) ? (+scale > 4 ? 4 : +scale) : limiter(Number(width), Number(height)),
     })
     ua && page.setUserAgent(ua)

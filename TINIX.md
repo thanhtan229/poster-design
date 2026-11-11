@@ -18,7 +18,12 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/views/Psd.vue` | Thông báo admin → tiếng Việt; đặt khổ trang **trước** khi thêm widget; ánh xạ font PSD → kho (`matchPsdFont`) + báo font bị thay; nới khung point text (`fitPointText`); báo lỗi khi không đọc được PSD | Việt hóa; sửa nhập PSD |
 | `src/utils/plugins/psd/index.ts` | Cỡ chữ × hệ số phóng dọc; Tracking → giãn chữ; All Caps; Leading → giãn dòng; tên font đúng style run (bỏ `.slice(1)` cắt mất chữ đầu); paragraph text dùng BoxBounds + ma trận → khung + `rotate`; `transform: ''` (object cũ làm hỏng CSS xoay) | Nhập PSD đúng như Photoshop |
 | `src/utils/plugins/worker/loadPSD.worker.ts` | Đọc bằng **ag-psd** trước (`processPsdWithAg`), lỗi thì thử `psd.js`; luôn gửi `{ data }` hoặc `{ error }` về | psd.js không đọc được PSD đời mới; trước đây lỗi làm trang quay vòng mãi |
-| `package.json` | Thêm phụ thuộc `ag-psd` (MIT) | Bộ đọc PSD mới |
+| `package.json` | Thêm phụ thuộc `ag-psd` (MIT); script `tinix:test-ai` | Bộ đọc PSD mới; tự kiểm tra AI |
+| `service/src/main.ts` | Mount `tinixAiRouter` (`/api/tinix/ai/*`) sau router gốc | Các tính năng AI của TinixPoster |
+| `src/components/business/ai-assistant/AiAssistant.vue` | Thêm 5 tab (Gợi ý chữ, Sửa chữ, Tìm font, Lịch sử, Cài đặt AI), mặc định mở "Gợi ý chữ", Việt hóa 3 tab cũ, rộng 780px | Trợ lý AI |
+| `src/store/design/widget/actions/template.ts` | `setTemplate()` không còn `constrainGroupToCanvas` | Mở mẫu nguyên trang từng bị co nhỏ cả mẫu (vd 937px → 204px) khi 1 lớp tràn mép, và co theo khổ trang cũ |
+| `src/components/business/create-design/sizeEditor.vue`, `designBoard/comps/resize.vue` | Giới hạn khổ trang 5000 → 10000px | Ô nhập tự cắt chiều cao trang về 5000 |
+| `service/src/utils/download-single.ts` | `maximum` 5000 → 10000, `maxPXs` 4,2M → 40M điểm ảnh | Ảnh xuất bị cắt ở 5000px và hạ độ phân giải (3761×5642 → ~750px) |
 | `.gitignore` | Ignore `/psd-test/` | File PSD thử nghiệm cục bộ |
 
 ## File mới (không đụng file gốc)
@@ -38,6 +43,12 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/utils/tinix/psd-font-map.ts` | Ánh xạ tên font Photoshop → font trong kho: trùng tên → tiền tố → đoán nhóm (script/rounded/display/serif/sans) → Montserrat; đọc độ đậm/nghiêng từ tên |
 | `src/utils/tinix/psd-fit.ts` | Đo chữ bằng font thay thế, nới khung point text để không bị xuống dòng sai |
 | `src/utils/tinix/psd-ag.ts` | Bộ chuyển PSD → trang dựa trên ag-psd (chữ + ảnh từng lớp + nền), cùng định dạng đầu ra với bộ cũ; khởi tạo canvas cho worker (`OffscreenCanvas`/`ImageData`) |
+| `service/src/tinix/ai/` | **AI**: `vision.ts` (mọi lời gọi AI: thu ảnh 1024px, gọi /chat/completions có ảnh, bóc JSON, thử lại 1 lần, ghi `ai_jobs`), `tasks.ts` (gợi ý chữ, sửa chữ, tìm font, gắn tag font), `prompts.ts` (sửa prompt ở đây), `validate.ts` (kiểm tra JSON — thay zod vì TS 3.9), `fonts.ts` (danh sách font cho prompt + chấm điểm), `cost-log.ts`, `settings.ts` (khóa `tinix_*` trong `ai_settings`), `routes.ts` |
+| `src/api/tinix-ai.ts` | Client gọi `/api/tinix/ai/*` |
+| `src/components/business/ai-assistant/Tinix*.vue`, `tinix-tab.less` | Các tab Trợ lý AI |
+| `src/utils/tinix/capture.ts` | Chụp trang (html2canvas, bỏ `transform: scale`) gửi AI |
+| `src/utils/tinix/place-text.ts` | Xếp chữ AI vào vùng trống (0–1 → px, co chữ cho vừa, chỉnh màu dễ đọc) |
+| `scripts/tinix-ai-selftest/` | `npm run tinix:test-ai`: thử toàn bộ đường AI với nhà cung cấp giả, DB tạm |
 | `scripts/tinix-psd-dump.cjs` | In thông tin lớp chữ của file PSD để gỡ lỗi: `node scripts/tinix-psd-dump.cjs "psd-test/x.psd"` |
 | `CLAUDE.md`, `MVP-SPEC.md`, `TINIX.md` | Tài liệu |
 

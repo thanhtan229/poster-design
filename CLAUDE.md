@@ -18,7 +18,9 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Làm trên nhánh git `tinix`. **Không push lên `origin`** (repo gốc của người khác).
 - Code mới đặt trong `service/src/tinix/` (backend) và `src/utils/tinix/`, `src/components/business/ai-assistant/` (frontend).
 - Hạn chế sửa file gốc. Mỗi chỗ sửa file gốc: thêm comment `[TINIX]` và ghi vào `TINIX.md`.
-- Mọi lời gọi AI đi qua `service/src/tinix/ai/vision.ts`; validate JSON trả về bằng zod; ghi lịch sử/chi phí vào bảng `ai_jobs`.
+- Mọi lời gọi AI đi qua `service/src/tinix/ai/vision.ts` (`callVisionJSON`); kiểm tra JSON bằng `service/src/tinix/ai/validate.ts` (KHÔNG dùng zod: service biên dịch bằng TypeScript 3.9); lịch sử/chi phí ghi vào `ai_jobs`.
+- Service dùng TypeScript 3.9: không có `catch (e: any)`, labeled tuple, `satisfies`… Kiểm tra: `cd service && npx tsc --noEmit -p .` (bỏ qua lỗi sẵn có trong `node_modules/axios`).
+- Sau khi sửa phần AI: chạy `npm run tinix:test-ai`.
 - AI trả tọa độ tỉ lệ 0–1; widget dùng px → đổi bằng kích thước trang.
 - Ghi chú code mới bằng tiếng Việt hoặc tiếng Anh (code gốc ghi chú tiếng Trung).
 - Repo không có test tự động: sau mỗi thay đổi, chạy app và kiểm tra tay (tạo, lưu, mở, thêm chữ, xuất ảnh) trước khi commit.

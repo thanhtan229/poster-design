@@ -56,12 +56,12 @@ function handlemousemove(e: any) {
     const dx = e.pageX - x
     const moveX = Math.floor((dx * 100) / canvasStore.dZoom)
     const result = moveRev ? w - moveX * 2 : w + moveX * 2
-    result <= 5000 && result > 0 && (canvasStore.dPage.width = result)
+    result <= 10000 && result > 0 && (canvasStore.dPage.width = result)
   } else {
     const dy = e.pageY - y
     const moveY = Math.floor((dy * 100) / canvasStore.dZoom)
     const result = moveRev ? h - moveY * 2 : h + moveY * 2
-    result <= 5000 && result > 0 && (canvasStore.dPage.height = result)
+    result <= 10000 && result > 0 && (canvasStore.dPage.height = result)
   }
 }
 

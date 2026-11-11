@@ -22,6 +22,7 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import fs from 'fs'
 import router from './control/router'
+import tinixAiRouter from './tinix/ai/routes' // [TINIX]
 import { filePath, servicePort } from './configs'
 import handleTimeout from './utils/timeout'
 import { initDB } from './db'
@@ -64,6 +65,7 @@ app.use((req: any, res: any, next: any) => {
 app.use(bodyParser.urlencoded({ limit: '100mb', extended: true, parameterLimit: 100000 }))
 app.use(bodyParser.json({ limit: '100mb' }))
 app.use(router)
+app.use(tinixAiRouter) // [TINIX] /api/tinix/ai/*
 
 // [TINIX] bind to localhost only (override with HOST in service/.env)
 app.listen(Number(port), listenHost, () => console.log(`Screenshot Server start on http://${listenHost}:${port}`))

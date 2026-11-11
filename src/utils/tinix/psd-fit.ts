@@ -22,7 +22,7 @@ let ctx: CanvasRenderingContext2D | null = null
 const registered = new Set<string>()
 
 /** Make sure the library font is usable by canvas before measuring (widgets register it later). */
-async function ensureFont(family: string, url: string) {
+export async function ensureFont(family: string, url: string) {
   if (!url || registered.has(family)) return
   registered.add(family)
   try {
@@ -62,4 +62,14 @@ export async function fitPointText(x: TextCloud, fontClass: { value: string; url
   // keep inside the page when possible
   if (x.left < 0) x.left = 0
   if (pageWidth > 0 && x.left + x.width > pageWidth && x.width <= pageWidth) x.left = pageWidth - x.width
+}
+
+
+/** Width in px of the widest line, with letter spacing (% of font size) — font must be loaded. */
+export function measureLines(text: string, font: { family: string; size: number; weight?: string; style?: string; letterSpacing?: number }): number {
+  ctx = ctx || document.createElement('canvas').getContext('2d')
+  if (!ctx) return 0
+  ctx.font = `${font.style || 'normal'} ${font.weight || '400'} ${font.size}px "${font.family}"`
+  const spacing = (font.size * (font.letterSpacing || 0)) / 100
+  return Math.max(0, ...String(text).split(/\r\n|\r|\n/).map((l) => ctx!.measureText(l).width + spacing * [...l].length))
 }

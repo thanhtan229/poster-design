@@ -10,10 +10,14 @@
  * @Description: AI 助手面板：文案生成 / 文生图 / 智能配色
 -->
 <template>
-  <el-dialog v-model="state.show" title="AI 助手" align-center width="680" :append-to-body="true" destroy-on-close @close="handleClose">
+  <el-dialog v-model="state.show" :title="$t('tinix.menu.ai')" align-center width="780" :append-to-body="true" destroy-on-close @close="handleClose">
     <el-tabs v-model="state.activeTab" class="ai-tabs">
+      <!-- [TINIX] TinixPoster AI tabs -->
+      <el-tab-pane label="Gợi ý chữ" name="suggest" lazy><TinixSuggestTab /></el-tab-pane>
+      <el-tab-pane label="Sửa chữ" name="rewrite" lazy><TinixRewriteTab /></el-tab-pane>
+      <el-tab-pane label="Tìm font" name="font" lazy><TinixFontTab /></el-tab-pane>
       <!-- 文案生成 -->
-      <el-tab-pane label="生成文案" name="text">
+      <el-tab-pane label="Viết chữ" name="text">
         <div class="ai-row">
           <el-input v-model="state.textPrompt" type="textarea" :rows="3" placeholder="输入海报主题，如：夏季冰饮新品上市" />
         </div>
@@ -33,7 +37,7 @@
       </el-tab-pane>
 
       <!-- 文生图 -->
-      <el-tab-pane label="生成图片" name="image">
+      <el-tab-pane label="Tạo ảnh" name="image">
         <div class="ai-row">
           <el-input v-model="state.imagePrompt" type="textarea" :rows="3" placeholder="输入图片描述，如：简约风格的夏日饮品促销背景，蓝绿色调" />
         </div>
@@ -51,7 +55,7 @@
       </el-tab-pane>
 
       <!-- 智能配色 -->
-      <el-tab-pane label="生成配色" name="color">
+      <el-tab-pane label="Gợi ý màu" name="color">
         <div class="ai-row">
           <el-input v-model="state.colorPrompt" type="textarea" :rows="2" placeholder="输入配色主题，如：清爽的夏日感 / 复古国潮风" />
         </div>
@@ -74,6 +78,9 @@
           </div>
         </div>
       </el-tab-pane>
+      <!-- [TINIX] -->
+      <el-tab-pane label="Lịch sử" name="history" lazy><TinixHistoryTab /></el-tab-pane>
+      <el-tab-pane label="Cài đặt AI" name="settings" lazy><TinixSettingsTab /></el-tab-pane>
     </el-tabs>
   </el-dialog>
 </template>
@@ -88,13 +95,19 @@ import { storeToRefs } from 'pinia'
 import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
 import { TAiColorItem } from '@/api/ai'
+// [TINIX] TinixPoster AI tabs
+import TinixSuggestTab from './TinixSuggestTab.vue'
+import TinixRewriteTab from './TinixRewriteTab.vue'
+import TinixFontTab from './TinixFontTab.vue'
+import TinixHistoryTab from './TinixHistoryTab.vue'
+import TinixSettingsTab from './TinixSettingsTab.vue'
 
 const styleList = ['营销', '简约', '文艺', '科技', '国潮']
 const ratioList = ['1:1', '3:4', '4:3', '9:16', '16:9']
 
 const state = reactive({
   show: false,
-  activeTab: 'text',
+  activeTab: 'suggest', // [TINIX]
   // 文案
   textPrompt: '',
   textStyle: '营销',
@@ -130,7 +143,7 @@ function open() {
 }
 
 function handleClose() {
-  state.activeTab = 'text'
+  state.activeTab = 'suggest' // [TINIX]
   // 关闭后恢复选中框显示
   useControlStore().setShowMoveable(true)
 }
