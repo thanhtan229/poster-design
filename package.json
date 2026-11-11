@@ -4,6 +4,8 @@
   "private": true,
   "author": "ShawnPhang",
   "scripts": {
+    "tinix:setup": "npm i && npm --prefix service i",
+    "tinix:dev": "node scripts/tinix-dev.mjs",
     "prepared": "npm i && cd service && PUPPETEER_DOWNLOAD_BASE_URL=https://cdn.npmmirror.com/binaries/chrome-for-testing npm i",
     "serve": "npm run dev & cd service && npm run dev",
     "dev": "cross-env NODE_ENV=development vite",

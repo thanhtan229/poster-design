@@ -5,7 +5,7 @@ config.json
 /.vite
 yarn.lock
 AGENTS.md
-CLAUDE.md
+# [TINIX] CLAUDE.md is tracked in this fork
 /docs
 .playwright-mcp
 
@@ -27,3 +27,6 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
+
+# [TINIX] local run logs
+.runtime/

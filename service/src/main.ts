@@ -15,6 +15,8 @@
  * @LastEditTime: 2026-08-31 01:20:06
  */
 
+// [TINIX] must stay the first import — loads service/.env before configs are read
+import { listenHost } from './tinix/env'
 import express from 'express'
 import bodyParser from 'body-parser'
 import fs from 'fs'
@@ -62,7 +64,8 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: true, parameterLimit: 
 app.use(bodyParser.json({ limit: '100mb' }))
 app.use(router)
 
-app.listen(port, () => console.log(`Screenshot Server start on port:${port}`))
+// [TINIX] bind to localhost only (override with HOST in service/.env)
+app.listen(Number(port), listenHost, () => console.log(`Screenshot Server start on http://${listenHost}:${port}`))
 
 const getContentType = function (path: any) {
   const extension = path.split('.').pop().toLowerCase()
