@@ -276,7 +276,7 @@ TinixPoster/                             ← D:\___TOOLS\__TINIX\TinixPoster (nh
 | Tuần | Việc | Xong khi |
 |---|---|---|
 | 0 (1–2 ngày) | Chạy ổn định trên Windows, tạo tài khoản admin, đổi AUTH_SECRET, chỉ nghe localhost, commit git nhánh `tinix` | Mở editor, tạo & lưu 1 thiết kế, xuất JPG |
-| 1 | Nạp **30–50 font có tiếng Việt** (Google Fonts/OFL) qua admin; kiểm tra hiển thị & xuất ảnh dấu tiếng Việt; nhập 5–10 mẫu PSD của bạn; migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
+| 1 | ✅ Nạp **46 font có tiếng Việt** (Google Fonts/OFL) bằng `npm run tinix:fonts`; ✅ kiểm tra hiển thị & xuất ảnh dấu tiếng Việt (14 font, đạt); ⏳ nhập 5–10 mẫu PSD của bạn (cần đăng nhập admin — xem TINIX.md); ✅ migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
 | 2 | `chatVision` + cost-log + **Gợi ý chữ** end-to-end + tab Lịch sử | Luồng A chạy trọn |
 | 3 | **Sửa chữ** + **Tìm font** + AI gắn tag font | Luồng B, C chạy trọn; dùng thật cho công việc |
 | 4+ | Giai đoạn 2: Dựng theo mẫu (Canvix Magic Layers); dịch giao diện tiếng Việt | — |

@@ -17,6 +17,7 @@
 
 // [TINIX] must stay the first import — loads service/.env before configs are read
 import { listenHost } from './tinix/env'
+import './tinix/process-guard' // [TINIX] don't crash on a timed-out export
 import express from 'express'
 import bodyParser from 'body-parser'
 import fs from 'fs'

@@ -16,6 +16,7 @@ import fs from 'fs'
 import path from 'path'
 const Database = require('better-sqlite3')
 import bootstrapDatabase from './bootstrap'
+import { migrateTinix } from '../tinix/db/migrate' // [TINIX]
 
 let instance: any = null
 
@@ -37,6 +38,7 @@ export function initDB(): void {
   instance.pragma('journal_mode = WAL')
   createTables(instance)
   bootstrapDatabase(instance)
+  migrateTinix(instance) // [TINIX] font metadata columns + ai_jobs table
 }
 
 function createTables(db: any): void {
