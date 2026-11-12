@@ -2,30 +2,30 @@
 <template>
   <div class="tx-tab">
     <div class="tx-row">
-      <el-button size="small" @click="pick">Chọn ảnh có chữ…</el-button>
-      <el-button size="small" :loading="state.loading && state.source === 'page'" @click="fromPage">Dùng ảnh trang hiện tại</el-button>
+      <el-button size="small" @click="pick">{{ $t('tinix.ui.fontTab.chon_anh_co_chu') }}</el-button>
+      <el-button size="small" :loading="state.loading && state.source === 'page'" @click="fromPage">{{ $t('tinix.ui.fontTab.dung_anh_trang_hien_tai') }}</el-button>
       <input ref="fileRef" type="file" accept="image/*" style="display: none" @change="onFile" />
     </div>
-    <p class="tx-hint">Gửi một ảnh có chữ đẹp (chụp màn hình Pinterest, mẫu thiệp…). AI mô tả từng kiểu chữ rồi tìm font gần giống trong kho. Bấm "Dùng font này" để áp vào lớp chữ đang chọn.</p>
+    <p class="tx-hint">{{ $t('tinix.ui.fontTab.gui_mot_anh_co_chu') }}</p>
     <img v-if="state.preview" :src="state.preview" style="max-width: 100%; max-height: 160px; border-radius: 6px" />
-    <p v-if="state.loading" class="tx-hint">AI đang nhận diện font…</p>
+    <p v-if="state.loading" class="tx-hint">{{ $t('tinix.ui.fontTab.ai_dang_nhan_dien_font') }}</p>
 
     <div v-if="state.result" class="tx-result">
       <div v-for="(it, i) in state.result.items" :key="i" class="tx-card">
-        <div class="tx-card-head"><b>“{{ it.text || '(không đọc được chữ)' }}”</b> <span class="tx-label">· {{ it.category }}</span></div>
+        <div class="tx-card-head"><b>“{{ it.text || $t('tinix.ui.fontTab.khong_doc_duoc_chu') }}”</b> <span class="tx-label">· {{ it.category }}</span></div>
         <div class="tx-label">{{ it.traits.join(' · ') }}</div>
-        <div v-if="it.suspected.length" class="tx-label">AI đoán: {{ it.suspected.join(', ') }}</div>
+        <div v-if="it.suspected.length" class="tx-label">{{ $t('tinix.ui.fontTab.suspected', { names: it.suspected.join(', ') }) }}</div>
         <div class="tx-cands">
           <div v-for="c in it.candidates" :key="c.value" class="tx-cand">
             <span class="tx-cand-sample" :style="{ fontFamily: `'${c.value}'` }">{{ sample(it.text) }}</span>
             <span class="tx-label" style="min-width: 120px">{{ c.alias }}</span>
-            <el-button size="small" type="primary" plain @click="useFont(c)">Dùng font này</el-button>
+            <el-button size="small" type="primary" plain @click="useFont(c)">{{ $t('tinix.ui.fontTab.dung_font_nay') }}</el-button>
           </div>
-          <p v-if="!it.candidates.length" class="tx-hint">Không có font gần giống trong kho.</p>
+          <p v-if="!it.candidates.length" class="tx-hint">{{ $t('tinix.ui.fontTab.khong_co_font_gan_giong') }}</p>
         </div>
-        <p v-if="it.notInLibrary.length" class="tx-hint">Chưa có trong kho (tự tìm & thêm nếu có giấy phép): {{ it.notInLibrary.join(', ') }}</p>
+        <p v-if="it.notInLibrary.length" class="tx-hint">{{ $t('tinix.ui.fontTab.notInLibrary', { names: it.notInLibrary.join(', ') }) }}</p>
       </div>
-      <p class="tx-meta">Model: {{ state.result.model }} · lần gọi #{{ state.result.jobId }}</p>
+      <p class="tx-meta">{{ $t('tinix.ui.fontTab.meta', { model: state.result.model, job: state.result.jobId }) }}</p>
     </div>
   </div>
 </template>
@@ -39,13 +39,15 @@ import * as tinixAi from '@/api/tinix-ai'
 import type { TFindFontResult, TFontCandidate } from '@/api/tinix-ai'
 import { capturePage, fileToDataUrl } from '@/utils/tinix/capture'
 import { ensureFont } from '@/utils/tinix/psd-fit'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 const widgetStore = useWidgetStore()
 const { dActiveElement } = storeToRefs(widgetStore)
 const fileRef = ref<HTMLInputElement>()
 const state = reactive({ loading: false, source: '', preview: '', result: null as TFindFontResult | null })
 
-const sample = (t: string) => (t && t.length <= 30 ? t : 'Hạnh phúc trọn đời')
+const sample = (t: string) => (t && t.length <= 30 ? t : i18t('tinix.ui.fontTab.hanh_phuc_tron_doi'))
 
 function pick() {
   fileRef.value?.click()
@@ -68,11 +70,11 @@ async function run(image: string) {
   state.result = null
   try {
     const res = await tinixAi.findFont({ image })
-    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Không tìm được font')
+    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.fontTab.khong_tim_duoc_font'))
     state.result = res as TFindFontResult
     for (const it of state.result.items) for (const c of it.candidates) ensureFont(c.value, c.url)
   } catch (e: any) {
-    ElMessage.error(e?.message || 'Lỗi khi gọi AI')
+    ElMessage.error(e?.message || i18t('tinix.ui.fontTab.loi_khi_goi_ai'))
   } finally {
     state.loading = false
   }
@@ -80,9 +82,9 @@ async function run(image: string) {
 
 function useFont(c: TFontCandidate) {
   const el: any = dActiveElement.value
-  if (!el || el.type !== 'w-text') return ElMessage.warning('Hãy chọn một lớp chữ trên trang trước (đóng hộp thoại, bấm vào chữ, rồi mở lại)')
+  if (!el || el.type !== 'w-text') return ElMessage.warning(i18t('tinix.ui.fontTab.hay_chon_mot_lop_chu'))
   widgetStore.updateWidgetData({ uuid: el.uuid, key: 'fontClass', value: { id: c.id, alias: c.alias, value: c.value, url: c.url } })
-  ElMessage.success(`Đã đổi font thành ${c.alias}`)
+  ElMessage.success(i18t('tinix.ui.fontTab.changed', { name: c.alias }))
 }
 </script>
 

@@ -2,33 +2,33 @@
 <template>
   <div class="tx-tab">
     <div class="tx-row">
-      <el-button size="small" @click="pick">Chọn ảnh thiết kế mẫu…</el-button>
+      <el-button size="small" @click="pick">{{ $t('tinix.ui.rebuildTab.chon_anh_thiet_ke_mau') }}</el-button>
       <input ref="fileRef" type="file" accept="image/*" style="display: none" @change="onFile" />
       <el-radio-group v-model="state.mode" size="small">
-        <el-radio-button value="faithful">Giống mẫu</el-radio-button>
-        <el-radio-button value="creative">Viết nội dung mới</el-radio-button>
+        <el-radio-button value="faithful">{{ $t('tinix.ui.rebuildTab.giong_mau') }}</el-radio-button>
+        <el-radio-button value="creative">{{ $t('tinix.ui.rebuildTab.viet_noi_dung_moi') }}</el-radio-button>
       </el-radio-group>
       <template v-if="state.mode === 'creative'">
-        <el-checkbox v-model="state.usePage" size="small">Viết chữ hợp với ảnh trang hiện tại</el-checkbox>
+        <el-checkbox v-model="state.usePage" size="small">{{ $t('tinix.ui.rebuildTab.viet_chu_hop_voi_anh') }}</el-checkbox>
         <el-radio-group v-model="state.lang" size="small">
-          <el-radio-button value="vi">Tiếng Việt</el-radio-button>
+          <el-radio-button value="vi">{{ $t('tinix.ui.rebuildTab.tieng_viet') }}</el-radio-button>
           <el-radio-button value="en">English</el-radio-button>
         </el-radio-group>
       </template>
     </div>
-    <p v-if="state.mode === 'faithful'" class="tx-hint"><b>Giống mẫu</b>: AI chép <b>đúng chữ, ngôn ngữ, bố cục, cỡ chữ, màu</b>, chọn font <b>gần nhất trong kho</b>, vẽ khung/đường kẻ và nét trang trí, biểu tượng đơn giản bằng SVG. Chữ thư pháp, nét cọ hay hình phức tạp chỉ ở mức xấp xỉ; ảnh chụp là khung xám để bạn thay ảnh. Tất cả chỉnh được.</p>
-    <p v-else class="tx-hint"><b>Viết nội dung mới</b>: AI chỉ học <b>bố cục, nhịp chữ, kiểu font, màu</b> của mẫu và viết <b>nội dung mới</b> (tiếng Việt hoặc English) — không chép chữ, logo hay hình minh hoạ.</p>
+    <p v-if="state.mode === 'faithful'" class="tx-hint" v-html="$t('tinix.ui.rebuildTab.hintFaithful')"></p>
+    <p v-else class="tx-hint" v-html="$t('tinix.ui.rebuildTab.hintCreative')"></p>
     <div v-if="state.mode === 'faithful'" class="tx-row">
-      <el-checkbox v-model="state.genPhoto" size="small">Tự tạo ảnh nền tương tự bằng AI (không chữ) ngay sau khi phân tích — tốn thêm 1 lần tạo ảnh, khoảng 15–30 giây</el-checkbox>
+      <el-checkbox v-model="state.genPhoto" size="small">{{ $t('tinix.ui.rebuildTab.tu_tao_anh_nen_tuong') }}</el-checkbox>
     </div>
     <div class="tx-row" v-if="state.reference">
       <img :src="state.reference" style="max-height: 150px; max-width: 45%; border-radius: 6px" />
-      <el-button type="primary" size="small" :loading="state.loading" @click="analyze">{{ state.loading ? 'AI đang phân tích (30–90 giây)…' : '✨ Phân tích mẫu' }}</el-button>
+      <el-button type="primary" size="small" :loading="state.loading" @click="analyze">{{ state.loading ? $t('tinix.ui.rebuildTab.ai_dang_phan_tich_30') : $t('tinix.ui.rebuildTab.phan_tich_mau') }}</el-button>
     </div>
 
     <div v-if="state.result" class="tx-result">
       <div class="tx-card">
-        <div class="tx-card-head"><b>Kết quả</b> <span class="tx-swatch" :style="{ background: state.result.background }" /> <span class="tx-label">{{ counts }}</span></div>
+        <div class="tx-card-head"><b>{{ $t('tinix.ui.rebuildTab.ket_qua') }}</b> <span class="tx-swatch" :style="{ background: state.result.background }" /> <span class="tx-label">{{ counts }}</span></div>
         <div v-for="(r, i) in textRegions" :key="i" class="tx-part">
           <span class="tx-label" style="min-width: 70px">{{ r.role }}</span>
           <span class="tx-part-text" :style="{ fontFamily: `'${r.fontFamily}'`, fontWeight: String(r.weight), fontStyle: r.italic ? 'italic' : 'normal', fontSize: '15px' }">{{ r.uppercase ? r.text.toUpperCase() : r.text }}</span>
@@ -41,26 +41,26 @@
           <div class="tx-row" style="align-items: flex-start">
             <img v-if="state.photoUrl" :src="state.photoUrl" style="max-height: 120px; max-width: 30%; border-radius: 6px" />
             <div style="flex: 1; min-width: 200px">
-              <el-input v-model="state.result.photoPrompt" type="textarea" :rows="3" size="small" placeholder="Mô tả ảnh nền để AI tạo ảnh tương tự (tiếng Anh) — sửa rồi bấm Tạo lại ảnh" />
+              <el-input v-model="state.result.photoPrompt" type="textarea" :rows="3" size="small" :placeholder="$t('tinix.ui.rebuildTab.mo_ta_anh_nen_de')" />
               <div class="tx-row" style="margin-top: 6px">
-                <el-button size="small" :loading="state.photoLoading" :disabled="!hasPhotoPrompt" @click="startPhoto">{{ state.photoLoading ? 'Đang tạo ảnh nền…' : state.photoUrl ? 'Tạo lại ảnh' : 'Tạo ảnh nền' }}</el-button>
+                <el-button size="small" :loading="state.photoLoading" :disabled="!hasPhotoPrompt" @click="startPhoto">{{ state.photoLoading ? $t('tinix.ui.rebuildTab.dang_tao_anh_nen') : state.photoUrl ? $t('tinix.ui.rebuildTab.tao_lai_anh') : $t('tinix.ui.rebuildTab.tao_anh_nen') }}</el-button>
                 <span v-if="state.photoError" class="tx-label" style="color: #c0392b">{{ state.photoError }}</span>
-                <span v-else-if="state.photoUrl && !state.photoLoading" class="tx-label">Ảnh nền đã sẵn sàng</span>
+                <span v-else-if="state.photoUrl && !state.photoLoading" class="tx-label">{{ $t('tinix.ui.rebuildTab.anh_nen_da_san_sang') }}</span>
               </div>
             </div>
           </div>
         </template>
 
         <div class="tx-row">
-          <el-checkbox v-model="state.matchSize" size="small">Đặt khổ trang theo tỉ lệ ảnh mẫu (chỉ khi trang còn trống hoặc đã chọn xoá lớp)</el-checkbox>
-          <el-checkbox v-model="state.useBackground" size="small">Dùng màu nền của mẫu</el-checkbox>
-          <el-checkbox v-model="state.clearFirst" size="small">Xoá các lớp hiện có trước khi dựng (giữ ảnh nền)</el-checkbox>
+          <el-checkbox v-model="state.matchSize" size="small">{{ $t('tinix.ui.rebuildTab.dat_kho_trang_theo_ti') }}</el-checkbox>
+          <el-checkbox v-model="state.useBackground" size="small">{{ $t('tinix.ui.rebuildTab.dung_mau_nen_cua_mau') }}</el-checkbox>
+          <el-checkbox v-model="state.clearFirst" size="small">{{ $t('tinix.ui.rebuildTab.xoa_cac_lop_hien_co') }}</el-checkbox>
         </div>
         <div class="tx-row">
-          <el-button type="primary" size="small" :loading="state.building" @click="build">{{ state.building && state.photoLoading ? 'Đang chờ ảnh nền…' : 'Dựng vào trang' }}</el-button>
+          <el-button type="primary" size="small" :loading="state.building" @click="build">{{ state.building && state.photoLoading ? $t('tinix.ui.rebuildTab.dang_cho_anh_nen') : $t('tinix.ui.rebuildTab.dung_vao_trang') }}</el-button>
         </div>
       </div>
-      <p class="tx-meta">Model: {{ state.result.model }} · lần gọi #{{ state.result.jobId }} · Hoàn tác: Ctrl+Z</p>
+      <p class="tx-meta">{{ $t('tinix.ui.rebuildTab.meta', { model: state.result.model, job: state.result.jobId }) }}</p>
     </div>
   </div>
 </template>
@@ -75,6 +75,8 @@ import * as tinixAi from '@/api/tinix-ai'
 import { capturePage, fileToDataUrl } from '@/utils/tinix/capture'
 import { buildRebuildWidgets } from '@/utils/tinix/rebuild'
 import { ensureFont } from '@/utils/tinix/psd-fit'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 const GEN_PHOTO_KEY = 'tinix_rebuild_gen_photo' // nhớ lựa chọn "tự tạo ảnh nền"
 
@@ -110,7 +112,7 @@ const textRegions = computed(() => (state.result?.regions || []).filter((r: any)
 const counts = computed(() => {
   const rs = state.result?.regions || []
   const n = (t: string) => rs.filter((r: any) => r.type === t).length
-  return `${n('text')} khối chữ · ${n('photo')} khung ảnh · ${n('shape')} khối màu · ${n('svg')} nét trang trí`
+  return i18t('tinix.ui.rebuildTab.counts', { text: n('text'), photo: n('photo'), shape: n('shape'), svg: n('svg') })
 })
 const hasPhotoPrompt = computed(() => !!String(state.result?.photoPrompt || '').trim())
 
@@ -210,7 +212,7 @@ function biggestPhoto(): any {
 function startPhoto(): Promise<void> {
   const big = biggestPhoto()
   if (!state.result || !big || !hasPhotoPrompt.value) {
-    state.photoError = !big ? 'Mẫu không có vùng ảnh để đặt ảnh nền.' : ''
+    state.photoError = !big ? i18t('tinix.ui.rebuildTab.mau_khong_co_vung_anh') : ''
     return Promise.resolve()
   }
   const seq = ++photoSeq
@@ -223,9 +225,9 @@ function startPhoto(): Promise<void> {
       const res: any = await api.ai.imageGenerate({ prompt: photoPromptText(), ratio }, { _noLoading: true, timeout: 180000 })
       if (seq !== photoSeq) return // đã phân tích lại / tạo lại: bỏ kết quả cũ
       if (res?.url) state.photoUrl = res.url
-      else state.photoError = res?.msg || 'Không tạo được ảnh nền.'
+      else state.photoError = res?.msg || i18t('tinix.ui.rebuildTab.khong_tao_duoc_anh_nen')
     } catch (e: any) {
-      if (seq === photoSeq) state.photoError = e?.message || 'Không tạo được ảnh nền.'
+      if (seq === photoSeq) state.photoError = e?.message || i18t('tinix.ui.rebuildTab.khong_tao_duoc_anh_nen')
     } finally {
       if (seq === photoSeq) state.photoLoading = false
     }
@@ -241,13 +243,13 @@ async function analyze() {
     // [TINIX] an empty page would be sent as a blank "customer photo" and confuse the AI: only capture a page that has layers
     const photo = state.mode === 'creative' && state.usePage && widgetStore.dWidgets.length > 0 ? await capturePage({ maxEdge: 768, hideText: true }) : undefined
     const res: any = await tinixAi.rebuild({ reference: state.reference, photo, lang: state.lang, mode: state.mode })
-    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Phân tích không thành công')
+    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.rebuildTab.phan_tich_khong_thanh_cong'))
     state.result = res
     for (const r of res.regions) if (r.fontClass) ensureFont(r.fontClass.value, r.fontClass.url)
     // [TINIX] tự tạo ảnh nền ngay (chạy ở nền trong lúc bạn xem kết quả)
     if (state.mode === 'faithful' && state.genPhoto) startPhoto()
   } catch (e: any) {
-    ElMessage.error(e?.message || 'Lỗi khi gọi AI')
+    ElMessage.error(e?.message || i18t('tinix.ui.rebuildTab.loi_khi_goi_ai'))
   } finally {
     state.loading = false
   }
@@ -263,14 +265,14 @@ async function build() {
       if (state.photoLoading && photoJob) await photoJob
       else if (!state.photoUrl && hasPhotoPrompt.value) await startPhoto()
       photoUrl = state.photoUrl
-      if (!photoUrl && state.photoError) ElMessage.warning(`${state.photoError} Dùng khung ảnh giữ chỗ.`)
+      if (!photoUrl && state.photoError) ElMessage.warning(i18t('tinix.ui.rebuildTab.photoFallback', { err: state.photoError }))
     }
     if (state.clearFirst) widgetStore.setDWidgets([])
     if (matchPageToReference()) await nextTick()
     if (state.useBackground) canvasStore.setDPage(Object.assign(dPage.value, { backgroundColor: state.result.background }))
     const widgets = await buildRebuildWidgets(state.result.regions, { width: dPage.value.width, height: dPage.value.height }, { photoUrl })
     widgets.forEach((w) => widgetStore.addWidget(w))
-    ElMessage.success(photoUrl ? `Đã dựng ${widgets.length} lớp, kèm ảnh nền tương tự. Chọn ảnh nền → "Thay ảnh" để đưa ảnh của bạn vào.` : `Đã dựng ${widgets.length} lớp. Chọn khung ảnh xám → "Thay ảnh" để đưa ảnh của bạn vào.`)
+    ElMessage.success(i18t(photoUrl ? 'tinix.ui.rebuildTab.builtWithPhoto' : 'tinix.ui.rebuildTab.built', { n: widgets.length }))
   } finally {
     state.building = false
   }

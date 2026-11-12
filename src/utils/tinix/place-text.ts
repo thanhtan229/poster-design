@@ -7,10 +7,12 @@
 import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import { ensureFont, measureLines } from './psd-fit'
 import type { TSuggestOption, TRegion, TSuggestPart } from '@/api/tinix-ai'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 export const PART_ORDER = ['subtitle', 'title', 'body', 'hashtag', 'signature'] as const
 export type TPartKey = (typeof PART_ORDER)[number]
-export const PART_LABEL: Record<TPartKey, string> = { title: 'Tiêu đề', subtitle: 'Tiêu đề phụ', body: 'Nội dung', hashtag: 'Hashtag', signature: 'Chữ ký' }
+export const PART_LABEL: Record<TPartKey, string> = { title: i18t('tinix.ui.placeText.tieu_de'), subtitle: i18t('tinix.ui.placeText.tieu_de_phu'), body: i18t('tinix.ui.placeText.noi_dung'), hashtag: 'Hashtag', signature: i18t('tinix.ui.placeText.chu_ky') }
 
 /** font size relative to the title */
 const SIZE_RATIO: Record<TPartKey, number> = { title: 1, subtitle: 0.34, body: 0.24, hashtag: 0.2, signature: 0.3 }

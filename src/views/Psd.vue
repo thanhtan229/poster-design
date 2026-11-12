@@ -71,6 +71,7 @@ import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import { useCanvasStore, useControlStore, useWidgetStore, useGroupStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 type TState = {
   isDone: boolean
@@ -105,7 +106,7 @@ const zoomControlRef = ref<typeof zoomControl | null>()
 try {
   const user = JSON.parse(localStorage.getItem('xp_user') || 'null')
   if (!user || user.role !== 1) {
-    ElMessage.warning('Chỉ tài khoản quản trị mới nhập được PSD. Hãy đăng nhập bằng tài khoản admin.') // [TINIX]
+    ElMessage.warning(i18t('tinix.ui.psdPage.chi_tai_khoan_quan_tri')) // [TINIX]
     setTimeout(() => (window.location.href = './'), 600)
   }
 } catch (e) {
@@ -143,7 +144,7 @@ async function loadPSD(file: File) {
   // [TINIX] the psd.js parser cannot read some files saved by recent Photoshop versions
   if (error || !data) {
     console.error('[tinix:psd] parse failed:', error)
-    ElMessage({ type: 'error', duration: 0, showClose: true, message: 'Không đọc được file PSD này: cả hai bộ đọc PSD (ag-psd và psd.js) đều báo lỗi. Chi tiết xem trong Console (F12).' })
+    ElMessage({ type: 'error', duration: 0, showClose: true, message: i18t('tinix.ui.psdPage.khong_doc_duoc_file_psd') })
     return
   }
   // [TINIX] set the page size first: widgets added while the page is still the default 1920px get clamped to it
@@ -175,7 +176,7 @@ async function loadPSD(file: File) {
   // [TINIX] tell the user which PSD fonts were replaced
   if (substituted.size) {
     const list = [...substituted].map(([from, to]) => `${from} → ${to}`).join('; ')
-    ElMessage({ type: 'info', duration: 8000, showClose: true, message: `Font không có trong kho, đã thay bằng font gần giống: ${list}` })
+    ElMessage({ type: 'info', duration: 8000, showClose: true, message: i18t('tinix.ui.psdPage.substituted', { list }) })
   }
   await loadDone()
 }

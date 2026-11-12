@@ -6,6 +6,8 @@ import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
 import { wSvgSetting } from '@/components/modules/widgets/wSvg/wSvgSetting'
 import { ensureFont, measureLines } from './psd-fit'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 export type TRebuildRegion = Record<string, any> & { type: 'text' | 'photo' | 'shape' | 'svg'; bbox: { x: number; y: number; w: number; h: number } }
 
@@ -15,7 +17,7 @@ const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt
 export function photoPlaceholder(w: number, h: number, dark = false): string {
   const bg = dark ? '#7f8490' : '#e9e9ee', line = dark ? '#b9bcc7' : '#b4b4c2', label = dark ? '#e4e5ea' : '#8a8a99'
   const fs = Math.max(14, Math.round(Math.min(w, h) / 14))
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}"><rect width="100%" height="100%" fill="${bg}"/><rect x="${fs / 2}" y="${fs / 2}" width="${Math.max(1, w - fs)}" height="${Math.max(1, h - fs)}" fill="none" stroke="${line}" stroke-width="${Math.max(2, fs / 6)}" stroke-dasharray="${fs} ${fs / 1.5}"/><text x="50%" y="50%" font-family="sans-serif" font-size="${fs}" fill="${label}" text-anchor="middle" dominant-baseline="middle">${esc('Ảnh của bạn')}</text></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}"><rect width="100%" height="100%" fill="${bg}"/><rect x="${fs / 2}" y="${fs / 2}" width="${Math.max(1, w - fs)}" height="${Math.max(1, h - fs)}" fill="none" stroke="${line}" stroke-width="${Math.max(2, fs / 6)}" stroke-dasharray="${fs} ${fs / 1.5}"/><text x="50%" y="50%" font-family="sans-serif" font-size="${fs}" fill="${label}" text-anchor="middle" dominant-baseline="middle">${esc(i18t('tinix.ui.rebuildUtil.yourPhoto'))}</text></svg>`
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 }
 
@@ -52,20 +54,20 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
     if (r.type === 'photo') {
       const w = JSON.parse(JSON.stringify(wImageSetting))
       const generated = !!opts.photoUrl && r === bigPhoto
-      Object.assign(w, { name: generated ? 'AI · Ảnh nền (tương tự)' : 'AI · Khung ảnh', imgUrl: generated ? opts.photoUrl : photoPlaceholder(width, height, lightText), left, top, width, height, fit: 'cover' })
+      Object.assign(w, { name: generated ? i18t('tinix.ui.rebuildUtil.ai_anh_nen_tuong_tu') : i18t('tinix.ui.rebuildUtil.ai_khung_anh'), imgUrl: generated ? opts.photoUrl : photoPlaceholder(width, height, lightText), left, top, width, height, fit: 'cover' })
       out.push(w)
     } else if (r.type === 'shape') {
       const thin = r.shape === 'line'
       const h2 = thin ? Math.max(2, Math.min(height, Math.round(H * 0.004))) : height
       const w = JSON.parse(JSON.stringify(wSvgSetting))
-      Object.assign(w, { name: 'AI · Hình khối', svgUrl: shapeSvg(thin ? 'rect' : r.shape, r.color || '#dddddd', width, h2), colors: [r.color || '#dddddd'], left, top, width, height: h2, opacity: r.opacity ?? 1 })
+      Object.assign(w, { name: i18t('tinix.ui.rebuildUtil.ai_hinh_khoi'), svgUrl: shapeSvg(thin ? 'rect' : r.shape, r.color || '#dddddd', width, h2), colors: [r.color || '#dddddd'], left, top, width, height: h2, opacity: r.opacity ?? 1 })
       w.record = { ...(w.record || {}), width, height: h2 }
       out.push(w)
     } else if (r.type === 'svg') {
       // [TINIX] biểu tượng / nét trang trí do AI vẽ (server đã lọc SVG an toàn)
       const w = JSON.parse(JSON.stringify(wSvgSetting))
       const svg = String(r.svg).replace('<svg ', `<svg width="${width}" height="${height}" `)
-      Object.assign(w, { name: 'AI · Nét trang trí', svgUrl: svg /* wSvg parses this string as SVG markup (Snap.parse), not as a URL */, colors: [], left, top, width, height })
+      Object.assign(w, { name: i18t('tinix.ui.rebuildUtil.ai_net_trang_tri'), svgUrl: svg /* wSvg parses this string as SVG markup (Snap.parse), not as a URL */, colors: [], left, top, width, height })
       w.record = { ...(w.record || {}), width, height }
       out.push(w)
     } else {
@@ -89,7 +91,7 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
       }
       const w = JSON.parse(JSON.stringify(wTextSetting))
       Object.assign(w, {
-        name: `AI · ${r.role || 'chữ'}`,
+        name: i18t('tinix.ui.rebuildUtil.textName', { role: r.role || i18t('tinix.ui.rebuildUtil.textDefault') }),
         text,
         fontFamily: family,
         fontSize: size,

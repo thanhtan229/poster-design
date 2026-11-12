@@ -4,10 +4,12 @@
  * CSS transform: scale(z) — html2canvas renders a clone without that transform.
  */
 import html2canvas from 'html2canvas'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 export async function capturePage(opts: { maxEdge?: number; hideText?: boolean } = {}): Promise<string> {
   const el = document.getElementById('page-design-canvas') as HTMLElement | null
-  if (!el) throw new Error('Không tìm thấy trang thiết kế')
+  if (!el) throw new Error(i18t('tinix.ui.capture.khong_tim_thay_trang_thiet'))
   const w = el.offsetWidth, h = el.offsetHeight
   const scale = Math.min(1, (opts.maxEdge || 1024) / Math.max(w, h))
   const canvas = await html2canvas(el, {

@@ -22,6 +22,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Service dùng TypeScript 3.9: không có `catch (e: any)`, labeled tuple, `satisfies`… Kiểm tra: `cd service && npx tsc --noEmit -p .` (bỏ qua lỗi sẵn có trong `node_modules/axios`).
 - Sau khi sửa phần AI: chạy `npm run tinix:test-ai`.
 - AI trả tọa độ tỉ lệ 0–1; widget dùng px → đổi bằng kích thước trang.
+- Chuỗi giao diện mới của TinixPoster: thêm khóa vào `src/languages/modules/vi/tinix-ui.ts` rồi dùng `$t('tinix.ui.<nhóm>.<khóa>')` / `i18t(...)`, không viết cứng tiếng Việt trong component.
 - Ghi chú code mới bằng tiếng Việt hoặc tiếng Anh (code gốc ghi chú tiếng Trung).
 - Repo không có test tự động: sau mỗi thay đổi, chạy app và kiểm tra tay (tạo, lưu, mở, thêm chữ, xuất ảnh) trước khi commit.
 - Code chép từ Canvix (MIT) phải ghi vào `THIRD_PARTY.md` kèm thông báo bản quyền.

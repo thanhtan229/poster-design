@@ -2,15 +2,15 @@
 <template>
   <div class="tx-tab">
     <div class="tx-row">
-      <span class="tx-label">Ngôn ngữ</span>
+      <span class="tx-label">{{ $t('tinix.ui.rewriteTab.ngon_ngu') }}</span>
       <el-radio-group v-model="state.lang" size="small">
-        <el-radio-button value="keep">Giữ như mẫu</el-radio-button>
-        <el-radio-button value="vi">Tiếng Việt</el-radio-button>
+        <el-radio-button value="keep">{{ $t('tinix.ui.rewriteTab.giu_nhu_mau') }}</el-radio-button>
+        <el-radio-button value="vi">{{ $t('tinix.ui.rewriteTab.tieng_viet') }}</el-radio-button>
         <el-radio-button value="en">English</el-radio-button>
       </el-radio-group>
-      <el-button type="primary" size="small" :loading="state.loading" :disabled="!textLayers.length" @click="rewrite">{{ state.loading ? 'AI đang viết…' : '✨ Gợi ý nội dung mới' }}</el-button>
+      <el-button type="primary" size="small" :loading="state.loading" :disabled="!textLayers.length" @click="rewrite">{{ state.loading ? $t('tinix.ui.rewriteTab.ai_dang_viet') : $t('tinix.ui.rewriteTab.goi_y_noi_dung_moi') }}</el-button>
     </div>
-    <p class="tx-hint">Mở một mẫu có sẵn, thay ảnh của bạn vào, rồi bấm gợi ý. AI giữ nguyên số dòng, độ dài, font và vị trí — chỉ đổi nội dung chữ. Trang hiện có <b>{{ textLayers.length }}</b> lớp chữ.</p>
+    <p class="tx-hint" v-html="$t('tinix.ui.rewriteTab.hint', { n: textLayers.length })"></p>
 
     <div v-if="state.result" class="tx-result">
       <div v-for="(opt, i) in state.result.options" :key="i" class="tx-card">
@@ -20,11 +20,11 @@
           <span class="tx-part-text" style="font-size: 14px">{{ r.text }}</span>
         </div>
         <div class="tx-row">
-          <el-button type="primary" size="small" @click="apply(i)">Áp dụng</el-button>
+          <el-button type="primary" size="small" @click="apply(i)">{{ $t('tinix.ui.rewriteTab.ap_dung') }}</el-button>
         </div>
-        <details v-if="opt.translationVi" class="tx-trans"><summary>Nghĩa tiếng Việt</summary>{{ opt.translationVi }}</details>
+        <details v-if="opt.translationVi" class="tx-trans"><summary>{{ $t('tinix.ui.rewriteTab.nghia_tieng_viet') }}</summary>{{ opt.translationVi }}</details>
       </div>
-      <p class="tx-meta">Model: {{ state.result.model }} · lần gọi #{{ state.result.jobId }} · Hoàn tác: Ctrl+Z</p>
+      <p class="tx-meta">{{ $t('tinix.ui.rewriteTab.meta', { model: state.result.model, job: state.result.jobId }) }}</p>
     </div>
   </div>
 </template>
@@ -38,6 +38,8 @@ import * as tinixAi from '@/api/tinix-ai'
 import type { TRewriteResult } from '@/api/tinix-ai'
 import { capturePage } from '@/utils/tinix/capture'
 import { ensureFont, measureLines } from '@/utils/tinix/psd-fit'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 const widgetStore = useWidgetStore()
 const { dWidgets } = storeToRefs(widgetStore)
@@ -55,10 +57,10 @@ async function rewrite() {
     const image = await capturePage()
     const layers = textLayers.value.map((w: any) => ({ uuid: w.uuid, text: plain(w.text) }))
     const res = await tinixAi.rewriteText({ image, layers, lang: state.lang })
-    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Gợi ý không thành công')
+    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.rewriteTab.goi_y_khong_thanh_cong'))
     state.result = res as TRewriteResult
   } catch (e: any) {
-    ElMessage.error(e?.message || 'Lỗi khi gọi AI')
+    ElMessage.error(e?.message || i18t('tinix.ui.rewriteTab.loi_khi_goi_ai'))
   } finally {
     state.loading = false
   }
@@ -85,7 +87,7 @@ async function apply(i: number) {
     }
     changed++
   }
-  ElMessage.success(`Đã thay nội dung ${changed} lớp chữ`)
+  ElMessage.success(i18t('tinix.ui.rewriteTab.replaced', { n: changed }))
 }
 </script>
 

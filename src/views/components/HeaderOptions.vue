@@ -42,6 +42,7 @@ import downloadBlob from '@/common/methods/download/downloadBlob'
 import { useControlStore, useCanvasStore, useUserStore, useWidgetStore } from '@/store/index'
 import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 type TProps = {
   modelValue?: boolean
@@ -159,22 +160,22 @@ async function saveAsTemplate() {
     isAdmin = false
   }
   if (!isAdmin) {
-    useNotification('Chưa lưu được', 'Chỉ tài khoản admin mới lưu được thành mẫu công khai.', { type: 'warning' })
+    useNotification(i18t('tinix.ui.headerOptions.chua_luu_duoc'), i18t('tinix.ui.headerOptions.chi_tai_khoan_admin_moi'), { type: 'warning' })
     return
   }
   state.loading = true
   try {
     const { id } = await adminApi.saveTemplate({
-      title: state.title || 'Mẫu chưa đặt tên',
+      title: state.title || i18t('tinix.ui.headerOptions.mau_chua_dat_ten'),
       type: 0,
       data: JSON.stringify(dLayouts.value),
       width: Number(dPage.value.width),
       height: Number(dPage.value.height),
     })
     window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách Mẫu thiết kế
-    useNotification('Đã lưu thành mẫu', `Mẫu #${id} đã hiện ở thẻ "Mẫu thiết kế" (bên trái).`)
+    useNotification(i18t('tinix.ui.headerOptions.da_luu_thanh_mau'), i18t('tinix.ui.headerOptions.savedBody', { id }))
   } catch (error: any) {
-    useNotification('Lưu thành mẫu không thành công', error?.msg || error?.message || 'Vui lòng thử lại.', { type: 'error' })
+    useNotification(i18t('tinix.ui.headerOptions.luu_thanh_mau_khong_thanh'), error?.msg || error?.message || i18t('tinix.ui.headerOptions.vui_long_thu_lai'), { type: 'error' })
   } finally {
     state.loading = false
   }

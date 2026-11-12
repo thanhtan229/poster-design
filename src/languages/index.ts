@@ -12,6 +12,7 @@ import zh from './modules/zh'
 const i18n = createI18n({
   allowComposition: true,
   legacy: false,
+  warnHtmlMessage: false, // [TINIX] một số chuỗi tĩnh dùng v-html (có <b>, <a>)
   locale: 'vi',
   fallbackLocale: 'en',
   messages: {

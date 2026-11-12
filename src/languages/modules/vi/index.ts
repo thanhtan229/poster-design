@@ -9,6 +9,7 @@ import common from './common'
 import editor from './editor'
 import header from './header'
 import settings from './settings'
+import tinixUi from './tinix-ui' // [TINIX] chuỗi giao diện của code TinixPoster
 
 export default {
   home: {
@@ -25,6 +26,7 @@ export default {
   settings,
   // Nhóm khóa cũ của nhánh tinix (một số màn hình riêng của TinixPoster vẫn dùng)
   tinix: {
+    ui: tinixUi,
     menu: {
       file: 'Tệp',
       help: 'Trợ giúp',

@@ -16,7 +16,7 @@
 
       <main class="admin-body">
         <!-- [TINIX] cảnh báo khi admin còn dùng mật khẩu mặc định -->
-        <el-alert v-if="defaultPassword" type="warning" show-icon :closable="false" style="margin-bottom: 12px" title="Tài khoản admin đang dùng mật khẩu mặc định (123456)" description="Hãy đổi mật khẩu: bấm “Mở editor”, rồi bấm “Đổi mật khẩu” trên thanh trên cùng. Ứng dụng chạy trên máy bạn nên rủi ro thấp, nhưng nên đổi trước khi cho người khác truy cập." />
+        <el-alert v-if="defaultPassword" type="warning" show-icon :closable="false" style="margin-bottom: 12px" :title="$t('tinix.ui.adminExtra.tai_khoan_admin_dang_dung')" :description="$t('tinix.ui.adminExtra.hay_doi_mat_khau_bam')" />
         <!-- 总览：平台内容规模 + 常用管理入口 -->
         <section v-if="activeTab === 'overview'" class="overview-pane">
           <div v-loading="loading" class="overview-stats">

@@ -13,12 +13,12 @@
   <el-dialog v-model="state.show" :title="$t('tinix.menu.ai')" align-center width="780" :append-to-body="true" destroy-on-close @close="handleClose">
     <el-tabs v-model="state.activeTab" class="ai-tabs">
       <!-- [TINIX] TinixPoster AI tabs -->
-      <el-tab-pane label="Gợi ý chữ" name="suggest" lazy><TinixSuggestTab /></el-tab-pane>
-      <el-tab-pane label="Sửa chữ" name="rewrite" lazy><TinixRewriteTab /></el-tab-pane>
-      <el-tab-pane label="Tìm font" name="font" lazy><TinixFontTab /></el-tab-pane>
-      <el-tab-pane label="Dựng theo mẫu" name="rebuild" lazy><TinixRebuildTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.goi_y_chu')" name="suggest" lazy><TinixSuggestTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.sua_chu')" name="rewrite" lazy><TinixRewriteTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.tim_font')" name="font" lazy><TinixFontTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.dung_theo_mau')" name="rebuild" lazy><TinixRebuildTab /></el-tab-pane>
       <!-- 文案生成 -->
-      <el-tab-pane label="Viết chữ" name="text">
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.viet_chu')" name="text">
         <div class="ai-row">
           <el-input v-model="state.textPrompt" type="textarea" :rows="3" :placeholder="$t('business.ai.textPlaceholder')" />
         </div>
@@ -38,7 +38,7 @@
       </el-tab-pane>
 
       <!-- 文生图 -->
-      <el-tab-pane label="Tạo ảnh" name="image">
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.tao_anh')" name="image">
         <div class="ai-row">
           <el-input v-model="state.imagePrompt" type="textarea" :rows="3" :placeholder="$t('business.ai.imagePlaceholder')" />
         </div>
@@ -56,7 +56,7 @@
       </el-tab-pane>
 
       <!-- 智能配色 -->
-      <el-tab-pane label="Gợi ý màu" name="color">
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.goi_y_mau')" name="color">
         <div class="ai-row">
           <el-input v-model="state.colorPrompt" type="textarea" :rows="2" :placeholder="$t('business.ai.colorPlaceholder')" />
         </div>
@@ -80,8 +80,8 @@
         </div>
       </el-tab-pane>
       <!-- [TINIX] -->
-      <el-tab-pane label="Lịch sử" name="history" lazy><TinixHistoryTab /></el-tab-pane>
-      <el-tab-pane label="Cài đặt AI" name="settings" lazy><TinixSettingsTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.lich_su')" name="history" lazy><TinixHistoryTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.cai_dat_ai')" name="settings" lazy><TinixSettingsTab /></el-tab-pane>
     </el-tabs>
   </el-dialog>
 </template>

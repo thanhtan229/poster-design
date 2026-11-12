@@ -2,27 +2,27 @@
 <template>
   <div class="tx-tab">
     <div v-if="base && (!base.enabled || !base.has_key)" class="tx-warn">
-      {{ !base.has_key ? 'Chưa có API key.' : 'AI đang tắt.' }} Vào <a href="/admin" target="_blank">trang Quản trị</a> → mục cấu hình AI (Thiết lập AI) để nhập API key, endpoint và bật AI.
+      <span v-html="$t('tinix.ui.settingsTab.warn', { reason: !base.has_key ? $t('tinix.ui.settingsTab.chua_co_api_key') : $t('tinix.ui.settingsTab.ai_dang_tat') })"></span>
     </div>
-    <p v-if="base" class="tx-hint">Endpoint: {{ base.base_url }} · model chữ: {{ base.text_model }} (đổi trong trang Quản trị).</p>
+    <p v-if="base" class="tx-hint">{{ $t('tinix.ui.settingsTab.endpointInfo', { url: base.base_url, model: base.text_model }) }}</p>
     <div class="tx-form">
-      <span>Model nhìn ảnh</span>
+      <span>{{ $t('tinix.ui.settingsTab.model_nhin_anh') }}</span>
       <el-input v-model="form.vision_model" size="small" placeholder="vd: glm-4v-flash, gemini-2.5-flash, gpt-4o-mini" />
-      <span>Tên studio (chữ ký)</span>
+      <span>{{ $t('tinix.ui.settingsTab.ten_studio_chu_ky') }}</span>
       <el-input v-model="form.studio_name" size="small" placeholder="vd: Tinix Studio" />
-      <span>Đơn giá vào (đ / 1 triệu token)</span>
+      <span>{{ $t('tinix.ui.settingsTab.don_gia_vao_d_1') }}</span>
       <el-input-number v-model="form.price_in_per_1m" size="small" :min="0" :step="1000" controls-position="right" />
-      <span>Đơn giá ra (đ / 1 triệu token)</span>
+      <span>{{ $t('tinix.ui.settingsTab.don_gia_ra_d_1') }}</span>
       <el-input-number v-model="form.price_out_per_1m" size="small" :min="0" :step="1000" controls-position="right" />
-      <span>Đơn giá mỗi ảnh tạo ra (đ)</span>
+      <span>{{ $t('tinix.ui.settingsTab.don_gia_moi_anh_tao') }}</span>
       <el-input-number v-model="form.price_per_image_vnd" size="small" :min="0" :step="500" controls-position="right" />
-      <span>Giới hạn chi phí / tháng (đ)</span>
+      <span>{{ $t('tinix.ui.settingsTab.gioi_han_chi_phi_thang') }}</span>
       <el-input-number v-model="form.monthly_limit_vnd" size="small" :min="0" :step="10000" controls-position="right" />
     </div>
-    <p class="tx-hint">Đơn giá lấy theo bảng giá của nhà cung cấp AI (đổi sang VNĐ). Đơn giá mỗi ảnh: nhập giá một lần tạo ảnh (để 0 = tính theo token nếu nhà cung cấp trả về). Giới hạn 0 = không giới hạn; lần tạo ảnh cũng được tính vào giới hạn.</p>
+    <p class="tx-hint">{{ $t('tinix.ui.settingsTab.don_gia_lay_theo_bang') }}</p>
     <div class="tx-row">
-      <el-button type="primary" size="small" :loading="state.saving" @click="save">Lưu cài đặt</el-button>
-      <el-button size="small" :loading="state.tagging" @click="tag">AI gắn tag cho font chưa có tag</el-button>
+      <el-button type="primary" size="small" :loading="state.saving" @click="save">{{ $t('tinix.ui.settingsTab.luu_cai_dat') }}</el-button>
+      <el-button size="small" :loading="state.tagging" @click="tag">{{ $t('tinix.ui.settingsTab.ai_gan_tag_cho_font') }}</el-button>
     </div>
   </div>
 </template>
@@ -32,6 +32,8 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElInputNumber } from 'element-plus'
 import * as tinixAi from '@/api/tinix-ai'
 import type { TAiSettings } from '@/api/tinix-ai'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 const form = reactive({ vision_model: '', studio_name: '', price_in_per_1m: 0, price_out_per_1m: 0, monthly_limit_vnd: 0, price_per_image_vnd: 0 })
 const base = ref<TAiSettings['base'] | null>(null)
@@ -39,7 +41,7 @@ const state = reactive({ saving: false, tagging: false })
 
 async function load() {
   const res = await tinixAi.getSettings()
-  if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Không đọc được cài đặt')
+  if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.settingsTab.khong_doc_duoc_cai_dat'))
   const s = res as TAiSettings
   Object.assign(form, { vision_model: s.vision_model, studio_name: s.studio_name, price_in_per_1m: s.price_in_per_1m, price_out_per_1m: s.price_out_per_1m, monthly_limit_vnd: s.monthly_limit_vnd, price_per_image_vnd: s.price_per_image_vnd || 0 })
   base.value = s.base || null
@@ -48,8 +50,8 @@ async function save() {
   state.saving = true
   try {
     const res = await tinixAi.saveSettings({ ...form })
-    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Lưu không thành công')
-    ElMessage.success('Đã lưu cài đặt AI')
+    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.settingsTab.luu_khong_thanh_cong'))
+    ElMessage.success(i18t('tinix.ui.settingsTab.da_luu_cai_dat_ai'))
   } finally {
     state.saving = false
   }
@@ -58,8 +60,8 @@ async function tag() {
   state.tagging = true
   try {
     const res: any = await tinixAi.tagFonts({})
-    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Gắn tag không thành công')
-    ElMessage.success(res.updated ? `Đã gắn tag cho ${res.updated} font` : 'Tất cả font đều đã có tag')
+    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.settingsTab.gan_tag_khong_thanh_cong'))
+    ElMessage.success(res.updated ? i18t('tinix.ui.settingsTab.tagged', { n: res.updated }) : i18t('tinix.ui.settingsTab.tat_ca_font_deu_da'))
   } finally {
     state.tagging = false
   }

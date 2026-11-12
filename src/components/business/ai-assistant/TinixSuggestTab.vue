@@ -2,14 +2,14 @@
 <template>
   <div class="tx-tab">
     <div class="tx-row">
-      <span class="tx-label">Ngôn ngữ chữ</span>
+      <span class="tx-label">{{ $t('tinix.ui.suggestTab.ngon_ngu_chu') }}</span>
       <el-radio-group v-model="state.lang" size="small">
-        <el-radio-button value="vi">Tiếng Việt</el-radio-button>
+        <el-radio-button value="vi">{{ $t('tinix.ui.suggestTab.tieng_viet') }}</el-radio-button>
         <el-radio-button value="en">English</el-radio-button>
       </el-radio-group>
-      <el-button type="primary" size="small" :loading="state.loading" @click="suggest">{{ state.loading ? 'AI đang xem ảnh…' : '✨ Gợi ý' }}</el-button>
+      <el-button type="primary" size="small" :loading="state.loading" @click="suggest">{{ state.loading ? $t('tinix.ui.suggestTab.ai_dang_xem_anh') : $t('tinix.ui.suggestTab.goi_y') }}</el-button>
     </div>
-    <p class="tx-hint">Thả ảnh vào trang trước (nên phủ kín trang). AI xem ảnh, tìm khoảng trống rồi đề xuất chữ, font và màu. Chữ đang có trên trang được ẩn khi gửi ảnh.</p>
+    <p class="tx-hint">{{ $t('tinix.ui.suggestTab.tha_anh_vao_trang_truoc') }}</p>
 
     <div v-if="state.result" class="tx-result">
       <p v-if="state.result.scene" class="tx-scene">🖼 {{ state.result.scene }}</p>
@@ -29,18 +29,18 @@
         </div>
         <div class="tx-row">
           <el-radio-group v-model="state.align[i]" size="small">
-            <el-radio-button value="left">Trái</el-radio-button>
-            <el-radio-button value="center">Giữa</el-radio-button>
-            <el-radio-button value="right">Phải</el-radio-button>
+            <el-radio-button value="left">{{ $t('tinix.ui.suggestTab.trai') }}</el-radio-button>
+            <el-radio-button value="center">{{ $t('tinix.ui.suggestTab.giua') }}</el-radio-button>
+            <el-radio-button value="right">{{ $t('tinix.ui.suggestTab.phai') }}</el-radio-button>
           </el-radio-group>
           <el-select v-model="state.region[i]" size="small" style="width: 150px">
             <el-option v-for="(r, ri) in state.result.emptyRegions" :key="ri" :label="regionLabel(r, ri)" :value="ri" />
           </el-select>
-          <el-button type="primary" size="small" :loading="state.adding === i" @click="add(i)">Thêm vào trang</el-button>
+          <el-button type="primary" size="small" :loading="state.adding === i" @click="add(i)">{{ $t('tinix.ui.suggestTab.them_vao_trang') }}</el-button>
         </div>
-        <details v-if="opt.translationVi" class="tx-trans"><summary>Nghĩa tiếng Việt</summary>{{ opt.translationVi }}</details>
+        <details v-if="opt.translationVi" class="tx-trans"><summary>{{ $t('tinix.ui.suggestTab.nghia_tieng_viet') }}</summary>{{ opt.translationVi }}</details>
       </div>
-      <p class="tx-meta">Model: {{ state.result.model }} · lần gọi #{{ state.result.jobId }}</p>
+      <p class="tx-meta">{{ $t('tinix.ui.suggestTab.meta', { model: state.result.model, job: state.result.jobId }) }}</p>
     </div>
   </div>
 </template>
@@ -56,6 +56,8 @@ import { capturePage } from '@/utils/tinix/capture'
 import { buildTextWidgets, PART_ORDER, PART_LABEL, TPartKey } from '@/utils/tinix/place-text'
 import { loadLibraryFonts, LibraryFont } from '@/utils/tinix/psd-font-map'
 import { ensureFont } from '@/utils/tinix/psd-fit'
+import i18n from '@/languages'
+const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 const widgetStore = useWidgetStore()
 const { dPage } = storeToRefs(useCanvasStore())
@@ -81,7 +83,7 @@ async function suggest() {
   try {
     const image = await capturePage({ hideText: true })
     const res = await tinixAi.suggestText({ image, width: dPage.value.width, height: dPage.value.height, lang: state.lang })
-    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Gợi ý không thành công')
+    if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.suggestTab.goi_y_khong_thanh_cong'))
     const r = res as TSuggestResult
     state.result = r
     state.picks = r.options.map((o) => Object.fromEntries(PART_ORDER.filter((k) => o.parts[k]).map((k) => [k, true])))
@@ -91,7 +93,7 @@ async function suggest() {
     // preview fonts in the cards
     for (const o of r.options) for (const k of PART_ORDER) { const fc = o.parts[k]?.fontClass; if (fc) ensureFont(fc.value, fc.url) }
   } catch (e: any) {
-    ElMessage.error(e?.message || 'Lỗi khi gọi AI')
+    ElMessage.error(e?.message || i18t('tinix.ui.suggestTab.loi_khi_goi_ai'))
   } finally {
     state.loading = false
   }
@@ -106,9 +108,9 @@ function partStyle(opt: TSuggestOption, key: TPartKey) {
   return { fontFamily: `'${p.fontClass?.value || p.fontFamily}'`, fontWeight: String(p.weight || 400), fontStyle: p.italic ? 'italic' : 'normal' }
 }
 function regionLabel(r: TRegion, i: number) {
-  const v = r.y < 0.33 ? 'trên' : r.y > 0.6 ? 'dưới' : 'giữa'
-  const h = r.x + r.w / 2 < 0.4 ? 'trái' : r.x + r.w / 2 > 0.6 ? 'phải' : 'giữa'
-  return `Vùng ${i + 1}: ${v} – ${h}${r.tone === 'light' ? ' (nền sáng)' : ' (nền tối)'}`
+  const v = r.y < 0.33 ? i18t('tinix.ui.suggestTab.tren') : r.y > 0.6 ? i18t('tinix.ui.suggestTab.duoi') : i18t('tinix.ui.suggestTab.giua_2')
+  const h = r.x + r.w / 2 < 0.4 ? i18t('tinix.ui.suggestTab.trai_2') : r.x + r.w / 2 > 0.6 ? i18t('tinix.ui.suggestTab.phai_2') : i18t('tinix.ui.suggestTab.giua_2')
+  return i18t(r.tone === 'light' ? 'tinix.ui.suggestTab.regionLight' : 'tinix.ui.suggestTab.regionDark', { n: i + 1, v, h })
 }
 
 function changeFont(i: number, key: TPartKey, value: string) {
@@ -126,11 +128,11 @@ async function add(i: number) {
   try {
     const option = state.result.options[i]
     const parts = PART_ORDER.filter((k) => state.picks[i][k])
-    if (!parts.length) return ElMessage.warning('Chọn ít nhất một dòng chữ')
+    if (!parts.length) return ElMessage.warning(i18t('tinix.ui.suggestTab.chon_it_nhat_mot_dong'))
     const region = state.result.emptyRegions[state.region[i]] || state.result.emptyRegions[0]
     const widgets = await buildTextWidgets({ option, region, parts, align: state.align[i] as any, page: { width: dPage.value.width, height: dPage.value.height } })
     widgets.forEach((w) => widgetStore.addWidget(w))
-    ElMessage.success(`Đã thêm ${widgets.length} lớp chữ — kéo, đổi cỡ, đổi màu thoải mái`)
+    ElMessage.success(i18t('tinix.ui.suggestTab.added', { n: widgets.length }))
   } finally {
     state.adding = -1
   }
