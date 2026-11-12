@@ -25,6 +25,8 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `service/src/service/ai.ts` (thêm) | Lần tạo ảnh được ghi vào `ai_jobs` (loại `image`, token từ `usage`) và bị chặn khi chạm giới hạn chi phí tháng; kích thước ảnh nhận tỉ lệ tùy ý `W:H` | Chi phí/lịch sử đủ cả ảnh |
 | `src/components/modules/panel/wrap/TempListWrap.vue` | Lắng nghe sự kiện `tinix:templates-changed` để tải lại danh sách mẫu | Lưu thành mẫu xong thấy ngay |
 | `src/components/modules/widgets/wSvg/wSvg.vue` | `loadSvg` nhận cả data URL và bỏ qua `svgUrl` không phải mã SVG (không ném lỗi chưa bắt) | Dữ liệu SVG sai định dạng không làm vỡ widget |
+| `src/components/modules/widgets/wImage/wImage.vue`, `wImageStatic.vue`, `wImageSetting.ts`, `wImageStyle.vue` | Thuộc tính `fit: 'cover'` cho khung ảnh của Dựng theo mẫu: `object-fit` phủ kín, và nút "Thay ảnh" **giữ kích thước khung** (upstream đổi theo kích thước gốc của ảnh mới) | Thay ảnh thật vào khung không phình/méo |
+| `src/views/Admin.vue`, `src/api/tinix-ai.ts`, `service/src/tinix/ai/routes.ts` | Banner cảnh báo ở trang Quản trị khi admin còn dùng mật khẩu mặc định; API `GET /api/tinix/security/status` | Nhắc đổi mật khẩu mặc định |
 | `service/src/main.ts` | Mount `tinixAiRouter` (`/api/tinix/ai/*`) sau router gốc | Các tính năng AI của TinixPoster |
 | `src/components/business/ai-assistant/AiAssistant.vue` | Thêm 5 tab (Gợi ý chữ, Sửa chữ, Tìm font, Lịch sử, Cài đặt AI), mặc định mở "Gợi ý chữ", Việt hóa 3 tab cũ, rộng 780px | Trợ lý AI |
 | `src/store/design/widget/actions/template.ts` | `setTemplate()` không còn `constrainGroupToCanvas` | Mở mẫu nguyên trang từng bị co nhỏ cả mẫu (vd 937px → 204px) khi 1 lớp tràn mép, và co theo khổ trang cũ |

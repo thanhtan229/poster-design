@@ -13,7 +13,8 @@
  */
 import express from 'express'
 import { send } from '../../utils/tools'
-import { getRequestUser } from '../../utils/auth'
+import { getRequestUser, hashPassword } from '../../utils/auth'
+import { findUserById } from '../../db/users'
 import { getAiSettings } from '../../db/settings'
 import { getTinixAiSettings, saveTinixAiSettings } from './settings'
 import { listJobs, monthUsage } from './cost-log'
@@ -54,5 +55,18 @@ router.get(
   }),
 )
 router.post(`${PREFIX}/settings`, requireLogin, handle(async (b) => saveTinixAiSettings(b)))
+
+// [TINIX] Cảnh báo bảo mật: tài khoản admin đang đăng nhập còn dùng mật khẩu mặc định (123456 hoặc DEFAULT_ADMIN_PASSWORD)
+router.get(
+  '/api/tinix/security/status',
+  requireLogin,
+  handle(async (_b, req) => {
+    const user = getRequestUser(req)
+    const row: any = user && findUserById(user.id)
+    if (!row || row.role !== 1) return { is_admin: false, default_password: false }
+    const defaults = ['123456', String(process.env.DEFAULT_ADMIN_PASSWORD || '')].filter(Boolean)
+    return { is_admin: true, default_password: defaults.some((p) => hashPassword(p, row.salt) === row.password) }
+  }),
+)
 
 export default router

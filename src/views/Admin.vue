@@ -15,6 +15,8 @@
       <AdminTopbar :title="pageMeta.title" :description="pageMeta.description" @home="jump2home" />
 
       <main class="admin-body">
+        <!-- [TINIX] cảnh báo khi admin còn dùng mật khẩu mặc định -->
+        <el-alert v-if="defaultPassword" type="warning" show-icon :closable="false" style="margin-bottom: 12px" title="Tài khoản admin đang dùng mật khẩu mặc định (123456)" description="Hãy đổi mật khẩu: bấm “Mở editor”, rồi bấm “Đổi mật khẩu” trên thanh trên cùng. Ứng dụng chạy trên máy bạn nên rủi ro thấp, nhưng nên đổi trước khi cho người khác truy cập." />
         <!-- 总览：平台内容规模 + 常用管理入口 -->
         <section v-if="activeTab === 'overview'" class="overview-pane">
           <div v-loading="loading" class="overview-stats">
@@ -486,6 +488,7 @@ import { useI18n } from 'vue-i18n'
 import {
   ElMessage,
   ElMessageBox,
+  ElAlert, // [TINIX]
   ElTable,
   ElTableColumn,
   ElTag,
@@ -510,6 +513,7 @@ import {
 import { Grid, Files, PictureFilled, Document, Upload, EditPen, MagicStick, Refresh, Plus, Link } from '@element-plus/icons-vue'
 import { LocalStorageKey } from '@/config'
 import * as adminApi from '@/api/admin'
+import * as tinixAi from '@/api/tinix-ai' // [TINIX]
 import * as materialApi from '@/api/material'
 import AdminTemplateTable from '@/views/components/AdminTemplateTable.vue'
 import AdminSidebar from './admin/comps/AdminSidebar.vue'
@@ -743,12 +747,24 @@ function checkLocalRole(): boolean {
   return true
 }
 
+// [TINIX] mật khẩu admin còn là mặc định?
+const defaultPassword = ref(false)
+async function checkDefaultPassword() {
+  try {
+    const res: any = await tinixAi.securityStatus()
+    defaultPassword.value = !!(res && res.default_password)
+  } catch (e) {
+    defaultPassword.value = false
+  }
+}
+
 onMounted(() => {
   if (!checkLocalRole()) {
     deny(t('admin.auth.adminRequired'))
     return
   }
   loadTab()
+  checkDefaultPassword()
 })
 
 /** 切换导航页：重置分页后拉取该页数据 */

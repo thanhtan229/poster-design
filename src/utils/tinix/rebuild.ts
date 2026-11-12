@@ -52,7 +52,7 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
     if (r.type === 'photo') {
       const w = JSON.parse(JSON.stringify(wImageSetting))
       const generated = !!opts.photoUrl && r === bigPhoto
-      Object.assign(w, { name: generated ? 'AI · Ảnh nền (tương tự)' : 'AI · Khung ảnh', imgUrl: generated ? opts.photoUrl : photoPlaceholder(width, height, lightText), left, top, width, height })
+      Object.assign(w, { name: generated ? 'AI · Ảnh nền (tương tự)' : 'AI · Khung ảnh', imgUrl: generated ? opts.photoUrl : photoPlaceholder(width, height, lightText), left, top, width, height, fit: 'cover' })
       out.push(w)
     } else if (r.type === 'shape') {
       const thin = r.shape === 'line'

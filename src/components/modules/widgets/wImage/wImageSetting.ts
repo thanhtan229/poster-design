@@ -41,6 +41,7 @@ export type TImageSetting = {
     left: number
   }
   cropEdit?: boolean
+  fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
 }
 
 const setting: TImageSetting = {

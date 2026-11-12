@@ -289,6 +289,8 @@ async function changeContainer(setting: any) {
 
 async function selectDone(img: TGetImageListResult) {
   state.innerElement.imgUrl = img.url
+  // [TINIX] khung ảnh (fit=cover): giữ kích thước khung, không đổi theo kích thước gốc của ảnh mới
+  if (state.innerElement.fit === 'cover') return
   const loadImg = await getImage(img.url)
   state.innerElement.width = (loadImg.width * canvasStore.dZoom) / 100
   state.innerElement.height = (loadImg.height * canvasStore.dZoom) / 100
