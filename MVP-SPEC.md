@@ -1,7 +1,7 @@
 # Bản thiết kế MVP — App thiết kế ảnh cưới có Trợ lý AI (bản dùng cá nhân)
 
 > Tên tạm: **TinixPoster** (đổi tên tùy ý — không dùng tên/giao diện/tài nguyên của Tizino).
-> Ngày: 2026-11-11 · Phiên bản tài liệu: **0.3.1 — xây trên nền repo [palxiao/poster-design](https://github.com/palxiao/poster-design)**
+> Ngày: 2026-11-12 · Phiên bản tài liệu: **0.4 — xây trên nền repo [palxiao/poster-design](https://github.com/palxiao/poster-design)**
 > Thư mục dự án: `D:\___TOOLS\__TINIX\TinixPoster` · nhánh git `tinix` · đánh dấu chỗ sửa file gốc bằng `[TINIX]`
 > Chỉ 1 người dùng (bạn), chạy trên máy của bạn.
 
@@ -27,7 +27,7 @@ Công cụ riêng giúp bạn tạo **ảnh truyền thông** và **trang album 
 
 ### Đã có sẵn trong poster-design (không phải làm)
 - Editor: chữ (font, cỡ, màu, giãn dòng, giãn chữ, viền, tô gradient), ảnh, SVG, nhóm, QR code, layer, căn chỉnh, đường gióng, undo/redo, **nhiều trang (multi-artboard)**.
-- **Nhập file PSD thành mẫu** (`src/views/Psd.vue`, thư viện `psd.js`).
+- **Nhập file PSD thành mẫu** (`src/views/Psd.vue`; TinixPoster đọc bằng `ag-psd` trước, `psd.js` dự phòng).
 - Xóa nền ảnh chạy trong trình duyệt (`@bunnio/rembg-web`).
 - Xuất ảnh bằng Puppeteer ở server, **tối đa ×4 độ phân giải**.
 - Trang admin: quản lý font (ttf/woff), chất liệu, mẫu, danh mục, **cấu hình AI** (base URL, API key, model).
@@ -45,6 +45,8 @@ Công cụ riêng giúp bạn tạo **ảnh truyền thông** và **trang album 
 | **Tìm font** từ ảnh có chữ | Đóng gói app desktop |
 | Nhật ký chi phí AI + giới hạn tháng | |
 | Kho font có tiếng Việt + mẫu cưới của bạn | |
+
+> **Cập nhật 2026-11-12:** các mục "Để sau" **Dịch giao diện sang tiếng Việt** và **Dựng theo mẫu** đã làm xong (xem §6.4 và §9). Còn lại để sau: Xuất PSD, nâng cấp Puppeteer/Vite, đóng gói desktop.
 
 **Tiêu chí MVP thành công:** thả ảnh → bấm "Gợi ý chữ" → có thiết kế đẹp với font tiếng Việt hiển thị đúng → xuất JPG trong **dưới 3 phút**.
 
@@ -222,11 +224,12 @@ Trong `service/src/service/ai.ts` đã có `chatCompletion(apiKey, baseUrl, mode
 1. Model thị giác đọc ảnh → mỗi đoạn chữ: `text`, `bbox`, đặc trưng (category, có chân/không, tương phản nét, nghiêng, nối nét, độ đậm, độ rộng, cảm giác), *tên font nghi ngờ*.
 2. Server so khớp với bảng `fonts`: lọc category → chấm điểm theo tags → ưu tiên tên trùng/na ná → trả top 5 + danh sách tên nghi ngờ chưa có trong kho.
 
-### 6.4. Dựng theo mẫu (giai đoạn 2 — mượn Canvix)
-- Chép & chỉnh từ Canvix: prompt trong `src/app/api/ai/magic-layers/route.ts`, logic `src/lib/magic-layers/{types,validate,normalize,reconstruct}.ts` (~550 dòng).
-- Viết bộ chuyển `regions → widget poster-design`: text → `wText` (fontClass → chọn font trong kho theo category), photo → `wImage` ô trống để thả ảnh, shape/decoration → `wSvg` hoặc ảnh cắt.
-- Bước thêm so với Canvix: **viết lại nội dung** theo ảnh của bạn (giữ độ dài từng khối).
-- Chỉ học **bố cục & phong cách**, luôn thay nội dung — không sao chép nguyên mẫu.
+### 6.4. Dựng theo mẫu (✅ đã làm)
+Viết lại hoàn toàn bằng prompt riêng (không chép mã Canvix, nên không cần ghi `THIRD_PARTY.md`). Mã: `service/src/tinix/ai/tasks.ts` (`rebuildFromReference`), `prompts.ts`, `svg.ts`; frontend `src/utils/tinix/rebuild.ts`, `TinixRebuildTab.vue`.
+- **Hai chế độ:** *Giống mẫu* (mặc định — chép đúng chữ, ngôn ngữ, cỡ, màu, bố cục; font gần nhất trong kho, tự chọn font CJK cho chữ Hán; vẽ khung/đường kẻ bằng `wSvg`, nét trang trí và biểu tượng đơn giản bằng SVG do AI viết và được lọc an toàn) và *Viết nội dung mới* (học bố cục/phong cách, viết lại nội dung tiếng Việt hoặc English).
+- **Ảnh nền tương tự (tùy chọn):** AI mô tả ảnh nền (`photoPrompt`, sửa được) → nút Tạo ảnh (`/api/ai/image`, ví dụ `gpt-image-2`) tạo ảnh tương tự, chừa khoảng trống có tông tương phản ở vùng có chữ, tự chạy nền ngay sau khi phân tích, có xem trước và Tạo lại. Khung ảnh dùng `fit: 'cover'`: **Thay ảnh** giữ nguyên kích thước khung.
+- Tự đặt khổ trang theo tỉ lệ ảnh mẫu; chống chồng chữ; từ chối kết quả AI bị tách chữ từng ký tự (gọi lại một lần).
+- Giới hạn đã biết: font thư pháp/nét cọ chỉ xấp xỉ, hình minh họa phức tạp bị bỏ, ảnh nền chỉ *tương tự* (không giống từng pixel), kết quả AI còn dao động giữa các lần chạy.
 
 ---
 
@@ -276,10 +279,11 @@ TinixPoster/                             ← D:\___TOOLS\__TINIX\TinixPoster (nh
 | Tuần | Việc | Xong khi |
 |---|---|---|
 | 0 (1–2 ngày) | Chạy ổn định trên Windows, tạo tài khoản admin, đổi AUTH_SECRET, chỉ nghe localhost, commit git nhánh `tinix` | Mở editor, tạo & lưu 1 thiết kế, xuất JPG |
-| 1 | ✅ Nạp **46 font có tiếng Việt** (Google Fonts/OFL) bằng `npm run tinix:fonts`; ✅ kiểm tra hiển thị & xuất ảnh dấu tiếng Việt (14 font, đạt); ⏳ nhập 5–10 mẫu PSD của bạn (cần đăng nhập admin — xem TINIX.md); ✅ migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
+| 1 | ✅ Nạp **46 font có tiếng Việt** (Google Fonts/OFL) bằng `npm run tinix:fonts`; ✅ kiểm tra hiển thị & xuất ảnh dấu tiếng Việt (14 font, đạt); ✅ nhập thử 3 file PSD mẫu (`psd-test/`, đạt cả sau các lần sửa); ⏳ nhập 5–10 mẫu PSD **của bạn** (cần đăng nhập admin — xem TINIX.md); ✅ migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
 | 2 | ✅ `callVisionJSON` + nhật ký chi phí + **Gợi ý chữ** + tab Lịch sử & Cài đặt AI | Luồng A chạy trọn (đã kiểm tra bằng `npm run tinix:test-ai`; cần API key để chạy thật) |
 | 3 | ✅ **Sửa chữ** + **Tìm font** + AI gắn tag font | Luồng B, C chạy trọn (cần API key để chạy thật) |
-| 4+ | ✅ Dựng theo mẫu (prompt riêng, không chép Canvix) · ✅ nhập PSD bằng ag-psd · ⏳ Việt hóa phần còn lại (bảng thuộc tính, trang Quản trị) · ⏳ Tauri (tùy chọn) | — |
+| 4 | ✅ Dựng theo mẫu (2 chế độ, nét trang trí SVG, ảnh nền tương tự bằng AI) · ✅ nhập PSD bằng ag-psd · ✅ Việt hóa (kể cả `vi/tinix-ui.ts`, hộp thoại font ở Quản trị) · ✅ Lưu thành mẫu (admin) | Chạy thật với ảnh mẫu (cưới và chữ Hán) |
+| 5 | ✅ Lịch sử/giới hạn chi phí cho cả tạo ảnh, đơn giá mỗi ảnh · ✅ tự thử lại khi nhà cung cấp quá tải, gợi ý khi model bị ngừng · ✅ cảnh báo mật khẩu admin mặc định · ⏳ Tauri (tùy chọn, chưa làm) | Bộ tự kiểm tra offline (`npm run tinix:test-ai`) đạt |
 
 **Kiểm tra quan trọng ở tuần 1:** xuất ảnh dùng Puppeteer (Chromium) ở server → font phải được Chromium tải được; nếu ảnh xuất mất dấu tiếng Việt thì kiểm tra file woff có đủ ký tự Việt (nhiều font Trung Quốc trong kho mẫu không có).
 
