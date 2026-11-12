@@ -165,7 +165,8 @@ async function resolveImageBuffer(body: any): Promise<Buffer> {
 function saveGeneratedImage(buffer: Buffer): { url: string; width: number; height: number } | null {
   const folder = 'ai'
   const folderPath = `${filePath}${folder}/`
-  checkCreateFolder(folderPath)
+  // [TINIX] checkCreateFolder không tạo được đường dẫn Windows (ghép "/D:/..." và nuốt lỗi) → tạo đệ quy trực tiếp
+  fs.mkdirSync(folderPath, { recursive: true })
   const name = `${Date.now()}-${randomCode(8)}.png`
   const targetPath = `${folderPath}${name}`
   fs.writeFileSync(targetPath, buffer)
@@ -243,7 +244,8 @@ export default {
       send.success(res, saved)
     } catch (e) {
       console.error('[ai] 文生图失败:', e?.message)
-      send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      // [TINIX] trả lỗi thật của nhà cung cấp (key đã được che) để biết vì sao thất bại
+      send.error(res, `Tạo ảnh bằng AI thất bại: ${extractApiErrorMessage(e).slice(0, 300)}`)
     }
   },
 
