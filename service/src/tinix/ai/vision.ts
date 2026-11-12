@@ -60,7 +60,8 @@ function apiError(e: any): string {
   const detail = (data && ((data.error && data.error.message) || data.message || data.msg)) || ''
   const msg = String(detail || (e && e.message) || 'Lỗi không xác định').slice(0, 300)
   // [TINIX] 429 = hết hạn mức (gói miễn phí hay gặp): nói rõ để người dùng biết chờ hoặc đổi gói
-  if (status === 429) return msg + ' — vượt hạn mức gọi API của nhà cung cấp (gói miễn phí giới hạn số lần/phút và số lần/ngày). Chờ khoảng 1 phút rồi thử lại, hoặc kiểm tra hạn mức trong trang quản lý của nhà cung cấp.'
+  // 429 có thể là hết hạn mức HOẶC dịch vụ đang quá tải (gói miễn phí hay gặp): không đoán, chỉ gợi ý cách kiểm tra
+  if (status === 429) return msg + ' — (lỗi 429: có thể đã vượt hạn mức hoặc dịch vụ đang quá tải. Chờ vài phút rồi thử lại; nếu vẫn lỗi, kiểm tra hạn mức trong trang quản lý của nhà cung cấp.)'
   return msg
 }
 
