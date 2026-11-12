@@ -58,6 +58,14 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
       for (let i = 0; i < 30 && measureLines(text, font(size)) > width * 1.02 && size > 10; i++) size *= 0.93
       size = Math.round(size * 10) / 10
       const lines = text.split(/\r\n|\r|\n/).length
+      // [TINIX] the box is approximate: widen it a little so a line that fits on the reference never wraps here
+      const need = Math.ceil(measureLines(text, font(size)) * 1.1)
+      let boxLeft = left, boxWidth = width
+      if (need > boxWidth) {
+        boxWidth = need
+        const diff = need - width
+        boxLeft = Math.max(0, Math.round(r.align === 'right' ? left - diff : r.align === 'left' ? left : left - diff / 2))
+      }
       const w = JSON.parse(JSON.stringify(wTextSetting))
       Object.assign(w, {
         name: `AI · ${r.role || 'chữ'}`,
@@ -70,15 +78,35 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
         fontStyle: r.italic ? 'italic' : '',
         textAlign: r.align || 'center',
         color: r.color || '#222222',
-        left,
+        left: boxLeft,
         top,
-        width,
+        width: boxWidth,
         height: Math.max(height, Math.ceil(size * (r.lineHeight || 1.2) * lines)),
       })
       if (fc) w.fontClass = fc
-      w.record = { ...(w.record || {}), width, height: w.height, minWidth: size, minHeight: size }
+      w.record = { ...(w.record || {}), width: boxWidth, height: w.height, minWidth: size, minHeight: size }
       out.push(w)
     }
   }
+  separateTexts(out, H)
   return out
+}
+
+/**
+ * [TINIX] The AI boxes are approximate: a multi-line or larger-than-expected text grows past its box and lands on the
+ * text below. Push such widgets down (top-down order) so no two text boxes that share horizontal space overlap.
+ */
+function separateTexts(widgets: any[], pageHeight: number) {
+  const texts = widgets.filter((w) => w.type === 'w-text').sort((a, b) => a.top - b.top)
+  const gap = Math.max(4, Math.round(pageHeight * 0.004))
+  for (let i = 1; i < texts.length; i++) {
+    const cur = texts[i]
+    for (let j = 0; j < i; j++) {
+      const prev = texts[j]
+      const shareX = cur.left < prev.left + prev.width && prev.left < cur.left + cur.width
+      if (shareX && cur.top < prev.top + prev.height + gap && cur.top + cur.height > prev.top) cur.top = Math.round(prev.top + prev.height + gap)
+    }
+  }
+  // keep the pushed texts inside the page
+  for (const w of texts) if (w.top + w.height > pageHeight) w.top = Math.max(0, Math.round(pageHeight - w.height))
 }

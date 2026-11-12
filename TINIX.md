@@ -50,7 +50,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/api/tinix-ai.ts` | Client gọi `/api/tinix/ai/*` |
 | `src/components/business/ai-assistant/Tinix*.vue`, `tinix-tab.less` | Các tab Trợ lý AI |
 | `src/utils/tinix/capture.ts` | Chụp trang (html2canvas, bỏ `transform: scale`) gửi AI |
-| `src/utils/tinix/rebuild.ts` | Dựng theo mẫu: vùng AI → lớp chữ / khung ảnh giữ chỗ (SVG xám) / khối màu (`wSvg`) |
+| `src/utils/tinix/rebuild.ts` | Dựng theo mẫu: vùng AI → lớp chữ / khung ảnh giữ chỗ (SVG xám) / khối màu (`wSvg`). Hộp chữ tự nới rộng để không xuống dòng; các chữ chồng nhau được đẩy xuống (`separateTexts`). Tab dựng: tự đặt khổ trang theo tỉ lệ ảnh mẫu (cạnh dài 1920px) khi trang còn trống hoặc đã chọn xoá lớp; chỉ gửi ảnh trang hiện tại cho AI khi trang có lớp |
 | `src/utils/tinix/place-text.ts` | Xếp chữ AI vào vùng trống (0–1 → px, co chữ cho vừa, chỉnh màu dễ đọc) |
 | `scripts/tinix-ai-selftest/` | `npm run tinix:test-ai`: thử toàn bộ đường AI với nhà cung cấp giả, DB tạm |
 | `scripts/tinix-psd-dump.cjs` | In thông tin lớp chữ của file PSD để gỡ lỗi: `node scripts/tinix-psd-dump.cjs "psd-test/x.psd"` |

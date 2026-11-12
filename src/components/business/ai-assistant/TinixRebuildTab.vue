@@ -26,6 +26,7 @@
         </div>
         <p v-if="state.result.notes" class="tx-hint">ℹ {{ state.result.notes }}</p>
         <div class="tx-row">
+          <el-checkbox v-model="state.matchSize" size="small">Đặt khổ trang theo tỉ lệ ảnh mẫu (chỉ khi trang còn trống hoặc đã chọn xoá lớp)</el-checkbox>
           <el-checkbox v-model="state.useBackground" size="small">Dùng màu nền của mẫu</el-checkbox>
           <el-checkbox v-model="state.clearFirst" size="small">Xoá các lớp hiện có trước khi dựng (giữ ảnh nền)</el-checkbox>
         </div>
@@ -39,7 +40,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, nextTick } from 'vue'
 import { ElMessage, ElCheckbox, ElRadioGroup, ElRadioButton } from 'element-plus'
 import { storeToRefs } from 'pinia'
 import { useWidgetStore, useCanvasStore } from '@/store'
@@ -52,7 +53,7 @@ const widgetStore = useWidgetStore()
 const canvasStore = useCanvasStore()
 const { dPage } = storeToRefs(canvasStore)
 const fileRef = ref<HTMLInputElement>()
-const state = reactive({ lang: 'vi', usePage: true, reference: '', loading: false, building: false, useBackground: false, clearFirst: false, result: null as any })
+const state = reactive({ lang: 'vi', usePage: true, reference: '', loading: false, building: false, useBackground: false, clearFirst: false, matchSize: true, refW: 0, refH: 0, result: null as any })
 
 const textRegions = computed(() => (state.result?.regions || []).filter((r: any) => r.type === 'text'))
 const counts = computed(() => {
@@ -70,12 +71,39 @@ async function onFile(e: Event) {
   if (!file) return
   state.reference = await fileToDataUrl(file)
   state.result = null
+  // [TINIX] remember the reference size: the page is reshaped to its aspect ratio when building
+  const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+    const im = new Image()
+    im.onload = () => resolve({ w: im.naturalWidth, h: im.naturalHeight })
+    im.onerror = () => resolve({ w: 0, h: 0 })
+    im.src = state.reference
+  })
+  state.refW = dims.w
+  state.refH = dims.h
+}
+
+/** Long side of a page reshaped to the reference aspect ratio (px). */
+const MATCH_LONG_SIDE = 1920
+
+/** Reshape the page to the reference aspect ratio when it differs; returns true when changed. */
+function matchPageToReference(): boolean {
+  if (!state.matchSize || !state.refW || !state.refH) return false
+  const pageEmpty = widgetStore.dWidgets.length === 0
+  if (!pageEmpty && !state.clearFirst) return false
+  const refRatio = state.refW / state.refH
+  const pageRatio = dPage.value.width / dPage.value.height
+  if (Math.abs(refRatio / pageRatio - 1) < 0.03) return false
+  const width = refRatio >= 1 ? MATCH_LONG_SIDE : Math.round(MATCH_LONG_SIDE * refRatio)
+  const height = refRatio >= 1 ? Math.round(MATCH_LONG_SIDE / refRatio) : MATCH_LONG_SIDE
+  canvasStore.setDPage(Object.assign(dPage.value, { width, height }))
+  return true
 }
 
 async function analyze() {
   state.loading = true
   try {
-    const photo = state.usePage ? await capturePage({ maxEdge: 768, hideText: true }) : undefined
+    // [TINIX] an empty page would be sent as a blank "customer photo" and confuse the AI: only capture a page that has layers
+    const photo = state.usePage && widgetStore.dWidgets.length > 0 ? await capturePage({ maxEdge: 768, hideText: true }) : undefined
     const res: any = await tinixAi.rebuild({ reference: state.reference, photo, lang: state.lang })
     if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Phân tích không thành công')
     state.result = res
@@ -92,6 +120,7 @@ async function build() {
   state.building = true
   try {
     if (state.clearFirst) widgetStore.setDWidgets([])
+    if (matchPageToReference()) await nextTick()
     if (state.useBackground) canvasStore.setDPage(Object.assign(dPage.value, { backgroundColor: state.result.background }))
     const widgets = await buildRebuildWidgets(state.result.regions, { width: dPage.value.width, height: dPage.value.height })
     widgets.forEach((w) => widgetStore.addWidget(w))
