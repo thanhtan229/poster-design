@@ -96,11 +96,20 @@ export async function callVisionJSON<T>(call: VisionCall<T>): Promise<{ data: T;
     ]
     if (attempt > 0) messages.push({ role: 'user', content: `Câu trả lời trước không hợp lệ (${lastErr}). Chỉ trả về đúng MỘT đối tượng JSON theo yêu cầu, không thêm chữ nào khác.` })
     try {
-      const body: any = await axios.post(
-        `${base.base_url}/chat/completions`,
-        { model, temperature: call.temperature ?? 0.8, messages },
-        { headers: { Authorization: `Bearer ${base.api_key}` }, timeout: call.timeoutMs || 90000 },
-      )
+      // [TINIX] một số model (vd gpt-6-luna) chỉ nhận temperature mặc định: nếu bị từ chối thì gọi lại không gửi temperature
+      const send = (withTemp: boolean) =>
+        axios.post(
+          `${base.base_url}/chat/completions`,
+          withTemp ? { model, temperature: call.temperature ?? 0.8, messages } : { model, messages },
+          { headers: { Authorization: `Bearer ${base.api_key}` }, timeout: call.timeoutMs || 90000 },
+        )
+      let body: any
+      try {
+        body = await send(true)
+      } catch (err) {
+        if (err && err.response && /temperature/i.test(apiError(err)) && /default|only|unsupported/i.test(apiError(err))) body = await send(false)
+        else throw err
+      }
       tokensIn += Number(body?.usage?.prompt_tokens) || 0
       tokensOut += Number(body?.usage?.completion_tokens) || 0
       lastRaw = String(body?.choices?.[0]?.message?.content ?? '')
