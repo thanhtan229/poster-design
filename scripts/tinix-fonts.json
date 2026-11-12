@@ -685,6 +685,152 @@
       ],
       "vietnamese": false,
       "lang": "ko"
+    },
+    {
+      "family": "Playball",
+      "dir": "playball",
+      "file": "Playball-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "wedding",
+        "viết tay",
+        "thiệp",
+        "lãng mạn"
+      ]
+    },
+    {
+      "family": "Lobster",
+      "dir": "lobster",
+      "file": "Lobster-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "đậm",
+        "tiêu đề",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Pattaya",
+      "dir": "pattaya",
+      "file": "Pattaya-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "baby",
+        "vui tươi",
+        "dễ thương"
+      ]
+    },
+    {
+      "family": "Sriracha",
+      "dir": "sriracha",
+      "file": "Sriracha-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "baby",
+        "bút",
+        "viết tay",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Petemoss",
+      "dir": "petemoss",
+      "file": "Petemoss-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "ghi chú",
+        "nhẹ nhàng"
+      ]
+    },
+    {
+      "family": "Mali",
+      "dir": "mali",
+      "file": "Mali-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "baby",
+        "tròn",
+        "dễ thương"
+      ]
+    },
+    {
+      "family": "Baloo 2",
+      "dir": "baloo2",
+      "file": "Baloo2[wght].ttf",
+      "category": "display",
+      "tags": [
+        "baby",
+        "poster",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Bungee",
+      "dir": "bungee",
+      "file": "Bungee-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "đậm",
+        "phá cách"
+      ]
+    },
+    {
+      "family": "Kanit",
+      "dir": "kanit",
+      "file": "Kanit-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "poster",
+        "hiện đại",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Oi",
+      "dir": "oi",
+      "file": "Oi-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "đậm",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Philosopher",
+      "dir": "philosopher",
+      "file": "Philosopher-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "wedding",
+        "thanh lịch",
+        "cổ điển"
+      ]
+    },
+    {
+      "family": "Barlow",
+      "dir": "barlow",
+      "file": "Barlow-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "nội dung",
+        "hiện đại",
+        "dễ đọc"
+      ]
+    },
+    {
+      "family": "Montserrat Alternates",
+      "dir": "montserratalternates",
+      "file": "MontserratAlternates-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "cách điệu",
+        "tiêu đề"
+      ]
     }
   ]
 }
