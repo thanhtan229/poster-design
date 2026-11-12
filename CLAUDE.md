@@ -11,7 +11,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 
 ## Chạy
 - Cài phụ thuộc: `npm run tinix:setup`
-- Chạy cả hai: `npm run tinix:dev` → http://127.0.0.1:5173
+- Chạy cả hai: nhấp đúp `Mo-TinixPoster.cmd`, hoặc `npm run tinix:dev` → http://127.0.0.1:5173
 - Cấu hình bí mật: `service/.env` (mẫu `service/.env.example`). Không bao giờ commit `.env`.
 
 ## Quy ước bắt buộc

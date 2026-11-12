@@ -35,6 +35,8 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `service/src/tinix/process-guard.ts` | Ghi log thay vì tắt service khi có unhandled rejection |
 | `service/src/tinix/db/migrate.ts` | Cột `fonts.category/tags/supports_vietnamese/license`; bảng `ai_jobs` (idempotent) |
 | `service/.env.example` | Mẫu biến môi trường (AUTH_SECRET, HOST, PORT, DEFAULT_ADMIN_*) |
+| `Mo-TinixPoster.cmd` | Nhấp đúp để mở app: kiểm tra Node + thư viện, đã chạy thì chỉ mở trình duyệt, chưa chạy thì `npm run tinix:dev` và tự mở trình duyệt khi sẵn sàng. `--check` = chỉ báo trạng thái |
+| `.gitattributes` | Giữ CRLF cho `*.cmd`/`*.bat` |
 | `scripts/tinix-dev.mjs` | Chạy editor + service cùng lúc, Ctrl+C dừng cả hai |
 | `scripts/tinix-fonts.json` | 46 font Google Fonts có chữ Việt, giấy phép OFL, kèm nhóm + tag |
 | `scripts/tinix-import-fonts.mjs` | Tải font về `service/static/fonts/` (+ `licenses/`) và ghi bảng `fonts` |
@@ -56,7 +58,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 
 ## Cách dùng nhanh
 
-- **Chạy app:** `npm run tinix:dev` → http://127.0.0.1:5173
+- **Chạy app:** nhấp đúp **`Mo-TinixPoster.cmd`** (hoặc `npm run tinix:dev`) → http://127.0.0.1:5173
 - **Nhập / cập nhật font:** sửa `scripts/tinix-fonts.json` rồi `npm run tinix:fonts` (chạy lại an toàn). Thêm `-- --dry` để chỉ xem danh sách.
 - **Nhập mẫu PSD** (cần đăng nhập tài khoản admin):
   1. Đăng nhập ở góc trên bên phải editor (nút **Đăng nhập**).

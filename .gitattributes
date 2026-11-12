@@ -1,0 +1,3 @@
+# [TINIX] Windows scripts must keep CRLF line endings (labels/goto break with LF)
+*.cmd text eol=crlf
+*.bat text eol=crlf
