@@ -430,22 +430,22 @@
     <!-- 新增 / 编辑字体对话框 -->
     <el-dialog v-model="fontDialog.visible" :title="fontDialog.title" width="560px" @closed="resetFontForm">
       <el-form ref="fontFormRef" :model="fontDialog.form" :rules="fontRules" label-width="92px" size="small">
-        <el-form-item label="字体名称" prop="alias">
-          <el-input v-model="fontDialog.form.alias" placeholder="例：站酷快乐体" maxlength="40" show-word-limit />
+        <el-form-item :label="t('admin.font.aliasLabel')" prop="alias">
+          <el-input v-model="fontDialog.form.alias" :placeholder="t('admin.font.aliasPlaceholder')" maxlength="40" show-word-limit />
         </el-form-item>
         <el-form-item label="value" prop="value">
-          <el-input v-model="fontDialog.form.value" placeholder="CSS 用的 family slug，例：zcool-kuaile-regular" maxlength="60" />
+          <el-input v-model="fontDialog.form.value" :placeholder="t('admin.font.valuePlaceholder')" maxlength="60" />
         </el-form-item>
-        <el-form-item label="woff 链接" prop="woff">
+        <el-form-item :label="t('admin.font.woffLabel')" prop="woff">
           <el-input v-model="fontDialog.form.woff" placeholder="https://..." />
           <input type="file" accept=".woff,.woff2" style="margin-top: 6px" @change="onFontFileChange" />
-          <span class="muted-text">可直接选择 woff 文件上传，或填写远程链接</span>
+          <span class="muted-text">{{ t('admin.font.woffHint') }}</span>
         </el-form-item>
-        <el-form-item label="ttf 链接">
-          <el-input v-model="fontDialog.form.ttf" placeholder="可选" />
+        <el-form-item :label="t('admin.font.ttfLabel')">
+          <el-input v-model="fontDialog.form.ttf" :placeholder="t('admin.font.optional')" />
         </el-form-item>
-        <el-form-item label="预览图">
-          <el-input v-model="fontDialog.form.preview" placeholder="可选，预览图 URL" />
+        <el-form-item :label="t('admin.font.previewLabel')">
+          <el-input v-model="fontDialog.form.preview" :placeholder="t('admin.font.previewPlaceholder')" />
         </el-form-item>
         <el-form-item :label="t('admin.v.language')" prop="lang">
           <el-radio-group v-model="fontDialog.form.lang">
@@ -454,18 +454,18 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="font-family">
-          <el-input v-model="fontDialog.form.font_family" placeholder="可选" maxlength="80" />
+          <el-input v-model="fontDialog.form.font_family" :placeholder="t('admin.font.optional')" maxlength="80" />
         </el-form-item>
-        <el-form-item v-if="!fontDialog.form.id" label="文件大小">
-          <el-input-number v-model="fontDialog.form.size" :min="0" :step="1" placeholder="字节，可选" />
+        <el-form-item v-if="!fontDialog.form.id" :label="t('admin.font.fileSize')">
+          <el-input-number v-model="fontDialog.form.size" :min="0" :step="1" :placeholder="t('admin.font.bytesOptional')" />
         </el-form-item>
-        <el-form-item v-if="!fontDialog.form.id" label="woff 大小">
-          <el-input-number v-model="fontDialog.form.woff_size" :min="0" :step="1" placeholder="字节，可选" />
+        <el-form-item v-if="!fontDialog.form.id" :label="t('admin.font.woffSize')">
+          <el-input-number v-model="fontDialog.form.woff_size" :min="0" :step="1" :placeholder="t('admin.font.bytesOptional')" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="fontDialog.visible = false">{{ t('admin.v.cancel') }}</el-button>
-        <el-button type="primary" :loading="fontDialog.submitting" @click="submitFont">{{ fontDialog.form.id ? '确认编辑' : '确认新增' }}</el-button>
+        <el-button type="primary" :loading="fontDialog.submitting" @click="submitFont">{{ fontDialog.form.id ? t('admin.font.confirmEdit') : t('admin.font.confirmAdd') }}</el-button>
       </template>
     </el-dialog>
   </div>
