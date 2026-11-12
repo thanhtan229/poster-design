@@ -230,6 +230,30 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
         return base
       }).filter((r: any) => !!r)
       if (!regions.some((r: any) => r.type === 'text')) throw new Error('regions: không có khối chữ nào')
+      // [TINIX] kiểm tra hợp lý (chế độ Giống mẫu): lỗi thì ném ra để callVisionJSON gọi lại một lần kèm lời nhắc
+      if (faithful) {
+        const texts = regions.filter((r: any) => r.type === 'text')
+        // AI tách chữ thành từng ký tự (vd "早","安","乐"…) thay vì mỗi DÒNG một vùng
+        const single = texts.filter((r: any) => String(r.text).replace(/\s/g, '').length <= 1)
+        if (texts.length >= 4 && single.length >= 3 && single.length / texts.length >= 0.6) {
+          throw new Error('chữ bị tách thành từng ký tự: mỗi DÒNG chữ phải là MỘT vùng text, không tách từng chữ')
+        }
+        // bỏ vùng chữ trùng lặp (cùng nội dung, hộp gần như chồng khít)
+        const iou = (a: any, b: any) => {
+          const x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y)
+          const x2 = Math.min(a.x + a.w, b.x + b.w), y2 = Math.min(a.y + a.h, b.y + b.h)
+          const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1)
+          const uni = a.w * a.h + b.w * b.h - inter
+          return uni > 0 ? inter / uni : 0
+        }
+        const keep: any[] = []
+        for (const r of regions as any[]) {
+          if (r.type === 'text' && keep.some((k) => k.type === 'text' && String(k.text).trim() === String(r.text).trim() && iou(k.bbox, r.bbox) > 0.6)) continue
+          keep.push(r)
+        }
+        regions.length = 0
+        keep.forEach((r) => regions.push(r))
+      }
       let notes = str(o.notes, 'notes', { optional: true, max: 400 })
       if (droppedSvg) notes = (notes ? notes + ' ' : '') + `(${droppedSvg} nét trang trí bị bỏ vì SVG của AI không hợp lệ — thử phân tích lại để có đủ.)`
       return { background: color(o.background, '#ffffff'), regions, notes, photoPrompt: str(o.photoPrompt, 'photoPrompt', { optional: true, max: 1200 }) }

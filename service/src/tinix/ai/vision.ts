@@ -65,6 +65,50 @@ function apiError(e: any): string {
   return msg
 }
 
+// ───────── [TINIX] Tự thử lại khi nhà cung cấp quá tải + gợi ý khi model bị ngừng ─────────
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const TRANSIENT_STATUS = [429, 500, 502, 503, 504]
+const NETWORK_CODES = ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND', 'ECONNREFUSED', 'EPIPE']
+/** Hết hạn mức / hết tiền: thử lại vô ích */
+const QUOTA_RE = /insufficient_quota|exceeded your current quota|check your plan|billing|out of credit|balance/i
+/** Model bị ngừng / sai tên */
+const MODEL_RE = /model_not_found|(model.{0,60}(deprecated|no longer available|does not exist|not found|unknown|not supported|unsupported))|((deprecated|no longer available|does not exist|not found|unknown|not supported|unsupported).{0,60}model)/i
+
+/** Chờ bao lâu (ms) trước lần thử lại thứ `retry` (0, 1…); null = không thử lại. Có thể ép bằng TINIX_AI_RETRY_DELAYS_MS="20,20" (dùng khi tự kiểm tra). */
+function retryDelayMs(e: any, retry: number): number | null {
+  const status = e && e.response && e.response.status
+  const transient = (status && TRANSIENT_STATUS.indexOf(status) >= 0) || (!(e && e.response) && e && e.code && NETWORK_CODES.indexOf(e.code) >= 0)
+  if (!transient) return null
+  if (status === 429 && QUOTA_RE.test(apiError(e))) return null
+  const forced = process.env.TINIX_AI_RETRY_DELAYS_MS
+  if (forced) return Number(forced.split(',')[retry]) || 10
+  const ra = Number(e.response && e.response.headers && e.response.headers['retry-after'])
+  return Math.min(20000, Number.isFinite(ra) && ra > 0 ? ra * 1000 : [3000, 8000][retry])
+}
+
+/** Gọi một request, tự thử lại tối đa 2 lần với lỗi tạm thời (429 quá tải, 5xx, mạng). Gắn `__retries` vào lỗi cuối. */
+export async function postWithRetry(doPost: () => Promise<any>): Promise<any> {
+  for (let retry = 0; ; retry++) {
+    try {
+      return await doPost()
+    } catch (e) {
+      const wait = retry < 2 ? retryDelayMs(e, retry) : null
+      if (wait === null) {
+        if (e && typeof e === 'object') (e as any).__retries = retry
+        throw e
+      }
+      console.warn(`[tinix:ai] lỗi tạm thời (${(e as any).response ? (e as any).response.status : (e as any).code}), thử lại sau ${wait}ms (lần ${retry + 1})`)
+      await sleep(wait)
+    }
+  }
+}
+
+/** Gợi ý khi lỗi nhà cung cấp cho thấy model bị ngừng hoặc sai tên; rỗng nếu không phải. */
+export function modelErrorHint(msg: string, model: string, where: string): string {
+  if (!MODEL_RE.test(String(msg || ''))) return ''
+  return ` → Model "${model}" có thể đã bị ngừng hoặc sai tên. Hãy đổi ${where} sang tên model hiện hành (xem trang model của nhà cung cấp).`
+}
+
 export type VisionCall<T> = {
   kind: AiJobKind
   system: string
@@ -105,9 +149,9 @@ export async function callVisionJSON<T>(call: VisionCall<T>): Promise<{ data: T;
         )
       let body: any
       try {
-        body = await send(true)
+        body = await postWithRetry(() => send(true))
       } catch (err) {
-        if (err && err.response && /temperature/i.test(apiError(err)) && /default|only|unsupported/i.test(apiError(err))) body = await send(false)
+        if (err && err.response && /temperature/i.test(apiError(err)) && /default|only|unsupported/i.test(apiError(err))) body = await postWithRetry(() => send(false))
         else throw err
       }
       tokensIn += Number(body?.usage?.prompt_tokens) || 0
@@ -120,8 +164,11 @@ export async function callVisionJSON<T>(call: VisionCall<T>): Promise<{ data: T;
       if (e && e.response) {
         // HTTP error from the provider: no point retrying with the same request
         const msg = apiError(e)
-        logJob({ kind: call.kind, input: call.inputSummary, model, tokensIn, tokensOut, status: 'error', error: msg })
-        throw new AiUserError(`Nhà cung cấp AI báo lỗi: ${msg}`)
+        const retried = e.__retries ? ` (đã tự thử lại ${e.__retries} lần)` : ''
+        const isVision = !!(call.images && call.images.length) && !call.useTextModel
+        const hint = modelErrorHint(msg, model, isVision ? 'Model nhìn ảnh (Trợ lý AI → Cài đặt)' : 'Model chữ (Quản trị → Thiết lập AI)')
+        logJob({ kind: call.kind, input: call.inputSummary, model, tokensIn, tokensOut, status: 'error', error: msg + retried })
+        throw new AiUserError(`Nhà cung cấp AI báo lỗi: ${msg}${retried}${hint}`)
       }
       if (e && e.code === 'ECONNABORTED') {
         logJob({ kind: call.kind, input: call.inputSummary, model, tokensIn, tokensOut, status: 'error', error: 'timeout' })

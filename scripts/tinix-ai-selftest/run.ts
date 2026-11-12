@@ -66,6 +66,39 @@ async function main() {
   ;(http as any).post = async () => { const e: any = new Error('Request failed'); e.response = { data: { error: { message: 'invalid api key' } } }; throw e }
   try { await findFont({ image: img }) } catch (e) { console.log('provider error ok:', (e as any).message) }
 
+  // 6) Phase 4: lỗi tạm thời (503) hai lần rồi thành công → tự thử lại, tổng 3 lần gọi
+  process.env.TINIX_AI_RETRY_DELAYS_MS = '5,5'
+  const okFont = JSON.stringify({ items: [{ text: 'Love', category: 'script', traits: ['nối nét'], suspected: ['Great Vibes'] }] })
+  const httpErr = (status: number, message: string, headers: any = {}) => { const e: any = new Error('Request failed'); e.response = { status, data: { error: { message } }, headers }; return e }
+  let calls = 0
+  ;(http as any).post = async () => { calls++; if (calls <= 2) throw httpErr(503, 'The service may be temporarily overloaded'); return { choices: [{ message: { content: okFont } }], usage: { prompt_tokens: 10, completion_tokens: 5 } } }
+  const rf = await findFont({ image: img })
+  console.log('retry ok: calls =', calls, '; result items =', rf.items.length)
+
+  // 7) 429 hết hạn mức (quota) → KHÔNG thử lại
+  calls = 0
+  ;(http as any).post = async () => { calls++; throw httpErr(429, 'You exceeded your current quota, please check your plan and billing details.') }
+  try { await findFont({ image: img }) } catch (e) { console.log('quota no-retry ok: calls =', calls, '; msg has 429 hint =', /429/.test((e as any).message)) }
+
+  // 8) 503 mãi mãi → thử lại 2 lần rồi báo, ghi "đã tự thử lại 2 lần"
+  calls = 0
+  ;(http as any).post = async () => { calls++; throw httpErr(503, 'overloaded') }
+  try { await findFont({ image: img }) } catch (e) { console.log('retry exhausted ok: calls =', calls, '; says retried =', /đã tự thử lại 2 lần/.test((e as any).message)) }
+
+  // 9) model bị ngừng → gợi ý đổi tên model
+  ;(http as any).post = async () => { throw httpErr(404, 'The model `gpt-4.1-nano` has been deprecated, learn more here') }
+  try { await findFont({ image: img }) } catch (e) { console.log('model hint ok:', /Model nhìn ảnh/.test((e as any).message) && /ngừng hoặc sai tên/.test((e as any).message)) }
+
+  // 10) Dựng theo mẫu: AI tách chữ từng ký tự → bị từ chối, lần gọi lại hợp lệ → thành công (2 request)
+  const chars = ['早', '安', '平', '安', '喜', '乐'].map((c, i) => ({ type: 'text', bbox: { x: 0.1 + i * 0.1, y: 0.1, w: 0.08, h: 0.08 }, role: 'title', text: c, fontFamily: 'ZCOOL', fontSize: 0.07, z: i }))
+  const good = [{ type: 'text', bbox: { x: 0.2, y: 0.05, w: 0.4, h: 0.1 }, role: 'title', text: '早安', fontFamily: 'ZCOOL', fontSize: 0.08, z: 5 }, { type: 'text', bbox: { x: 0.3, y: 0.15, w: 0.5, h: 0.1 }, role: 'title', text: '平安喜乐', fontFamily: 'ZCOOL', fontSize: 0.08, z: 6 }, { type: 'text', bbox: { x: 0.3, y: 0.15, w: 0.5, h: 0.1 }, role: 'title', text: '平安喜乐', fontFamily: 'ZCOOL', fontSize: 0.08, z: 7 }]
+  const queue = [JSON.stringify({ background: '#fff', regions: chars }), JSON.stringify({ background: '#fff', regions: good })]
+  let reqs = 0
+  ;(http as any).post = async () => { reqs++; return { choices: [{ message: { content: queue.shift() || '' } }], usage: { prompt_tokens: 10, completion_tokens: 5 } } }
+  const rb2: any = await (require('../../service/src/tinix/ai/tasks') as any).rebuildFromReference({ reference: img, lang: 'vi', mode: 'faithful' })
+  console.log('split-chars guard ok: requests =', reqs, '; texts =', rb2.regions.filter((r: any) => r.type === 'text').map((r: any) => r.text).join(' | '), '(trùng lặp đã bỏ)')
+  delete process.env.TINIX_AI_RETRY_DELAYS_MS
+
   const u = monthUsage()
   console.log('usage:', u.jobs, 'jobs,', u.cost_vnd, 'đ;', JSON.stringify(db.prepare('SELECT kind, status FROM ai_jobs').all()))
 }

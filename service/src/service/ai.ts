@@ -21,6 +21,7 @@ import { send, checkCreateFolder, randomCode } from '../utils/tools'
 import { getRequestUser } from '../utils/auth'
 import { getAiSettings, saveAiSettingsInput, AiSettings, AiImageSizeMode } from '../db/settings'
 import { addUserImage } from '../db/userImages'
+import { postWithRetry, modelErrorHint } from '../tinix/ai/vision' // [TINIX] tự thử lại khi quá tải + gợi ý khi model bị ngừng
 import { logJob, assertWithinMonthlyLimit } from '../tinix/ai/cost-log' // [TINIX] lịch sử + giới hạn chi phí cho cả lần tạo ảnh
 
 /**
@@ -263,10 +264,12 @@ export default {
     const jobInput = { prompt: prompt.slice(0, 300), ratio, size }
     try {
       // 注意：utils/http 的 axios 拦截器已将响应解包为 body，类型断言绕开 AxiosResponse 类型
-      const body: any = await axios.post(
-        `${config.base_url}/images/generations`,
-        { model: config.image_model, prompt, size },
-        { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 120000 } // [TINIX] ảnh lớn có thể >60s
+      const body: any = await postWithRetry(() =>
+        axios.post(
+          `${config.base_url}/images/generations`,
+          { model: config.image_model, prompt, size },
+          { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 120000 } // [TINIX] ảnh lớn có thể >60s
+        )
       )
       const buffer = await resolveImageBuffer(body)
       // [TINIX] token dùng (nếu nhà cung cấp trả về `usage`) để ghi lịch sử/chi phí
@@ -287,7 +290,8 @@ export default {
       send.success(res, saved)
     } catch (e) {
       console.error('[ai] 文生图失败:', e?.message)
-      const detail = extractApiErrorMessage(e).slice(0, 300)
+      const retried = e && e.__retries ? ` (đã tự thử lại ${e.__retries} lần)` : ''
+      const detail = extractApiErrorMessage(e).slice(0, 300) + retried + modelErrorHint(extractApiErrorMessage(e), config.image_model, 'Model tạo ảnh (Quản trị → Thiết lập AI)')
       logJob({ kind: 'image', input: jobInput, model: config.image_model, status: 'error', error: detail })
       // [TINIX] trả lỗi thật của nhà cung cấp (key đã được che) để biết vì sao thất bại
       send.error(res, `Tạo ảnh bằng AI thất bại: ${detail}`)
