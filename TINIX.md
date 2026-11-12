@@ -20,6 +20,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/utils/plugins/psd/index.ts` | Cỡ chữ × hệ số phóng dọc; Tracking → giãn chữ; All Caps; Leading → giãn dòng; tên font đúng style run (bỏ `.slice(1)` cắt mất chữ đầu); paragraph text dùng BoxBounds + ma trận → khung + `rotate`; `transform: ''` (object cũ làm hỏng CSS xoay) | Nhập PSD đúng như Photoshop |
 | `src/utils/plugins/worker/loadPSD.worker.ts` | Đọc bằng **ag-psd** trước (`processPsdWithAg`), lỗi thì thử `psd.js`; luôn gửi `{ data }` hoặc `{ error }` về | psd.js không đọc được PSD đời mới; trước đây lỗi làm trang quay vòng mãi |
 | `package.json` | Thêm phụ thuộc `ag-psd` (MIT); script `tinix:test-ai` | Bộ đọc PSD mới; tự kiểm tra AI |
+| `src/views/components/HeaderOptions.vue`, `Folder.vue`, `src/views/Index.vue` | Mục **Tệp → Lưu thành mẫu (công khai)** (chỉ admin): `saveAsTemplate()` gọi `/api/admin/template/save` với `dLayouts`, mẫu hiện ngay ở thẻ "Mẫu thiết kế" (tải lại trang để thấy) | Lưu thiết kế thành mẫu mà không cần nhập PSD |
 | `service/src/main.ts` | Mount `tinixAiRouter` (`/api/tinix/ai/*`) sau router gốc | Các tính năng AI của TinixPoster |
 | `src/components/business/ai-assistant/AiAssistant.vue` | Thêm 5 tab (Gợi ý chữ, Sửa chữ, Tìm font, Lịch sử, Cài đặt AI), mặc định mở "Gợi ý chữ", Việt hóa 3 tab cũ, rộng 780px | Trợ lý AI |
 | `src/store/design/widget/actions/template.ts` | `setTemplate()` không còn `constrainGroupToCanvas` | Mở mẫu nguyên trang từng bị co nhỏ cả mẫu (vd 937px → 204px) khi 1 lớp tràn mép, và co theo khổ trang cũ |

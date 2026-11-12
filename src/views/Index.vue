@@ -313,6 +313,10 @@ const fns: any = {
   download: () => {
     optionsRef.value?.download()
   },
+  // [TINIX] Lưu thiết kế thành mẫu công khai (admin)
+  saveAsTemplate: () => {
+    optionsRef.value?.saveAsTemplate()
+  },
   changeLineGuides,
   newDesign: () => {
     createDesignRef.value?.open()

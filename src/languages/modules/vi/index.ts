@@ -39,6 +39,7 @@ export default {
     folder: {
       newDesign: 'Tạo thiết kế mới',
       save: 'Lưu',
+      saveAsTemplate: 'Lưu thành mẫu (công khai)',
       download: 'Tải ảnh xuống',
       guides: 'Thước & đường gióng',
     },

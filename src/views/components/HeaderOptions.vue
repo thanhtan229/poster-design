@@ -31,6 +31,7 @@
 <script lang="ts" setup>
 import i18n from '@/languages'
 import api from '@/api'
+import * as adminApi from '@/api/admin' // [TINIX]
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import _dl from '@/common/methods/download'
@@ -143,6 +144,36 @@ async function saveTemp() {
     }
   } catch (error: any) {
     useNotification(i18n.global.t('editor.header.saveFailed'), error?.message || i18n.global.t('editor.header.templateSaveFailed'), { type: 'error' })
+  } finally {
+    state.loading = false
+  }
+}
+
+// [TINIX] Lưu thiết kế hiện tại thành MẪU CÔNG KHAI (bảng templates, hiện ở thẻ "Mẫu thiết kế") — chỉ admin
+async function saveAsTemplate() {
+  if (state.loading) return
+  let isAdmin = false
+  try {
+    isAdmin = JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
+  } catch (e) {
+    isAdmin = false
+  }
+  if (!isAdmin) {
+    useNotification('Chưa lưu được', 'Chỉ tài khoản admin mới lưu được thành mẫu công khai.', { type: 'warning' })
+    return
+  }
+  state.loading = true
+  try {
+    const { id } = await adminApi.saveTemplate({
+      title: state.title || 'Mẫu chưa đặt tên',
+      type: 0,
+      data: JSON.stringify(dLayouts.value),
+      width: Number(dPage.value.width),
+      height: Number(dPage.value.height),
+    })
+    useNotification('Đã lưu thành mẫu', `Mẫu #${id} đã hiện ở thẻ "Mẫu thiết kế" (bên trái).`)
+  } catch (error: any) {
+    useNotification('Lưu thành mẫu không thành công', error?.msg || error?.message || 'Vui lòng thử lại.', { type: 'error' })
   } finally {
     state.loading = false
   }
@@ -272,6 +303,7 @@ defineExpose({
   download,
   save,
   saveTemp,
+  saveAsTemplate, // [TINIX]
   stateChange,
   load,
 })
