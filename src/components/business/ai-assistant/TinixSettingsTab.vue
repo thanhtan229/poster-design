@@ -2,7 +2,7 @@
 <template>
   <div class="tx-tab">
     <div v-if="base && (!base.enabled || !base.has_key)" class="tx-warn">
-      {{ !base.has_key ? 'Chưa có API key.' : 'AI đang tắt.' }} Vào <a href="/admin" target="_blank">trang Quản trị</a> → mục cấu hình AI (AI 设置) để nhập API key, endpoint và bật AI.
+      {{ !base.has_key ? 'Chưa có API key.' : 'AI đang tắt.' }} Vào <a href="/admin" target="_blank">trang Quản trị</a> → mục cấu hình AI (Thiết lập AI) để nhập API key, endpoint và bật AI.
     </div>
     <p v-if="base" class="tx-hint">Endpoint: {{ base.base_url }} · model chữ: {{ base.text_model }} (đổi trong trang Quản trị).</p>
     <div class="tx-form">

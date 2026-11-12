@@ -23,7 +23,7 @@ const router = express.Router()
 const PREFIX = '/api/tinix/ai'
 
 function requireLogin(req: any, res: any, next: () => void) {
-  if (!getRequestUser(req)) return res.json({ code: 401, msg: '请先登录' })
+  if (!getRequestUser(req)) return res.json({ code: 401, msg: 'Vui lòng đăng nhập' })
   next()
 }
 

@@ -1,20 +1,29 @@
-/**
- * [TINIX] Tiếng Việt cho giao diện TinixPoster.
- * Giữ cùng khóa với modules/en & modules/zh (home, tabs, header) + nhóm `tinix` cho phần đã Việt hóa.
- * Việt hóa thêm màn hình nào: thêm khóa vào đây rồi dùng $t('tinix....') trong file .vue.
+/*
+ * Nguồn chuẩn (source of truth) cho chuỗi giao diện.
+ * Mọi key mới thêm vào đây trước, sau đó bổ sung bản tương ứng ở `../en`.
+ * Thuật ngữ thống nhất theo bảng glossary trong PLAN.md §5.
  */
+import admin from './admin'
+import business from './business'
+import common from './common'
+import editor from './editor'
+import header from './header'
+import settings from './settings'
+
 export default {
   home: {
-    welcome: 'Xin chào',
+    welcome: 'Chào mừng',
   },
   tabs: {
     refresh: 'Làm mới',
   },
-  header: {
-    logout: 'Đăng xuất',
-    save: 'Lưu',
-    download: 'Tải ảnh',
-  },
+  admin,
+  business,
+  common,
+  editor,
+  header,
+  settings,
+  // Nhóm khóa cũ của nhánh tinix (một số màn hình riêng của TinixPoster vẫn dùng)
   tinix: {
     menu: {
       file: 'Tệp',

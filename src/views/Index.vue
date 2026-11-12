@@ -94,6 +94,7 @@
 </template>
 
 <script lang="ts" setup>
+import i18n from '@/languages'
 import _config from '../config'
 import {
   CSSProperties, computed, nextTick,
@@ -202,7 +203,7 @@ function openAiAssistant() {
 
 const beforeUnload = function (e: Event): any {
   if (dHistoryStack.value.changes.length > 0) {
-    const confirmationMessage: string = '系统不会自动保存您未修改的内容';
+    const confirmationMessage: string = i18n.global.t('editor.top.unsavedWarning');
     (e || window.event).returnValue = (confirmationMessage as any) // Gecko and Trident
     return confirmationMessage // Gecko and WebKit
   } else return false

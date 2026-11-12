@@ -23,13 +23,14 @@
 
     <ul ref="listRef" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
       <img-water-fall :listData="state.list" @select="selectItem" />
-      <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> 拼命加载中</div>
+      <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
       <div v-show="state.loadDone" class="loading">Đã tải hết</div>
     </ul>
   </div>
 </template>
 
 <script lang="ts" setup>
+import i18n from '@/languages'
 import { reactive, ref } from 'vue'
 import api from '@/api'
 

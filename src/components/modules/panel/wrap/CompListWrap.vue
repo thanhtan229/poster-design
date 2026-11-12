@@ -42,7 +42,7 @@
           <!-- </edit-model> -->
         </div>
       </el-space>
-      <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> 拼命加载中</div>
+      <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
       <div v-show="state.loadDone" class="loading">Đã tải hết</div>
     </ul>
   </div>

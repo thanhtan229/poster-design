@@ -34,6 +34,7 @@
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  */
+import i18n from '@/languages'
 import { reactive, ref } from 'vue'
 // ElDialog / ElInput / ElButton 已全局注册（见 elementConfig.ts），此处仅需补未注册的
 import { ElMessage, ElForm, ElFormItem } from 'element-plus'
