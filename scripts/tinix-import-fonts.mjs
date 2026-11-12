@@ -49,9 +49,9 @@ async function main() {
   if (db) ensureColumns(db)
   const findByValue = db?.prepare('SELECT id FROM fonts WHERE value = ?')
   const insert = db?.prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, category, tags, supports_vietnamese, license)
-    VALUES (@alias, @value, '', @url, @url, 'en', @family, @size, @size, @category, @tags, 1, 'OFL')`)
+    VALUES (@alias, @value, '', @url, @url, 'en', @family, @size, @size, @category, @tags, @vn, 'OFL')`)
   const update = db?.prepare(`UPDATE fonts SET alias=@alias, woff=@url, ttf=@url, lang='en', font_family=@family, size=@size, woff_size=@size,
-    category=@category, tags=@tags, supports_vietnamese=1, license='OFL' WHERE id=@id`)
+    category=@category, tags=@tags, supports_vietnamese=@vn, license='OFL' WHERE id=@id`)
 
   let added = 0, updated = 0, fetched = 0, bytes = 0
   for (const f of catalog.fonts) {
@@ -72,7 +72,7 @@ async function main() {
     if (!fs.existsSync(lic)) await download(catalog.source + f.dir + '/OFL.txt', lic)
 
     const row = { alias: f.family, value: f.family, family: f.family, url: `/static/fonts/${name}`, size,
-      category: f.category, tags: JSON.stringify(f.tags || []) }
+      category: f.category, tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1 }
     const existing = findByValue.get(f.family)
     if (existing) { update.run({ ...row, id: existing.id }); updated++ } else { insert.run(row); added++ }
   }
