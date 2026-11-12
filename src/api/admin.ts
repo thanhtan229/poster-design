@@ -117,6 +117,7 @@ export type TAdminFontItem = {
   font_family: string
   size: number
   woff_size: number
+  supports_vietnamese?: number // [TINIX]
   created_at: string
 }
 

@@ -260,7 +260,7 @@ export default {
 
   // 新增字体
   async addFont(req: any, res: Response) {
-    const { alias, value, woff, lang, preview, ttf, font_family, size, woff_size } = req.body || {}
+    const { alias, value, woff, lang, preview, ttf, font_family, size, woff_size, supports_vietnamese } = req.body || {}
     // 必填：alias（显示名）、value（CSS family slug）、woff（字体 woff 链接）
     if (typeof alias !== 'string' || !alias.trim()) return send.error(res, 'Tên font không được để trống')
     if (typeof value !== 'string' || !value.trim()) return send.error(res, 'Giá trị value của font không được để trống')
@@ -282,13 +282,14 @@ export default {
       font_family: typeof font_family === 'string' ? font_family : '',
       size: toSafeNumber(size),
       woff_size: toSafeNumber(woff_size),
+      supports_vietnamese: supports_vietnamese === true || supports_vietnamese === 1 || supports_vietnamese === '1', // [TINIX]
     })
     send.success(res, { id })
   },
 
   // 编辑字体基础信息，不修改文件大小统计
   async updateFont(req: any, res: Response) {
-    const { id, alias, value, woff, lang, preview, ttf, font_family } = req.body || {}
+    const { id, alias, value, woff, lang, preview, ttf, font_family, supports_vietnamese } = req.body || {}
     if (!isNumber(Number(id)) || Number(id) <= 0) return send.error(res, 'Tham số không hợp lệ')
     if (typeof alias !== 'string' || !alias.trim()) return send.error(res, 'Tên font không được để trống')
     if (typeof value !== 'string' || !value.trim()) return send.error(res, 'Giá trị value của font không được để trống')
@@ -298,7 +299,8 @@ export default {
       preview: typeof preview === 'string' ? preview : '',
       ttf: typeof ttf === 'string' ? ttf : '', lang: lang === 'en' ? 'en' : 'zh',
       font_family: typeof font_family === 'string' ? font_family : '',
-    })
+      supports_vietnamese: supports_vietnamese === true || supports_vietnamese === 1 || supports_vietnamese === '1', // [TINIX]
+    } as any)
     updated ? send.success(res, undefined) : send.error(res, 'Bản ghi không tồn tại')
   },
 

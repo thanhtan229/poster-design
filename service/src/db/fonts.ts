@@ -24,10 +24,11 @@ export interface FontRow {
   font_family: string
   size: number
   woff_size: number
+  supports_vietnamese: number // [TINIX] 1 = có chữ tiếng Việt
   created_at: string
 }
 
-const LIST_FIELDS = 'id, alias, value, preview, woff, ttf, lang, font_family, size, woff_size, created_at'
+const LIST_FIELDS = 'id, alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese, created_at'
 
 /** 分页查询字体；搜索名称、value 和 font-family。 */
 export function listFonts(page = 1, pageSize = 20, search = ''): { list: FontRow[]; total: number } {
@@ -65,21 +66,22 @@ export interface AddFontParams {
   font_family: string
   size: number
   woff_size: number
+  supports_vietnamese?: boolean | number // [TINIX]
 }
 
 /** 新增字体，返回自增 id */
 export function addFont(params: AddFontParams): number {
   const info = getDB()
-    .prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size)
-      VALUES (@alias, @value, @preview, @woff, @ttf, @lang, @font_family, @size, @woff_size)`)
-    .run(params)
+    .prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese)
+      VALUES (@alias, @value, @preview, @woff, @ttf, @lang, @font_family, @size, @woff_size, @supports_vietnamese)`)
+    .run({ ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0 })
   return Number(info.lastInsertRowid)
 }
 
 /** 更新字体基础信息；文件大小字段由上传/新增时记录，编辑不改动。 */
 export function updateFont(id: number, params: Omit<AddFontParams, 'size' | 'woff_size'>): boolean {
   const info = getDB().prepare(`UPDATE fonts SET alias = @alias, value = @value, preview = @preview,
-    woff = @woff, ttf = @ttf, lang = @lang, font_family = @font_family WHERE id = @id`).run({ id, ...params })
+    woff = @woff, ttf = @ttf, lang = @lang, font_family = @font_family, supports_vietnamese = @supports_vietnamese WHERE id = @id`).run({ id, ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0 })
   return info.changes > 0
 }
 

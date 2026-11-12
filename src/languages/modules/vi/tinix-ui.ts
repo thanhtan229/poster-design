@@ -150,6 +150,10 @@ export default {
   adminExtra: {
     tai_khoan_admin_dang_dung: 'Tài khoản admin đang dùng mật khẩu mặc định (123456)',
     hay_doi_mat_khau_bam: 'Hãy đổi mật khẩu: bấm “Mở editor”, rồi bấm “Đổi mật khẩu” trên thanh trên cùng. Ứng dụng chạy trên máy bạn nên rủi ro thấp, nhưng nên đổi trước khi cho người khác truy cập.',
+    tiengViet: 'Tiếng Việt',
+    coDau: 'Có dấu',
+    chuaCo: 'Chưa có',
+    hoTroDauTiengViet: 'Hỗ trợ tiếng Việt (có dấu)',
   },
   psdPage: {
     chi_tai_khoan_quan_tri: 'Chỉ tài khoản quản trị mới nhập được PSD. Hãy đăng nhập bằng tài khoản admin.',

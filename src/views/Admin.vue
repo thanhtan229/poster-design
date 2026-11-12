@@ -230,6 +230,13 @@
                 <el-tag size="small" :type="row.lang === 'en' ? 'warning' : 'success'">{{ row.lang === 'en' ? t('admin.v.english') : t('admin.v.chinese') }}</el-tag>
               </template>
             </el-table-column>
+            <!-- [TINIX] cờ hỗ trợ tiếng Việt (AI chỉ gợi ý font có cờ này ở chế độ tiếng Việt) -->
+            <el-table-column :label="t('tinix.ui.adminExtra.tiengViet')" width="110">
+              <template #default="{ row }">
+                <el-tag v-if="row.supports_vietnamese" size="small" type="success">{{ t('tinix.ui.adminExtra.coDau') }}</el-tag>
+                <el-tag v-else size="small" type="info">{{ t('tinix.ui.adminExtra.chuaCo') }}</el-tag>
+              </template>
+            </el-table-column>
             <el-table-column label="woff" min-width="220" show-overflow-tooltip>
               <template #default="{ row }">
                 <a v-if="row.woff" :href="row.woff" target="_blank" rel="noopener" class="link-primary">{{ row.woff }}</a>
@@ -453,6 +460,9 @@
             <el-radio value="en">{{ t('admin.v.english') }}</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item :label="t('tinix.ui.adminExtra.tiengViet')">
+          <el-checkbox v-model="fontDialog.form.supports_vietnamese">{{ t('tinix.ui.adminExtra.hoTroDauTiengViet') }}</el-checkbox>
+        </el-form-item>
         <el-form-item label="font-family">
           <el-input v-model="fontDialog.form.font_family" :placeholder="t('admin.font.optional')" maxlength="80" />
         </el-form-item>
@@ -492,6 +502,7 @@ import {
   ElTable,
   ElTableColumn,
   ElTag,
+  ElCheckbox, // [TINIX]
   ElButton,
   ElImage,
   ElDialog,
@@ -611,6 +622,7 @@ const fontDialog = reactive({
     font_family: '',
     size: 0,
     woff_size: 0,
+    supports_vietnamese: false, // [TINIX]
   },
 })
 const fontFormRef = ref<FormInstance | null>(null)
@@ -648,6 +660,7 @@ function openFontDialog(row?: adminApi.TAdminFontItem) {
     fontDialog.form.preview = row.preview
     fontDialog.form.lang = row.lang === 'en' ? 'en' : 'zh'
     fontDialog.form.font_family = row.font_family
+    fontDialog.form.supports_vietnamese = !!row.supports_vietnamese // [TINIX]
   } else {
     fontDialog.title = t('admin.font.add')
   }
@@ -1019,6 +1032,7 @@ async function submitFont() {
       font_family: fontDialog.form.font_family.trim(),
       size: Number(fontDialog.form.size) || 0,
       woff_size: Number(fontDialog.form.woff_size) || 0,
+      supports_vietnamese: !!fontDialog.form.supports_vietnamese, // [TINIX]
     }
     const res: any = fontDialog.form.id
       ? await adminApi.updateFont({ ...data, id: fontDialog.form.id })
