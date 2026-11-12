@@ -25,6 +25,10 @@ const ROLE_FALLBACK: Record<PartKey, string[]> = {
 
 const fontClass = (f: LibFont) => ({ id: f.id, alias: f.alias, value: f.value, url: f.woff })
 
+// [TINIX] font có chữ Hán (font Trung Quốc có sẵn trong kho: tên font viết bằng chữ Hán)
+const CJK_CHAR = /[぀-ヿ㐀-鿿가-힯]/
+const isCjkFont = (f: LibFont) => CJK_CHAR.test(f.alias) && !f.supports_vietnamese
+
 function pickFont(name: string, role: PartKey, fonts: LibFont[]): LibFont | null {
   return resolveFont(name, fonts) || ROLE_FALLBACK[role].map((n) => resolveFont(n, fonts)).find(Boolean) || fonts[0] || null
 }
@@ -163,7 +167,8 @@ const ROLE_TO_PART: Record<string, PartKey> = { title: 'title', subtitle: 'subti
 export async function rebuildFromReference(input: { reference: string; photo?: string; lang?: string; mode?: string }) {
   const faithful = input.mode !== 'creative'
   const lang = input.lang === 'en' ? 'en' : 'vi'
-  const fonts = libraryFonts(faithful ? true : lang === 'vi')
+  // Giống mẫu: lấy cả font chữ Hán (mẫu có thể là tiếng Trung/Nhật/Hàn); sau đó ép đúng loại font theo chữ thực tế
+  const fonts = libraryFonts(faithful ? false : lang === 'vi')
   if (!fonts.length) throw new Error('Kho font trống — chạy "npm run tinix:fonts" trước.')
   const reference = await prepareImage(input.reference, faithful ? 1600 : 1280)
   const photo = !faithful && input.photo ? await prepareImage(input.photo, 768) : ''
@@ -179,7 +184,7 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
   const { data, jobId, model } = await callVisionJSON({
     kind: 'rebuild',
     system: faithful ? P.REBUILD_FAITHFUL_SYSTEM : P.REBUILD_SYSTEM,
-    text: faithful ? P.rebuildFaithfulUser({ fonts: fontListForPrompt(fonts) }) : P.rebuildUser({ lang, hasPhoto: !!photo, studio, fonts: fontListForPrompt(fonts) }),
+    text: faithful ? P.rebuildFaithfulUser({ fonts: fonts.map((f) => fontListForPrompt([f]) + (isCjkFont(f) ? ' | CHỈ DÙNG CHO CHỮ HÁN/NHẬT/HÀN' : ' | chữ Latin/Việt')).join('\n') }) : P.rebuildUser({ lang, hasPhoto: !!photo, studio, fonts: fontListForPrompt(fonts) }),
     images,
     temperature: faithful ? 0.2 : 0.6,
     timeoutMs: 150000,
@@ -220,7 +225,11 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
 
   for (const r of data.regions as any[]) {
     if (r.type !== 'text') continue
-    const f = pickFont(r.fontFamily, ROLE_TO_PART[r.role] || 'body', fonts)
+    // chữ Hán/Nhật/Hàn → chỉ font CJK; chữ Latin/Việt → loại font CJK (chữ Hán sẽ rỗng/vỡ nếu sai loại)
+    const cjkText = CJK_CHAR.test(String(r.text))
+    const pool = faithful ? fonts.filter((x) => isCjkFont(x) === cjkText) : fonts
+    const cjkDefault = pool.find((x) => x.category === 'display') || pool[0]
+    const f = (cjkText && faithful ? resolveFont(r.fontFamily, pool) || cjkDefault : null) || pickFont(r.fontFamily, ROLE_TO_PART[r.role] || 'body', pool.length ? pool : fonts)
     r.fontClass = f ? fontClass(f) : null
     r.fontFamily = f ? f.value : r.fontFamily
   }

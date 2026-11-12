@@ -43,9 +43,14 @@ export function extractJson(text: string): any {
 }
 
 function apiError(e: any): string {
-  const data = e && e.response && e.response.data
-  const msg = (data && ((data.error && data.error.message) || data.message || data.msg)) || (e && e.message) || 'Lỗi không xác định'
-  return String(msg)
+  let data = e && e.response && e.response.data
+  if (Array.isArray(data)) data = data[0] // Gemini's OpenAI endpoint returns errors as [{ error: {...} }]
+  const status = e && e.response && e.response.status
+  const detail = (data && ((data.error && data.error.message) || data.message || data.msg)) || ''
+  const msg = String(detail || (e && e.message) || 'Lỗi không xác định').slice(0, 300)
+  // [TINIX] 429 = hết hạn mức (gói miễn phí hay gặp): nói rõ để người dùng biết chờ hoặc đổi gói
+  if (status === 429) return msg + ' — vượt hạn mức gọi API của nhà cung cấp (gói miễn phí giới hạn số lần/phút và số lần/ngày). Chờ khoảng 1 phút rồi thử lại, hoặc kiểm tra hạn mức trong trang quản lý của nhà cung cấp.'
+  return msg
 }
 
 export type VisionCall<T> = {
