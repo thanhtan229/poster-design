@@ -20,12 +20,12 @@ const MAX_ELEMENTS = 80
 export type CleanSvg = { svg: string; viewW: number; viewH: number }
 
 /** Trả về svg đã lọc, hoặc null nếu không còn gì để vẽ. */
-export function cleanSvg(raw: any): CleanSvg | null {
+export function cleanSvg(raw: any, fallbackViewBox?: any): CleanSvg | null {
   if (typeof raw !== 'string') return null
   const src = raw.trim().slice(0, 20000)
-  const root = /<svg\b([^>]*)>/i.exec(src)
-  if (!root) return null
-  const vb = /viewBox\s*=\s*"([^"]*)"/i.exec(root[1])
+  // AI đôi khi chỉ trả các thẻ con (không có <svg>) hoặc để viewBox ở trường riêng: vẫn nhận
+  const root = /<svg\b([^>]*)>/i.exec(src) || ['', '']
+  const vb = /viewBox\s*=\s*["']([^"']*)["']/i.exec(root[1]) || (typeof fallbackViewBox === 'string' ? [fallbackViewBox, fallbackViewBox] : null)
   let viewW = 100
   let viewH = 100
   if (vb) {

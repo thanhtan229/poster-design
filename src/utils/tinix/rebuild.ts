@@ -51,7 +51,7 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
       // [TINIX] biểu tượng / nét trang trí do AI vẽ (server đã lọc SVG an toàn)
       const w = JSON.parse(JSON.stringify(wSvgSetting))
       const svg = String(r.svg).replace('<svg ', `<svg width="${width}" height="${height}" `)
-      Object.assign(w, { name: 'AI · Nét trang trí', svgUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg), colors: [], left, top, width, height })
+      Object.assign(w, { name: 'AI · Nét trang trí', svgUrl: svg /* wSvg parses this string as SVG markup (Snap.parse), not as a URL */, colors: [], left, top, width, height })
       w.record = { ...(w.record || {}), width, height }
       out.push(w)
     } else {

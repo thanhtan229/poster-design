@@ -28,6 +28,17 @@ export async function prepareImage(input: string, maxEdge = 1024): Promise<strin
   return `data:image/jpeg;base64,${out.toString('base64')}`
 }
 
+/** [TINIX] Pixel size of a data URL image (used to turn pixel boxes the model sometimes returns into 0..1 ratios). */
+export async function imageSize(dataUrl: string): Promise<{ w: number; h: number } | null> {
+  try {
+    const base64 = String(dataUrl || '').replace(/^data:[^;]+;base64,/, '')
+    const meta = await sharp(Buffer.from(base64, 'base64')).metadata()
+    return meta.width && meta.height ? { w: meta.width, h: meta.height } : null
+  } catch (e) {
+    return null
+  }
+}
+
 /** Pull the first JSON object/array out of a model answer. */
 export function extractJson(text: string): any {
   const s = String(text || '').trim()

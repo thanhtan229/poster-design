@@ -2,7 +2,7 @@
  * [TINIX] AI features: suggest text, rewrite text, find font, tag fonts.
  * Coordinates returned to the editor are ratios 0..1 (CLAUDE.md); the frontend converts to px.
  */
-import { callVisionJSON, prepareImage } from './vision'
+import { callVisionJSON, prepareImage, imageSize } from './vision'
 import * as P from './prompts'
 import { obj, arr, str, num01, oneOf, color, bool } from './validate'
 import { libraryFonts, fontListForPrompt, resolveFont, rankFonts, LibFont } from './fonts'
@@ -175,8 +175,13 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
   const images = photo ? [reference, photo] : [reference]
   const studio = getTinixAiSettings().studio_name
 
+  const refSize = await imageSize(reference)
   const bbox = (b: any, path: string) => {
-    const o = obj(b, path)
+    let o = obj(b, path)
+    // [TINIX] đôi khi AI trả toạ độ pixel (vd x=239, w=724) thay vì tỉ lệ 0..1: đổi theo kích thước ảnh nó đã nhìn thấy
+    if (refSize && [o.x, o.y, o.w, o.h].some((v) => Number(v) > 1.5)) {
+      o = { x: Number(o.x) / refSize.w, y: Number(o.y) / refSize.h, w: Number(o.w) / refSize.w, h: Number(o.h) / refSize.h }
+    }
     const x = num01(o.x, `${path}.x`), y = num01(o.y, `${path}.y`)
     return { x, y, w: Math.max(0.005, Math.min(1 - x, num01(o.w, `${path}.w`))), h: Math.max(0.005, Math.min(1 - y, num01(o.h, `${path}.h`))) }
   }
@@ -191,11 +196,14 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
     inputSummary: { lang, hasPhoto: !!photo, mode: faithful ? 'faithful' : 'creative' },
     validate: (v) => {
       const o = obj(v, 'root')
+      let droppedSvg = 0
       const regions = arr(o.regions, 'regions', 1, 30).map((r: any, i: number) => {
         const p = `regions[${i}]`
         const type = oneOf(r.type, ['text', 'photo', 'shape', 'svg'] as const, 'shape')
         const base = { type, bbox: bbox(r.bbox, `${p}.bbox`), z: Number.isFinite(Number(r.z)) ? Number(r.z) : i }
         if (type === 'text') {
+          // [TINIX] AI đôi khi trả bbox suy biến (vd x=1,y=1,w=0.005): ném lỗi để gọi lại một lần thay vì dựng chữ vô hình
+          if (base.bbox.w < 0.02 || base.bbox.h < 0.008) throw new Error(`${p}.bbox quá nhỏ (${base.bbox.w} × ${base.bbox.h})`)
           return {
             ...base,
             role: oneOf(r.role, ROLES, 'other'),
@@ -213,13 +221,16 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
         }
         if (type === 'shape') return { ...base, shape: oneOf(r.shape, ['rect', 'rounded', 'ellipse', 'line'] as const, 'rect'), color: color(r.color, '#dddddd'), opacity: Math.min(1, Math.max(0.05, Number(r.opacity) || 1)) }
         if (type === 'svg') {
-          const clean = cleanSvg(r.svg)
+          const clean = cleanSvg(r.svg, r.viewBox)
+          if (!clean) droppedSvg++
           return clean ? { ...base, svg: clean.svg, viewW: clean.viewW, viewH: clean.viewH } : null
         }
         return base
       }).filter((r: any) => !!r)
       if (!regions.some((r: any) => r.type === 'text')) throw new Error('regions: không có khối chữ nào')
-      return { background: color(o.background, '#ffffff'), regions, notes: str(o.notes, 'notes', { optional: true, max: 400 }) }
+      let notes = str(o.notes, 'notes', { optional: true, max: 400 })
+      if (droppedSvg) notes = (notes ? notes + ' ' : '') + `(${droppedSvg} nét trang trí bị bỏ vì SVG của AI không hợp lệ — thử phân tích lại để có đủ.)`
+      return { background: color(o.background, '#ffffff'), regions, notes }
     },
   })
 
