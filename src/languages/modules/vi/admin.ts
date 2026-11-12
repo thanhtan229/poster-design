@@ -80,6 +80,7 @@ export default {
     language: 'Ngôn ngữ',
     english: 'Tiếng Anh',
     chinese: 'Tiếng Trung',
+    korean: 'Tiếng Hàn',
     createdAt: 'Ngày tạo',
     preview: 'Xem trước',
     size: 'Kích thước',

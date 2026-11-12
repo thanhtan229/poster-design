@@ -266,7 +266,7 @@ export default {
     if (typeof value !== 'string' || !value.trim()) return send.error(res, 'Giá trị value của font không được để trống')
     if (typeof woff !== 'string' || !woff.trim()) return send.error(res, 'Liên kết woff không được để trống')
     // lang 兜底为 'zh'，非字符串则视为 'zh'
-    const langValue = lang === 'en' ? 'en' : 'zh'
+    const langValue = lang === 'en' || lang === 'ko' ? lang : 'zh' // [TINIX] thêm ko (tiếng Hàn)
     // 数值字段：上游可能给空串 / null，统一安全降级为 0
     const toSafeNumber = (v: any) => {
       const n = Number(v)
@@ -297,7 +297,7 @@ export default {
     const updated = fontsRepo.updateFont(Number(id), {
       alias: alias.trim(), value: value.trim(), woff: woff.trim(),
       preview: typeof preview === 'string' ? preview : '',
-      ttf: typeof ttf === 'string' ? ttf : '', lang: lang === 'en' ? 'en' : 'zh',
+      ttf: typeof ttf === 'string' ? ttf : '', lang: lang === 'en' || lang === 'ko' ? lang : 'zh', // [TINIX] ko
       font_family: typeof font_family === 'string' ? font_family : '',
       supports_vietnamese: supports_vietnamese === true || supports_vietnamese === 1 || supports_vietnamese === '1', // [TINIX]
     } as any)

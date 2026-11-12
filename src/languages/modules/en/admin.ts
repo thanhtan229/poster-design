@@ -79,6 +79,7 @@ export default {
     language: 'Language',
     english: 'English',
     chinese: 'Chinese',
+    korean: 'Korean',
     createdAt: 'Created',
     preview: 'Preview',
     size: 'Size',

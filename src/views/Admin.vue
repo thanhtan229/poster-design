@@ -227,7 +227,7 @@
             <el-table-column prop="value" label="value" min-width="140" show-overflow-tooltip />
             <el-table-column :label="t('admin.v.language')" width="80">
               <template #default="{ row }">
-                <el-tag size="small" :type="row.lang === 'en' ? 'warning' : 'success'">{{ row.lang === 'en' ? t('admin.v.english') : t('admin.v.chinese') }}</el-tag>
+                <el-tag size="small" :type="row.lang === 'en' ? 'warning' : row.lang === 'ko' ? 'info' : 'success'">{{ row.lang === 'en' ? t('admin.v.english') : row.lang === 'ko' ? t('admin.v.korean') : t('admin.v.chinese') }}</el-tag>
               </template>
             </el-table-column>
             <!-- [TINIX] cờ hỗ trợ tiếng Việt (AI chỉ gợi ý font có cờ này ở chế độ tiếng Việt) -->
@@ -458,6 +458,7 @@
           <el-radio-group v-model="fontDialog.form.lang">
             <el-radio value="zh">{{ t('admin.v.chinese') }}</el-radio>
             <el-radio value="en">{{ t('admin.v.english') }}</el-radio>
+            <el-radio value="ko">{{ t('admin.v.korean') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="t('tinix.ui.adminExtra.tiengViet')">
@@ -618,7 +619,7 @@ const fontDialog = reactive({
     woff: '',
     ttf: '',
     preview: '',
-    lang: 'zh' as 'zh' | 'en',
+    lang: 'zh' as 'zh' | 'en' | 'ko',
     font_family: '',
     size: 0,
     woff_size: 0,
@@ -658,7 +659,7 @@ function openFontDialog(row?: adminApi.TAdminFontItem) {
     fontDialog.form.woff = row.woff
     fontDialog.form.ttf = row.ttf
     fontDialog.form.preview = row.preview
-    fontDialog.form.lang = row.lang === 'en' ? 'en' : 'zh'
+    fontDialog.form.lang = row.lang === 'en' || row.lang === 'ko' ? row.lang : 'zh'
     fontDialog.form.font_family = row.font_family
     fontDialog.form.supports_vietnamese = !!row.supports_vietnamese // [TINIX]
   } else {
