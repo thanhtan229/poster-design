@@ -68,6 +68,6 @@ export function cleanSvg(raw: any, fallbackViewBox?: any): CleanSvg | null {
   else if (closes > opens) return null
   if (!drawable || inner.length > MAX_INNER) return null
 
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + viewW + ' ' + viewH + '" preserveAspectRatio="none">' + inner + '</svg>'
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + viewW + ' ' + viewH + '" preserveAspectRatio="xMidYMid meet">' + inner + '</svg>'
   return { svg, viewW, viewH }
 }

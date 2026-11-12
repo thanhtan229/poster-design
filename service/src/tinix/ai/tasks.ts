@@ -221,6 +221,8 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
         }
         if (type === 'shape') return { ...base, shape: oneOf(r.shape, ['rect', 'rounded', 'ellipse', 'line'] as const, 'rect'), color: color(r.color, '#dddddd'), opacity: Math.min(1, Math.max(0.05, Number(r.opacity) || 1)) }
         if (type === 'svg') {
+          // [TINIX] svg phủ gần hết trang = AI gộp mọi nét vào một hình: ném lỗi để gọi lại một lần (kèm lời nhắc của validator)
+          if (base.bbox.w > 0.6 && base.bbox.h > 0.6) throw new Error(`${p}: svg phủ cả trang — mỗi hình phải là một vùng svg riêng, bbox ôm sát hình`)
           const clean = cleanSvg(r.svg, r.viewBox)
           if (!clean) droppedSvg++
           return clean ? { ...base, svg: clean.svg, viewW: clean.viewW, viewH: clean.viewH } : null

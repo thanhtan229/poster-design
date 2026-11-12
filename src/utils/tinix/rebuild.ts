@@ -12,9 +12,10 @@ export type TRebuildRegion = Record<string, any> & { type: 'text' | 'photo' | 's
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] as string))
 
 /** Grey dashed frame with a hint — the user swaps it with "Thay ảnh". */
-export function photoPlaceholder(w: number, h: number): string {
+export function photoPlaceholder(w: number, h: number, dark = false): string {
+  const bg = dark ? '#7f8490' : '#e9e9ee', line = dark ? '#b9bcc7' : '#b4b4c2', label = dark ? '#e4e5ea' : '#8a8a99'
   const fs = Math.max(14, Math.round(Math.min(w, h) / 14))
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}"><rect width="100%" height="100%" fill="#e9e9ee"/><rect x="${fs / 2}" y="${fs / 2}" width="${Math.max(1, w - fs)}" height="${Math.max(1, h - fs)}" fill="none" stroke="#b4b4c2" stroke-width="${Math.max(2, fs / 6)}" stroke-dasharray="${fs} ${fs / 1.5}"/><text x="50%" y="50%" font-family="sans-serif" font-size="${fs}" fill="#8a8a99" text-anchor="middle" dominant-baseline="middle">${esc('Ảnh của bạn')}</text></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}"><rect width="100%" height="100%" fill="${bg}"/><rect x="${fs / 2}" y="${fs / 2}" width="${Math.max(1, w - fs)}" height="${Math.max(1, h - fs)}" fill="none" stroke="${line}" stroke-width="${Math.max(2, fs / 6)}" stroke-dasharray="${fs} ${fs / 1.5}"/><text x="50%" y="50%" font-family="sans-serif" font-size="${fs}" fill="${label}" text-anchor="middle" dominant-baseline="middle">${esc('Ảnh của bạn')}</text></svg>`
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 }
 
@@ -32,13 +33,22 @@ function shapeSvg(shape: string, color: string, w: number, h: number): string {
 export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { width: number; height: number }) {
   const W = page.width, H = page.height
   const out: any[] = []
+  // [TINIX] mẫu có chữ sáng nằm đè ảnh: dùng khung ảnh tối hơn để chữ trắng vẫn nhìn thấy khi chưa thay ảnh
+  const lum = (hex: string) => {
+    const h6 = String(hex || '#222222').replace('#', '')
+    const full = h6.length === 3 ? h6.split('').map((c) => c + c).join('') : h6.slice(0, 6)
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) || 0)
+    return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
+  }
+  const texts = regions.filter((r) => r.type === 'text')
+  const lightText = texts.length > 0 && texts.filter((r) => lum(r.color) > 0.75).length / texts.length >= 0.5
   for (const r of regions) {
     const left = Math.round(r.bbox.x * W), top = Math.round(r.bbox.y * H)
     const width = Math.max(10, Math.round(r.bbox.w * W)), height = Math.max(4, Math.round(r.bbox.h * H))
 
     if (r.type === 'photo') {
       const w = JSON.parse(JSON.stringify(wImageSetting))
-      Object.assign(w, { name: 'AI · Khung ảnh', imgUrl: photoPlaceholder(width, height), left, top, width, height })
+      Object.assign(w, { name: 'AI · Khung ảnh', imgUrl: photoPlaceholder(width, height, lightText), left, top, width, height })
       out.push(w)
     } else if (r.type === 'shape') {
       const thin = r.shape === 'line'

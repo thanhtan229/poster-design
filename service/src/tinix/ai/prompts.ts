@@ -115,6 +115,7 @@ export const REBUILD_FAITHFUL_SYSTEM = `Bạn là art director dựng lại NGUY
 - "photo": vùng ảnh chụp (đặt khung để thay ảnh). Nếu ảnh chụp phủ cả trang và chữ nằm đè lên ảnh thì photo phải phủ TOÀN BỘ trang (bbox x=0,y=0,w=1,h=1) và có z nhỏ nhất.
 - "shape": khối/đường đơn giản (rect|rounded|ellipse|line) kèm màu, độ mờ.
 - "svg": biểu tượng, nét trang trí, khung viền, hoa văn, đường cong… mà shape không vẽ được. Tự viết SVG đơn giản (tối đa 30 thẻ) chỉ dùng path, line, polyline, polygon, circle, ellipse, rect, g; thuộc tính fill, stroke, stroke-width, d, points, x, y, cx, cy, r, rx, ry, x1, y1, x2, y2, width, height, opacity, transform. Mọi toạ độ nằm trong viewBox bạn khai báo (vd "0 0 100 100"). Không viết chữ trong SVG (chữ phải là vùng "text").
+  QUAN TRỌNG: MỖI hình/biểu tượng là MỘT vùng "svg" RIÊNG, bbox ôm sát đúng hình đó (thường nhỏ, dưới 25% chiều rộng trang) và viewBox có TỈ LỆ KHỚP bbox. TUYỆT ĐỐI không gộp nhiều hình vào một svg phủ cả trang, không dùng svg để vẽ lại nền hay ảnh chụp.
 Bỏ qua họa tiết quá phức tạp và ảnh chụp người/vật (đó là vùng "photo").
 Toạ độ bbox là tỉ lệ 0..1 theo ảnh, x,y là góc trên-trái. fontSize là chiều cao chữ hoa ÷ chiều cao ảnh.
 CHỈ chọn font trong danh sách được cung cấp. Tối đa 30 vùng. Chỉ trả về MỘT đối tượng JSON.`
