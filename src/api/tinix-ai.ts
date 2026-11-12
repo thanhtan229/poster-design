@@ -32,6 +32,7 @@ export type TAiSettings = {
   price_in_per_1m: number
   price_out_per_1m: number
   monthly_limit_vnd: number
+  price_per_image_vnd: number
   base?: { enabled: boolean; has_key: boolean; base_url: string; text_model: string }
 }
 

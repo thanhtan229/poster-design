@@ -4,10 +4,12 @@
 import { getDB } from '../../db'
 import { getTinixAiSettings } from './settings'
 
-export type AiJobKind = 'suggest_text' | 'rewrite_text' | 'find_font' | 'tag_fonts' | 'rebuild'
+export type AiJobKind = 'suggest_text' | 'rewrite_text' | 'find_font' | 'tag_fonts' | 'rebuild' | 'image'
 
-export function estimateCost(tokensIn: number, tokensOut: number): number {
+export function estimateCost(tokensIn: number, tokensOut: number, kind?: AiJobKind): number {
   const s = getTinixAiSettings()
+  // ảnh tạo ra: ưu tiên đơn giá mỗi ảnh do bạn nhập (giá ảnh tính theo token ảnh nên khác giá chữ)
+  if (kind === 'image' && s.price_per_image_vnd > 0) return s.price_per_image_vnd
   return Math.round(((tokensIn * s.price_in_per_1m + tokensOut * s.price_out_per_1m) / 1e6) * 100) / 100
 }
 
@@ -35,7 +37,7 @@ export function logJob(job: {
       model: job.model || '',
       tokensIn,
       tokensOut,
-      cost: estimateCost(tokensIn, tokensOut),
+      cost: job.status === 'ok' || job.kind !== 'image' ? estimateCost(tokensIn, tokensOut, job.kind) : 0,
       status: job.status,
       error: String(job.error || '').slice(0, 2000),
     })

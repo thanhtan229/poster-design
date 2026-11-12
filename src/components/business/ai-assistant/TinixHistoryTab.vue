@@ -33,7 +33,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import * as tinixAi from '@/api/tinix-ai'
 
-const KIND: Record<string, string> = { suggest_text: 'Gợi ý chữ', rewrite_text: 'Sửa chữ', find_font: 'Tìm font', tag_fonts: 'Gắn tag font', rebuild: 'Dựng theo mẫu' }
+const KIND: Record<string, string> = { suggest_text: 'Gợi ý chữ', rewrite_text: 'Sửa chữ', find_font: 'Tìm font', tag_fonts: 'Gắn tag font', rebuild: 'Dựng theo mẫu', image: 'Tạo ảnh' }
 const jobs = ref<any[]>([])
 const usage = reactive({ month: '', jobs: 0, cost_vnd: 0, limit_vnd: 0 })
 const vnd = (n: number) => `${Math.round(Number(n) || 0).toLocaleString('vi-VN')}đ`

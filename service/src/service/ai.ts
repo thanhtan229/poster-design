@@ -21,6 +21,7 @@ import { send, checkCreateFolder, randomCode } from '../utils/tools'
 import { getRequestUser } from '../utils/auth'
 import { getAiSettings, saveAiSettingsInput, AiSettings, AiImageSizeMode } from '../db/settings'
 import { addUserImage } from '../db/userImages'
+import { logJob, assertWithinMonthlyLimit } from '../tinix/ai/cost-log' // [TINIX] lịch sử + giới hạn chi phí cho cả lần tạo ảnh
 
 /**
  * 各尺寸模式下「宽高比 → 供应商 size 参数」的映射。
@@ -253,6 +254,13 @@ export default {
     const ratio = typeof req.body?.ratio === 'string' ? req.body.ratio.trim() : '1:1'
     if (!prompt) return send.error(res, 'Vui lòng nhập mô tả ảnh')
     const size = resolveImageSize(ratio, config.image_size_mode)
+    // [TINIX] chạm giới hạn chi phí tháng thì không tạo ảnh nữa
+    try {
+      assertWithinMonthlyLimit()
+    } catch (e) {
+      return send.error(res, e?.message || 'Đã chạm giới hạn chi phí AI tháng này')
+    }
+    const jobInput = { prompt: prompt.slice(0, 300), ratio, size }
     try {
       // 注意：utils/http 的 axios 拦截器已将响应解包为 body，类型断言绕开 AxiosResponse 类型
       const body: any = await axios.post(
@@ -261,15 +269,28 @@ export default {
         { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 120000 } // [TINIX] ảnh lớn có thể >60s
       )
       const buffer = await resolveImageBuffer(body)
-      if (!buffer || !buffer.length) return send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      // [TINIX] token dùng (nếu nhà cung cấp trả về `usage`) để ghi lịch sử/chi phí
+      const usage = body && body.usage ? body.usage : {}
+      const tokensIn = Number(usage.input_tokens ?? usage.prompt_tokens) || 0
+      const tokensOut = Number(usage.output_tokens ?? usage.completion_tokens) || 0
+      if (!buffer || !buffer.length) {
+        logJob({ kind: 'image', input: jobInput, model: config.image_model, tokensIn, tokensOut, status: 'error', error: 'Nhà cung cấp không trả về ảnh' })
+        return send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      }
       const saved = saveGeneratedImage(buffer)
-      if (!saved) return send.error(res, 'Ảnh do AI tạo không hợp lệ, vui lòng thử lại')
+      if (!saved) {
+        logJob({ kind: 'image', input: jobInput, model: config.image_model, tokensIn, tokensOut, status: 'error', error: 'Ảnh không hợp lệ' })
+        return send.error(res, 'Ảnh do AI tạo không hợp lệ, vui lòng thử lại')
+      }
       addUserImage(user.id, saved.url, saved.width, saved.height)
+      logJob({ kind: 'image', input: jobInput, output: saved, model: config.image_model, tokensIn, tokensOut, status: 'ok' })
       send.success(res, saved)
     } catch (e) {
       console.error('[ai] 文生图失败:', e?.message)
+      const detail = extractApiErrorMessage(e).slice(0, 300)
+      logJob({ kind: 'image', input: jobInput, model: config.image_model, status: 'error', error: detail })
       // [TINIX] trả lỗi thật của nhà cung cấp (key đã được che) để biết vì sao thất bại
-      send.error(res, `Tạo ảnh bằng AI thất bại: ${extractApiErrorMessage(e).slice(0, 300)}`)
+      send.error(res, `Tạo ảnh bằng AI thất bại: ${detail}`)
     }
   },
 

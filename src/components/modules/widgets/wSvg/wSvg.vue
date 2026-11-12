@@ -201,7 +201,21 @@ function loadSvg() {
         // 链接加载方法
     //   },
     // )
-    const svg = Snap.parse(props.params.svgUrl)
+    // [TINIX] svgUrl phải là mã SVG: nhận thêm data URL (giải mã) và bỏ qua dữ liệu hỏng thay vì ném lỗi chưa bắt
+    let markup: string = String(props.params.svgUrl || '')
+    if (/^data:image\/svg\+xml/i.test(markup)) {
+      try {
+        markup = decodeURIComponent(markup.slice(markup.indexOf(',') + 1))
+      } catch (e) {
+        /* giữ nguyên */
+      }
+    }
+    if (!/^\s*<svg/i.test(markup)) {
+      console.warn('[tinix] wSvg: svgUrl không phải mã SVG, bỏ qua', props.params.uuid)
+      resolve()
+      return
+    }
+    const svg = Snap.parse(markup)
     let svg2 = Snap(svg.node)
         let items = svg2.node.childNodes
         svg2.node.removeAttribute('width')

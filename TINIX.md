@@ -22,6 +22,9 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `package.json` | Thêm phụ thuộc `ag-psd` (MIT); script `tinix:test-ai` | Bộ đọc PSD mới; tự kiểm tra AI |
 | `src/views/components/HeaderOptions.vue`, `Folder.vue`, `src/views/Index.vue` | Mục **Tệp → Lưu thành mẫu (công khai)** (chỉ admin): `saveAsTemplate()` gọi `/api/admin/template/save` với `dLayouts`, mẫu hiện ngay ở thẻ "Mẫu thiết kế" (tải lại trang để thấy) | Lưu thiết kế thành mẫu mà không cần nhập PSD |
 | `service/src/service/ai.ts` | Nút **Tạo ảnh** (upstream): thư mục `static/ai` tạo đệ quy (`checkCreateFolder` không tạo được đường dẫn Windows); lỗi nhà cung cấp trả về nguyên nhân thật | Tạo ảnh chạy được trên Windows; dùng `gpt-image-2` của OpenAI |
+| `service/src/service/ai.ts` (thêm) | Lần tạo ảnh được ghi vào `ai_jobs` (loại `image`, token từ `usage`) và bị chặn khi chạm giới hạn chi phí tháng; kích thước ảnh nhận tỉ lệ tùy ý `W:H` | Chi phí/lịch sử đủ cả ảnh |
+| `src/components/modules/panel/wrap/TempListWrap.vue` | Lắng nghe sự kiện `tinix:templates-changed` để tải lại danh sách mẫu | Lưu thành mẫu xong thấy ngay |
+| `src/components/modules/widgets/wSvg/wSvg.vue` | `loadSvg` nhận cả data URL và bỏ qua `svgUrl` không phải mã SVG (không ném lỗi chưa bắt) | Dữ liệu SVG sai định dạng không làm vỡ widget |
 | `service/src/main.ts` | Mount `tinixAiRouter` (`/api/tinix/ai/*`) sau router gốc | Các tính năng AI của TinixPoster |
 | `src/components/business/ai-assistant/AiAssistant.vue` | Thêm 5 tab (Gợi ý chữ, Sửa chữ, Tìm font, Lịch sử, Cài đặt AI), mặc định mở "Gợi ý chữ", Việt hóa 3 tab cũ, rộng 780px | Trợ lý AI |
 | `src/store/design/widget/actions/template.ts` | `setTemplate()` không còn `constrainGroupToCanvas` | Mở mẫu nguyên trang từng bị co nhỏ cả mẫu (vd 937px → 204px) khi 1 lớp tràn mép, và co theo khổ trang cũ |

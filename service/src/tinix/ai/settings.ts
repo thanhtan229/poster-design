@@ -11,6 +11,7 @@ export type TinixAiSettings = {
   price_in_per_1m: number // VND per 1M input tokens
   price_out_per_1m: number // VND per 1M output tokens
   monthly_limit_vnd: number // 0 = no limit
+  price_per_image_vnd: number // VND per generated image (0 = estimate from tokens)
 }
 
 const num = (v: any, def = 0) => {
@@ -31,6 +32,7 @@ export function getTinixAiSettings(): TinixAiSettings {
     price_in_per_1m: num(getSetting('tinix_price_in_per_1m')),
     price_out_per_1m: num(getSetting('tinix_price_out_per_1m')),
     monthly_limit_vnd: num(getSetting('tinix_monthly_limit_vnd')),
+    price_per_image_vnd: num(getSetting('tinix_price_per_image_vnd')),
   }
 }
 
@@ -40,5 +42,6 @@ export function saveTinixAiSettings(input: Partial<TinixAiSettings>): TinixAiSet
   if (input.price_in_per_1m !== undefined) setSetting('tinix_price_in_per_1m', String(num(input.price_in_per_1m)))
   if (input.price_out_per_1m !== undefined) setSetting('tinix_price_out_per_1m', String(num(input.price_out_per_1m)))
   if (input.monthly_limit_vnd !== undefined) setSetting('tinix_monthly_limit_vnd', String(num(input.monthly_limit_vnd)))
+  if (input.price_per_image_vnd !== undefined) setSetting('tinix_price_per_image_vnd', String(num(input.price_per_image_vnd)))
   return getTinixAiSettings()
 }

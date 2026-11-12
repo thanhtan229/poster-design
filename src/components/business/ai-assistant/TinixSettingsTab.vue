@@ -14,10 +14,12 @@
       <el-input-number v-model="form.price_in_per_1m" size="small" :min="0" :step="1000" controls-position="right" />
       <span>Đơn giá ra (đ / 1 triệu token)</span>
       <el-input-number v-model="form.price_out_per_1m" size="small" :min="0" :step="1000" controls-position="right" />
+      <span>Đơn giá mỗi ảnh tạo ra (đ)</span>
+      <el-input-number v-model="form.price_per_image_vnd" size="small" :min="0" :step="500" controls-position="right" />
       <span>Giới hạn chi phí / tháng (đ)</span>
       <el-input-number v-model="form.monthly_limit_vnd" size="small" :min="0" :step="10000" controls-position="right" />
     </div>
-    <p class="tx-hint">Đơn giá lấy theo bảng giá của nhà cung cấp AI (đổi sang VNĐ). Giới hạn 0 = không giới hạn.</p>
+    <p class="tx-hint">Đơn giá lấy theo bảng giá của nhà cung cấp AI (đổi sang VNĐ). Đơn giá mỗi ảnh: nhập giá một lần tạo ảnh (để 0 = tính theo token nếu nhà cung cấp trả về). Giới hạn 0 = không giới hạn; lần tạo ảnh cũng được tính vào giới hạn.</p>
     <div class="tx-row">
       <el-button type="primary" size="small" :loading="state.saving" @click="save">Lưu cài đặt</el-button>
       <el-button size="small" :loading="state.tagging" @click="tag">AI gắn tag cho font chưa có tag</el-button>
@@ -31,7 +33,7 @@ import { ElMessage, ElInputNumber } from 'element-plus'
 import * as tinixAi from '@/api/tinix-ai'
 import type { TAiSettings } from '@/api/tinix-ai'
 
-const form = reactive({ vision_model: '', studio_name: '', price_in_per_1m: 0, price_out_per_1m: 0, monthly_limit_vnd: 0 })
+const form = reactive({ vision_model: '', studio_name: '', price_in_per_1m: 0, price_out_per_1m: 0, monthly_limit_vnd: 0, price_per_image_vnd: 0 })
 const base = ref<TAiSettings['base'] | null>(null)
 const state = reactive({ saving: false, tagging: false })
 
@@ -39,7 +41,7 @@ async function load() {
   const res = await tinixAi.getSettings()
   if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Không đọc được cài đặt')
   const s = res as TAiSettings
-  Object.assign(form, { vision_model: s.vision_model, studio_name: s.studio_name, price_in_per_1m: s.price_in_per_1m, price_out_per_1m: s.price_out_per_1m, monthly_limit_vnd: s.monthly_limit_vnd })
+  Object.assign(form, { vision_model: s.vision_model, studio_name: s.studio_name, price_in_per_1m: s.price_in_per_1m, price_out_per_1m: s.price_out_per_1m, monthly_limit_vnd: s.monthly_limit_vnd, price_per_image_vnd: s.price_per_image_vnd || 0 })
   base.value = s.base || null
 }
 async function save() {

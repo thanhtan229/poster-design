@@ -171,6 +171,7 @@ async function saveAsTemplate() {
       width: Number(dPage.value.width),
       height: Number(dPage.value.height),
     })
+    window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách Mẫu thiết kế
     useNotification('Đã lưu thành mẫu', `Mẫu #${id} đã hiện ở thẻ "Mẫu thiết kế" (bên trái).`)
   } catch (error: any) {
     useNotification('Lưu thành mẫu không thành công', error?.msg || error?.message || 'Vui lòng thử lại.', { type: 'error' })

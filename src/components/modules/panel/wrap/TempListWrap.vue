@@ -31,7 +31,7 @@
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/api'
 
 import { LocationQueryValue, useRoute, useRouter } from 'vue-router'
@@ -95,6 +95,11 @@ const isAdmin = (() => {
 edit && isAdmin && userStore.managerEdit(true)
 
 // onMounted(async () => {})
+
+// [TINIX] "Tệp → Lưu thành mẫu" phát sự kiện này: tải lại danh sách để thấy mẫu mới ngay
+const onTemplatesChanged = () => load(true, pageOptions.state)
+onMounted(() => window.addEventListener('tinix:templates-changed', onTemplatesChanged))
+onBeforeUnmount(() => window.removeEventListener('tinix:templates-changed', onTemplatesChanged))
 
 const load = async (init: boolean = false, stat?: string) => {
   stat && (pageOptions.state = stat)
