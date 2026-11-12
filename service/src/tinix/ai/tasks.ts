@@ -232,7 +232,7 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
       if (!regions.some((r: any) => r.type === 'text')) throw new Error('regions: không có khối chữ nào')
       let notes = str(o.notes, 'notes', { optional: true, max: 400 })
       if (droppedSvg) notes = (notes ? notes + ' ' : '') + `(${droppedSvg} nét trang trí bị bỏ vì SVG của AI không hợp lệ — thử phân tích lại để có đủ.)`
-      return { background: color(o.background, '#ffffff'), regions, notes }
+      return { background: color(o.background, '#ffffff'), regions, notes, photoPrompt: str(o.photoPrompt, 'photoPrompt', { optional: true, max: 1200 }) }
     },
   })
 

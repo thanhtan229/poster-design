@@ -33,12 +33,16 @@
         </div>
         <p v-if="state.result.notes" class="tx-hint">ℹ {{ state.result.notes }}</p>
         <div class="tx-row">
+          <el-checkbox v-if="state.mode === 'faithful'" v-model="state.genPhoto" size="small">Tạo ảnh nền tương tự bằng AI (không chữ) — tốn thêm 1 lần tạo ảnh, khoảng 15–30 giây</el-checkbox>
           <el-checkbox v-model="state.matchSize" size="small">Đặt khổ trang theo tỉ lệ ảnh mẫu (chỉ khi trang còn trống hoặc đã chọn xoá lớp)</el-checkbox>
           <el-checkbox v-model="state.useBackground" size="small">Dùng màu nền của mẫu</el-checkbox>
           <el-checkbox v-model="state.clearFirst" size="small">Xoá các lớp hiện có trước khi dựng (giữ ảnh nền)</el-checkbox>
         </div>
+        <div class="tx-row" v-if="state.mode === 'faithful' && state.genPhoto">
+          <el-input v-model="state.result.photoPrompt" type="textarea" :rows="3" size="small" placeholder="Mô tả ảnh nền để AI tạo ảnh tương tự (tiếng Anh) — có thể sửa trước khi dựng" />
+        </div>
         <div class="tx-row">
-          <el-button type="primary" size="small" :loading="state.building" @click="build">Dựng vào trang</el-button>
+          <el-button type="primary" size="small" :loading="state.building" @click="build">{{ state.building && state.genPhoto ? 'Đang tạo ảnh nền…' : 'Dựng vào trang' }}</el-button>
         </div>
       </div>
       <p class="tx-meta">Model: {{ state.result.model }} · lần gọi #{{ state.result.jobId }} · Hoàn tác: Ctrl+Z</p>
@@ -50,6 +54,7 @@
 import { reactive, ref, computed, nextTick } from 'vue'
 import { ElMessage, ElCheckbox, ElRadioGroup, ElRadioButton } from 'element-plus'
 import { storeToRefs } from 'pinia'
+import api from '@/api'
 import { useWidgetStore, useCanvasStore } from '@/store'
 import * as tinixAi from '@/api/tinix-ai'
 import { capturePage, fileToDataUrl } from '@/utils/tinix/capture'
@@ -60,7 +65,7 @@ const widgetStore = useWidgetStore()
 const canvasStore = useCanvasStore()
 const { dPage } = storeToRefs(canvasStore)
 const fileRef = ref<HTMLInputElement>()
-const state = reactive({ lang: 'vi', usePage: true, reference: '', loading: false, building: false, mode: 'faithful' as 'faithful' | 'creative', useBackground: false, clearFirst: false, matchSize: true, refW: 0, refH: 0, result: null as any })
+const state = reactive({ lang: 'vi', usePage: true, reference: '', loading: false, building: false, mode: 'faithful' as 'faithful' | 'creative', useBackground: false, clearFirst: false, matchSize: true, genPhoto: false, refW: 0, refH: 0, result: null as any })
 
 const textRegions = computed(() => (state.result?.regions || []).filter((r: any) => r.type === 'text'))
 const counts = computed(() => {
@@ -129,9 +134,34 @@ async function build() {
     if (state.clearFirst) widgetStore.setDWidgets([])
     if (matchPageToReference()) await nextTick()
     if (state.useBackground) canvasStore.setDPage(Object.assign(dPage.value, { backgroundColor: state.result.background }))
-    const widgets = await buildRebuildWidgets(state.result.regions, { width: dPage.value.width, height: dPage.value.height })
+    // [TINIX] ảnh nền TƯƠNG TỰ (không chữ): AI mô tả ảnh của mẫu → tạo ảnh mới có tỉ lệ đúng bằng vùng ảnh lớn nhất
+    let photoUrl = ''
+    const prompt = String(state.result.photoPrompt || '').trim()
+    if (state.mode === 'faithful' && state.genPhoto && prompt) {
+      const big = [...state.result.regions].filter((r: any) => r.type === 'photo').sort((a: any, b: any) => b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h)[0]
+      if (big) {
+        const ratio = `${Math.max(1, Math.round(big.bbox.w * dPage.value.width))}:${Math.max(1, Math.round(big.bbox.h * dPage.value.height))}`
+        // chừa khoảng trống sạch ở vùng sẽ đặt chữ (đầu/cuối khung) để chữ không đè lên chủ thể
+        const tx = state.result.regions.filter((r: any) => r.type === 'text')
+        let space = ''
+        if (tx.length) {
+          const y0 = Math.min(...tx.map((r: any) => r.bbox.y))
+          const y1 = Math.max(...tx.map((r: any) => r.bbox.y + r.bbox.h))
+          if (y1 < 0.5) space = ` Keep the top ${Math.min(60, Math.round(y1 * 100) + 8)}% of the frame calm and uncluttered (soft plain background, no subjects, no objects) to leave room for overlay text.`
+          else if (y0 > 0.5) space = ` Keep the bottom ${Math.min(60, Math.round((1 - y0) * 100) + 8)}% of the frame calm and uncluttered (soft plain background, no subjects, no objects) to leave room for overlay text.`
+        }
+        try {
+          const res: any = await api.ai.imageGenerate({ prompt: `${prompt}${space} Photorealistic photograph. No text, no letters, no watermark, no logo, no stickers, no graphic overlays.`, ratio }, { _noLoading: true, timeout: 180000 })
+          if (res?.url) photoUrl = res.url
+          else ElMessage.warning(res?.msg || 'Không tạo được ảnh nền, dùng khung ảnh giữ chỗ.')
+        } catch (e: any) {
+          ElMessage.warning(e?.message || 'Không tạo được ảnh nền, dùng khung ảnh giữ chỗ.')
+        }
+      }
+    }
+    const widgets = await buildRebuildWidgets(state.result.regions, { width: dPage.value.width, height: dPage.value.height }, { photoUrl })
     widgets.forEach((w) => widgetStore.addWidget(w))
-    ElMessage.success(`Đã dựng ${widgets.length} lớp. Chọn khung ảnh xám → "Thay ảnh" để đưa ảnh của bạn vào.`)
+    ElMessage.success(photoUrl ? `Đã dựng ${widgets.length} lớp, kèm ảnh nền tương tự. Chọn ảnh nền → "Thay ảnh" để đưa ảnh của bạn vào.` : `Đã dựng ${widgets.length} lớp. Chọn khung ảnh xám → "Thay ảnh" để đưa ảnh của bạn vào.`)
   } finally {
     state.building = false
   }

@@ -30,7 +30,7 @@ function shapeSvg(shape: string, color: string, w: number, h: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${body}</svg>`
 }
 
-export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { width: number; height: number }) {
+export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { width: number; height: number }, opts: { photoUrl?: string } = {}) {
   const W = page.width, H = page.height
   const out: any[] = []
   // [TINIX] mẫu có chữ sáng nằm đè ảnh: dùng khung ảnh tối hơn để chữ trắng vẫn nhìn thấy khi chưa thay ảnh
@@ -40,6 +40,9 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
     const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) || 0)
     return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
   }
+  // [TINIX] ảnh nền AI tạo (tương tự mẫu, không chữ) thay khung giữ chỗ của vùng photo lớn nhất
+  const photos = regions.filter((r) => r.type === 'photo')
+  const bigPhoto = photos.sort((a, b) => b.bbox.w * b.bbox.h - a.bbox.w * a.bbox.h)[0]
   const texts = regions.filter((r) => r.type === 'text')
   const lightText = texts.length > 0 && texts.filter((r) => lum(r.color) > 0.75).length / texts.length >= 0.5
   for (const r of regions) {
@@ -48,7 +51,8 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
 
     if (r.type === 'photo') {
       const w = JSON.parse(JSON.stringify(wImageSetting))
-      Object.assign(w, { name: 'AI · Khung ảnh', imgUrl: photoPlaceholder(width, height, lightText), left, top, width, height })
+      const generated = !!opts.photoUrl && r === bigPhoto
+      Object.assign(w, { name: generated ? 'AI · Ảnh nền (tương tự)' : 'AI · Khung ảnh', imgUrl: generated ? opts.photoUrl : photoPlaceholder(width, height, lightText), left, top, width, height })
       out.push(w)
     } else if (r.type === 'shape') {
       const thin = r.shape === 'line'

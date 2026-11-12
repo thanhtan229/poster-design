@@ -48,7 +48,31 @@ function requireAiEnabled(): AiSettings {
 function resolveImageSize(ratio: string, mode: AiImageSizeMode): string {
   const map = IMAGE_SIZE_MAPS[mode]
   if (!map) return '1024x1024'
-  return map[ratio] || map['1:1'] || '1024x1024'
+  if (map[ratio]) return map[ratio]
+  // [TINIX] tỉ lệ tùy ý "W:H" (vd "1280:1920" của Dựng theo mẫu) → kích thước hợp lệ cho từng chế độ
+  const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(ratio || ''))
+  if (m && Number(m[1]) > 0 && Number(m[2]) > 0) {
+    const r = Math.min(3, Math.max(1 / 3, Number(m[1]) / Number(m[2])))
+    if (mode === 'openai') {
+      // GPT Image nhận cạnh bội số của 16, tỉ lệ 1:3..3:1: cạnh dài 1536px
+      if (r > 0.97 && r < 1.03) return '1024x1024'
+      const snap = (v: number) => Math.max(16, Math.round(v / 16) * 16)
+      return r >= 1 ? `1536x${snap(1536 / r)}` : `${snap(1536 * r)}x1536`
+    }
+    // chế độ khác: chọn tỉ lệ có sẵn gần nhất
+    let best = '1:1'
+    let diff = Infinity
+    for (const key of Object.keys(map)) {
+      const [a, b] = key.split(':').map(Number)
+      const d = Math.abs(Math.log(a / b / r))
+      if (d < diff) {
+        diff = d
+        best = key
+      }
+    }
+    return map[best]
+  }
+  return map['1:1'] || '1024x1024'
 }
 
 /** 密钥脱敏：短密钥只保留前 2 位，长密钥保留前 6 位与后 4 位 */
@@ -234,7 +258,7 @@ export default {
       const body: any = await axios.post(
         `${config.base_url}/images/generations`,
         { model: config.image_model, prompt, size },
-        { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 60000 }
+        { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 120000 } // [TINIX] ảnh lớn có thể >60s
       )
       const buffer = await resolveImageBuffer(body)
       if (!buffer || !buffer.length) return send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')

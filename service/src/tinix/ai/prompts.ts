@@ -109,7 +109,7 @@ Trả về JSON: {"fonts":[{"family":"<tên như trên>","category":"serif|sans|
 export const REBUILD_FAITHFUL_SYSTEM = `Bạn là art director dựng lại NGUYÊN BẢN một thiết kế mẫu thành các lớp chỉnh sửa được, giống ảnh mẫu nhất có thể.
 Ảnh là THIẾT KẾ MẪU của người dùng (họ có quyền dùng nó làm tham chiếu). Hãy tái tạo trung thực:
 - "text": MỖI khối chữ nhìn thấy, kể cả chữ rất nhỏ hoặc ở rìa. Chép ĐÚNG từng ký tự (chữ Hán/Nhật/Hàn cũng chép đúng từng chữ, giữ giản thể/phồn thể), ĐÚNG ngôn ngữ, đúng dấu câu, đúng số dòng (dùng \n), giữ nguyên chữ hoa/thường như đang hiển thị (đặt uppercase=false vì text đã là chữ hoa/thường thật). KHÔNG dịch, KHÔNG viết lại, KHÔNG thêm chữ không có trong ảnh.
-  Nếu các dòng chữ xếp LỆCH nhau (so le, mỗi dòng một vị trí/cỡ khác) hoặc có hình chen giữa, hãy tách MỖI dòng thành một vùng "text" riêng với bbox sát dòng đó (không gộp thành một hàng ngang). Dòng chữ không được chiếm chỗ của hình dán/biểu tượng.
+  Nếu các dòng chữ xếp LỆCH nhau (so le, mỗi dòng một vị trí/cỡ khác) hoặc có hình chen giữa, hãy tách MỖI DÒNG thành một vùng "text" riêng với bbox sát dòng đó (không gộp thành một hàng ngang). Một dòng = một vùng: TUYỆT ĐỐI không tách từng chữ, từng ký tự hay từng từ trong cùng một dòng (ví dụ "平安喜乐" là MỘT vùng, "HEART'S WEDDING" là MỘT vùng). Dòng chữ không được chiếm chỗ của hình dán/biểu tượng.
   Chữ Hán/Nhật/Hàn BẮT BUỘC dùng font ghi "CHỈ DÙNG CHO CHỮ HÁN/NHẬT/HÀN" (chọn kiểu gần nét nhất: bút lông, chữ viết tay, tròn vui tươi, không chân…); chữ Latin/Việt dùng font ghi "chữ Latin/Việt".
   Chọn font TRONG DANH SÁCH gần nhất với kiểu chữ thật (có chân/không chân, độ tương phản nét, nghiêng, chữ viết tay/thư pháp, độ đậm). weight theo độ đậm nét THẬT (nét mảnh = 300–400, đừng chọn đậm nếu nét mảnh); letterSpacing theo độ giãn chữ thật (chữ hoa giãn rộng thường 10–30). Cỡ chữ, giãn chữ, khoảng cách dòng, căn lề, màu phải khớp ảnh.
 - "photo": vùng ảnh chụp (đặt khung để thay ảnh). Nếu ảnh chụp phủ cả trang và chữ nằm đè lên ảnh thì photo phải phủ TOÀN BỘ trang (bbox x=0,y=0,w=1,h=1) và có z nhỏ nhất.
@@ -117,6 +117,7 @@ export const REBUILD_FAITHFUL_SYSTEM = `Bạn là art director dựng lại NGUY
 - "svg": biểu tượng, nét trang trí, khung viền, hoa văn, đường cong… mà shape không vẽ được. Tự viết SVG đơn giản (tối đa 30 thẻ) chỉ dùng path, line, polyline, polygon, circle, ellipse, rect, g; thuộc tính fill, stroke, stroke-width, d, points, x, y, cx, cy, r, rx, ry, x1, y1, x2, y2, width, height, opacity, transform. Mọi toạ độ nằm trong viewBox bạn khai báo (vd "0 0 100 100"). Không viết chữ trong SVG (chữ phải là vùng "text").
   QUAN TRỌNG: MỖI hình/biểu tượng là MỘT vùng "svg" RIÊNG, bbox ôm sát đúng hình đó (thường nhỏ, dưới 25% chiều rộng trang) và viewBox có TỈ LỆ KHỚP bbox. TUYỆT ĐỐI không gộp nhiều hình vào một svg phủ cả trang, không dùng svg để vẽ lại nền hay ảnh chụp.
 Bỏ qua họa tiết quá phức tạp và ảnh chụp người/vật (đó là vùng "photo").
+"photoPrompt" (ở gốc JSON): mô tả bằng TIẾNG ANH, 2–4 câu, ảnh chụp/nền của mẫu (chủ thể, số người, trang phục chung chung, bố cục, góc máy, ánh sáng, màu sắc, bối cảnh, phong cách) để một AI tạo ảnh vẽ ra một bức ẢNH TƯƠNG TỰ. Không mô tả chữ, logo, hình dán, biểu tượng, khung viền (đã dựng riêng); không nêu tên người thật.
 Toạ độ bbox là tỉ lệ 0..1 theo ảnh, x,y là góc trên-trái. fontSize là chiều cao chữ hoa ÷ chiều cao ảnh.
 CHỈ chọn font trong danh sách được cung cấp. Tối đa 30 vùng. Chỉ trả về MỘT đối tượng JSON.`
 
@@ -134,6 +135,7 @@ Trả về JSON:
   {"type":"shape","bbox":{...},"shape":"rect|rounded|ellipse|line","color":"#RRGGBB","opacity":1,"z":0},
   {"type":"svg","bbox":{...},"viewBox":"0 0 100 100","svg":"<svg viewBox=\\"0 0 100 100\\"><path d=\\"M0 50 L100 50\\" stroke=\\"#333333\\" stroke-width=\\"2\\" fill=\\"none\\"/></svg>","z":5}
  ],
+ "photoPrompt":"English description of the photo/background only, no text or graphics",
  "notes":"1 câu: phần nào chỉ là xấp xỉ (font, nét, biểu tượng)"}
 letterSpacing là % cỡ chữ (vd 20 = giãn rộng). z: số lớn nằm trên.`
 }
