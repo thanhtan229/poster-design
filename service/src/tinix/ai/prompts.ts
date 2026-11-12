@@ -104,3 +104,33 @@ Fonts:
 ${names.map((n) => `- ${n}`).join('\n')}
 Trả về JSON: {"fonts":[{"family":"<tên như trên>","category":"serif|sans|script|display|handwriting","tags":["..."]}]}`
 }
+
+/** Dựng theo mẫu — chế độ "Giống mẫu": chép đúng chữ, ngôn ngữ, font gần nhất, kèm nét/biểu tượng đơn giản bằng SVG. */
+export const REBUILD_FAITHFUL_SYSTEM = `Bạn là art director dựng lại NGUYÊN BẢN một thiết kế mẫu thành các lớp chỉnh sửa được, giống ảnh mẫu nhất có thể.
+Ảnh là THIẾT KẾ MẪU của người dùng (họ có quyền dùng nó làm tham chiếu). Hãy tái tạo trung thực:
+- "text": MỖI khối chữ nhìn thấy, kể cả chữ rất nhỏ hoặc ở rìa. Chép ĐÚNG từng ký tự, ĐÚNG ngôn ngữ, đúng dấu câu, đúng số dòng (dùng \n), giữ nguyên chữ hoa/thường như đang hiển thị (đặt uppercase=false vì text đã là chữ hoa/thường thật). KHÔNG dịch, KHÔNG viết lại, KHÔNG thêm chữ không có trong ảnh.
+  Chọn font TRONG DANH SÁCH gần nhất với kiểu chữ thật (có chân/không chân, độ tương phản nét, nghiêng, chữ viết tay/thư pháp, độ đậm). weight theo độ đậm nét THẬT (nét mảnh = 300–400, đừng chọn đậm nếu nét mảnh); letterSpacing theo độ giãn chữ thật (chữ hoa giãn rộng thường 10–30). Cỡ chữ, giãn chữ, khoảng cách dòng, căn lề, màu phải khớp ảnh.
+- "photo": vùng ảnh chụp (đặt khung để thay ảnh). Nếu ảnh chụp phủ cả trang và chữ nằm đè lên ảnh thì photo phải phủ TOÀN BỘ trang (bbox x=0,y=0,w=1,h=1) và có z nhỏ nhất.
+- "shape": khối/đường đơn giản (rect|rounded|ellipse|line) kèm màu, độ mờ.
+- "svg": biểu tượng, nét trang trí, khung viền, hoa văn, đường cong… mà shape không vẽ được. Tự viết SVG đơn giản (tối đa 30 thẻ) chỉ dùng path, line, polyline, polygon, circle, ellipse, rect, g; thuộc tính fill, stroke, stroke-width, d, points, x, y, cx, cy, r, rx, ry, x1, y1, x2, y2, width, height, opacity, transform. Mọi toạ độ nằm trong viewBox bạn khai báo (vd "0 0 100 100"). Không viết chữ trong SVG (chữ phải là vùng "text").
+Bỏ qua họa tiết quá phức tạp và ảnh chụp người/vật (đó là vùng "photo").
+Toạ độ bbox là tỉ lệ 0..1 theo ảnh, x,y là góc trên-trái. fontSize là chiều cao chữ hoa ÷ chiều cao ảnh.
+CHỈ chọn font trong danh sách được cung cấp. Tối đa 30 vùng. Chỉ trả về MỘT đối tượng JSON.`
+
+export function rebuildFaithfulUser(p: { fonts: string }) {
+  return `Danh sách font (tên | nhóm | cảm giác):
+${p.fonts}
+
+Trả về JSON:
+{"background":"#RRGGBB",
+ "regions":[
+  {"type":"text","bbox":{"x":0.1,"y":0.1,"w":0.8,"h":0.1},"role":"title|subtitle|body|date|hashtag|signature|other",
+   "text":"CHỮ ĐÚNG NHƯ TRONG ẢNH","fontFamily":"<tên font>","fontSize":0.06,"weight":400,"italic":false,"uppercase":false,
+   "letterSpacing":0,"lineHeight":1.2,"align":"left|center|right","color":"#RRGGBB","z":10},
+  {"type":"photo","bbox":{...},"z":1},
+  {"type":"shape","bbox":{...},"shape":"rect|rounded|ellipse|line","color":"#RRGGBB","opacity":1,"z":0},
+  {"type":"svg","bbox":{...},"viewBox":"0 0 100 100","svg":"<svg viewBox=\\"0 0 100 100\\"><path d=\\"M0 50 L100 50\\" stroke=\\"#333333\\" stroke-width=\\"2\\" fill=\\"none\\"/></svg>","z":5}
+ ],
+ "notes":"1 câu: phần nào chỉ là xấp xỉ (font, nét, biểu tượng)"}
+letterSpacing là % cỡ chữ (vd 20 = giãn rộng). z: số lớn nằm trên.`
+}

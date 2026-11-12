@@ -41,7 +41,7 @@ export const isErr = (r: any): r is TErr => !!r && typeof r === 'object' && type
 export const suggestText = (p: { image: string; width: number; height: number; lang: string }) => fetch<TSuggestResult | TErr>('api/tinix/ai/suggest-text', { ...p, ...slow }, 'post', {}, long)
 export const rewriteText = (p: { image: string; layers: Array<{ uuid: string; text: string }>; lang: string }) => fetch<TRewriteResult | TErr>('api/tinix/ai/rewrite-text', { ...p, ...slow }, 'post', {}, long)
 export const findFont = (p: { image: string }) => fetch<TFindFontResult | TErr>('api/tinix/ai/find-font', { ...p, ...slow }, 'post', {}, long)
-export const rebuild = (p: { reference: string; photo?: string; lang: string }) => fetch<any>('api/tinix/ai/rebuild', { ...p, ...slow }, 'post', {}, { timeout: 180000 })
+export const rebuild = (p: { reference: string; photo?: string; lang: string; mode?: 'faithful' | 'creative' }) => fetch<any>('api/tinix/ai/rebuild', { ...p, ...slow }, 'post', {}, { timeout: 180000 })
 export const tagFonts = (p: { all?: boolean } = {}) => fetch<any>('api/tinix/ai/tag-fonts', { ...p, ...slow }, 'post', {}, long)
 export const getJobs = (p: { limit?: number; kind?: string } = {}) => fetch<{ list: any[] } | TErr>('api/tinix/ai/jobs', p, 'get')
 export const getUsage = (p: { month?: string } = {}) => fetch<{ month: string; jobs: number; cost_vnd: number; limit_vnd: number } | TErr>('api/tinix/ai/usage', p, 'get')

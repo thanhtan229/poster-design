@@ -4,13 +4,20 @@
     <div class="tx-row">
       <el-button size="small" @click="pick">Chọn ảnh thiết kế mẫu…</el-button>
       <input ref="fileRef" type="file" accept="image/*" style="display: none" @change="onFile" />
-      <el-checkbox v-model="state.usePage" size="small">Viết chữ hợp với ảnh trang hiện tại</el-checkbox>
-      <el-radio-group v-model="state.lang" size="small">
-        <el-radio-button value="vi">Tiếng Việt</el-radio-button>
-        <el-radio-button value="en">English</el-radio-button>
+      <el-radio-group v-model="state.mode" size="small">
+        <el-radio-button value="faithful">Giống mẫu</el-radio-button>
+        <el-radio-button value="creative">Viết nội dung mới</el-radio-button>
       </el-radio-group>
+      <template v-if="state.mode === 'creative'">
+        <el-checkbox v-model="state.usePage" size="small">Viết chữ hợp với ảnh trang hiện tại</el-checkbox>
+        <el-radio-group v-model="state.lang" size="small">
+          <el-radio-button value="vi">Tiếng Việt</el-radio-button>
+          <el-radio-button value="en">English</el-radio-button>
+        </el-radio-group>
+      </template>
     </div>
-    <p class="tx-hint">AI chỉ <b>học bố cục, nhịp chữ, kiểu font, màu</b> của mẫu (Pinterest, tạp chí…) và viết <b>nội dung mới</b> — không chép chữ, logo hay hình minh hoạ. Kết quả gồm lớp chữ, khung ảnh (thay ảnh của bạn vào) và khối màu, tất cả chỉnh được.</p>
+    <p v-if="state.mode === 'faithful'" class="tx-hint"><b>Giống mẫu</b>: AI chép <b>đúng chữ, ngôn ngữ, bố cục, cỡ chữ, màu</b>, chọn font <b>gần nhất trong kho</b>, vẽ khung/đường kẻ và nét trang trí, biểu tượng đơn giản bằng SVG. Chữ thư pháp, nét cọ hay hình phức tạp chỉ ở mức xấp xỉ; ảnh chụp là khung xám để bạn thay ảnh. Tất cả chỉnh được.</p>
+    <p v-else class="tx-hint"><b>Viết nội dung mới</b>: AI chỉ học <b>bố cục, nhịp chữ, kiểu font, màu</b> của mẫu và viết <b>nội dung mới</b> (tiếng Việt hoặc English) — không chép chữ, logo hay hình minh hoạ.</p>
     <div class="tx-row" v-if="state.reference">
       <img :src="state.reference" style="max-height: 150px; max-width: 45%; border-radius: 6px" />
       <el-button type="primary" size="small" :loading="state.loading" @click="analyze">{{ state.loading ? 'AI đang phân tích (30–90 giây)…' : '✨ Phân tích mẫu' }}</el-button>
@@ -53,13 +60,13 @@ const widgetStore = useWidgetStore()
 const canvasStore = useCanvasStore()
 const { dPage } = storeToRefs(canvasStore)
 const fileRef = ref<HTMLInputElement>()
-const state = reactive({ lang: 'vi', usePage: true, reference: '', loading: false, building: false, useBackground: false, clearFirst: false, matchSize: true, refW: 0, refH: 0, result: null as any })
+const state = reactive({ lang: 'vi', usePage: true, reference: '', loading: false, building: false, mode: 'faithful' as 'faithful' | 'creative', useBackground: false, clearFirst: false, matchSize: true, refW: 0, refH: 0, result: null as any })
 
 const textRegions = computed(() => (state.result?.regions || []).filter((r: any) => r.type === 'text'))
 const counts = computed(() => {
   const rs = state.result?.regions || []
   const n = (t: string) => rs.filter((r: any) => r.type === t).length
-  return `${n('text')} khối chữ · ${n('photo')} khung ảnh · ${n('shape')} khối màu`
+  return `${n('text')} khối chữ · ${n('photo')} khung ảnh · ${n('shape')} khối màu · ${n('svg')} nét trang trí`
 })
 
 function pick() {
@@ -103,8 +110,8 @@ async function analyze() {
   state.loading = true
   try {
     // [TINIX] an empty page would be sent as a blank "customer photo" and confuse the AI: only capture a page that has layers
-    const photo = state.usePage && widgetStore.dWidgets.length > 0 ? await capturePage({ maxEdge: 768, hideText: true }) : undefined
-    const res: any = await tinixAi.rebuild({ reference: state.reference, photo, lang: state.lang })
+    const photo = state.mode === 'creative' && state.usePage && widgetStore.dWidgets.length > 0 ? await capturePage({ maxEdge: 768, hideText: true }) : undefined
+    const res: any = await tinixAi.rebuild({ reference: state.reference, photo, lang: state.lang, mode: state.mode })
     if (tinixAi.isErr(res)) return ElMessage.error(res.msg || 'Phân tích không thành công')
     state.result = res
     for (const r of res.regions) if (r.fontClass) ensureFont(r.fontClass.value, r.fontClass.url)

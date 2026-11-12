@@ -8,6 +8,7 @@ import { obj, arr, str, num01, oneOf, color, bool } from './validate'
 import { libraryFonts, fontListForPrompt, resolveFont, rankFonts, LibFont } from './fonts'
 import { getTinixAiSettings } from './settings'
 import { getDB } from '../../db'
+import { cleanSvg } from './svg'
 
 const CATEGORIES = ['serif', 'sans', 'script', 'display', 'handwriting'] as const
 const PART_KEYS = ['title', 'subtitle', 'body', 'hashtag', 'signature'] as const
@@ -158,12 +159,14 @@ export async function findFont(input: { image: string }) {
 const ROLES = ['title', 'subtitle', 'body', 'date', 'hashtag', 'signature', 'other'] as const
 const ROLE_TO_PART: Record<string, PartKey> = { title: 'title', subtitle: 'subtitle', body: 'body', date: 'subtitle', hashtag: 'hashtag', signature: 'signature', other: 'body' }
 
-export async function rebuildFromReference(input: { reference: string; photo?: string; lang?: string }) {
+// [TINIX] mode 'faithful' (mặc định): chép đúng chữ/ngôn ngữ/font/nét của mẫu. mode 'creative': học bố cục rồi viết nội dung mới.
+export async function rebuildFromReference(input: { reference: string; photo?: string; lang?: string; mode?: string }) {
+  const faithful = input.mode !== 'creative'
   const lang = input.lang === 'en' ? 'en' : 'vi'
-  const fonts = libraryFonts(lang === 'vi')
+  const fonts = libraryFonts(faithful ? true : lang === 'vi')
   if (!fonts.length) throw new Error('Kho font trống — chạy "npm run tinix:fonts" trước.')
-  const reference = await prepareImage(input.reference, 1280)
-  const photo = input.photo ? await prepareImage(input.photo, 768) : ''
+  const reference = await prepareImage(input.reference, faithful ? 1600 : 1280)
+  const photo = !faithful && input.photo ? await prepareImage(input.photo, 768) : ''
   const images = photo ? [reference, photo] : [reference]
   const studio = getTinixAiSettings().studio_name
 
@@ -175,17 +178,17 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
 
   const { data, jobId, model } = await callVisionJSON({
     kind: 'rebuild',
-    system: P.REBUILD_SYSTEM,
-    text: P.rebuildUser({ lang, hasPhoto: !!photo, studio, fonts: fontListForPrompt(fonts) }),
+    system: faithful ? P.REBUILD_FAITHFUL_SYSTEM : P.REBUILD_SYSTEM,
+    text: faithful ? P.rebuildFaithfulUser({ fonts: fontListForPrompt(fonts) }) : P.rebuildUser({ lang, hasPhoto: !!photo, studio, fonts: fontListForPrompt(fonts) }),
     images,
-    temperature: 0.6,
+    temperature: faithful ? 0.2 : 0.6,
     timeoutMs: 150000,
-    inputSummary: { lang, hasPhoto: !!photo },
+    inputSummary: { lang, hasPhoto: !!photo, mode: faithful ? 'faithful' : 'creative' },
     validate: (v) => {
       const o = obj(v, 'root')
-      const regions = arr(o.regions, 'regions', 1, 25).map((r: any, i: number) => {
+      const regions = arr(o.regions, 'regions', 1, 30).map((r: any, i: number) => {
         const p = `regions[${i}]`
-        const type = oneOf(r.type, ['text', 'photo', 'shape'] as const, 'shape')
+        const type = oneOf(r.type, ['text', 'photo', 'shape', 'svg'] as const, 'shape')
         const base = { type, bbox: bbox(r.bbox, `${p}.bbox`), z: Number.isFinite(Number(r.z)) ? Number(r.z) : i }
         if (type === 'text') {
           return {
@@ -196,7 +199,7 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
             fontSize: Math.min(0.4, Math.max(0.006, Number(r.fontSize) || 0.03)),
             weight: Math.min(900, Math.max(100, Math.round((Number(r.weight) || 400) / 100) * 100)),
             italic: bool(r.italic),
-            uppercase: bool(r.uppercase),
+            uppercase: faithful ? false : bool(r.uppercase),
             letterSpacing: Math.min(200, Math.max(-20, Number(r.letterSpacing) || 0)),
             lineHeight: Math.min(3, Math.max(0.8, Number(r.lineHeight) || 1.2)),
             align: oneOf(r.align, ['left', 'center', 'right'] as const, 'center'),
@@ -204,8 +207,12 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
           }
         }
         if (type === 'shape') return { ...base, shape: oneOf(r.shape, ['rect', 'rounded', 'ellipse', 'line'] as const, 'rect'), color: color(r.color, '#dddddd'), opacity: Math.min(1, Math.max(0.05, Number(r.opacity) || 1)) }
+        if (type === 'svg') {
+          const clean = cleanSvg(r.svg)
+          return clean ? { ...base, svg: clean.svg, viewW: clean.viewW, viewH: clean.viewH } : null
+        }
         return base
-      })
+      }).filter((r: any) => !!r)
       if (!regions.some((r: any) => r.type === 'text')) throw new Error('regions: không có khối chữ nào')
       return { background: color(o.background, '#ffffff'), regions, notes: str(o.notes, 'notes', { optional: true, max: 400 }) }
     },

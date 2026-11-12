@@ -7,7 +7,7 @@ import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
 import { wSvgSetting } from '@/components/modules/widgets/wSvg/wSvgSetting'
 import { ensureFont, measureLines } from './psd-fit'
 
-export type TRebuildRegion = Record<string, any> & { type: 'text' | 'photo' | 'shape'; bbox: { x: number; y: number; w: number; h: number } }
+export type TRebuildRegion = Record<string, any> & { type: 'text' | 'photo' | 'shape' | 'svg'; bbox: { x: number; y: number; w: number; h: number } }
 
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] as string))
 
@@ -46,6 +46,13 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
       const w = JSON.parse(JSON.stringify(wSvgSetting))
       Object.assign(w, { name: 'AI · Hình khối', svgUrl: shapeSvg(thin ? 'rect' : r.shape, r.color || '#dddddd', width, h2), colors: [r.color || '#dddddd'], left, top, width, height: h2, opacity: r.opacity ?? 1 })
       w.record = { ...(w.record || {}), width, height: h2 }
+      out.push(w)
+    } else if (r.type === 'svg') {
+      // [TINIX] biểu tượng / nét trang trí do AI vẽ (server đã lọc SVG an toàn)
+      const w = JSON.parse(JSON.stringify(wSvgSetting))
+      const svg = String(r.svg).replace('<svg ', `<svg width="${width}" height="${height}" `)
+      Object.assign(w, { name: 'AI · Nét trang trí', svgUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg), colors: [], left, top, width, height })
+      w.record = { ...(w.record || {}), width, height }
       out.push(w)
     } else {
       const fc = r.fontClass
