@@ -279,7 +279,7 @@ TinixPoster/                             ← D:\___TOOLS\__TINIX\TinixPoster (nh
 | Tuần | Việc | Xong khi |
 |---|---|---|
 | 0 (1–2 ngày) | Chạy ổn định trên Windows, tạo tài khoản admin, đổi AUTH_SECRET, chỉ nghe localhost, commit git nhánh `tinix` | Mở editor, tạo & lưu 1 thiết kế, xuất JPG |
-| 1 | ✅ Nạp **46 font có tiếng Việt** (Google Fonts/OFL) bằng `npm run tinix:fonts`; ✅ kiểm tra hiển thị & xuất ảnh dấu tiếng Việt (14 font, đạt); ✅ nhập thử 3 file PSD mẫu (`psd-test/`, đạt cả sau các lần sửa); ⏳ nhập 5–10 mẫu PSD **của bạn** (cần đăng nhập admin — xem TINIX.md); ✅ migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
+| 1 | ✅ Nạp **46 font có tiếng Việt** (Google Fonts/OFL) bằng `npm run tinix:fonts`; ✅ kiểm tra hiển thị & xuất ảnh dấu tiếng Việt (14 font, đạt); ✅ nhập thử **9 file PSD** của bạn trong `psd-test/` (2–35 MB, trang tới 8268×11220): đều nhập đạt, bố cục chữ/ảnh/xoay đúng; giới hạn đã biết: lớp hiệu ứng (layer style) chưa tái tạo, chữ đã raster hóa thì chỉ là ảnh, chữ Hán dùng font hệ thống dự phòng; ✅ migration cột font + bảng `ai_jobs` | Font Việt hiển thị đúng cả trong editor lẫn ảnh xuất |
 | 2 | ✅ `callVisionJSON` + nhật ký chi phí + **Gợi ý chữ** + tab Lịch sử & Cài đặt AI | Luồng A chạy trọn (đã kiểm tra bằng `npm run tinix:test-ai`; cần API key để chạy thật) |
 | 3 | ✅ **Sửa chữ** + **Tìm font** + AI gắn tag font | Luồng B, C chạy trọn (cần API key để chạy thật) |
 | 4 | ✅ Dựng theo mẫu (2 chế độ, nét trang trí SVG, ảnh nền tương tự bằng AI) · ✅ nhập PSD bằng ag-psd · ✅ Việt hóa (kể cả `vi/tinix-ui.ts`, hộp thoại font ở Quản trị) · ✅ Lưu thành mẫu (admin) | Chạy thật với ảnh mẫu (cưới và chữ Hán) |

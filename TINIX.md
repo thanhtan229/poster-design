@@ -45,6 +45,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `service/src/tinix/process-guard.ts` | Ghi log thay vì tắt service khi có unhandled rejection |
 | `service/src/tinix/db/migrate.ts` | Cột `fonts.category/tags/supports_vietnamese/license`; bảng `ai_jobs` (idempotent) |
 | `service/.env.example` | Mẫu biến môi trường (AUTH_SECRET, HOST, PORT, DEFAULT_ADMIN_*) |
+| `scripts/tinix-shortcut.ps1` (`npm run tinix:shortcut`) | Tạo shortcut "TinixPoster" ngoài Desktop trỏ vào `Mo-TinixPoster.cmd` (script chỉ dùng ASCII vì PowerShell 5 đọc file không BOM theo ANSI) |
 | `Mo-TinixPoster.cmd` | Nhấp đúp để mở app: kiểm tra Node + thư viện, đã chạy thì chỉ mở trình duyệt, chưa chạy thì `npm run tinix:dev` và tự mở trình duyệt khi sẵn sàng. `--check` = chỉ báo trạng thái |
 | `.gitattributes` | Giữ CRLF cho `*.cmd`/`*.bat` |
 | `scripts/tinix-dev.mjs` | Chạy editor + service cùng lúc, Ctrl+C dừng cả hai |
