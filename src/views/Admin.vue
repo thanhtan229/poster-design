@@ -252,16 +252,12 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column :label="t('admin.v.language')" width="90">
+            <!-- [TINIX] gộp ngôn ngữ (nhóm trong editor) và cờ tiếng Việt (AI gợi ý font) vào một cột; bộ lọc vẫn tách riêng -->
+            <el-table-column :label="t('admin.v.language')" width="170">
               <template #default="{ row }">
                 <el-tag size="small" :type="row.lang === 'en' ? 'warning' : row.lang === 'ko' ? 'info' : 'success'">{{ row.lang === 'en' ? t('admin.v.english') : row.lang === 'ko' ? t('admin.v.korean') : t('admin.v.chinese') }}</el-tag>
-              </template>
-            </el-table-column>
-            <!-- [TINIX] cờ hỗ trợ tiếng Việt (AI chỉ gợi ý font có cờ này ở chế độ tiếng Việt) -->
-            <el-table-column :label="t('tinix.ui.adminExtra.tiengViet')" width="110">
-              <template #default="{ row }">
-                <el-tag v-if="row.supports_vietnamese" size="small" type="success">{{ t('tinix.ui.adminExtra.coDau') }}</el-tag>
-                <el-tag v-else size="small" type="info">{{ t('tinix.ui.adminExtra.khongHoTro') }}</el-tag>
+                <el-tag v-if="row.supports_vietnamese" size="small" type="success" class="font-tag">{{ t('tinix.ui.adminExtra.coDau') }}</el-tag>
+                <el-tag v-else size="small" type="info" class="font-tag">{{ t('tinix.ui.adminExtra.khongHoTro') }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column :label="t('tinix.ui.adminExtra.nhom')" width="130">
