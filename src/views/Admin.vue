@@ -215,6 +215,20 @@
               @clear="reloadFromPage1"
             />
             <el-button size="small" @click="reloadFromPage1">{{ t('admin.v.search') }}</el-button>
+            <!-- [TINIX] bộ lọc font -->
+            <el-select v-model="fontQuery.lang" size="small" clearable :placeholder="t('admin.v.language')" style="width: 120px" @change="reloadFromPage1">
+              <el-option :label="t('admin.v.english')" value="en" />
+              <el-option :label="t('admin.v.korean')" value="ko" />
+              <el-option :label="t('admin.v.chinese')" value="zh" />
+            </el-select>
+            <el-select v-model="fontQuery.vn" size="small" clearable :placeholder="t('tinix.ui.adminExtra.tiengViet')" style="width: 130px" @change="reloadFromPage1">
+              <el-option :label="t('tinix.ui.adminExtra.coDau')" value="1" />
+              <el-option :label="t('tinix.ui.adminExtra.khongHoTro')" value="0" />
+            </el-select>
+            <el-select v-model="fontQuery.category" size="small" clearable :placeholder="t('tinix.ui.adminExtra.nhom')" style="width: 150px" @change="reloadFromPage1">
+              <el-option v-for="c in FONT_CATEGORIES" :key="c" :label="t('tinix.ui.adminExtra.cat_' + c)" :value="c" />
+              <el-option :label="t('tinix.ui.adminExtra.chuaPhanNhom')" value="none" />
+            </el-select>
             <span class="toolbar-spacer"></span>
             <el-button type="primary" size="small" @click="openFontDialog()">
               <el-icon><Plus /></el-icon>
@@ -222,10 +236,23 @@
             </el-button>
           </div>
           <el-table class="admin-table" :data="fonts" size="small" stripe v-loading="loading">
-            <el-table-column prop="id" label="ID" width="70" />
-            <el-table-column prop="alias" :label="t('admin.v.name')" min-width="120" show-overflow-tooltip />
-            <el-table-column prop="value" label="value" min-width="140" show-overflow-tooltip />
-            <el-table-column :label="t('admin.v.language')" width="80">
+            <el-table-column prop="id" label="ID" width="60" />
+            <!-- [TINIX] xem trước: dòng chữ mẫu viết bằng chính font (ảnh do npm run tinix:font-previews tạo) -->
+            <el-table-column :label="t('tinix.ui.adminExtra.xemTruoc')" width="300">
+              <template #default="{ row }">
+                <img v-if="row.preview" :src="row.preview" class="font-preview" loading="lazy" alt="" />
+                <span v-else class="muted-text">{{ t('tinix.ui.adminExtra.chuaCoAnh') }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('admin.v.name')" min-width="170" show-overflow-tooltip>
+              <template #default="{ row }">
+                <div class="font-name-cell">
+                  <b>{{ row.alias }}</b>
+                  <span class="muted-text">{{ row.value }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('admin.v.language')" width="90">
               <template #default="{ row }">
                 <el-tag size="small" :type="row.lang === 'en' ? 'warning' : row.lang === 'ko' ? 'info' : 'success'">{{ row.lang === 'en' ? t('admin.v.english') : row.lang === 'ko' ? t('admin.v.korean') : t('admin.v.chinese') }}</el-tag>
               </template>
@@ -234,18 +261,22 @@
             <el-table-column :label="t('tinix.ui.adminExtra.tiengViet')" width="110">
               <template #default="{ row }">
                 <el-tag v-if="row.supports_vietnamese" size="small" type="success">{{ t('tinix.ui.adminExtra.coDau') }}</el-tag>
-                <el-tag v-else size="small" type="info">{{ t('tinix.ui.adminExtra.chuaCo') }}</el-tag>
+                <el-tag v-else size="small" type="info">{{ t('tinix.ui.adminExtra.khongHoTro') }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="woff" min-width="220" show-overflow-tooltip>
+            <el-table-column :label="t('tinix.ui.adminExtra.nhom')" width="130">
               <template #default="{ row }">
-                <a v-if="row.woff" :href="row.woff" target="_blank" rel="noopener" class="link-primary">{{ row.woff }}</a>
+                <el-tag v-if="row.category" size="small" effect="plain">{{ t('tinix.ui.adminExtra.cat_' + row.category) }}</el-tag>
                 <span v-else class="muted-text">-</span>
               </template>
             </el-table-column>
-            <el-table-column prop="font_family" label="font-family" min-width="140" show-overflow-tooltip />
-            <el-table-column prop="created_at" :label="t('admin.v.createdAt')" width="170" />
-            <el-table-column :label="t('admin.v.actions')" width="120" fixed="right">
+            <el-table-column label="Tag" min-width="170">
+              <template #default="{ row }">
+                <el-tag v-for="tg in parseFontTags(row.tags)" :key="tg" size="small" type="info" class="font-tag">{{ tg }}</el-tag>
+                <span v-if="!parseFontTags(row.tags).length" class="muted-text">-</span>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('admin.v.actions')" width="110" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" size="small" link @click="openFontDialog(row)">{{ t('admin.v.edit') }}</el-button>
                 <el-button type="danger" size="small" link @click="onDelFont(row)">{{ t('admin.v.delete') }}</el-button>
@@ -464,6 +495,15 @@
         <el-form-item :label="t('tinix.ui.adminExtra.tiengViet')">
           <el-checkbox v-model="fontDialog.form.supports_vietnamese">{{ t('tinix.ui.adminExtra.hoTroDauTiengViet') }}</el-checkbox>
         </el-form-item>
+        <!-- [TINIX] nhóm + tag: giúp AI chọn đúng font và giúp bạn lọc -->
+        <el-form-item :label="t('tinix.ui.adminExtra.nhom')">
+          <el-select v-model="fontDialog.form.category" clearable style="width: 100%" :placeholder="t('tinix.ui.adminExtra.chuaPhanNhom')">
+            <el-option v-for="c in FONT_CATEGORIES" :key="c" :label="t('tinix.ui.adminExtra.cat_' + c)" :value="c" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Tag">
+          <el-select v-model="fontDialog.form.tags" multiple filterable allow-create default-first-option :multiple-limit="10" style="width: 100%" :placeholder="t('tinix.ui.adminExtra.tagGoiY')" />
+        </el-form-item>
         <el-form-item label="font-family">
           <el-input v-model="fontDialog.form.font_family" :placeholder="t('admin.font.optional')" maxlength="80" />
         </el-form-item>
@@ -554,7 +594,17 @@ const templateCategories = ref<any[]>([])
 const newTemplateCategory = reactive({ name: '' })
 const templateCategoryType = ref<0 | 1>(0)
 const fonts = ref<adminApi.TAdminFontItem[]>([])
-const fontQuery = reactive({ page: 1, pageSize: 20, search: '', total: 0 })
+// [TINIX] nhóm font và đọc tag (cột tags lưu JSON)
+const FONT_CATEGORIES = ['serif', 'sans', 'script', 'display', 'handwriting']
+function parseFontTags(raw: any): string[] {
+  try {
+    const v = JSON.parse(raw || '[]')
+    return Array.isArray(v) ? v.map(String) : []
+  } catch (e) {
+    return []
+  }
+}
+const fontQuery = reactive({ page: 1, pageSize: 20, search: '', lang: '', vn: '', category: '', total: 0 }) // [TINIX] thêm bộ lọc
 // AI 设置
 const aiForm = reactive<adminApi.TAiSettings>({
   api_key: '',
@@ -624,6 +674,8 @@ const fontDialog = reactive({
     size: 0,
     woff_size: 0,
     supports_vietnamese: false, // [TINIX]
+    category: '',
+    tags: [] as string[],
   },
 })
 const fontFormRef = ref<FormInstance | null>(null)
@@ -662,6 +714,8 @@ function openFontDialog(row?: adminApi.TAdminFontItem) {
     fontDialog.form.lang = row.lang === 'en' || row.lang === 'ko' ? row.lang : 'zh'
     fontDialog.form.font_family = row.font_family
     fontDialog.form.supports_vietnamese = !!row.supports_vietnamese // [TINIX]
+    fontDialog.form.category = row.category || ''
+    fontDialog.form.tags = parseFontTags(row.tags)
   } else {
     fontDialog.title = t('admin.font.add')
   }
@@ -1034,6 +1088,8 @@ async function submitFont() {
       size: Number(fontDialog.form.size) || 0,
       woff_size: Number(fontDialog.form.woff_size) || 0,
       supports_vietnamese: !!fontDialog.form.supports_vietnamese, // [TINIX]
+      category: fontDialog.form.category || '',
+      tags: fontDialog.form.tags,
     }
     const res: any = fontDialog.form.id
       ? await adminApi.updateFont({ ...data, id: fontDialog.form.id })
@@ -1199,6 +1255,20 @@ async function testAiConnection() {
 .muted-text {
   font-size: 12px;
   color: @color-ink-hint;
+}
+/* [TINIX] bảng font: ảnh xem trước + tên 2 dòng + tag */
+.font-preview {
+  display: block;
+  height: 32px;
+  max-width: 100%;
+}
+.font-name-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+.font-tag {
+  margin: 0 4px 2px 0;
 }
 .link-primary {
   color: @color-primary;

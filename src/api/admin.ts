@@ -118,6 +118,9 @@ export type TAdminFontItem = {
   size: number
   woff_size: number
   supports_vietnamese?: number // [TINIX]
+  category?: string // [TINIX]
+  tags?: string // [TINIX] JSON mảng
+  license?: string // [TINIX]
   created_at: string
 }
 
@@ -135,7 +138,7 @@ export type TFontForm = {
   woff_size?: number
 }
 
-export const getFonts = (params: { page?: number; pageSize?: number; search?: string } = {}) => fetch<{ list: TAdminFontItem[]; total: number }>(API.fonts, params)
+export const getFonts = (params: { page?: number; pageSize?: number; search?: string; lang?: string; vn?: string; category?: string } = {}) => fetch<{ list: TAdminFontItem[]; total: number }>(API.fonts, params)
 
 export const addFont = (data: Omit<TFontForm, 'id'>) => fetch<{ id: number }>(API.addFont, data, 'post')
 export const updateFont = (data: TFontForm & { id: number }) => fetch(API.updateFont, data, 'post')

@@ -29,6 +29,22 @@ function pageResult<T>(list: T[], pageValue: any, pageSizeValue: any) {
   return { list: list.slice((page - 1) * pageSize, page * pageSize), total: list.length, page, pageSize }
 }
 
+// [TINIX] làm sạch nhóm/tag font nhận từ form quản trị
+function cleanCategory(v: any): string {
+  const s = typeof v === 'string' ? v.trim() : ''
+  return fontsRepo.CATEGORIES.indexOf(s) >= 0 ? s : ''
+}
+function cleanTags(v: any): string {
+  const arr = Array.isArray(v) ? v : typeof v === 'string' ? v.split(',') : []
+  const out: string[] = []
+  for (const t of arr) {
+    const s = String(t).trim().slice(0, 30)
+    if (s && out.indexOf(s) < 0) out.push(s)
+    if (out.length >= 10) break
+  }
+  return JSON.stringify(out)
+}
+
 export default {
   // 模板列表（含已下架）
   async getTemplates(req: any, res: Response) {
@@ -255,7 +271,9 @@ export default {
     const page = Number(req.query?.page) || 1
     const pageSize = Number(req.query?.pageSize) || 20
     const search = typeof req.query?.search === 'string' ? req.query.search : ''
-    send.success(res, fontsRepo.listFonts(page, pageSize, search))
+    const q = req.query || {}
+    const str = (v: any) => (typeof v === 'string' ? v : '')
+    send.success(res, fontsRepo.listFonts(page, pageSize, search, { lang: str(q.lang), vn: str(q.vn), category: str(q.category) })) // [TINIX] bộ lọc
   },
 
   // 新增字体
@@ -283,6 +301,8 @@ export default {
       size: toSafeNumber(size),
       woff_size: toSafeNumber(woff_size),
       supports_vietnamese: supports_vietnamese === true || supports_vietnamese === 1 || supports_vietnamese === '1', // [TINIX]
+      category: cleanCategory(req.body && req.body.category),
+      tags: cleanTags(req.body && req.body.tags),
     })
     send.success(res, { id })
   },
@@ -300,6 +320,8 @@ export default {
       ttf: typeof ttf === 'string' ? ttf : '', lang: lang === 'en' || lang === 'ko' ? lang : 'zh', // [TINIX] ko
       font_family: typeof font_family === 'string' ? font_family : '',
       supports_vietnamese: supports_vietnamese === true || supports_vietnamese === 1 || supports_vietnamese === '1', // [TINIX]
+      category: cleanCategory(req.body && req.body.category),
+      tags: cleanTags(req.body && req.body.tags),
     } as any)
     updated ? send.success(res, undefined) : send.error(res, 'Bản ghi không tồn tại')
   },

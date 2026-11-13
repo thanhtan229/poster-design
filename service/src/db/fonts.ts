@@ -25,18 +25,43 @@ export interface FontRow {
   size: number
   woff_size: number
   supports_vietnamese: number // [TINIX] 1 = có chữ tiếng Việt
+  category: string // [TINIX] serif | sans | script | display | handwriting
+  tags: string // [TINIX] JSON mảng tag
+  license: string // [TINIX]
   created_at: string
 }
 
-const LIST_FIELDS = 'id, alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese, created_at'
+/** [TINIX] nhóm font hợp lệ (cũng dùng cho AI chọn font) */
+export const CATEGORIES = ['serif', 'sans', 'script', 'display', 'handwriting']
+
+const LIST_FIELDS = 'id, alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese, category, tags, license, created_at'
 
 /** 分页查询字体；搜索名称、value 和 font-family。 */
-export function listFonts(page = 1, pageSize = 20, search = ''): { list: FontRow[]; total: number } {
+export function listFonts(page = 1, pageSize = 20, search = '', filters: { lang?: string; vn?: string; category?: string } = {}): { list: FontRow[]; total: number } {
   const safePage = Math.max(1, Math.floor(Number(page) || 1))
   const safePageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSize) || 20)))
   const keyword = String(search || '').trim()
-  const where = keyword ? 'WHERE alias LIKE @keyword OR value LIKE @keyword OR font_family LIKE @keyword' : ''
-  const params: any = keyword ? { keyword: `%${keyword}%` } : {}
+  // [TINIX] bộ lọc: ngôn ngữ, hỗ trợ tiếng Việt, nhóm (kết hợp AND với ô tìm kiếm)
+  const conds: string[] = []
+  const params: any = {}
+  if (keyword) {
+    conds.push('(alias LIKE @keyword OR value LIKE @keyword OR font_family LIKE @keyword OR tags LIKE @keyword)')
+    params.keyword = `%${keyword}%`
+  }
+  if (filters.lang === 'en' || filters.lang === 'zh' || filters.lang === 'ko') {
+    conds.push('lang = @lang')
+    params.lang = filters.lang
+  }
+  if (filters.vn === '1' || filters.vn === '0') {
+    conds.push('COALESCE(supports_vietnamese, 0) = @vn')
+    params.vn = Number(filters.vn)
+  }
+  if (filters.category === 'none') conds.push("COALESCE(category, '') = ''")
+  else if (filters.category && CATEGORIES.indexOf(filters.category) >= 0) {
+    conds.push('category = @category')
+    params.category = filters.category
+  }
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : ''
   const total = Number(getDB().prepare(`SELECT COUNT(*) AS n FROM fonts ${where}`).get(params).n || 0)
   const list = getDB().prepare(`SELECT ${LIST_FIELDS} FROM fonts ${where} ORDER BY id DESC LIMIT @limit OFFSET @offset`).all({
     ...params,
@@ -67,21 +92,23 @@ export interface AddFontParams {
   size: number
   woff_size: number
   supports_vietnamese?: boolean | number // [TINIX]
+  category?: string // [TINIX]
+  tags?: string // [TINIX] JSON mảng
 }
 
 /** 新增字体，返回自增 id */
 export function addFont(params: AddFontParams): number {
   const info = getDB()
-    .prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese)
-      VALUES (@alias, @value, @preview, @woff, @ttf, @lang, @font_family, @size, @woff_size, @supports_vietnamese)`)
-    .run({ ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0 })
+    .prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese, category, tags)
+      VALUES (@alias, @value, @preview, @woff, @ttf, @lang, @font_family, @size, @woff_size, @supports_vietnamese, @category, @tags)`)
+    .run({ ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0, category: params.category || '', tags: params.tags || '[]' })
   return Number(info.lastInsertRowid)
 }
 
 /** 更新字体基础信息；文件大小字段由上传/新增时记录，编辑不改动。 */
 export function updateFont(id: number, params: Omit<AddFontParams, 'size' | 'woff_size'>): boolean {
   const info = getDB().prepare(`UPDATE fonts SET alias = @alias, value = @value, preview = @preview,
-    woff = @woff, ttf = @ttf, lang = @lang, font_family = @font_family, supports_vietnamese = @supports_vietnamese WHERE id = @id`).run({ id, ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0 })
+    woff = @woff, ttf = @ttf, lang = @lang, font_family = @font_family, supports_vietnamese = @supports_vietnamese, category = @category, tags = @tags WHERE id = @id`).run({ id, ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0, category: params.category || '', tags: params.tags || '[]' })
   return info.changes > 0
 }
 

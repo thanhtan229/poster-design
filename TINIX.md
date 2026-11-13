@@ -82,6 +82,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
   4. Lớp chữ thành widget chữ chỉnh được. Font không có trong kho được thay bằng font gần giống — app hiện thông báo "PSD font → font thay thế". Muốn đúng font gốc: thêm font đó (có giấy phép) vào kho rồi nhập lại.
   5. Giới hạn: hiệu ứng chữ phức tạp (warp, chữ theo đường cong), mask và smart object không được giữ nguyên; layer style (đổ màu, viền, bóng, nổi 3D) không được giữ.
 - **Trang admin:** http://127.0.0.1:5173/admin (quản lý font, mẫu, cấu hình AI).
+- **Bảng Quản lý font** (sửa file gốc, đều có comment `[TINIX]`: `src/views/Admin.vue`, `src/api/admin.ts`, `service/src/service/admin.ts`, `service/src/db/fonts.ts`): cột Xem trước (ảnh chữ mẫu do `npm run tinix:font-previews` tạo), Nhóm, Tag, cờ Tiếng Việt; bộ lọc ngôn ngữ / tiếng Việt / nhóm; hộp thoại sửa có Nhóm + Tag. Font thêm tay trong admin chưa có ảnh cho đến khi chạy lại script.
 
 ## Lỗi đã biết của repo gốc
 
