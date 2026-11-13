@@ -1226,6 +1226,66 @@
         "surf"
       ],
       "vietnamese": false
+    },
+    {
+      "family": "League Script",
+      "dir": "leaguescript",
+      "file": "LeagueScript-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "trang trí",
+        "cổ điển",
+        "thiệp cưới"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Mr Dafoe",
+      "dir": "mrdafoe",
+      "file": "MrDafoe-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "nghệ thuật",
+        "album"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Cookie",
+      "dir": "cookie",
+      "file": "Cookie-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "vintage",
+        "quảng cáo",
+        "poster"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Leckerli One",
+      "dir": "leckerlione",
+      "file": "LeckerliOne-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "brush",
+        "đậm",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Amatic SC",
+      "dir": "amaticsc",
+      "file": "AmaticSC-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "tiêu đề nhỏ",
+        "chữ phụ"
+      ],
+      "vietnamese": true
     }
   ]
 }
