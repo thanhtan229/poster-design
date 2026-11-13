@@ -1286,6 +1286,30 @@
         "chữ phụ"
       ],
       "vietnamese": true
+    },
+    {
+      "family": "Tangerine",
+      "dir": "tangerine",
+      "file": "Tangerine-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "thiệp cưới",
+        "tên cô dâu chú rể"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Cardo",
+      "dir": "cardo",
+      "file": "Cardo-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "vietnamese": false
     }
   ]
 }
