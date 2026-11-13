@@ -15,10 +15,14 @@
       <ul v-if="data && Array.isArray(data)" class="list-ul">
         <li
           v-for="listItem in data" :key="typeof listItem === 'object' ? listItem.alias : listItem"
-          :class="{ active: listItem == state.innerValue }"
+          :class="{ active: listItem == state.innerValue, 'has-preview': listItem.preview }"
           @click="selectItem(listItem)"
         >
-          <img v-if="listItem.preview" class="preview" :src="listItem.preview" alt="preview" />
+          <!-- [TINIX] có ảnh xem trước: hiện tên font (nhỏ) + dòng chữ mẫu viết bằng chính font đó -->
+          <template v-if="listItem.preview">
+            <span class="font-name">{{ typeof listItem === 'object' ? listItem.alias : listItem }}</span>
+            <img class="preview" :src="listItem.preview" alt="preview" loading="lazy" />
+          </template>
           <span v-else>{{ (typeof listItem === 'object' ? listItem.alias : listItem) + suffix }}</span>
         </li>
       </ul>
@@ -27,8 +31,11 @@
         <el-tabs v-model="state.activeTab">
           <el-tab-pane v-for="(val, key, i) in data" :key="'tab' + i" :label="key" :name="key">
             <ul class="list-ul">
-              <li v-for="listItem in data[key]" :key="typeof listItem === 'object' ? listItem.alias : listItem" :class="{ active: listItem == state.innerValue }" @click="selectItem(listItem)">
-                <img v-if="listItem.preview" class="preview" :src="listItem.preview" alt="preview" />
+              <li v-for="listItem in data[key]" :key="typeof listItem === 'object' ? listItem.alias : listItem" :class="{ active: listItem == state.innerValue, 'has-preview': listItem.preview }" @click="selectItem(listItem)">
+                <template v-if="listItem.preview">
+                  <span class="font-name">{{ typeof listItem === 'object' ? listItem.alias : listItem }}</span>
+                  <img class="preview" :src="listItem.preview" alt="preview" loading="lazy" />
+                </template>
                 <span v-else :style="{ fontFamily: `'${listItem.value}'` }">{{ (typeof listItem === 'object' ? listItem.alias : listItem) + suffix }}</span>
               </li>
             </ul>
@@ -300,9 +307,30 @@ function down() {
     // transform: scaleY(-1);
     height: 1.6em;
   }
+  // [TINIX] mục font có ảnh xem trước: tên nhỏ phía trên, ảnh chữ mẫu bên dưới
+  li.has-preview {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #f0f1f3;
+    .font-name {
+      color: #8a9099;
+      font-size: 11px;
+      line-height: 1.2;
+    }
+    .preview {
+      height: 36px;
+      width: auto;
+      max-width: 100%;
+    }
+  }
+  li.has-preview.active .font-name {
+    color: @color-primary;
+  }
 }
 
 .tabs-wrap {
-  width: 210px;
+  width: 300px; // [TINIX] rộng hơn để ảnh chữ mẫu của font hiển thị đủ
 }
 </style>

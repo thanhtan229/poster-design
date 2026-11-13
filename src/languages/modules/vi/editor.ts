@@ -138,6 +138,7 @@ export default {
     lineHeight: 'Giãn dòng',
     groupCurrent: 'Trang hiện tại',
     groupZh: 'Tiếng Trung',
+    groupKo: 'Tiếng Hàn',
     groupLatin: 'Latin',
   },
   qrcode: {

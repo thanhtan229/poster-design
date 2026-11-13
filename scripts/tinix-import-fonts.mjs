@@ -77,7 +77,8 @@ async function main() {
     if (existing) { update.run({ ...row, id: existing.id }); updated++ } else { insert.run(row); added++ }
   }
   db?.close()
-  if (!dry) console.log(`\nXong: thêm ${added}, cập nhật ${updated}, tải mới ${fetched} file (${(bytes / 1048576).toFixed(1)} MB). Font nằm ở service/static/fonts/.`)
+  if (!dry) console.log(`\nXong: thêm ${added}, cập nhật ${updated}, tải mới ${fetched} file (${(bytes / 1048576).toFixed(1)} MB). Font nằm ở service/static/fonts/.
+Tiếp theo: npm run tinix:font-previews (tạo ảnh xem trước cho font mới).`)
 }
 
 main().catch((e) => { console.error('[tinix:fonts] Lỗi:', e.message); process.exit(1) })

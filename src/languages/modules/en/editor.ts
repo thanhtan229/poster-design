@@ -138,6 +138,7 @@ export default {
     lineHeight: 'Leading',
     groupCurrent: 'On this page',
     groupZh: 'Chinese',
+    groupKo: 'Korean',
     groupLatin: 'Latin',
   },
   qrcode: {

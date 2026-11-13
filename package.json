@@ -7,6 +7,7 @@
     "tinix:setup": "npm i && npm --prefix service i",
     "tinix:dev": "node scripts/tinix-dev.mjs",
     "tinix:fonts": "node scripts/tinix-import-fonts.mjs",
+    "tinix:font-previews": "node scripts/tinix-font-previews.mjs",
     "tinix:test-ai": "node scripts/tinix-ai-selftest/index.cjs",
     "tinix:shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tinix-shortcut.ps1",
     "prepared": "npm i && cd service && PUPPETEER_DOWNLOAD_BASE_URL=https://cdn.npmmirror.com/binaries/chrome-for-testing npm i",

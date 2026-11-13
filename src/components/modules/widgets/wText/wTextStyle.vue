@@ -181,11 +181,12 @@ function selectTextEffect({ key, value, style }: any) {
 
 function loadFonts() {
   const localFonts = useFontStore.list
-  const fontLists: Record<string, any> = { [i18n.global.t('editor.text.groupCurrent')]: [], [i18n.global.t('editor.text.groupZh')]: [], [i18n.global.t('editor.text.groupLatin')]: [] }
+  const fontLists: Record<string, any> = { [i18n.global.t('editor.text.groupCurrent')]: [], [i18n.global.t('editor.text.groupZh')]: [], [i18n.global.t('editor.text.groupKo')]: [], [i18n.global.t('editor.text.groupLatin')]: [] } // [TINIX] thêm thẻ Tiếng Hàn
   for (const font of localFonts) {
     const { id, oid, value, url, alias, preview, lang } = font
     const item = { id, oid, value, url, alias, preview }
-    lang === 'zh' ? fontLists[i18n.global.t('editor.text.groupZh')].unshift(item) : fontLists[i18n.global.t('editor.text.groupLatin')].unshift(item)
+    const group = lang === 'zh' ? 'groupZh' : lang === 'ko' ? 'groupKo' : 'groupLatin' // [TINIX]
+    fontLists[i18n.global.t('editor.text.' + group)].unshift(item)
   }
   fontLists[i18n.global.t('editor.text.groupCurrent')] = usePageFontsFilter()
   state.fontClassList = fontLists
