@@ -967,6 +967,65 @@
         "thanh lịch",
         "tiêu đề"
       ]
+    },
+    {
+      "family": "Instrument Serif",
+      "dir": "instrumentserif",
+      "file": "InstrumentSerif-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "tiêu đề",
+        "tương phản cao",
+        "poster"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Funnel Display",
+      "dir": "funneldisplay",
+      "file": "FunnelDisplay[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "poster",
+        "âm nhạc",
+        "thể thao"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "BioRhyme",
+      "dir": "biorhyme",
+      "file": "BioRhyme[wdth,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "biểu cảm",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Parisienne",
+      "dir": "parisienne",
+      "file": "Parisienne-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "thiệp cưới"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Jost",
+      "dir": "jost",
+      "file": "Jost[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "hình học",
+        "hiện đại",
+        "nội dung"
+      ],
+      "vietnamese": false
     }
   ]
 }
