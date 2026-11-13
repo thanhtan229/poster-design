@@ -240,7 +240,7 @@
           <el-table class="admin-table" :data="fonts" size="small" stripe v-loading="loading">
             <el-table-column prop="id" label="ID" width="60" />
             <!-- [TINIX] xem trước: dòng chữ mẫu viết bằng chính font (ảnh do npm run tinix:font-previews tạo) -->
-            <el-table-column :label="t('tinix.ui.adminExtra.xemTruoc')" width="300">
+            <el-table-column :label="t('tinix.ui.adminExtra.xemTruoc')" width="220">
               <template #default="{ row }">
                 <img v-if="row.preview" :src="row.preview" class="font-preview" loading="lazy" alt="" />
                 <span v-else class="muted-text">{{ t('tinix.ui.adminExtra.chuaCoAnh') }}</span>
@@ -504,7 +504,8 @@
           </el-select>
         </el-form-item>
         <el-form-item label="Tag">
-          <el-select v-model="fontDialog.form.tags" multiple filterable allow-create default-first-option :multiple-limit="10" style="width: 100%" :placeholder="t('tinix.ui.adminExtra.tagGoiY')" />
+          <!-- [TINIX] reserve-keyword=false: xóa chữ đang gõ sau khi nhấn Enter -->
+          <el-select v-model="fontDialog.form.tags" multiple filterable allow-create default-first-option :reserve-keyword="false" :multiple-limit="10" style="width: 100%" :placeholder="t('tinix.ui.adminExtra.tagGoiY')" />
         </el-form-item>
         <el-form-item label="font-family">
           <el-input v-model="fontDialog.form.font_family" :placeholder="t('admin.font.optional')" maxlength="80" />
