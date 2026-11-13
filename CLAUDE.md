@@ -21,7 +21,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - **Tệp → Lưu thành mẫu (công khai)** (chỉ admin) biến thiết kế thành mẫu trong thẻ "Mẫu thiết kế".
 - Khung ảnh do AI dựng có `fit: 'cover'`: "Thay ảnh" giữ nguyên kích thước khung.
 - Độ ổn định AI: `postWithRetry` (tự thử lại 429 quá tải/5xx, không thử lại khi hết quota), `modelErrorHint` (model bị ngừng/sai tên). Mọi lần gọi, kể cả tạo ảnh, ghi vào `ai_jobs` và tính vào giới hạn chi phí tháng.
-- Bộ tự kiểm tra offline: `npm run tinix:test-ai` (nhà cung cấp giả, DB tạm) — chạy sau mỗi thay đổi phần AI.
+- Bộ tự kiểm tra offline: `npm run tinix:test` (AI nhà cung cấp giả + font + khóa i18n, DB tạm, không cần API key) — chạy sau mỗi thay đổi; riêng phần AI có `npm run tinix:test-ai`.
 - Thư mục `.runtime/` (log chạy thử, công cụ tạm) và `psd-test/` (PSD mẫu) không đưa vào git.
 
 ## Quy ước bắt buộc
@@ -30,7 +30,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Hạn chế sửa file gốc. Mỗi chỗ sửa file gốc: thêm comment `[TINIX]` và ghi vào `TINIX.md`.
 - Mọi lời gọi AI đi qua `service/src/tinix/ai/vision.ts` (`callVisionJSON`); kiểm tra JSON bằng `service/src/tinix/ai/validate.ts` (KHÔNG dùng zod: service biên dịch bằng TypeScript 3.9); lịch sử/chi phí ghi vào `ai_jobs`.
 - Service dùng TypeScript 3.9: không có `catch (e: any)`, labeled tuple, `satisfies`… Kiểm tra: `cd service && npx tsc --noEmit -p .` (bỏ qua lỗi sẵn có trong `node_modules/axios`).
-- Sau khi sửa phần AI: chạy `npm run tinix:test-ai`.
+- Sau khi sửa phần AI: chạy `npm run tinix:test-ai`; sau khi sửa font/admin/i18n: chạy `npm run tinix:test`.
 - AI trả tọa độ tỉ lệ 0–1; widget dùng px → đổi bằng kích thước trang.
 - Chuỗi giao diện mới của TinixPoster: thêm khóa vào `src/languages/modules/vi/tinix-ui.ts` rồi dùng `$t('tinix.ui.<nhóm>.<khóa>')` / `i18t(...)`, không viết cứng tiếng Việt trong component.
 - Ghi chú code mới bằng tiếng Việt hoặc tiếng Anh (code gốc ghi chú tiếng Trung).

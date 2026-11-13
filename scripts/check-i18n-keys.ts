@@ -28,4 +28,5 @@ used.forEach((f, k) => { if (isTinix(k)) return; if (!viKeys.has(k) || !enKeys.h
 viKeys.forEach((k) => { if (!isTinix(k) && !enKeys.has(k)) { console.log('vi-only', k); bad++ } })
 enKeys.forEach((k) => { if (!viKeys.has(k)) { console.log('en-only', k); bad++ } })
 console.log(`vi=${viKeys.size} en=${enKeys.size} used=${used.size} problems=${bad}`)
+if (bad) process.exitCode = 1 // [TINIX] để npm run tinix:test báo lỗi
 process.exit(bad ? 1 : 0)

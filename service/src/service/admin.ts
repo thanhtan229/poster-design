@@ -18,6 +18,7 @@ import { send, isNumber } from '../utils/tools'
 import { listAllTemplates, softDeleteTemplate, deleteTemplate as deleteTemplateRow, deleteUserImage, listCategories, listAssets, addAsset as addAssetRow, saveAsset, moveAsset, deleteAsset as deleteAssetRow, deleteCategory, addCategory, renameCategory } from '../db/admin'
 import { listUserImages } from '../db/userImages'
 import * as fontsRepo from '../db/fonts'
+import { cleanCategory, cleanTags } from '../tinix/fontMeta' // [TINIX]
 import * as templatesRepo from '../db/templates'
 import * as usersRepo from '../db/users'
 import * as templateCategoriesRepo from '../db/templateCategories'
@@ -29,21 +30,7 @@ function pageResult<T>(list: T[], pageValue: any, pageSizeValue: any) {
   return { list: list.slice((page - 1) * pageSize, page * pageSize), total: list.length, page, pageSize }
 }
 
-// [TINIX] làm sạch nhóm/tag font nhận từ form quản trị
-function cleanCategory(v: any): string {
-  const s = typeof v === 'string' ? v.trim() : ''
-  return fontsRepo.CATEGORIES.indexOf(s) >= 0 ? s : ''
-}
-function cleanTags(v: any): string {
-  const arr = Array.isArray(v) ? v : typeof v === 'string' ? v.split(',') : []
-  const out: string[] = []
-  for (const t of arr) {
-    const s = String(t).trim().slice(0, 30)
-    if (s && out.indexOf(s) < 0) out.push(s)
-    if (out.length >= 10) break
-  }
-  return JSON.stringify(out)
-}
+// [TINIX] làm sạch nhóm/tag font nhận từ form quản trị: xem service/src/tinix/fontMeta.ts
 
 export default {
   // 模板列表（含已下架）

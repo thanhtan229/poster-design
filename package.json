@@ -11,6 +11,7 @@
     "tinix:winfonts": "node scripts/tinix-winfonts.mjs",
     "tinix:backup": "node scripts/tinix-backup.mjs",
     "tinix:test-ai": "node scripts/tinix-ai-selftest/index.cjs",
+    "tinix:test": "node scripts/tinix-test.cjs",
     "tinix:shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tinix-shortcut.ps1",
     "prepared": "npm i && cd service && PUPPETEER_DOWNLOAD_BASE_URL=https://cdn.npmmirror.com/binaries/chrome-for-testing npm i",
     "serve": "npm run dev & cd service && npm run dev",

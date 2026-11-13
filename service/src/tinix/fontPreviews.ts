@@ -23,6 +23,8 @@ function appendLog(chunk: string) {
 
 /** Thư mục gốc repo: service được chạy với cwd = thư mục service/ */
 function scriptPath(): string {
+  // TINIX_PREVIEW_SCRIPT: đường dẫn script thay thế (dùng khi kiểm thử)
+  if (process.env.TINIX_PREVIEW_SCRIPT) return process.env.TINIX_PREVIEW_SCRIPT
   return path.resolve(process.cwd(), '..', 'scripts', 'tinix-font-previews.mjs')
 }
 
