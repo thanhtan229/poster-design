@@ -831,6 +831,53 @@
         "cách điệu",
         "tiêu đề"
       ]
+    },
+    {
+      "family": "Fraunces",
+      "dir": "fraunces",
+      "file": "Fraunces[SOFT,WONK,opsz,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "tương phản cao",
+        "album",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Lato",
+      "dir": "lato",
+      "file": "Lato-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "nhẹ nhàng",
+        "nội dung",
+        "sạch"
+      ]
+    },
+    {
+      "family": "Cinzel",
+      "dir": "cinzel",
+      "file": "Cinzel[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "tiêu đề",
+        "viết hoa"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Abril Fatface",
+      "dir": "abrilfatface",
+      "file": "AbrilFatface-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "tạp chí",
+        "đậm",
+        "tiêu đề"
+      ],
+      "vietnamese": false
     }
   ]
 }
