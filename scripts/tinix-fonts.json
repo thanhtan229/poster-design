@@ -1384,6 +1384,54 @@
         "mạnh mẽ",
         "tiêu đề"
       ]
+    },
+    {
+      "family": "Kristi",
+      "dir": "kristi",
+      "file": "Kristi-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "viết tay",
+        "thiệp cưới",
+        "mềm mại"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Niconne",
+      "dir": "niconne",
+      "file": "Niconne-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "thiệp cưới",
+        "nét mảnh"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Grand Hotel",
+      "dir": "grandhotel",
+      "file": "GrandHotel-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "retro",
+        "poster",
+        "nghệ thuật"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Meddon",
+      "dir": "meddon",
+      "file": "Meddon.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "tự nhiên",
+        "album"
+      ],
+      "vietnamese": false
     }
   ]
 }
