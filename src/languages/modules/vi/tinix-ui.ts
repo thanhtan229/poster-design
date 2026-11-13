@@ -193,6 +193,7 @@ export default {
     yourPhoto: 'Ảnh của bạn',
   },
   placeText: {
+    hashtag: 'Hashtag',
     tieu_de: 'Tiêu đề',
     tieu_de_phu: 'Tiêu đề phụ',
     noi_dung: 'Nội dung',

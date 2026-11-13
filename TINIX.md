@@ -85,6 +85,17 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 - **Bảng Quản lý font** (sửa file gốc, đều có comment `[TINIX]`: `src/views/Admin.vue`, `src/api/admin.ts`, `service/src/service/admin.ts`, `service/src/db/fonts.ts`): cột Xem trước (ảnh chữ mẫu do `npm run tinix:font-previews` tạo), Nhóm, Tag, cờ Tiếng Việt; bộ lọc ngôn ngữ / tiếng Việt / nhóm; hộp thoại sửa có Nhóm + Tag. Font thêm tay trong admin chưa có ảnh cho đến khi chạy lại script.
 - **Gắn tag font theo ảnh** (Trợ lý AI → Cài đặt → "AI gắn tag theo ảnh xem trước"): `POST /api/tinix/ai/tag-fonts` với `{mode:'vision', limit?, ids?}` → `tagFontsFromPreview` (`service/src/tinix/ai/tasks.ts`): gửi ảnh `static/font-previews/<id>.png` (lô 8 ảnh/lượt, qua `callVisionJSON`) để AI nhìn nét chữ rồi gán nhóm + tag. Cột mới `fonts.tag_source`: `''` | `name` (AI đoán theo tên) | `vision` | `manual` (sửa tay trong admin, AI không bao giờ ghi đè). Giá trị cũ của từng font ghi trong `ai_jobs.input_summary.previous` để khôi phục. Sửa file gốc: `service/src/db/fonts.ts` (`updateFont` đánh dấu manual).
 - **Nhập nhiều PSD thành mẫu** (`/psd`, chỉ admin): chọn nhiều file `.psd` cùng lúc → `Psd.vue` gom file (Uploader phát `load` từng file), nhập tuần tự: `loadPSD` → `UploadTemplate.vue` `saveAsTemplate(title, cate)` (tải ảnh nền/ảnh lớp lên server rồi `saveTemplate`; server tự tạo ảnh bìa) → dọn trang → file kế. Bỏ qua file trùng tiêu đề mẫu đã có; chọn danh mục (tùy chọn) ở thanh trên; hộp thoại hiện tiến độ và lỗi từng file. Chọn 1 file thì giữ luồng cũ (mở trong editor). Đã nhập thử 9 PSD trong `psd-test/` (kể cả file 8268×11220, 35 MB): 9/9 thành công.
+- **Đối chiếu với Tizino Design 1.2** (video review, kiểm tra 2026-11-13):
+  | Tính năng (Tizino) | TinixPoster | Ghi chú |
+  |---|---|---|
+  | Trợ lý AI: sửa chữ, gợi ý chữ, dựng theo mẫu, tìm font, lịch sử | ✅ | đủ 5 chức năng |
+  | Gợi ý chữ: 3 phong cách, tiêu đề/phụ đề/nội dung/hashtag/chữ ký | ✅ | chữ ký lấy từ tên studio trong Cài đặt AI |
+  | Dựng theo mẫu thành lớp chỉnh sửa được | ✅ | 2 chế độ; ảnh nền tương tự bằng AI |
+  | Tìm font bằng AI | ✅ | |
+  | Bảng lớp: danh sách, kéo đổi thứ tự, khóa | ✅ | ⚠ chưa có nút ẩn/hiện và đổi tên lớp; chuột phải: sao chép/dán/lên/xuống/xóa |
+  | Logo | ⚠ | thêm như ảnh thường (Ảnh/Của tôi); chưa có "logo mặc định" tự chèn |
+  | Thư viện mẫu | ⚠ | đã nhập 9 PSD vào thư viện; còn ít so với 100+ tài nguyên của Tizino |
+  Việc thiếu (backlog, chưa làm): nút ẩn/hiện + đổi tên lớp; logo mặc định theo studio.
 - **Kiểm thử:** `npm run tinix:test` chạy 3 nhóm (AI nhà cung cấp giả, font, khóa i18n) trên DB tạm trong `.runtime/`; mã thoát khác 0 nếu lỗi. File: `scripts/tinix-test.cjs`, `scripts/tinix-selftest/fonts.ts`, `scripts/tinix-selftest/run-ts.cjs`. Checklist thử tay sau khi sửa giao diện: tạo thiết kế → thêm chữ → lưu → mở lại → xuất ảnh; trang admin → Quản lý font (lọc, sửa nhóm/tag, nút tạo ảnh xem trước).
 - **Sao lưu:** `npm run tinix:backup` → `backups/<ngày-giờ>/poster.db` (SQLite backup API) + `static.tar.gz` (không gồm `fonts/`, `font-previews/`), giữ 10 bản mới nhất (`-- --keep N`). `backups/` nằm trong .gitignore.
 - **Nút tạo ảnh xem trước còn thiếu** (trang admin → Quản lý font): gọi `POST /api/admin/fonts/previews` → `service/src/tinix/fontPreviews.ts` chạy `scripts/tinix-font-previews.mjs` (chỉ font chưa có ảnh). Sửa file gốc: `service/src/control/api.ts`, `service/src/control/router.ts` (route + import), `src/api/admin.ts`, `src/views/Admin.vue`, `src/languages/modules/vi/tinix-ui.ts`.
