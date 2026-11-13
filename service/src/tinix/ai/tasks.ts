@@ -9,6 +9,9 @@ import { libraryFonts, fontListForPrompt, resolveFont, rankFonts, LibFont } from
 import { getTinixAiSettings } from './settings'
 import { getDB } from '../../db'
 import { cleanSvg } from './svg'
+import fs from 'fs'
+import path from 'path'
+import { filePath } from '../../configs'
 
 const CATEGORIES = ['serif', 'sans', 'script', 'display', 'handwriting'] as const
 const PART_KEYS = ['title', 'subtitle', 'body', 'hashtag', 'signature'] as const
@@ -295,7 +298,7 @@ export async function tagFonts(input: { all?: boolean }) {
       }))
     },
   })
-  const update = getDB().prepare('UPDATE fonts SET category = @category, tags = @tags WHERE value = @value')
+  const update = getDB().prepare("UPDATE fonts SET category = @category, tags = @tags, tag_source = 'name' WHERE value = @value AND tag_source != 'manual'")
   let updated = 0
   for (const f of data) {
     const target = resolveFont(f.family, fonts)
@@ -303,4 +306,60 @@ export async function tagFonts(input: { all?: boolean }) {
     updated += update.run({ category: f.category, tags: JSON.stringify(f.tags), value: target.value }).changes
   }
   return { updated, fonts: data, jobId, model }
+}
+
+/**
+ * [TINIX] Gắn nhóm + tag cho font bằng cách NHÌN ảnh xem trước (static/font-previews/<id>.png), thay cho đoán theo tên.
+ * - Mặc định xử lý font chưa được nhìn ảnh: tag_source = 'name', hoặc '' mà thiếu nhóm/tag. Font sửa tay ('manual') không bao giờ bị ghi đè.
+ * - `ids`: làm lại đúng các font này (trừ 'manual'). Mỗi lần gọi tối đa `limit` font (mặc định 24, lô 8 ảnh/lượt); `remaining` cho biết còn bao nhiêu.
+ * - Giá trị cũ của từng font được ghi vào ai_jobs.input_summary.previous để có thể khôi phục.
+ */
+export async function tagFontsFromPreview(input: { limit?: number; ids?: number[] }) {
+  const db = getDB()
+  const limit = Math.min(48, Math.max(1, Math.floor(Number(input.limit) || 24)))
+  const ids = Array.isArray(input.ids) ? input.ids.map((n) => Math.floor(Number(n))).filter((n) => n > 0) : []
+  const rows: any[] = ids.length
+    ? db.prepare(`SELECT id, alias, category, tags FROM fonts WHERE tag_source != 'manual' AND id IN (${ids.map(() => '?').join(',')}) ORDER BY id`).all(...ids)
+    : db.prepare("SELECT id, alias, category, tags FROM fonts WHERE tag_source != 'manual' AND (tag_source = 'name' OR (tag_source = '' AND (category = '' OR tags = '[]'))) ORDER BY id").all()
+  const previewFile = (id: number) => path.join(filePath, 'font-previews', `${id}.png`)
+  const withPreview = rows.filter((r) => fs.existsSync(previewFile(r.id)))
+  const skippedNoPreview = rows.length - withPreview.length
+  const todo = withPreview.slice(0, limit)
+  const remaining = withPreview.length - todo.length
+  const update = db.prepare("UPDATE fonts SET category = @category, tags = @tags, tag_source = 'vision' WHERE id = @id AND tag_source != 'manual'")
+  const changes: Array<{ id: number; alias: string; before: { category: string; tags: string }; after: { category: string; tags: string[] } }> = []
+  let updated = 0
+  for (let i = 0; i < todo.length; i += 8) {
+    const chunk = todo.slice(i, i + 8)
+    const images: string[] = []
+    for (const r of chunk) images.push(await prepareImage('data:image/png;base64,' + fs.readFileSync(previewFile(r.id)).toString('base64'), 700))
+    const names = chunk.map((r) => r.alias as string)
+    const previous: Record<string, { category: string; tags: string }> = {}
+    for (const r of chunk) previous[r.alias] = { category: r.category, tags: r.tags }
+    const { data } = await callVisionJSON({
+      kind: 'tag_fonts',
+      system: P.TAG_FONTS_VISION_SYSTEM,
+      text: P.tagFontsVisionUser(names),
+      images,
+      temperature: 0.3,
+      inputSummary: { mode: 'vision', names, previous },
+      validate: (v) => {
+        const o = obj(v, 'root')
+        return arr(o.fonts, 'fonts', 1, 8).map((f: any, k: number) => ({
+          family: str(f.family, `fonts[${k}].family`, { max: 80 }),
+          category: oneOf(f.category, CATEGORIES, 'sans'),
+          tags: arr(f.tags || [], `fonts[${k}].tags`, 0, 8).map((t: any) => String(t).slice(0, 30)),
+        }))
+      },
+    })
+    const byName = new Map<string, any>()
+    for (const d of data) byName.set(d.family.trim().toLowerCase(), d)
+    for (const r of chunk) {
+      const d = byName.get(String(r.alias).trim().toLowerCase())
+      if (!d || !d.tags.length) continue
+      updated += update.run({ id: r.id, category: d.category, tags: JSON.stringify(d.tags) }).changes
+      changes.push({ id: r.id, alias: r.alias, before: { category: r.category, tags: r.tags }, after: { category: d.category, tags: d.tags } })
+    }
+  }
+  return { updated, remaining, skippedNoPreview, changes }
 }

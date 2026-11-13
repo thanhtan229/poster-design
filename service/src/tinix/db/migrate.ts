@@ -2,7 +2,7 @@
  * [TINIX] Schema additions for TinixPoster. Idempotent — safe to run on every start.
  * Called from db/index.ts initDB() after the original tables are created.
  *
- * - fonts: category, tags (JSON array), supports_vietnamese, license
+ * - fonts: category, tags (JSON array), supports_vietnamese, license, tag_source
  * - ai_jobs: history + cost log for every AI call (see MVP-SPEC.md §4.2)
  */
 
@@ -14,6 +14,7 @@ const FONT_COLUMNS: Array<[string, string]> = [
   ['tags', "TEXT NOT NULL DEFAULT '[]'"], // JSON array, e.g. ["sang trọng","lãng mạn"]
   ['supports_vietnamese', 'INTEGER NOT NULL DEFAULT 0'],
   ['license', "TEXT NOT NULL DEFAULT ''"], // e.g. OFL
+  ['tag_source', "TEXT NOT NULL DEFAULT ''"], // '' | 'name' (AI gắn theo tên) | 'vision' (AI nhìn ảnh xem trước) | 'manual' (sửa tay: AI không ghi đè)
 ]
 
 function addMissingColumns(db: Db, table: string, columns: Array<[string, string]>): string[] {

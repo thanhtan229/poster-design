@@ -9,5 +9,6 @@ const dir = path.join(root, '.runtime', process.argv[3] || 'selftest-' + path.ba
 fs.rmSync(dir, { recursive: true, force: true })
 fs.mkdirSync(dir, { recursive: true })
 process.chdir(dir)
+process.env.NODE_ENV = process.env.NODE_ENV || 'development' // service dùng thư mục static theo cwd (thư mục tạm) khi ở chế độ development
 require(path.join(root, 'service/node_modules/ts-node')).register({ transpileOnly: true, compilerOptions: { module: 'commonjs', esModuleInterop: true } })
 require(path.join(__dirname, file))

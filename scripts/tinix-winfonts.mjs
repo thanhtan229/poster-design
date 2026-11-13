@@ -28,7 +28,7 @@ if (!fs.existsSync(dbPath)) throw new Error(`Không thấy ${dbPath}. Hãy chạ
 function exportManifest(db) {
   const catalog = JSON.parse(fs.readFileSync(path.join(root, 'scripts', 'tinix-fonts.json'), 'utf8'))
   const googleFamilies = new Set(catalog.fonts.map((f) => f.family))
-  const rows = db.prepare('SELECT alias, value, woff, category, tags, license, supports_vietnamese, lang FROM fonts ORDER BY id').all()
+  const rows = db.prepare('SELECT alias, value, woff, category, tags, license, supports_vietnamese, lang, tag_source FROM fonts ORDER BY id').all()
   const fonts = []
   for (const r of rows) {
     if (googleFamilies.has(r.value) || googleFamilies.has(r.alias)) continue
@@ -37,7 +37,7 @@ function exportManifest(db) {
     if (!file || !fs.existsSync(path.join(winDir, file))) continue
     let tags = []
     try { tags = JSON.parse(r.tags || '[]') } catch (e) { tags = [] }
-    fonts.push({ file, family: r.alias, category: r.category || '', tags, license: r.license || '', vietnamese: Number(r.supports_vietnamese) === 1, lang: r.lang || 'en' })
+    fonts.push({ file, family: r.alias, category: r.category || '', tags, tag_source: r.tag_source || '', license: r.license || '', vietnamese: Number(r.supports_vietnamese) === 1, lang: r.lang || 'en' })
   }
   const out = { _comment: '[TINIX] Font từ C:\\Windows\\Fonts (không gồm font Microsoft). Tạo bằng: npm run tinix:winfonts -- --export. Nhập bằng: npm run tinix:winfonts.', fonts }
   fs.writeFileSync(manifestPath, JSON.stringify(out, null, 2) + '\n')
@@ -48,10 +48,10 @@ function importManifest(db) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
   if (!dry) fs.mkdirSync(fontDir, { recursive: true })
   const findByValue = db.prepare('SELECT id FROM fonts WHERE value = ?')
-  const insert = db.prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, category, tags, supports_vietnamese, license)
-    VALUES (@alias, @alias, '', @url, @url, @lang, @alias, @size, @size, @category, @tags, @vn, @license)`)
+  const insert = db.prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, category, tags, supports_vietnamese, license, tag_source)
+    VALUES (@alias, @alias, '', @url, @url, @lang, @alias, @size, @size, @category, @tags, @vn, @license, @tag_source)`)
   const update = db.prepare(`UPDATE fonts SET woff=@url, ttf=@url, lang=@lang, size=@size, woff_size=@size,
-    category=@category, tags=@tags, supports_vietnamese=@vn, license=@license WHERE id=@id`)
+    category=@category, tags=@tags, supports_vietnamese=@vn, license=@license, tag_source=@tag_source WHERE id=@id`)
   let added = 0, updated = 0, missing = []
   for (const f of manifest.fonts) {
     const src = path.join(winDir, f.file)
@@ -61,7 +61,7 @@ function importManifest(db) {
     if (fs.existsSync(path.join(fontDir, name)) && fs.statSync(path.join(fontDir, name)).size !== size) name = 'win-' + f.file
     if (dry) { console.log(`${(f.category || '-').padEnd(11)} ${f.family.padEnd(28)} ← ${f.file}`); continue }
     if (!fs.existsSync(path.join(fontDir, name))) fs.copyFileSync(src, path.join(fontDir, name))
-    const row = { alias: f.family, url: `/static/fonts/${name}`, lang: f.lang || 'en', size, category: f.category || '', tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1, license: f.license || '' }
+    const row = { alias: f.family, url: `/static/fonts/${name}`, lang: f.lang || 'en', size, category: f.category || '', tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1, license: f.license || '', tag_source: f.tag_source || '' }
     const existing = findByValue.get(f.family)
     if (existing) { update.run({ ...row, id: existing.id }); updated++ } else { insert.run(row); added++ }
   }
@@ -70,6 +70,8 @@ function importManifest(db) {
 }
 
 const db = new Database(dbPath)
+// cột tag_source do service thêm khi khởi động (service/src/tinix/db/migrate.ts); thêm sớm ở đây nếu chưa có
+if (!db.prepare('PRAGMA table_info(fonts)').all().some((c) => c.name === 'tag_source')) db.prepare("ALTER TABLE fonts ADD COLUMN tag_source TEXT NOT NULL DEFAULT ''").run()
 try {
   if (doExport) exportManifest(db)
   else importManifest(db)

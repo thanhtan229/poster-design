@@ -51,6 +51,11 @@ async function main() {
   const ok = fontsRepo.updateFont(a, { alias: 'Alpha', value: 'Alpha', preview: '', woff: '/static/fonts/Alpha.ttf', ttf: '', lang: 'en', font_family: 'Alpha', supports_vietnamese: 1, category: 'display', tags: JSON.stringify(['mới']) })
   const row = fontsRepo.listFonts(1, 50, 'Alpha').list[0]
   check('sửa font lưu nhóm + tag', ok && row.category === 'display' && row.tags === '["mới"]', row)
+  const src = (id: number) => getDB().prepare('SELECT tag_source FROM fonts WHERE id = ?').get(id).tag_source
+  check('sửa nhóm/tag → tag_source = manual', src(a) === 'manual', src(a))
+  getDB().prepare("UPDATE fonts SET tag_source = 'vision' WHERE id = ?").run(a)
+  fontsRepo.updateFont(a, { alias: 'Alpha2', value: 'Alpha', preview: '', woff: '/static/fonts/Alpha.ttf', ttf: '', lang: 'en', font_family: 'Alpha', supports_vietnamese: 1, category: 'display', tags: JSON.stringify(['mới']) })
+  check('sửa trường khác (nhóm/tag giữ nguyên) → không đổi tag_source', src(a) === 'vision', src(a))
 
   console.log('Manifest/danh mục font')
   const readJson = (rel: string) => JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'))

@@ -3,7 +3,7 @@
 import http from '../../service/src/utils/http'
 import * as settings from '../../service/src/db/settings'
 import { initDB, getDB } from '../../service/src/db'
-import { suggestText, rewriteText, findFont, tagFonts } from '../../service/src/tinix/ai/tasks'
+import { suggestText, rewriteText, findFont, tagFonts, tagFontsFromPreview } from '../../service/src/tinix/ai/tasks'
 import { monthUsage } from '../../service/src/tinix/ai/cost-log'
 import { saveTinixAiSettings } from '../../service/src/tinix/ai/settings'
 
@@ -61,6 +61,21 @@ async function main() {
   answers = [JSON.stringify({ fonts: [{ family: 'ZCOOL', category: 'display', tags: ['vui tươi'] }] })]
   const t = await tagFonts({})
   console.log('tag fonts ok: updated =', t.updated, '; model =', lastRequest.body.model, '; row =', JSON.stringify(db.prepare("SELECT category, tags FROM fonts WHERE value='ZCOOL'").get()))
+
+  // 4b) tag fonts bằng ẢNH xem trước: 2 font 'name' + 1 font 'manual' (không được đụng) + 1 font thiếu ảnh
+  const sharpLib = require('../../service/node_modules/sharp')
+  const png = await sharpLib({ create: { width: 560, height: 72, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 0 } } }).png().toBuffer()
+  require('fs').mkdirSync('static/font-previews', { recursive: true })
+  const idOf = (v: string) => db.prepare('SELECT id FROM fonts WHERE value = ?').get(v).id
+  for (const v of ['Great Vibes', 'Montserrat', 'Allura']) { db.prepare("UPDATE fonts SET tag_source = ? WHERE value = ?").run(v === 'Allura' ? 'manual' : 'name', v); require('fs').writeFileSync(`static/font-previews/${idOf(v)}.png`, png) }
+  db.prepare("UPDATE fonts SET tag_source = 'name' WHERE value = 'Playfair Display'").run() // không có ảnh → bị bỏ qua
+  answers = [JSON.stringify({ fonts: [{ family: 'Great Vibes', category: 'script', tags: ['lãng mạn', 'thư pháp', 'chữ ký'] }, { family: 'Montserrat', category: 'sans', tags: ['hiện đại', 'hình học'] }] })]
+  const tv = await tagFontsFromPreview({})
+  const manualRow = db.prepare("SELECT category, tags, tag_source FROM fonts WHERE value = 'Allura'").get()
+  const gv = db.prepare("SELECT category, tags, tag_source FROM fonts WHERE value = 'Great Vibes'").get()
+  const sentImgs = lastRequest.body.messages[1].content.filter((c: any) => c.type === 'image_url').length
+  console.log('tag fonts (vision) ok: updated =', tv.updated, '; images sent =', sentImgs, '; skipped no preview =', tv.skippedNoPreview, '; remaining =', tv.remaining, '; manual untouched =', manualRow.tag_source === 'manual' && manualRow.category === 'script', '; Great Vibes →', gv.tag_source, gv.tags)
+  if (tv.updated !== 2 || sentImgs !== 2 || tv.skippedNoPreview < 1 || gv.tag_source !== 'vision') throw new Error('tagFontsFromPreview sai kết quả')
 
   // 5) provider error → readable message + logged
   ;(http as any).post = async () => { const e: any = new Error('Request failed'); e.response = { data: { error: { message: 'invalid api key' } } }; throw e }

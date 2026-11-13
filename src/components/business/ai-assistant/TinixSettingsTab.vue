@@ -23,6 +23,7 @@
     <div class="tx-row">
       <el-button type="primary" size="small" :loading="state.saving" @click="save">{{ $t('tinix.ui.settingsTab.luu_cai_dat') }}</el-button>
       <el-button size="small" :loading="state.tagging" @click="tag">{{ $t('tinix.ui.settingsTab.ai_gan_tag_cho_font') }}</el-button>
+      <el-button size="small" :loading="state.taggingVision" @click="tagVision">{{ state.taggingVision ? $t('tinix.ui.settingsTab.dang_gan_tag_theo_anh', { n: state.visionDone }) : $t('tinix.ui.settingsTab.ai_gan_tag_theo_anh') }}</el-button>
     </div>
   </div>
 </template>
@@ -37,7 +38,7 @@ const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [T
 
 const form = reactive({ vision_model: '', studio_name: '', price_in_per_1m: 0, price_out_per_1m: 0, monthly_limit_vnd: 0, price_per_image_vnd: 0 })
 const base = ref<TAiSettings['base'] | null>(null)
-const state = reactive({ saving: false, tagging: false })
+const state = reactive({ saving: false, tagging: false, taggingVision: false, visionDone: 0 })
 
 async function load() {
   const res = await tinixAi.getSettings()
@@ -64,6 +65,22 @@ async function tag() {
     ElMessage.success(res.updated ? i18t('tinix.ui.settingsTab.tagged', { n: res.updated }) : i18t('tinix.ui.settingsTab.tat_ca_font_deu_da'))
   } finally {
     state.tagging = false
+  }
+}
+// [TINIX] Gắn tag bằng cách nhìn ảnh xem trước: gọi lặp (mỗi lần tối đa 24 font) đến khi hết font cần làm
+async function tagVision() {
+  state.taggingVision = true
+  state.visionDone = 0
+  try {
+    for (let round = 0; round < 40; round++) {
+      const res: any = await tinixAi.tagFonts({ mode: 'vision', limit: 24 })
+      if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.settingsTab.gan_tag_khong_thanh_cong'))
+      state.visionDone += res.updated || 0
+      if (!res.remaining || !res.updated) break // hết việc, hoặc AI không trả được gì thêm (tránh lặp vô hạn)
+    }
+    ElMessage.success(state.visionDone ? i18t('tinix.ui.settingsTab.tagged', { n: state.visionDone }) : i18t('tinix.ui.settingsTab.tat_ca_font_da_nhin_anh'))
+  } finally {
+    state.taggingVision = false
   }
 }
 onMounted(load)

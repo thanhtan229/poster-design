@@ -5,7 +5,7 @@
  *   POST /api/tinix/ai/rewrite-text   { image, layers: [{uuid, text}], lang }
  *   POST /api/tinix/ai/find-font      { image }
  *   POST /api/tinix/ai/rebuild        { reference, photo?, lang, mode?: 'faithful'|'creative' }  (Dựng theo mẫu)
- *   POST /api/tinix/ai/tag-fonts      { all? }
+ *   POST /api/tinix/ai/tag-fonts      { all? } | { mode:'vision', limit?, ids? }
  *   GET  /api/tinix/ai/jobs?limit=&kind=
  *   GET  /api/tinix/ai/usage?month=YYYY-MM
  *   GET  /api/tinix/ai/settings       → tinix settings + status of the base AI config
@@ -18,7 +18,7 @@ import { findUserById } from '../../db/users'
 import { getAiSettings } from '../../db/settings'
 import { getTinixAiSettings, saveTinixAiSettings } from './settings'
 import { listJobs, monthUsage } from './cost-log'
-import { suggestText, rewriteText, findFont, tagFonts, rebuildFromReference } from './tasks'
+import { suggestText, rewriteText, findFont, tagFonts, tagFontsFromPreview, rebuildFromReference } from './tasks'
 
 const router = express.Router()
 const PREFIX = '/api/tinix/ai'
@@ -43,7 +43,7 @@ router.post(`${PREFIX}/suggest-text`, requireLogin, handle((b) => suggestText({ 
 router.post(`${PREFIX}/rewrite-text`, requireLogin, handle((b) => rewriteText({ image: b.image, layers: Array.isArray(b.layers) ? b.layers : [], lang: b.lang })))
 router.post(`${PREFIX}/find-font`, requireLogin, handle((b) => findFont({ image: b.image })))
 router.post(`${PREFIX}/rebuild`, requireLogin, handle((b) => rebuildFromReference({ reference: b.reference, photo: b.photo, lang: b.lang, mode: b.mode })))
-router.post(`${PREFIX}/tag-fonts`, requireLogin, handle((b) => tagFonts({ all: !!b.all })))
+router.post(`${PREFIX}/tag-fonts`, requireLogin, handle((b) => (b.mode === 'vision' ? tagFontsFromPreview({ limit: Number(b.limit) || undefined, ids: Array.isArray(b.ids) ? b.ids : undefined }) : tagFonts({ all: !!b.all })))) // [TINIX] mode:'vision' = nhìn ảnh xem trước
 router.get(`${PREFIX}/jobs`, requireLogin, handle(async (_b, req) => ({ list: listJobs(Number(req.query.limit) || 30, req.query.kind ? String(req.query.kind) : undefined) })))
 router.get(`${PREFIX}/usage`, requireLogin, handle(async (_b, req) => ({ ...monthUsage(req.query.month ? String(req.query.month) : undefined), limit_vnd: getTinixAiSettings().monthly_limit_vnd })))
 router.get(

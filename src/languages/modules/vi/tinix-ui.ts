@@ -137,6 +137,9 @@ export default {
     warn: '{reason} Vào <a href="/admin" target="_blank">trang Quản trị</a> → mục cấu hình AI (Thiết lập AI) để nhập API key, endpoint và bật AI.',
     endpointInfo: 'Endpoint: {url} · model chữ: {model} (đổi trong trang Quản trị).',
     tagged: 'Đã gắn tag cho {n} font',
+    ai_gan_tag_theo_anh: 'AI gắn tag theo ảnh xem trước',
+    dang_gan_tag_theo_anh: 'Đang gắn tag… ({n} font)',
+    tat_ca_font_da_nhin_anh: 'Không còn font nào cần gắn tag theo ảnh',
   },
   headerOptions: {
     chua_luu_duoc: 'Chưa lưu được',

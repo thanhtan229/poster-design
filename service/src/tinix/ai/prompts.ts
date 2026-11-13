@@ -98,6 +98,17 @@ letterSpacing là % cỡ chữ (vd 20 = giãn rộng). z: số lớn nằm trên
 export const TAG_FONTS_SYSTEM = `Bạn là chuyên gia typography. Phân loại font theo tên (bạn biết các font phổ biến của Google Fonts và font Trung/Việt).
 Chỉ trả về MỘT đối tượng JSON.`
 
+/** Gắn tag theo ẢNH xem trước: mỗi ảnh là một dòng chữ mẫu viết bằng đúng font đó. */
+export const TAG_FONTS_VISION_SYSTEM = `Bạn là chuyên gia typography. Bạn nhận một loạt ảnh, mỗi ảnh là một dòng chữ mẫu viết bằng MỘT font. Hãy phân loại theo HÌNH DẠNG NÉT CHỮ thực tế nhìn thấy trong ảnh (không đoán theo tên). Chỉ trả về MỘT đối tượng JSON.`
+
+export function tagFontsVisionUser(names: string[]) {
+  return `Có ${names.length} ảnh, theo đúng thứ tự dưới đây (ảnh 1 = font đầu tiên...):
+${names.map((n, i) => `${i + 1}. ${n}`).join(String.fromCharCode(10))}
+Với mỗi font cho nhóm và 3–5 tag cảm giác bằng tiếng Việt (ví dụ: sang trọng, lãng mạn, cổ điển, hiện đại, tối giản, tạp chí, thư pháp, chữ ký, vui tươi, mạnh mẽ, tiêu đề, nội dung, dễ đọc).
+Nhóm: serif = có chân; sans = không chân; script = nét nối/thư pháp/chữ ký; handwriting = viết tay tự nhiên, bút lông/marker; display = chữ tiêu đề trang trí, rất đậm hoặc có hình dáng đặc biệt.
+Trả về JSON: {"fonts":[{"family":"<tên như trên>","category":"serif|sans|script|display|handwriting","tags":["..."]}]}`
+}
+
 export function tagFontsUser(names: string[]) {
   return `Với mỗi font dưới đây, cho nhóm và 3–5 tag cảm giác bằng tiếng Việt (ví dụ: sang trọng, lãng mạn, cổ điển, hiện đại, tối giản, tạp chí, thư pháp, chữ ký, vui tươi, mạnh mẽ, tiêu đề, nội dung, dễ đọc).
 Fonts:

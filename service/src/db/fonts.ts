@@ -106,9 +106,11 @@ export function addFont(params: AddFontParams): number {
 }
 
 /** 更新字体基础信息；文件大小字段由上传/新增时记录，编辑不改动。 */
+// [TINIX] sửa tay nhóm/tag → tag_source = 'manual' (AI không ghi đè)
 export function updateFont(id: number, params: Omit<AddFontParams, 'size' | 'woff_size'>): boolean {
   const info = getDB().prepare(`UPDATE fonts SET alias = @alias, value = @value, preview = @preview,
-    woff = @woff, ttf = @ttf, lang = @lang, font_family = @font_family, supports_vietnamese = @supports_vietnamese, category = @category, tags = @tags WHERE id = @id`).run({ id, ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0, category: params.category || '', tags: params.tags || '[]' })
+    woff = @woff, ttf = @ttf, lang = @lang, font_family = @font_family, supports_vietnamese = @supports_vietnamese, category = @category, tags = @tags,
+    tag_source = CASE WHEN category != @category OR tags != @tags THEN 'manual' ELSE tag_source END WHERE id = @id`).run({ id, ...params, supports_vietnamese: params.supports_vietnamese ? 1 : 0, category: params.category || '', tags: params.tags || '[]' })
   return info.changes > 0
 }
 
