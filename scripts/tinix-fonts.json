@@ -1098,6 +1098,134 @@
         "gồ ghề"
       ],
       "vietnamese": false
+    },
+    {
+      "family": "Permanent Marker",
+      "dir": "permanentmarker",
+      "file": "PermanentMarker-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "marker",
+        "tiêu đề",
+        "poster"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Rock Salt",
+      "dir": "rocksalt",
+      "file": "RockSalt-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "khô",
+        "chữ lớn"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Yellowtail",
+      "dir": "yellowtail",
+      "file": "Yellowtail-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "retro",
+        "biển hiệu",
+        "vintage"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Satisfy",
+      "dir": "satisfy",
+      "file": "Satisfy-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "mềm",
+        "thiệp cưới"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Nanum Brush Script",
+      "dir": "nanumbrushscript",
+      "file": "NanumBrushScript-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "nghệ thuật"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Caveat Brush",
+      "dir": "caveatbrush",
+      "file": "CaveatBrush-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "nhẹ nhàng"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Merienda",
+      "dir": "merienda",
+      "file": "Merienda[wght].ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "gọn"
+      ],
+      "vietnamese": true
+    },
+    {
+      "family": "Caveat",
+      "dir": "caveat",
+      "file": "Caveat[wght].ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "hiện đại"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Kalam",
+      "dir": "kalam",
+      "file": "Kalam-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "nhẹ"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Indie Flower",
+      "dir": "indieflower",
+      "file": "IndieFlower-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "thân thiện",
+        "vui tươi"
+      ],
+      "vietnamese": true
+    },
+    {
+      "family": "Kaushan Script",
+      "dir": "kaushanscript",
+      "file": "KaushanScript-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "brush",
+        "surf"
+      ],
+      "vietnamese": false
     }
   ]
 }

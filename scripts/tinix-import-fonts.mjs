@@ -57,7 +57,9 @@ async function main() {
   for (const f of catalog.fonts) {
     const name = localName(f.file)
     const dest = path.join(fontDir, name)
-    const remote = catalog.source + f.dir + '/' + encodeURIComponent(f.file)
+    // [TINIX] f.source: nhánh khác của google/fonts (vd apache/) khi font không thuộc ofl/
+    const base = f.source || catalog.source
+    const remote = base + f.dir + '/' + encodeURIComponent(f.file)
     if (dry) { console.log(`${f.category.padEnd(11)} ${f.family.padEnd(24)} ← ${remote}`); continue }
 
     let size
@@ -69,7 +71,7 @@ async function main() {
       process.stdout.write(`  tải ${f.family} (${Math.round(size / 1024)} KB)\n`)
     }
     const lic = path.join(licenseDir, `${f.dir}-OFL.txt`)
-    if (!fs.existsSync(lic)) await download(catalog.source + f.dir + '/OFL.txt', lic)
+    if (!fs.existsSync(lic)) await download(base + f.dir + '/' + (f.source ? 'LICENSE.txt' : 'OFL.txt'), lic)
 
     const row = { alias: f.family, value: f.family, family: f.family, url: `/static/fonts/${name}`, size,
       category: f.category, tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1, lang: f.lang === 'ko' ? 'ko' : 'en' }
