@@ -175,6 +175,10 @@ export default {
     cat_handwriting: 'Viết tay',
   },
   psdPage: {
+    danh_muc_mau: 'Danh mục mẫu (khi chọn nhiều file)',
+    nhap_nhieu_mau: 'Nhập nhiều PSD thành mẫu',
+    dang_nhap: 'Đang nhập {i}/{n}: {name}',
+    ket_qua_nhap: 'Xong: {ok} mẫu đã thêm, {skipped} bỏ qua (trùng tên), {failed} lỗi.',
     chi_tai_khoan_quan_tri: 'Chỉ tài khoản quản trị mới nhập được PSD. Hãy đăng nhập bằng tài khoản admin.',
     khong_doc_duoc_file_psd: 'Không đọc được file PSD này: cả hai bộ đọc PSD (ag-psd và psd.js) đều báo lỗi. Chi tiết xem trong Console (F12).',
     substituted: 'Font không có trong kho, đã thay bằng font gần giống: {list}',

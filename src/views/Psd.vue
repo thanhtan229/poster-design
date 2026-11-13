@@ -14,10 +14,14 @@
         </div>
         <div style="flex: 1">
           <el-button plain type="primary" @click="jump2word">{{ $t('business.psd.spec') }}</el-button>
+          <!-- [TINIX] chọn nhiều file .psd cùng lúc → tự nhập thành mẫu; chọn danh mục (tùy chọn) cho các mẫu đó -->
+          <el-select v-model="batch.cate" clearable size="default" style="width: 200px; margin-left: 12px" :placeholder="$t('tinix.ui.psdPage.danh_muc_mau')">
+            <el-option v-for="c in batch.cates" :key="c.id" :label="c.name" :value="c.name" />
+          </el-select>
         </div>
         <el-button v-show="state.isDone" @click="clear">{{ $t('business.psd.clear') }}</el-button>
         <div class="v-tips">
-          <HeaderOptions :isDone="state.isDone" @change="optionsChange" />
+          <HeaderOptions ref="headerRef" :isDone="state.isDone" @change="optionsChange" />
         </div>
       </div>
     </div>
@@ -39,6 +43,15 @@
     <!-- 旋转缩放组件 -->
     <Moveable />
     <!-- 遮罩百分比进度条 -->
+    <!-- [TINIX] tiến độ / kết quả nhập nhiều PSD -->
+    <el-dialog :model-value="batch.running || batch.done" :title="$t('tinix.ui.psdPage.nhap_nhieu_mau')" width="520px" :close-on-click-modal="false" :show-close="!batch.running" @close="batch.done = false">
+      <el-progress :percentage="batch.total ? Math.round(((batch.running ? batch.index - 1 : batch.total) / batch.total) * 100) : 0" />
+      <p v-if="batch.running" style="margin-top: 12px">{{ $t('tinix.ui.psdPage.dang_nhap', { i: batch.index, n: batch.total, name: batch.name }) }}</p>
+      <div v-else style="margin-top: 12px; line-height: 1.8">
+        <div>{{ $t('tinix.ui.psdPage.ket_qua_nhap', { ok: batch.ok.length, skipped: batch.skipped.length, failed: batch.failed.length }) }}</div>
+        <div v-for="f in batch.failed" :key="f.name" style="color: #f56c6c">{{ f.name }}: {{ f.msg }}</div>
+      </div>
+    </el-dialog>
     <ProgressLoading :percent="state.downloadPercent" :text="state.downloadText" :cancelText="state.cancelText" :msg="state.downloadMsg" @cancel="cancel" @done="state.downloadPercent = 0" />
   </div>
 </template>
@@ -71,6 +84,7 @@ import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import { useCanvasStore, useControlStore, useWidgetStore, useGroupStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
+import * as adminApi from '@/api/admin' // [TINIX] nhập nhiều PSD
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 type TState = {
@@ -118,6 +132,7 @@ const myWorker = new useWorker(psdWorker)
 
 onMounted(async () => {
   groupStore.initGroupJson(JSON.stringify(wGroupSetting))
+  adminApi.getTemplateCategories(0, { page: 1, pageSize: 100 }).then((r: any) => (batch.cates = Array.isArray(r?.list) ? r.list : [])).catch(() => {}) // [TINIX]
   await nextTick()
   if (zoomControlRef.value) {
     zoomControlRef.value.screenChange()
@@ -125,11 +140,68 @@ onMounted(async () => {
   state.isDone = false
 })
 
+// [TINIX] nhiều file chọn cùng lúc: gom lại (Uploader phát 'load' từng file) rồi nhập tuần tự thành mẫu; một file thì giữ nguyên luồng cũ (mở trong editor)
+const headerRef = ref<any>(null)
+const batch = reactive({ running: false, done: false, total: 0, index: 0, name: '', cate: '', cates: [] as any[], ok: [] as string[], skipped: [] as string[], failed: [] as Array<{ name: string; msg: string }> })
+const pendingFiles: File[] = []
+let collectTimer: any
+
 async function selectFile(file: File) {
+  pendingFiles.push(file)
+  clearTimeout(collectTimer)
+  collectTimer = setTimeout(runPending, 250)
+}
+
+async function runPending() {
+  const files = pendingFiles.splice(0)
+  if (files.length > 1) return importBatch(files)
   loading = useLoading()
-  await loadPSD(file)
+  await loadPSD(files[0])
   loading.close()
   state.isDone = true
+}
+
+/** Tiêu đề các mẫu đã có (để bỏ qua file trùng tên khi nhập lại) */
+async function existingTemplateTitles(): Promise<Set<string>> {
+  const titles = new Set<string>()
+  try {
+    for (let page = 1; page <= 20; page++) {
+      const res: any = await adminApi.getTemplates({ page, pageSize: 100 })
+      const list: any[] = Array.isArray(res?.list) ? res.list : []
+      list.forEach((t) => titles.add(String(t.title)))
+      if (list.length < 100) break
+    }
+  } catch (e) {
+    // không lấy được danh sách: vẫn nhập, chỉ không bỏ qua được mẫu trùng
+  }
+  return titles
+}
+
+async function importBatch(files: File[]) {
+  Object.assign(batch, { running: true, done: false, total: files.length, index: 0, name: '', ok: [], skipped: [], failed: [] })
+  const existing = await existingTemplateTitles()
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const title = file.name.replace(/\.psd$/i, '')
+    batch.index = i + 1
+    batch.name = file.name
+    if (existing.has(title)) {
+      batch.skipped.push(file.name)
+      continue
+    }
+    try {
+      if (!(await loadPSD(file))) throw new Error(i18t('tinix.ui.psdPage.khong_doc_duoc_file_psd'))
+      await headerRef.value.saveAsTemplate(title, batch.cate)
+      batch.ok.push(file.name)
+      existing.add(title)
+    } catch (e: any) {
+      batch.failed.push({ name: file.name, msg: String((e && (e.msg || e.message)) || e).slice(0, 160) })
+    } finally {
+      await clear() // dọn trang trước khi sang file kế
+    }
+  }
+  batch.running = false
+  batch.done = true
 }
 
 const types: any = {
@@ -145,7 +217,7 @@ async function loadPSD(file: File) {
   if (error || !data) {
     console.error('[tinix:psd] parse failed:', error)
     ElMessage({ type: 'error', duration: 0, showClose: true, message: i18t('tinix.ui.psdPage.khong_doc_duoc_file_psd') })
-    return
+    return false
   }
   // [TINIX] set the page size first: widgets added while the page is still the default 1920px get clamped to it
   pageStore.setDPage(Object.assign(pageStore.dPage, { width: data.width, height: data.height }))
@@ -179,6 +251,7 @@ async function loadPSD(file: File) {
     ElMessage({ type: 'info', duration: 8000, showClose: true, message: i18t('tinix.ui.psdPage.substituted', { list }) })
   }
   await loadDone()
+  return true
 }
 
 async function clear() {
