@@ -19,7 +19,7 @@ const walk = (d: string) => {
     if (fs.statSync(f).isDirectory()) { if (n !== 'languages' && n !== 'node_modules') walk(f); continue }
     if (!/\.(vue|ts)$/.test(n)) continue
     const s = fs.readFileSync(f, 'utf8')
-    for (const m of s.matchAll(/(?<![\w.])(?:\$t|t|i18n\.global\.t)\(\s*['"`]([\w.]+)['"`]/g)) used.set(m[1], f)
+    for (const m of s.matchAll(/(?<![\w.])(?:\$t|t|i18n\.global\.t)\(\s*['"`]([\w.]+)['"`]/g)) { if (m[1].endsWith('.')) continue; used.set(m[1], f) } // [TINIX] bỏ qua khóa động ghép chuỗi ('editor.text.' + group)
   }
 }
 walk(path.resolve(__dirname, '../src'))

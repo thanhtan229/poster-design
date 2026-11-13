@@ -148,6 +148,7 @@ export default {
     savedBody: 'Mẫu #{id} đã hiện ở thẻ "Mẫu thiết kế" (bên trái).',
   },
   adminExtra: {
+    tag: 'Tag',
     taoAnhXemTruoc: 'Tạo ảnh xem trước còn thiếu',
     dangTaoAnh: 'Đang tạo ảnh xem trước…',
     daTaoAnh: 'Đã tạo xong ảnh xem trước',

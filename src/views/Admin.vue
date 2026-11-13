@@ -272,7 +272,7 @@
                 <span v-else class="muted-text">-</span>
               </template>
             </el-table-column>
-            <el-table-column label="Tag" min-width="170">
+            <el-table-column :label="t('tinix.ui.adminExtra.tag')" min-width="170">
               <template #default="{ row }">
                 <el-tag v-for="tg in parseFontTags(row.tags)" :key="tg" size="small" type="info" class="font-tag">{{ tg }}</el-tag>
                 <span v-if="!parseFontTags(row.tags).length" class="muted-text">-</span>
@@ -503,7 +503,7 @@
             <el-option v-for="c in FONT_CATEGORIES" :key="c" :label="t('tinix.ui.adminExtra.cat_' + c)" :value="c" />
           </el-select>
         </el-form-item>
-        <el-form-item label="Tag">
+        <el-form-item :label="t('tinix.ui.adminExtra.tag')">
           <!-- [TINIX] reserve-keyword=false: xóa chữ đang gõ sau khi nhấn Enter -->
           <el-select v-model="fontDialog.form.tags" multiple filterable allow-create default-first-option :reserve-keyword="false" :multiple-limit="10" style="width: 100%" :placeholder="t('tinix.ui.adminExtra.tagGoiY')" />
         </el-form-item>
