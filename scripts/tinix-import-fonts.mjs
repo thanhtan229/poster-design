@@ -49,9 +49,9 @@ async function main() {
   if (db) ensureColumns(db)
   const findByValue = db?.prepare('SELECT id FROM fonts WHERE value = ?')
   const insert = db?.prepare(`INSERT INTO fonts (alias, value, preview, woff, ttf, lang, font_family, size, woff_size, category, tags, supports_vietnamese, license)
-    VALUES (@alias, @value, '', @url, @url, @lang, @family, @size, @size, @category, @tags, @vn, 'OFL')`)
+    VALUES (@alias, @value, '', @url, @url, @lang, @family, @size, @size, @category, @tags, @vn, @license)`)
   const update = db?.prepare(`UPDATE fonts SET alias=@alias, woff=@url, ttf=@url, lang=@lang, font_family=@family, size=@size, woff_size=@size,
-    category=@category, tags=@tags, supports_vietnamese=@vn, license='OFL' WHERE id=@id`)
+    category=@category, tags=@tags, supports_vietnamese=@vn, license=@license WHERE id=@id`)
 
   let added = 0, updated = 0, fetched = 0, bytes = 0
   for (const f of catalog.fonts) {
@@ -73,7 +73,9 @@ async function main() {
     const lic = path.join(licenseDir, `${f.dir}-OFL.txt`)
     if (!fs.existsSync(lic)) await download(base + f.dir + '/' + (f.source ? 'LICENSE.txt' : 'OFL.txt'), lic)
 
-    const row = { alias: f.family, value: f.family, family: f.family, url: `/static/fonts/${name}`, size,
+    // [TINIX] giấy phép theo nhánh: google/fonts ofl = OFL, apache = Apache 2.0
+    const license = f.source && /apache/.test(f.source) ? 'Apache 2.0' : 'OFL'
+    const row = { alias: f.family, value: f.family, family: f.family, url: `/static/fonts/${name}`, size, license,
       category: f.category, tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1, lang: f.lang === 'ko' ? 'ko' : f.lang === 'zh' ? 'zh' : 'en' }
     const existing = findByValue.get(f.family)
     if (existing) { update.run({ ...row, id: existing.id }); updated++ } else { insert.run(row); added++ }

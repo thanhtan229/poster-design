@@ -1432,6 +1432,19 @@
         "album"
       ],
       "vietnamese": false
+    },
+    {
+      "family": "Rochester",
+      "dir": "rochester",
+      "file": "Rochester-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "viết tay",
+        "cổ điển",
+        "thiệp cưới"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
     }
   ]
 }
