@@ -1362,6 +1362,28 @@
       ],
       "vietnamese": false,
       "lang": "zh"
+    },
+    {
+      "family": "Oooh Baby",
+      "dir": "ooohbaby",
+      "file": "OoohBaby-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "viết tay",
+        "bút lông",
+        "mềm mại"
+      ]
+    },
+    {
+      "family": "Hurricane",
+      "dir": "hurricane",
+      "file": "Hurricane-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "nét cọ",
+        "mạnh mẽ",
+        "tiêu đề"
+      ]
     }
   ]
 }
