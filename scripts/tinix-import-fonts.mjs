@@ -74,7 +74,7 @@ async function main() {
     if (!fs.existsSync(lic)) await download(base + f.dir + '/' + (f.source ? 'LICENSE.txt' : 'OFL.txt'), lic)
 
     const row = { alias: f.family, value: f.family, family: f.family, url: `/static/fonts/${name}`, size,
-      category: f.category, tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1, lang: f.lang === 'ko' ? 'ko' : 'en' }
+      category: f.category, tags: JSON.stringify(f.tags || []), vn: f.vietnamese === false ? 0 : 1, lang: f.lang === 'ko' ? 'ko' : f.lang === 'zh' ? 'zh' : 'en' }
     const existing = findByValue.get(f.family)
     if (existing) { update.run({ ...row, id: existing.id }); updated++ } else { insert.run(row); added++ }
   }

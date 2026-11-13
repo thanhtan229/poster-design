@@ -1310,6 +1310,58 @@
         "nội dung"
       ],
       "vietnamese": false
+    },
+    {
+      "family": "Ma Shan Zheng",
+      "dir": "mashanzheng",
+      "file": "MaShanZheng-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "brush",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "ZCOOL QingKe HuangYou",
+      "dir": "zcoolqingkehuangyou",
+      "file": "ZCOOLQingKeHuangYou-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "brush",
+        "tiêu đề",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "Zhi Mang Xing",
+      "dir": "zhimangxing",
+      "file": "ZhiMangXing-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thảo thư",
+        "nét bay",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "Long Cang",
+      "dir": "longcang",
+      "file": "LongCang-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "brush",
+        "chữ phụ",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
     }
   ]
 }
