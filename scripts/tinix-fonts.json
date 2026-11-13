@@ -878,6 +878,95 @@
         "tiêu đề"
       ],
       "vietnamese": false
+    },
+    {
+      "family": "Bebas Neue",
+      "dir": "bebasneue",
+      "file": "BebasNeue-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "sự kiện",
+        "chữ hoa"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Teko",
+      "dir": "teko",
+      "file": "Teko[wght].ttf",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "hẹp",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Archivo",
+      "dir": "archivo",
+      "file": "Archivo[wdth,wght].ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Sacramento",
+      "dir": "sacramento",
+      "file": "Sacramento-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "mảnh",
+        "thanh lịch"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Bodoni Moda",
+      "dir": "bodonimoda",
+      "file": "BodoniModa[opsz,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "tạp chí",
+        "sang trọng"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Marcellus",
+      "dir": "marcellus",
+      "file": "Marcellus-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "viết hoa"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "DM Serif Display",
+      "dir": "dmserifdisplay",
+      "file": "DMSerifDisplay-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "tiêu đề",
+        "tương phản cao"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Viaoda Libre",
+      "dir": "viaodalibre",
+      "file": "ViaodaLibre-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "tiêu đề"
+      ]
     }
   ]
 }
