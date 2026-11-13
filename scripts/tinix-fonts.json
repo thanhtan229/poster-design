@@ -1026,6 +1026,78 @@
         "nội dung"
       ],
       "vietnamese": false
+    },
+    {
+      "family": "Monoton",
+      "dir": "monoton",
+      "file": "Monoton-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "retro",
+        "nightclub",
+        "điện tử"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Caprasimo",
+      "dir": "caprasimo",
+      "file": "Caprasimo-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "retro",
+        "bo tròn",
+        "vui tươi"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Shrikhand",
+      "dir": "shrikhand",
+      "file": "Shrikhand-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "retro",
+        "vintage",
+        "script đậm"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Limelight",
+      "dir": "limelight",
+      "file": "Limelight-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "art deco",
+        "retro",
+        "sang trọng"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Righteous",
+      "dir": "righteous",
+      "file": "Righteous-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "đậm",
+        "tiêu đề",
+        "mạnh mẽ"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Metal Mania",
+      "dir": "metalmania",
+      "file": "MetalMania-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "grunge",
+        "rock",
+        "gồ ghề"
+      ],
+      "vietnamese": false
     }
   ]
 }
