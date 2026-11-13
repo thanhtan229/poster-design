@@ -31,5 +31,8 @@ pnpm-debug.log*
 # [TINIX] local run logs
 .runtime/
 
+# [TINIX] backups from npm run tinix:backup
+/backups/
+
 # [TINIX] PSD files for local import testing
 /psd-test/

@@ -11,7 +11,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 
 ## Chạy
 - Cài phụ thuộc: `npm run tinix:setup`
-- Font mới: `npm run tinix:fonts` rồi `npm run tinix:font-previews` (ảnh xem trước trong danh sách chọn font)
+- Font mới: `npm run tinix:fonts` rồi `npm run tinix:font-previews` (ảnh xem trước trong danh sách chọn font). Font từ `C:\Windows\Fonts`: `npm run tinix:winfonts` (manifest `scripts/tinix-winfonts.json`). Sao lưu DB + file tĩnh: `npm run tinix:backup`.
 - Shortcut ngoài Desktop: `npm run tinix:shortcut` (trỏ vào `Mo-TinixPoster.cmd`)
 - Chạy cả hai: nhấp đúp `Mo-TinixPoster.cmd`, hoặc `npm run tinix:dev` → http://127.0.0.1:5173
 - Cấu hình bí mật: `service/.env` (mẫu `service/.env.example`). Không bao giờ commit `.env`.

@@ -1,0 +1,2750 @@
+{
+  "_comment": "[TINIX] Font từ C:\\Windows\\Fonts (không gồm font Microsoft). Tạo bằng: npm run tinix:winfonts -- --export. Nhập bằng: npm run tinix:winfonts.",
+  "fonts": [
+    {
+      "file": "Agbalumo-Regular.ttf",
+      "family": "Agbalumo",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "tròn trịa",
+        "thân thiện",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BT-BeauSans-Regular.ttf",
+      "family": "BT Beau Sans",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "gọn gàng",
+        "dễ đọc",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BT-BeauSans-BoldItalic.ttf",
+      "family": "BT Beau Sans Bold",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "hiện đại",
+        "rõ nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BT-BeauSans-ExtraBoldItalic.ttf",
+      "family": "BT Beau Sans Extra Bold",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BT-BeauSans-Light.ttf",
+      "family": "BT Beau Sans Light",
+      "category": "sans",
+      "tags": [
+        "thanh thoát",
+        "tối giản",
+        "hiện đại",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BT-BeauSans-ExtraBold.ttf",
+      "family": "BT Beau Sans Medium",
+      "category": "sans",
+      "tags": [
+        "cân bằng",
+        "hiện đại",
+        "gọn gàng",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-Black.ttf",
+      "family": "Be Vietnam Pro Black",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-ExtraBold.ttf",
+      "family": "Be Vietnam Pro ExtraBold",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-ExtraLight.ttf",
+      "family": "Be Vietnam Pro ExtraLight",
+      "category": "sans",
+      "tags": [
+        "thanh thoát",
+        "tối giản",
+        "hiện đại",
+        "dễ đọc"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-Light.ttf",
+      "family": "Be Vietnam Pro Light",
+      "category": "sans",
+      "tags": [
+        "nhẹ nhàng",
+        "tối giản",
+        "hiện đại",
+        "dễ đọc"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-Medium.ttf",
+      "family": "Be Vietnam Pro Medium",
+      "category": "sans",
+      "tags": [
+        "cân bằng",
+        "hiện đại",
+        "gọn gàng",
+        "dễ đọc"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-SemiBold.ttf",
+      "family": "Be Vietnam Pro SemiBold",
+      "category": "sans",
+      "tags": [
+        "rõ nét",
+        "hiện đại",
+        "chắc chắn",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BeVietnamPro-Thin.ttf",
+      "family": "Be Vietnam Pro Thin",
+      "category": "sans",
+      "tags": [
+        "mảnh mai",
+        "thanh thoát",
+        "tối giản",
+        "hiện đại"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Blackye.otf",
+      "family": "Blackye",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "mạnh mẽ",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Classique-Saigon.otf",
+      "family": "ClassiqueSaigon",
+      "category": "display",
+      "tags": [
+        "cổ điển",
+        "hoài niệm",
+        "thanh lịch",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Cookii-Display.otf",
+      "family": "Cookii Display",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "đáng yêu",
+        "tròn trịa",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DFVN Boris.otf",
+      "family": "DFVN Boris",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "mạnh mẽ",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DFVN Hello Honey.otf",
+      "family": "DFVN Hello Honey",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "mềm mại",
+        "chữ ký",
+        "nữ tính"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DFVN Radja Lover.otf",
+      "family": "DFVN Radja Lover",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "bay bổng",
+        "thanh lịch",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DFVN Soyuz Grotesk 2.0.ttf",
+      "family": "DFVN Soyuz Grotesk",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "hình học",
+        "mạnh mẽ",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DL-Mid-Autumn.otf",
+      "family": "DL Mid Autumn",
+      "category": "display",
+      "tags": [
+        "lễ hội",
+        "trang trí",
+        "ấm áp",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DL-Super-Dream.otf",
+      "family": "DL Super Dream",
+      "category": "display",
+      "tags": [
+        "bay bổng",
+        "trẻ trung",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DVN-Fredoka-Bold.ttf",
+      "family": "DVN - Fredoka",
+      "category": "sans",
+      "tags": [
+        "tròn trịa",
+        "vui tươi",
+        "thân thiện",
+        "dễ đọc"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "DVN-PoetsenOne.ttf",
+      "family": "DVN - Poetsen One",
+      "category": "sans",
+      "tags": [
+        "đậm nét",
+        "vui tươi",
+        "thân thiện",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Albra-Grotesk-Light.otf",
+      "family": "FC Albra Grotesk Light",
+      "category": "sans",
+      "tags": [
+        "tối giản",
+        "thanh thoát",
+        "hiện đại",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Arcittya-Begatri.otf",
+      "family": "FC Arcittya Begatri",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "bay bổng",
+        "trang trí",
+        "cổ điển"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Borish.otf",
+      "family": "FC Borish Regular",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "mộc mạc",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Brema.otf",
+      "family": "FC Brema",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "cổ điển",
+        "tạp chí",
+        "sang trọng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Chomp.otf",
+      "family": "FC Chomp",
+      "category": "display",
+      "tags": [
+        "vui nhộn",
+        "ngộ nghĩnh",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Daypon.otf",
+      "family": "FC Daypon",
+      "category": "display",
+      "tags": [
+        "trẻ trung",
+        "cá tính",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Daytonica.otf",
+      "family": "FC Daytonica",
+      "category": "script",
+      "tags": [
+        "mềm mại",
+        "thanh lịch",
+        "chữ ký",
+        "lãng mạn"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Handstand.otf",
+      "family": "FC Handstand",
+      "category": "display",
+      "tags": [
+        "nghịch ngợm",
+        "năng động",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Milk-Kids.otf",
+      "family": "FC Milk Kids",
+      "category": "handwriting",
+      "tags": [
+        "đáng yêu",
+        "ngây thơ",
+        "vui tươi",
+        "thân thiện"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Montra.otf",
+      "family": "FC Montra FreePersonalUse",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "trang trí",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Chỉ dùng cá nhân (FreePersonalUse, Surplus Type)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-Parkinsans-Bold.otf",
+      "family": "FC Parkinsans Bold",
+      "category": "sans",
+      "tags": [
+        "đậm nét",
+        "hiện đại",
+        "rõ ràng",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-The-Bold-Font.otf",
+      "family": "FC The Bold Font",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FC-VIP-Alpha-Brights.otf",
+      "family": "FC VIP Alpha Brights",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "rực rỡ",
+        "trẻ trung",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FVHShopeeText-Bold.otf",
+      "family": "FVH Shopee Text",
+      "category": "sans",
+      "tags": [
+        "thân thiện",
+        "hiện đại",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Fz-ED-Mentasta.ttf",
+      "family": "Fz ED Mentasta",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "mạnh mẽ",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "FzManchesterSignature.ttf",
+      "family": "Fz Manchester Signature",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "thanh lịch",
+        "bay bổng",
+        "lãng mạn"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Fz Thư pháp Tiểu tự Fontzin.ttf",
+      "family": "Fz Thu Phap TT Fontzin",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "cổ điển",
+        "trang trọng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Fz Thư pháp Đại tự Fontzin.ttf",
+      "family": "Fz Thu phap DT Fontzin",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "cổ điển",
+        "trang trọng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Fz-MrDakota.ttf",
+      "family": "Fz_MrDakota",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "phóng khoáng",
+        "cá tính",
+        "bay bổng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "HLkyokashoMedium.ttf",
+      "family": "HLkyokasho Medium",
+      "category": "sans",
+      "tags": [
+        "rõ ràng",
+        "gọn gàng",
+        "thân thiện",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "HY-Thu Phap 1.otf",
+      "family": "HY-Thu Phap 1",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "cổ điển",
+        "trang trọng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "KS-Bellerose.ttf",
+      "family": "KS Bellerose",
+      "category": "sans",
+      "tags": [
+        "thanh lịch",
+        "hình học",
+        "cổ điển",
+        "tiêu đề"
+      ],
+      "license": "Shareware (bản quyền ghi $15, cần mua trước khi dùng)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "LNTH-Marker-Felt.ttf",
+      "family": "LNTH-Marker Felt",
+      "category": "handwriting",
+      "tags": [
+        "tự nhiên",
+        "thân thiện",
+        "phóng khoáng",
+        "dễ gần"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "LNTH-Springtime-Flowers.ttf",
+      "family": "LNTH-Springtime Flowers",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "bay bổng",
+        "nữ tính",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Ð¡Ã×À¼Í¤×ÖÌå.ttf",
+      "family": "MI LANTING",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "thanh lịch",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Berrigela-Anitta.otf",
+      "family": "MTD Berrigela Anitta",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "mềm mại",
+        "chữ ký",
+        "nữ tính"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Bertolessi.otf",
+      "family": "MTD Bertolessi",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "bay bổng",
+        "chữ ký",
+        "cổ điển"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Brignola-PUA-Script.otf",
+      "family": "MTD Brignola PUA Script",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "lãng mạn",
+        "bay bổng",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Brunette.otf",
+      "family": "MTD Brunette",
+      "category": "script",
+      "tags": [
+        "nữ tính",
+        "mềm mại",
+        "lãng mạn",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Carrington.otf",
+      "family": "MTD Carrington",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "cổ điển",
+        "chữ ký",
+        "sang trọng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Colatin.otf",
+      "family": "MTD Colatin",
+      "category": "script",
+      "tags": [
+        "bay bổng",
+        "thanh lịch",
+        "lãng mạn",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Genia.otf",
+      "family": "MTD Genia",
+      "category": "script",
+      "tags": [
+        "mềm mại",
+        "nữ tính",
+        "thanh lịch",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD High Way.otf",
+      "family": "MTD High Way",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "năng động",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD Hummington.otf",
+      "family": "MTD Hummington",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "bay bổng",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD Valky Bold.otf",
+      "family": "MTD Valky Bold",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "cổ điển",
+        "mạnh mẽ",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD Valky Light.otf",
+      "family": "MTD Valky Light",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "sang trọng",
+        "cổ điển",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD Valky Regular.otf",
+      "family": "MTD Valky Regular",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "hiện đại",
+        "tạp chí",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD Valky Semibold.otf",
+      "family": "MTD Valky Semibold",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "mạnh mẽ",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MTD-Youther-Script.otf",
+      "family": "MTD Youther Script",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "lãng mạn",
+        "thanh lịch",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "MomoTrustDisplay-Regular.ttf",
+      "family": "Momo Trust Display",
+      "category": "display",
+      "tags": [
+        "hiện đại",
+        "nổi bật",
+        "tiêu đề",
+        "cá tính"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUAristonRegular.TTF",
+      "family": "SFU Ariston",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "cổ điển",
+        "lãng mạn",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUBaskervilleBookRegular.TTF",
+      "family": "SFU BaskervilleBook",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "sang trọng",
+        "nội dung",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUErgoeRegular.TTF",
+      "family": "SFU Ergoe",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUFuturaRegular.TTF",
+      "family": "SFU Futura",
+      "category": "sans",
+      "tags": [
+        "hình học",
+        "hiện đại",
+        "tối giản",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUGillSansRegular.TTF",
+      "family": "SFU GillSans",
+      "category": "sans",
+      "tags": [
+        "cổ điển",
+        "thân thiện",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUInsigniaRegular.TTF",
+      "family": "SFU Insignia",
+      "category": "display",
+      "tags": [
+        "hình học",
+        "mạnh mẽ",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUNapoliLight.TTF",
+      "family": "SFU Napoli",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "tạp chí",
+        "sang trọng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SFUStoneSansRegular.TTF",
+      "family": "SFU StoneSans",
+      "category": "sans",
+      "tags": [
+        "thân thiện",
+        "dễ đọc",
+        "hiện đại",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-ARCO-Typography.otf",
+      "family": "SVN-ARCO Typography",
+      "category": "display",
+      "tags": [
+        "hình học",
+        "vui tươi",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Ameyallinda Signature.otf",
+      "family": "SVN-Ameyallinda Signature",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "thanh lịch",
+        "lãng mạn",
+        "cá nhân"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Amstirdam.otf",
+      "family": "SVN-Amstirdam",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "lãng mạn",
+        "thanh lịch",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Aptima bold italic.ttf",
+      "family": "SVN-Aptima",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "dễ đọc",
+        "thân thiện",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Archattes.otf",
+      "family": "SVN-Archattes",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "cổ điển",
+        "thanh lịch",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Athene.otf",
+      "family": "SVN-Athene",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "sang trọng",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Be-Cool.otf",
+      "family": "SVN-Be Cool",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "trẻ trung",
+        "nổi bật",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Blywoofs.otf",
+      "family": "SVN-Blywoofs",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "trang trí",
+        "mạnh mẽ",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-BonVoyage-Regular.otf",
+      "family": "SVN-Bon Voyage",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "thanh lịch",
+        "du lịch",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-California.otf",
+      "family": "SVN-California",
+      "category": "script",
+      "tags": [
+        "phóng khoáng",
+        "lãng mạn",
+        "chữ ký",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Canopee.otf",
+      "family": "SVN-Canopee",
+      "category": "serif",
+      "tags": [
+        "tạp chí",
+        "cổ điển",
+        "cá tính",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Chicken-Noodle-Soup.otf",
+      "family": "SVN-Chicken Noodle Soup",
+      "category": "handwriting",
+      "tags": [
+        "vui tươi",
+        "thân thiện",
+        "ngộ nghĩnh",
+        "thủ công"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Cyrano.otf",
+      "family": "SVN-Cyrano",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "thư pháp",
+        "cổ điển",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-DKLongreach.otf",
+      "family": "SVN-DK Longreach",
+      "category": "display",
+      "tags": [
+        "miền Tây",
+        "mạnh mẽ",
+        "cổ điển",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Daisy.otf",
+      "family": "SVN-Daisy",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "dễ thương",
+        "trẻ trung",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Dayland.ttf",
+      "family": "SVN-Dayland",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "lãng mạn",
+        "chữ ký",
+        "cá nhân"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Diablo.otf",
+      "family": "SVN-Diablo",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "kịch tính",
+        "cá tính",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Doodly.ttf",
+      "family": "SVN-Doodly",
+      "category": "handwriting",
+      "tags": [
+        "vui tươi",
+        "ngộ nghĩnh",
+        "thân thiện",
+        "thủ công"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Fashion.otf",
+      "family": "SVN-Fashion",
+      "category": "serif",
+      "tags": [
+        "thời trang",
+        "sang trọng",
+        "tạp chí",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Fontaine.otf",
+      "family": "SVN-Fontaine",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "sang trọng",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Garleriny.otf",
+      "family": "SVN-Garleriny",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "lãng mạn",
+        "thanh lịch",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Regular.otf",
+      "family": "SVN-Gilroy",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "hình học",
+        "tối giản",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Black Italic.otf",
+      "family": "SVN-Gilroy Black",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "hiện đại",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Heavy Italic.otf",
+      "family": "SVN-Gilroy Heavy",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "hiện đại",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Light Italic.otf",
+      "family": "SVN-Gilroy Light",
+      "category": "sans",
+      "tags": [
+        "tối giản",
+        "thanh lịch",
+        "hiện đại",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Medium Italic.otf",
+      "family": "SVN-Gilroy Medium",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "cân đối",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy SemiBold Italic.otf",
+      "family": "SVN-Gilroy SemiBold",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "mạnh mẽ",
+        "cân đối",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Thin Italic.otf",
+      "family": "SVN-Gilroy Thin",
+      "category": "sans",
+      "tags": [
+        "tối giản",
+        "thanh lịch",
+        "mảnh mai",
+        "hiện đại"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy XBold Italic.otf",
+      "family": "SVN-Gilroy XBold",
+      "category": "sans",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Gilroy Xlight Italic.otf",
+      "family": "SVN-Gilroy XLight",
+      "category": "sans",
+      "tags": [
+        "tối giản",
+        "thanh lịch",
+        "mảnh mai",
+        "hiện đại"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Ginger.otf",
+      "family": "SVN-Ginger",
+      "category": "script",
+      "tags": [
+        "ấm áp",
+        "thân thiện",
+        "lãng mạn",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Graphitel.otf",
+      "family": "SVN-Graphitel",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "mạnh mẽ",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Hand-Of-Sean-Pro.otf",
+      "family": "SVN-Hand Of Sean Pro",
+      "category": "handwriting",
+      "tags": [
+        "chữ viết tay",
+        "thân thiện",
+        "tự nhiên",
+        "cá nhân"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Heavenly.otf",
+      "family": "SVN-Heavenly",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "lãng mạn",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Impress.otf",
+      "family": "SVN-Impress",
+      "category": "display",
+      "tags": [
+        "cổ điển",
+        "nổi bật",
+        "trang trí",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Just Sunday.otf",
+      "family": "SVN-Just Sunday",
+      "category": "script",
+      "tags": [
+        "thư giãn",
+        "thân thiện",
+        "lãng mạn",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Lumios-Marker.otf",
+      "family": "SVN-Lumios Marker",
+      "category": "handwriting",
+      "tags": [
+        "marker",
+        "phóng khoáng",
+        "trẻ trung",
+        "thủ công"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Magnificent.otf",
+      "family": "SVN-Magnificent",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "sang trọng",
+        "lãng mạn",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Manchester Park.otf",
+      "family": "SVN-Manchester Park",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "lãng mạn",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Mightiest.otf",
+      "family": "SVN-Mightiest",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "cá tính",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Mother Carmel.otf",
+      "family": "SVN-Mother Carmel",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "cổ điển",
+        "lãng mạn",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-North-Carossela.otf",
+      "family": "SVN-North Carossela",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "lãng mạn",
+        "chữ ký",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Palmaton.otf",
+      "family": "SVN-Palmaton",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "sang trọng",
+        "thanh lịch",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Pasternak.otf",
+      "family": "SVN-Pasternak",
+      "category": "display",
+      "tags": [
+        "cá tính",
+        "cổ điển",
+        "nổi bật",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Peristiwa.otf",
+      "family": "SVN-Peristiwa",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "lãng mạn",
+        "thanh lịch",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Pleasent.otf",
+      "family": "SVN-Pleasent",
+      "category": "handwriting",
+      "tags": [
+        "thân thiện",
+        "tự nhiên",
+        "vui tươi",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Primark.otf",
+      "family": "SVN-Primark",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "mạnh mẽ",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-RollgatesLuxury.otf",
+      "family": "SVN-Rollgates Luxury",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "cổ điển",
+        "thời trang",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Rushtick.otf",
+      "family": "SVN-Rushtick",
+      "category": "script",
+      "tags": [
+        "năng động",
+        "phóng khoáng",
+        "cọ vẽ",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Rustling Sound.otf",
+      "family": "SVN-Rustling Sound",
+      "category": "handwriting",
+      "tags": [
+        "tự nhiên",
+        "phóng khoáng",
+        "thân mật",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Sage.otf",
+      "family": "SVN-Sage",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "cổ điển",
+        "điềm đạm",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Sage 2.otf",
+      "family": "SVN-Sage 2",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "cổ điển",
+        "điềm đạm",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Santillana Daughter.otf",
+      "family": "SVN-Santillana Daughter",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "nữ tính",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Saudagar.otf",
+      "family": "SVN-Saudagar",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "thanh lịch",
+        "lãng mạn",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Signatie.otf",
+      "family": "SVN-Signatie",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "phóng khoáng",
+        "cá tính",
+        "thanh lịch"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-South Dakota.ttf",
+      "family": "SVN-South Dakota",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "bụi bặm",
+        "viễn Tây",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Sunflower.otf",
+      "family": "SVN-Sunflower",
+      "category": "handwriting",
+      "tags": [
+        "vui tươi",
+        "thân thiện",
+        "tự nhiên",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Taken by Vultures.otf",
+      "family": "SVN-Taken by Vultures",
+      "category": "display",
+      "tags": [
+        "gai góc",
+        "bụi bặm",
+        "nổi loạn",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-The Secret.ttf",
+      "family": "SVN-The Secret",
+      "category": "script",
+      "tags": [
+        "bí ẩn",
+        "lãng mạn",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-The-Untold-Story.otf",
+      "family": "SVN-The Untold Story",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "thanh lịch",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Tipper.otf",
+      "family": "SVN-Tipper",
+      "category": "script",
+      "tags": [
+        "phóng khoáng",
+        "trẻ trung",
+        "chữ ký",
+        "thân thiện"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-VT Redzone Classic.otf",
+      "family": "SVN-VT Redzone Classic",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "thể thao",
+        "năng động",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Waliglona.otf",
+      "family": "SVN-Waliglona",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "lãng mạn",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Weekdays Santtuy.otf",
+      "family": "SVN-Weekdays Santtuy",
+      "category": "handwriting",
+      "tags": [
+        "thân thiện",
+        "tự nhiên",
+        "trẻ trung",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SVN-Ziclets.ttf",
+      "family": "SVN-Ziclets",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "ngộ nghĩnh",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "SansSerifCollection.ttf",
+      "family": "Sans Serif Collection",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "đa dụng",
+        "dễ đọc"
+      ],
+      "license": "OFL (Noto Project)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TH Viettay 6.otf",
+      "family": "TH Viettay 6",
+      "category": "handwriting",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "mềm mại",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TUV Asheron II.otf",
+      "family": "TUV Asheron II",
+      "category": "display",
+      "tags": [
+        "huyền ảo",
+        "cổ điển",
+        "mạnh mẽ",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TUV-Domaine-Regular.ttf",
+      "family": "TUV Domaine Display",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "tạp chí",
+        "cổ điển",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TikTokDisplay-Regular.otf",
+      "family": "TikTok Display",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "trẻ trung",
+        "gọn gàng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TikTokDisplay-Medium.otf",
+      "family": "TikTok Display Medium",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "trẻ trung",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TikTokText-Regular.otf",
+      "family": "TikTok Text",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "TikTokText-Medium.otf",
+      "family": "TikTok Text Medium",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "rõ ràng",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Alba-Matter (1).ttf",
+      "family": "UTM Alba Matter",
+      "category": "display",
+      "tags": [
+        "cổ điển",
+        "trang trí",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Amplo.ttf",
+      "family": "UTM Amplo",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "hình học",
+        "gọn gàng",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Beautiful-Caps.ttf",
+      "family": "UTM Beautiful Caps",
+      "category": "display",
+      "tags": [
+        "trang trí",
+        "cổ điển",
+        "thanh lịch",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Bromo.ttf",
+      "family": "UTM Bromo",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "hiện đại",
+        "đậm nét",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Brushtip-C.ttf",
+      "family": "UTM Brushtip-C",
+      "category": "script",
+      "tags": [
+        "cọ vẽ",
+        "phóng khoáng",
+        "năng động",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM BryantLG.ttf",
+      "family": "UTM BryantLG",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "thân thiện",
+        "hình học",
+        "dễ đọc"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Bubble-Boom.ttf",
+      "family": "UTM Bubble Boom",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "tròn trịa",
+        "ngộ nghĩnh",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-But-tre.ttf",
+      "family": "UTM But tre",
+      "category": "handwriting",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "mộc mạc",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Cafeta.ttf",
+      "family": "UTM Cafeta",
+      "category": "sans",
+      "tags": [
+        "đậm nét",
+        "gọn gàng",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Caviar.ttf",
+      "family": "UTM Caviar",
+      "category": "sans",
+      "tags": [
+        "thanh lịch",
+        "hiện đại",
+        "tối giản",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-EdwardianKT.ttf",
+      "family": "UTM Edwardian",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "cổ điển",
+        "lãng mạn",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Encore-Regular.ttf",
+      "family": "UTM Encore Regular",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "trang trọng",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Gilmore.ttf",
+      "family": "UTM Gilmore",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "gọn gàng",
+        "thân thiện",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Kona-KT.ttf",
+      "family": "UTM Kona KT",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "hình học",
+        "tối giản",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Magnesium.ttf",
+      "family": "UTM Magnesium",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "hiện đại",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Neutra.ttf",
+      "family": "UTM Neutra",
+      "category": "sans",
+      "tags": [
+        "hình học",
+        "hiện đại",
+        "tối giản",
+        "đa dụng"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM Penumbra.ttf",
+      "family": "UTM Penumbra",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "trang trọng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Showcard.ttf",
+      "family": "UTM Showcard",
+      "category": "display",
+      "tags": [
+        "đậm nét",
+        "ấn tượng",
+        "quảng cáo",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Thu-Phap-Thien-An.ttf",
+      "family": "UTM ThuPhap Thien An",
+      "category": "handwriting",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "trang trọng",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UTM-Wedding-KT.ttf",
+      "family": "UTM Wedding K&T",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "sang trọng",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVF-Aphrodite-Pro.ttf",
+      "family": "UVF Aphrodite Pro",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "sang trọng",
+        "nữ tính",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVF Chikita.ttf",
+      "family": "UVF Chikita",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "ngộ nghĩnh",
+        "trẻ trung",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVF Cider Script.ttf",
+      "family": "UVF Cider Script",
+      "category": "script",
+      "tags": [
+        "thân thiện",
+        "mộc mạc",
+        "phóng khoáng",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVF Metroscript.ttf",
+      "family": "UVF MetroScript",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "cổ điển",
+        "mềm mại",
+        "thiệp mời"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVNBaiSau.TTF",
+      "family": "UVN Bai Sau",
+      "category": "handwriting",
+      "tags": [
+        "tự nhiên",
+        "thân thiện",
+        "chữ viết tay",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVN-Bai-Sau-Nang.ttf",
+      "family": "UVN Bai Sau Nang",
+      "category": "handwriting",
+      "tags": [
+        "tự nhiên",
+        "đậm nét",
+        "thân thiện",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVNBaiSau_Nh.TTF",
+      "family": "UVN Bai Sau Nhe",
+      "category": "handwriting",
+      "tags": [
+        "nhẹ nhàng",
+        "tự nhiên",
+        "thân thiện",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVN-Dinh-Hon.ttf",
+      "family": "UVN Dinh Hon",
+      "category": "handwriting",
+      "tags": [
+        "thư pháp",
+        "truyền thống",
+        "trang trọng",
+        "trang trí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVNNhanNang_I.TTF",
+      "family": "UVN Nhan Nang",
+      "category": "handwriting",
+      "tags": [
+        "nhẹ nhàng",
+        "mềm mại",
+        "thân thiện",
+        "chữ viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVNNhatKy.TTF",
+      "family": "UVN Nhat Ky",
+      "category": "handwriting",
+      "tags": [
+        "thân mật",
+        "tự nhiên",
+        "chữ viết tay",
+        "trẻ trung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "VL-Crystal-Noir.ttf",
+      "family": "VL Crystal Noir",
+      "category": "display",
+      "tags": [
+        "sang trọng",
+        "bí ẩn",
+        "thanh lịch",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "VL-FERTIGOPRO-REGULAR.OTF",
+      "family": "VL FertigoPro",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "cổ điển",
+        "mềm mại",
+        "tạp chí"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "VL-Houstoner-Script.ttf",
+      "family": "VL Houstoner Script",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "phóng khoáng",
+        "cá tính",
+        "hiện đại"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "VL-Wolfsbane.otf",
+      "family": "VL Wolfsbane",
+      "category": "display",
+      "tags": [
+        "gai góc",
+        "huyền bí",
+        "mạnh mẽ",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "UVF-Aire-Roman-Std.ttf",
+      "family": "VNF-Aire Roman Std",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "tạp chí",
+        "tương phản cao",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Alina.otf",
+      "family": "iCiel Alina",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "lãng mạn",
+        "thư pháp",
+        "chữ ký",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Baliho-Script.otf",
+      "family": "iCiel Baliho Script",
+      "category": "script",
+      "tags": [
+        "phóng khoáng",
+        "năng động",
+        "viết tay",
+        "cá tính",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "BloomingElegant1.otf",
+      "family": "iCiel Blooming Elegant",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "lãng mạn",
+        "thư pháp",
+        "cổ điển",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Blooming Elegant Hand1.otf",
+      "family": "iCiel Blooming Elegant Hand",
+      "category": "handwriting",
+      "tags": [
+        "tự nhiên",
+        "lãng mạn",
+        "viết tay",
+        "thân thiện",
+        "chữ ký"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "Blooming Elegant Sans1.otf",
+      "family": "iCiel Blooming Elegant Sans",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "thanh lịch",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Cadena.otf",
+      "family": "iCiel Cadena",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "sang trọng",
+        "cổ điển",
+        "điệu đà",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Crocante.otf",
+      "family": "iCiel Crocante",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "đậm nét",
+        "cá tính",
+        "retro",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "iCiel Koni Black.otf",
+      "family": "iCiel Koni",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "vui tươi",
+        "đậm nét",
+        "trẻ trung",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Mijas-Ultra.otf",
+      "family": "iCiel Mijas",
+      "category": "display",
+      "tags": [
+        "phóng khoáng",
+        "thủ công",
+        "cá tính",
+        "retro",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Pacifico.otf",
+      "family": "iCiel Pacifico",
+      "category": "script",
+      "tags": [
+        "vui tươi",
+        "phóng khoáng",
+        "retro",
+        "thân thiện",
+        "tiêu đề"
+      ],
+      "license": "SIL OFL 1.1",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Pony.ttf",
+      "family": "iCiel Pony",
+      "category": "handwriting",
+      "tags": [
+        "đáng yêu",
+        "vui tươi",
+        "tự nhiên",
+        "trẻ trung",
+        "viết tay"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Rukola.otf",
+      "family": "iCiel Rukola",
+      "category": "display",
+      "tags": [
+        "thủ công",
+        "mộc mạc",
+        "cá tính",
+        "vui tươi",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Simplifica.otf",
+      "family": "iCiel Simplifica",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "thanh mảnh",
+        "thanh lịch",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-Soup-of-Justice.otf",
+      "family": "iCiel Soup of Justice",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "đậm nét",
+        "cá tính",
+        "ấn tượng",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    },
+    {
+      "file": "ICIEL-BC-Cubano-Normal.otf",
+      "family": "iCielBC Cubano Normal",
+      "category": "display",
+      "tags": [
+        "đậm nét",
+        "bo tròn",
+        "retro",
+        "thân thiện",
+        "tiêu đề"
+      ],
+      "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
+      "vietnamese": true,
+      "lang": "en"
+    }
+  ]
+}
