@@ -230,6 +230,8 @@
               <el-option :label="t('tinix.ui.adminExtra.chuaPhanNhom')" value="none" />
             </el-select>
             <span class="toolbar-spacer"></span>
+            <!-- [TINIX] tạo ảnh xem trước còn thiếu cho font (chạy scripts/tinix-font-previews.mjs trên service) -->
+            <el-button size="small" :loading="previewRunning" @click="onFontPreviews">{{ previewRunning ? t('tinix.ui.adminExtra.dangTaoAnh') : t('tinix.ui.adminExtra.taoAnhXemTruoc') }}</el-button>
             <el-button type="primary" size="small" @click="openFontDialog()">
               <el-icon><Plus /></el-icon>
               {{ t('admin.font.add') }}
@@ -1110,6 +1112,22 @@ async function submitFont() {
   } finally {
     fontDialog.submitting = false
   }
+}
+
+// [TINIX] tạo ảnh xem trước còn thiếu: bắt đầu rồi hỏi tiến độ mỗi 3 giây
+const previewRunning = ref(false)
+async function onFontPreviews() {
+  const res: any = await adminApi.startFontPreviews()
+  // Thành công trả về trạng thái (không có code); lỗi trả về { code, msg }
+  if (res && res.code !== undefined) return ElMessage.error(res.msg || t('tinix.ui.adminExtra.loiTaoAnh'))
+  previewRunning.value = true
+  const timer = setInterval(async () => {
+    const st: any = await adminApi.getFontPreviewStatus()
+    if (!st || st.running) return
+    clearInterval(timer)
+    previewRunning.value = false
+    if (st.exitCode === 0) { ElMessage.success(t('tinix.ui.adminExtra.daTaoAnh')); loadTab() } else { ElMessage.error(t('tinix.ui.adminExtra.loiTaoAnh')) }
+  }, 3000)
 }
 
 async function onDelFont(row: adminApi.TAdminFontItem) {

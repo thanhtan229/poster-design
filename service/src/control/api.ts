@@ -74,4 +74,5 @@ export default {
   ADMIN_FONT_ADD: path + '/admin/font/add',
   ADMIN_FONT_UPDATE: path + '/admin/font/update',
   ADMIN_FONT_DELETE: path + '/admin/font/delete',
+  ADMIN_FONT_PREVIEWS: path + '/admin/fonts/previews', // [TINIX] tạo ảnh xem trước còn thiếu
 }

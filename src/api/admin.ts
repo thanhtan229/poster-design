@@ -45,6 +45,7 @@ const API = {
   addFont: prefix + 'api/admin/font/add',
   updateFont: prefix + 'api/admin/font/update',
   deleteFont: prefix + 'api/admin/font/delete',
+  fontPreviews: prefix + 'api/admin/fonts/previews', // [TINIX]
   aiSettings: prefix + 'api/admin/ai/settings',
   aiTest: prefix + 'api/admin/ai/test',
 }
@@ -144,6 +145,9 @@ export const addFont = (data: Omit<TFontForm, 'id'>) => fetch<{ id: number }>(AP
 export const updateFont = (data: TFontForm & { id: number }) => fetch(API.updateFont, data, 'post')
 
 export const deleteFont = (id: number) => fetch(API.deleteFont, { id }, 'post')
+// [TINIX] tạo ảnh xem trước còn thiếu; status trả về running/log
+export const startFontPreviews = () => fetch<{ running: boolean; log: string; exitCode: number | null }>(API.fontPreviews, {}, 'post')
+export const getFontPreviewStatus = () => fetch<{ running: boolean; log: string; exitCode: number | null }>(API.fontPreviews, {})
 
 /** 后台 AI 配置：兼容任意 OpenAI 格式端点 */
 export type TAiSettings = {

@@ -18,6 +18,8 @@ import rExpress from 'express'
 import screenshots from '../service/screenshots'
 import fileService from '../service/files'
 import userService from '../service/user'
+import { startPreviews, getPreviewStatus } from '../tinix/fontPreviews' // [TINIX]
+import { send } from '../utils/tools' // [TINIX]
 import designService from '../service/design'
 import authService from '../service/auth'
 import adminService from '../service/admin'
@@ -82,5 +84,8 @@ rRouter.get(api.ADMIN_FONTS, requireAdmin, adminService.getFonts)
 rRouter.post(api.ADMIN_FONT_ADD, requireAdmin, adminService.addFont)
 rRouter.post(api.ADMIN_FONT_UPDATE, requireAdmin, adminService.updateFont)
 rRouter.post(api.ADMIN_FONT_DELETE, requireAdmin, adminService.deleteFont)
+// [TINIX] tạo ảnh xem trước còn thiếu (POST bắt đầu, GET xem tiến độ)
+rRouter.post(api.ADMIN_FONT_PREVIEWS, requireAdmin, (req: any, res: any) => { if (startPreviews()) send.success(res, getPreviewStatus(), 'Đã bắt đầu'); else send.error(res, 'Đang chạy, chờ xong') })
+rRouter.get(api.ADMIN_FONT_PREVIEWS, requireAdmin, (req: any, res: any) => { send.success(res, getPreviewStatus()) })
 
 export default rRouter

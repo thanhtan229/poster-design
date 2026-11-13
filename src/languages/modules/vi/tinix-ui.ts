@@ -148,6 +148,10 @@ export default {
     savedBody: 'Mẫu #{id} đã hiện ở thẻ "Mẫu thiết kế" (bên trái).',
   },
   adminExtra: {
+    taoAnhXemTruoc: 'Tạo ảnh xem trước còn thiếu',
+    dangTaoAnh: 'Đang tạo ảnh xem trước…',
+    daTaoAnh: 'Đã tạo xong ảnh xem trước',
+    loiTaoAnh: 'Tạo ảnh xem trước thất bại',
     tai_khoan_admin_dang_dung: 'Tài khoản admin đang dùng mật khẩu mặc định (123456)',
     hay_doi_mat_khau_bam: 'Hãy đổi mật khẩu: bấm “Mở editor”, rồi bấm “Đổi mật khẩu” trên thanh trên cùng. Ứng dụng chạy trên máy bạn nên rủi ro thấp, nhưng nên đổi trước khi cho người khác truy cập.',
     tiengViet: 'Tiếng Việt',
