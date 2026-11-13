@@ -83,6 +83,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
   5. Giới hạn: hiệu ứng chữ phức tạp (warp, chữ theo đường cong), mask và smart object không được giữ nguyên; layer style (đổ màu, viền, bóng, nổi 3D) không được giữ.
 - **Trang admin:** http://127.0.0.1:5173/admin (quản lý font, mẫu, cấu hình AI).
 - **Bảng Quản lý font** (sửa file gốc, đều có comment `[TINIX]`: `src/views/Admin.vue`, `src/api/admin.ts`, `service/src/service/admin.ts`, `service/src/db/fonts.ts`): cột Xem trước (ảnh chữ mẫu do `npm run tinix:font-previews` tạo), Nhóm, Tag, cờ Tiếng Việt; bộ lọc ngôn ngữ / tiếng Việt / nhóm; hộp thoại sửa có Nhóm + Tag. Font thêm tay trong admin chưa có ảnh cho đến khi chạy lại script.
+- **Nhập font:** `scripts/tinix-fonts.json` hỗ trợ `vietnamese:false`, `lang:'ko'|'zh'` và `source` (nhánh khác của google/fonts, vd apache/). Font từ `C:\Windows\Fonts` (14 OFL + 181 font chưa rõ giấy phép, đủ dấu tiếng Việt, không gồm font Microsoft) được thêm bằng script tạm trong `.runtime/` (không commit); cột `license` ghi 'Không rõ…' để kiểm tra trước khi dùng thương mại. `service/static/` nằm trong .gitignore nên file font không lên git.
 
 ## Lỗi đã biết của repo gốc
 
