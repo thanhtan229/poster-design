@@ -24,6 +24,7 @@ import fs from 'fs'
 import path from 'path' // [TINIX]
 import router from './control/router'
 import tinixAiRouter from './tinix/ai/routes' // [TINIX]
+import tinixPhotosRouter from './tinix/photos/routes' // [TINIX]
 import { filePath, servicePort } from './configs'
 import handleTimeout from './utils/timeout'
 import { initDB } from './db'
@@ -67,6 +68,7 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: true, parameterLimit: 
 app.use(bodyParser.json({ limit: '100mb' }))
 app.use(router)
 app.use(tinixAiRouter) // [TINIX] /api/tinix/ai/*
+app.use(tinixPhotosRouter) // [TINIX] /api/tinix/photos/*
 
 // [TINIX] Chế độ production một cổng (npm run tinix:prod): service tự phục vụ bản build của frontend (../dist) + SPA fallback.
 // Đặt SAU các router nên mọi route API vẫn được ưu tiên.

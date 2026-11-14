@@ -11,13 +11,10 @@
       <el-tab-pane :label="$t('editor.panel.resources')" name="pics"> </el-tab-pane>
       <el-tab-pane :label="$t('editor.panel.myDesigns')" name="design"> </el-tab-pane>
     </el-tabs>
-    <div v-show="state.tabActiveName === 'pics'">
-      <uploader v-model="state.percent" class="upload" @done="uploadDone">
-        <el-button class="upload-btn" plain><i class="iconfont icon-upload" /> {{ $t('editor.panel.uploadImage') }}</el-button>
-      </uploader>
-      <div style="margin: 1rem; height: 100vh">
-        <photo-list ref="imgListRef" :edit="state.editOptions.photo" :isDone="state.isDone" :listData="state.imgList" @load="load" @drag="dragStart" @select="selectImg" />
-      </div>
+    <!-- [TINIX] ảnh tải lên chuyển sang dải ảnh phía dưới editor -->
+    <div v-show="state.tabActiveName === 'pics'" class="tinix-pics-note">
+      <p>{{ $t('tinix.ui.photoDock.nhac_o_duoi') }}</p>
+      <el-button type="primary" plain @click="eventBus.emit('tinix:open-photo-dock')">{{ $t('tinix.ui.photoDock.mo_dai_anh') }}</el-button>
     </div>
     <div v-show="state.tabActiveName === 'design'" class="wrap">
       <ul ref="listRef" v-infinite-scroll="loadDesign" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
@@ -151,7 +148,7 @@ function checkHeight(el: HTMLElement, loadFn: Function) {
 }
 
 onMounted(() => {
-  load(true)
+  // [TINIX] không còn tải danh sách ảnh ở đây (dải ảnh phía dưới đảm nhiệm)
   nextTick(() => {
     state.tabActiveName = 'pics'
   })
@@ -278,6 +275,15 @@ defineExpose({
 
 .tabs {
   padding: 0.2rem 0;
+}
+.tinix-pics-note {
+  margin: 1.2rem;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #666;
+  p {
+    margin-bottom: 12px;
+  }
 }
 .upload {
   width: auto;

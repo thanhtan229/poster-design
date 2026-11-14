@@ -51,7 +51,7 @@ export async function screenshots(req: any, res: any) {
       return
     }
     const renderToken = typeof req.query.token === 'string' ? `&token=${encodeURIComponent(req.query.token)}` : ''
-    const targetUrl = url + id + `${tempType ? '&tempType=' + tempType : ''}` + `&index=${index}${renderToken}`
+    const targetUrl = url + id + `${tempType ? '&tempType=' + tempType : ''}` + `&index=${index}${renderToken}` + (type === 'file' ? '&hq=1' : '') // [TINIX] xuất thành phẩm dùng ảnh gốc
     // /draw 会在模板、图片和字体完成加载后主动调用 loadFinishToInject；
     // 禁止 load 事件提前截图，否则会得到空白页面。
     queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true })

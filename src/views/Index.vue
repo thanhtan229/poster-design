@@ -65,6 +65,8 @@
       </design-board>
       <style-panel ref="ref3"></style-panel>
     </div>
+    <!-- [TINIX] dải ảnh ngang phía dưới: ảnh đã tải, đánh dấu đã dùng, yêu thích -->
+    <photo-strip />
     <!-- 标尺 -->
     <line-guides :show="state.showLineGuides" />
     <!-- 缩放控制 -->
@@ -125,6 +127,7 @@ import loginDialog from '@/components/business/login-dialog/index.vue'
 import ChangePassword from '@/components/business/login-dialog/ChangePassword.vue'
 import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
+import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
 import useHistory from '@/common/hooks/history'
 useHistory()
 

@@ -41,6 +41,7 @@ import wImageSetting from '../../widgets/wImage/wImageSetting'
 import api from '@/api'
 
 import setImageData from '@/common/methods/DesignFeatures/setImage'
+import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
 import { storeToRefs } from 'pinia'
 import { useControlStore, useCanvasStore, useWidgetStore } from '@/store'
 import { TGetImageListResult } from '@/api/material'
@@ -101,7 +102,7 @@ const selectImg = async (index: number, list: TGetImageListResult[]) => {
   const img = await setImageData(item) // await getImage(item.url)
   setting.width = img.width
   setting.height = img.height // parseInt(100 / item.value.ratio, 10)
-  setting.imgUrl = item.url
+  applyImageSource(setting, { url: item.url, hq: (item as any).hq }) // [TINIX] mục "Yêu thích": url = ảnh nhẹ, hq = ảnh gốc
   const { width: pW, height: pH } = dPage.value
   setting.left = pW / 2 - img.width / 2
   setting.top = pH / 2 - img.height / 2

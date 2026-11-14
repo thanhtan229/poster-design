@@ -10,6 +10,7 @@
 import { writePsd } from 'ag-psd'
 import type { Psd, Layer } from 'ag-psd'
 import html2canvas from 'html2canvas'
+import { useOriginalImages } from './hq-images' // [TINIX]
 
 type W = Record<string, any>
 
@@ -192,6 +193,7 @@ export async function buildPsd(page: W, widgets: W[], onProgress?: (done: number
   const fonts = Array.from(fontMap.values())
   const clone = makeOffscreenClone(page)
   try {
+    await useOriginalImages(clone.root, widgets) // ảnh gốc cho thành phẩm
     for (let i = 0; i < top.length; i++) {
       const l = await widgetLayer(clone.root, top[i], fonts)
       if (l) children.push(l)

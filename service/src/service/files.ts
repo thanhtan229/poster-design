@@ -66,7 +66,8 @@ export async function upload(req: Request, res: Response) {
       const size = imageSize(targetPath)
       const width = Number(size.width)
       const height = Number(size.height)
-      if (width > 0 && height > 0) {
+      // [TINIX] chỉ ảnh người dùng (thư mục gốc/'user') mới vào danh sách ảnh; ảnh lớp PSD (template), logo, bìa… thì không
+      if (width > 0 && height > 0 && (!folder || folder === 'user')) {
         addUserImage(getRequestUser(req)?.id || 0, url, width, height)
       }
     } catch (e) {}

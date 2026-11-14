@@ -16,6 +16,7 @@ import api from '@/api'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useWidgetStore } from '@/store'
 import FontFaceObserver from 'fontfaceobserver'
+import { useOriginalImages } from '@/utils/tinix/hq-images' // [TINIX]
 
 // const { dZoom } = useSetupMapGetters(['dZoom'])
 
@@ -80,11 +81,12 @@ async function createPoster() {
   // const style = document.createElement('style')
   // document.head.appendChild(style)
   // style.sheet?.insertRule('body > img { display: initial; }')
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => { // [TINIX] async: chờ đổi sang ảnh gốc trước khi chụp
     const clonePage = document.getElementById('page-design-canvas')?.cloneNode(true) as HTMLElement
     if (!clonePage) return
     clonePage.setAttribute('id', 'clone-page')
     document.body.appendChild(clonePage)
+    await useOriginalImages(clonePage, widgetStore.dWidgets) // [TINIX] xuất thành phẩm: dùng ảnh gốc thay cho ảnh nhẹ trên canvas
     html2canvas(clonePage, opts).then((canvas) => {
       canvas.toBlob(async (blob) => resolve({ blob }), `image/png`)
       clonePage.remove()

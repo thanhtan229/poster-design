@@ -18,6 +18,7 @@
 // import { getImage } from '../getImgDetail'
 import i18n from '@/languages'
 import setImageData from '@/common/methods/DesignFeatures/setImage'
+import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
 // import wText from '@/components/modules/widgets/wText/wText.vue'
 import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 // import wImage from '@/components/modules/widgets/wImage/wImage.vue'
@@ -38,7 +39,7 @@ export default async function(type: string, item: TCommonItemData, data: Record<
     const img = await setImageData(item.value)
     setting.width = img.width
     setting.height = img.height // parseInt(100 / item.value.ratio, 10)
-    setting.imgUrl = item.value.url
+    applyImageSource(setting, item.value) // [TINIX] imgUrl = bản nhẹ (nếu có), nhớ bản gốc (item.value.hq) cho lúc xuất
   }
   if (type === 'mask') {
     setting.mask = item.value.url

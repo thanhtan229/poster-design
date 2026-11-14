@@ -288,9 +288,9 @@ defineExpose({
 @z-border-color: #e6e6e6;
 
 #zoom-control {
-  bottom: 10px;
+  bottom: calc(10px + var(--tinix-dock-h, 0px)); /* [TINIX] trên dải ảnh phía dưới */
   position: absolute;
-  right: 292px;
+  right: calc(var(--tinix-panel-right, 280px) + 12px); /* [TINIX] panel phải kéo rộng được (mặc định 280px → 292px như cũ) */
   z-index: 1000;
   .zoom-control-wrap {
     display: flex;

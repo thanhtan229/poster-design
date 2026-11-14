@@ -69,6 +69,7 @@
 import { computed, onMounted } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
+import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
 import PointImg from '@/utils/plugins/pointImg'
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
 import { debounce } from 'throttle-debounce'
@@ -277,7 +278,7 @@ async function drop(e: MouseEvent) {
 
       const widget = dWidgets.value.find((item: { uuid: string }) => item.uuid === uuid)
       if (!widget) return
-      widget.imgUrl = item.value.url
+      applyImageSource(widget, item.value) // [TINIX] thả ảnh vào khung/mask: giữ bản gốc cho lúc xuất
       // if (e.target.className.baseVal) {
       //   !widget.imgs && (widget.imgs = {})
       //   widget.imgs[`${e.target.className.baseVal}`] = item.value.url
@@ -286,7 +287,7 @@ async function drop(e: MouseEvent) {
       if (dropIn) {
         const widget = dWidgets.value.find((item: { uuid: string }) => item.uuid == dropIn)
         if (!widget) return
-        widget.imgUrl = item.value.url
+        applyImageSource(widget, item.value) // [TINIX]
         // store.commit('setShowMoveable', true) // 恢复选择
         controlStore.setShowMoveable(true) // 恢复选择
       } else {

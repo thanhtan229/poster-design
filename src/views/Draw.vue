@@ -12,6 +12,7 @@
 import { StyleValue, onMounted, reactive, nextTick } from 'vue'
 import api from '@/api'
 import Preload from '@/utils/plugins/preload'
+import { swapToOriginalInData } from '@/utils/tinix/photo-source' // [TINIX]
 import FontFaceObserver from 'fontfaceobserver'
 import { fontMinWithDraw, font2style } from '@/utils/widgets/loadFontRule'
 import designBoard from '@/components/modules/layout/designBoard/index.vue'
@@ -62,6 +63,8 @@ async function load() {
       content = {page: global, widgets: layers}
     }
     const widgets = isGroupTemplate ? content : content.widgets
+    // [TINIX] xuất thành phẩm (hq=1): lớp ảnh dùng ảnh gốc thay cho ảnh nhẹ; bìa/xem trước thì giữ ảnh nhẹ cho nhanh
+    if (route.query.hq === '1') swapToOriginalInData(widgets)
     
     if (isGroupTemplate) {
       dPage.value.width = width
