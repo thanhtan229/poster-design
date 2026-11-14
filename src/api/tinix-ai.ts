@@ -33,6 +33,9 @@ export type TAiSettings = {
   price_out_per_1m: number
   monthly_limit_vnd: number
   price_per_image_vnd: number
+  logo_url: string // [TINIX] logo studio
+  logo_corner: string // tl | tr | bl | br | bc
+  logo_auto: boolean
   base?: { enabled: boolean; has_key: boolean; base_url: string; text_model: string }
 }
 

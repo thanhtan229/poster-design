@@ -57,6 +57,7 @@ import { buildTextWidgets, PART_ORDER, PART_LABEL, TPartKey } from '@/utils/tini
 import { loadLibraryFonts, LibraryFont } from '@/utils/tinix/psd-font-map'
 import { ensureFont } from '@/utils/tinix/psd-fit'
 import i18n from '@/languages'
+import { insertStudioLogo } from '@/utils/tinix/logo' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 const widgetStore = useWidgetStore()
@@ -132,6 +133,7 @@ async function add(i: number) {
     const region = state.result.emptyRegions[state.region[i]] || state.result.emptyRegions[0]
     const widgets = await buildTextWidgets({ option, region, parts, align: state.align[i] as any, page: { width: dPage.value.width, height: dPage.value.height } })
     widgets.forEach((w) => widgetStore.addWidget(w))
+    insertStudioLogo(widgetStore, dPage.value, true).catch(() => {}) // [TINIX] tự chèn logo studio nếu bật
     ElMessage.success(i18t('tinix.ui.suggestTab.added', { n: widgets.length }))
   } finally {
     state.adding = -1

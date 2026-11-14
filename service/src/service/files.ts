@@ -15,6 +15,7 @@ import { Request, Response } from 'express'
 import imageSize from 'image-size'
 import multiparty from 'multiparty'
 import { filePath, staticLink } from '../configs'
+import fs from 'fs' // [TINIX]
 import { checkCreateFolder, randomCode, copyFile, send } from '../utils/tools'
 import { addUserImage } from '../db/userImages'
 import { getRequestUser } from '../utils/auth'
@@ -49,6 +50,8 @@ export async function upload(req: Request, res: Response) {
     const folder = fields && fields.folder ? String(fields.folder[0]).replace(/\.\./g, '') : ''
     const folderPath = `${filePath}${folder ? `${folder}/` : ''}`
     checkCreateFolder(folderPath)
+    // [TINIX] checkCreateFolder không tạo được đường dẫn Windows (ghép "/D:/..." và nuốt lỗi) → tạo đệ quy trực tiếp
+    try { fs.mkdirSync(folderPath, { recursive: true }) } catch (e) {}
     const targetPath = `${folderPath}${name}`
     try {
       await copyFile(file.path, targetPath)

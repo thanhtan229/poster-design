@@ -12,6 +12,15 @@ export type TinixAiSettings = {
   price_out_per_1m: number // VND per 1M output tokens
   monthly_limit_vnd: number // 0 = no limit
   price_per_image_vnd: number // VND per generated image (0 = estimate from tokens)
+  logo_url: string // logo studio ('' = chưa có): đường dẫn /static/... hoặc http(s)
+  logo_corner: string // tl | tr | bl | br | bc
+  logo_auto: boolean // tự chèn logo khi đặt gợi ý chữ
+}
+
+const CORNERS = ['tl', 'tr', 'bl', 'br', 'bc']
+const cleanLogoUrl = (v: any) => {
+  const s = typeof v === 'string' ? v.trim().slice(0, 300) : ''
+  return /^(\/static\/|https?:\/\/)/.test(s) ? s : ''
 }
 
 const num = (v: any, def = 0) => {
@@ -33,6 +42,9 @@ export function getTinixAiSettings(): TinixAiSettings {
     price_out_per_1m: num(getSetting('tinix_price_out_per_1m')),
     monthly_limit_vnd: num(getSetting('tinix_monthly_limit_vnd')),
     price_per_image_vnd: num(getSetting('tinix_price_per_image_vnd')),
+    logo_url: cleanLogoUrl(getSetting('tinix_logo_url')),
+    logo_corner: CORNERS.indexOf(getSetting('tinix_logo_corner') || '') >= 0 ? (getSetting('tinix_logo_corner') as string) : 'br',
+    logo_auto: getSetting('tinix_logo_auto') === '1',
   }
 }
 
@@ -43,5 +55,8 @@ export function saveTinixAiSettings(input: Partial<TinixAiSettings>): TinixAiSet
   if (input.price_out_per_1m !== undefined) setSetting('tinix_price_out_per_1m', String(num(input.price_out_per_1m)))
   if (input.monthly_limit_vnd !== undefined) setSetting('tinix_monthly_limit_vnd', String(num(input.monthly_limit_vnd)))
   if (input.price_per_image_vnd !== undefined) setSetting('tinix_price_per_image_vnd', String(num(input.price_per_image_vnd)))
+  if (input.logo_url !== undefined) setSetting('tinix_logo_url', cleanLogoUrl(input.logo_url))
+  if (typeof input.logo_corner === 'string' && CORNERS.indexOf(input.logo_corner) >= 0) setSetting('tinix_logo_corner', input.logo_corner)
+  if (input.logo_auto !== undefined) setSetting('tinix_logo_auto', input.logo_auto ? '1' : '0')
   return getTinixAiSettings()
 }

@@ -6,6 +6,7 @@ import { initDB, getDB } from '../../service/src/db'
 import * as fontsRepo from '../../service/src/db/fonts'
 import { cleanCategory, cleanTags } from '../../service/src/tinix/fontMeta'
 import { startPreviews, getPreviewStatus } from '../../service/src/tinix/fontPreviews'
+import { getTinixAiSettings, saveTinixAiSettings } from '../../service/src/tinix/ai/settings'
 
 let failed = 0
 function check(name: string, ok: boolean, detail?: any) {
@@ -67,6 +68,13 @@ async function main() {
   check('tinix-winfonts.json: family duy nhất', unique(win.map((f: any) => f.family)))
   check('tinix-winfonts.json: có file, nhóm hợp lệ hoặc rỗng, tag là mảng', win.every((f: any) => f.file && (f.category === '' || fontsRepo.CATEGORIES.indexOf(f.category) >= 0) && Array.isArray(f.tags)))
   check('không trùng family giữa hai manifest', (() => { const g = new Set(google.map((f: any) => f.family.toLowerCase())); return win.every((f: any) => !g.has(f.family.toLowerCase())) })())
+
+  console.log('Logo studio (cài đặt)')
+  check('mặc định: chưa có logo, góc br, không tự chèn', (() => { const g = getTinixAiSettings(); return g.logo_url === '' && g.logo_corner === 'br' && g.logo_auto === false })())
+  saveTinixAiSettings({ logo_url: '/static/logo/a.png', logo_corner: 'tl', logo_auto: true })
+  check('lưu logo + góc + tự chèn', (() => { const g = getTinixAiSettings(); return g.logo_url === '/static/logo/a.png' && g.logo_corner === 'tl' && g.logo_auto === true })())
+  saveTinixAiSettings({ logo_url: 'javascript:alert(1)', logo_corner: 'zz' })
+  check('đường dẫn lạ bị bỏ, góc sai giữ nguyên góc cũ', (() => { const g = getTinixAiSettings(); return g.logo_url === '' && g.logo_corner === 'tl' })())
 
   console.log('Tạo ảnh xem trước (script giả)')
   const fake = path.join(process.cwd(), 'fake-previews.js')
