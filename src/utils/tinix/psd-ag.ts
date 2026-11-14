@@ -127,7 +127,11 @@ export function convertAgPsd(psd: Psd) {
   }
   walk(children)
 
-  return { background, width: psd.width, height: psd.height, clouds }
+  // [TINIX] độ phân giải của file PSD (PPI; PPCM đổi ×2,54) → dùng để hiện đúng cm; không có/không hợp lý thì bỏ
+  const ri: any = psd.imageResources && psd.imageResources.resolutionInfo
+  let dpi = ri && Number(ri.horizontalResolution) ? Number(ri.horizontalResolution) * (ri.horizontalResolutionUnit === 'PPCM' ? 2.54 : 1) : 0
+  dpi = dpi >= 36 && dpi <= 1200 ? Math.round(dpi) : 0
+  return { background, width: psd.width, height: psd.height, clouds, dpi }
 }
 
 export async function processPsdWithAg(file: File) {

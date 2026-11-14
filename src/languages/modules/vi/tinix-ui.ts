@@ -233,4 +233,14 @@ export default {
   capture: {
     khong_tim_thay_trang_thiet: 'Không tìm thấy trang thiết kế',
   },
+  sizeUnit: {
+    don_vi: 'Đơn vị',
+    dpi: 'DPI',
+    dpi_tip: 'Độ phân giải in: số điểm ảnh (px) trên mỗi inch. Ảnh in thường dùng 300, poster lớn có thể dùng 150.',
+    quy_doi: '= {w} × {h} px ({mp} MP)',
+    quy_doi_cm: '= {w} × {h} cm ở {dpi} DPI',
+    kho_in: 'Khổ in (cm)',
+    qua_gioi_han_canh: 'Một cạnh vượt 10.000 px: giảm DPI hoặc kích thước.',
+    qua_nhieu_diem_anh: 'Trên 60 triệu điểm ảnh: xuất ảnh dễ quá thời gian chờ. Nên giảm DPI (ví dụ 150).',
+  },
 }

@@ -42,6 +42,8 @@ import downloadBlob from '@/common/methods/download/downloadBlob'
 import { useControlStore, useCanvasStore, useUserStore, useWidgetStore } from '@/store/index'
 import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
+import { clampDpi, DEFAULT_DPI } from '@/utils/tinix/units' // [TINIX]
+import { withPngDpi } from '@/utils/tinix/png-dpi' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 type TProps = {
@@ -199,7 +201,7 @@ async function download() {
   if (!backEndCapture) {
     // 无特殊条件命中则直接从前端出图，无需登录保存
     const { blob } = await canvasImage.value?.createPoster()
-    downloadBlob(blob, fileName)
+    downloadBlob(await withPngDpi(blob, clampDpi(dPage.value.dpi || DEFAULT_DPI)), fileName) // [TINIX] ghi DPI vào PNG để Photoshop/tiệm in mở đúng khổ
     state.loading = false
     return
   }
@@ -224,7 +226,7 @@ async function download() {
     }
   }, 800)
   await _dl.downloadImg(
-      api.home.download({ id: screenshotId, tempid, width, height, index: pageStore.dCurrentPage, token: screenshotToken }) + '&r=' + Math.random(),
+      api.home.download({ id: screenshotId, tempid, width, height, index: pageStore.dCurrentPage, token: screenshotToken, dpi: clampDpi(dPage.value.dpi || DEFAULT_DPI) }) + '&r=' + Math.random(),
     (progress: number, xhr: any) => {
       if (props.modelValue) {
         clearInterval(animation)
@@ -244,7 +246,7 @@ function RandomNumber(min: number, max: number) {
 }
 
 async function load(cb: () => void) {
-  const { id, tempid: tempId, tempType: type, w_h } = route.query
+  const { id, tempid: tempId, tempType: type, w_h, dpi } = route.query
   if (route.name !== 'Draw') {
     await useFontStore.init() // 初始化加载字体
   }
@@ -254,6 +256,7 @@ async function load(cb: () => void) {
     const wh: any = w_h.toString().split('*')
     wh[0] && (dPage.value.width = wh[0])
     wh[1] && (dPage.value.height = wh[1])
+    dpi && (dPage.value.dpi = clampDpi(dpi)) // [TINIX] DPI đi kèm kích thước cm khi tạo thiết kế mới
   }
   if (!id && !tempId) {
     initBoard()

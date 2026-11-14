@@ -18,6 +18,7 @@ import { saveScreenshot } from '../utils/download-single'
 import uuid from '../utils/uuid'
 import { filePath, upperLimit, drawLink } from '../configs'
 import { queueRun, queueList } from '../utils/node-queue'
+import { setPngFileDpi } from '../tinix/pngDpi' // [TINIX]
 // const path = require('path')
 
 /**
@@ -37,7 +38,7 @@ import { queueRun, queueList } from '../utils/node-queue'
  * @apiParam {String|Number} index 可选, 下载哪个画板
  */
 export async function screenshots(req: any, res: any) {
-  let { id, tempid, tempType, width, height, screenshot_url, type = 'file', size, quality, index = 0 } = req.query
+  let { id, tempid, tempType, width, height, screenshot_url, type = 'file', size, quality, index = 0, dpi } = req.query // [TINIX] dpi: ghi vào PNG xuất
   id == 'undefined' && (id = null)
   const url = (screenshot_url || drawLink) + `${id ? '?id=' : '?tempid='}`
   id = id || tempid
@@ -55,6 +56,7 @@ export async function screenshots(req: any, res: any) {
     // 禁止 load 事件提前截图，否则会得到空白页面。
     queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true })
       .then(() => {
+        type === 'file' && dpi && setPngFileDpi(path, Number(dpi)) // [TINIX] ảnh tải về mang đúng DPI (khổ in)
         res.setHeader('Content-Type', 'image/jpg')
         // const stats = fs.statSync(path)
         // res.setHeader('Cache-Control', stats.size)

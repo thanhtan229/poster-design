@@ -201,6 +201,9 @@ export async function buildPsd(page: W, widgets: W[], onProgress?: (done: number
     clone.dispose()
   }
   const psd: Psd = { width: Math.round(page.width), height: Math.round(page.height), children }
+  // DPI của thiết kế (mặc định 300) để Photoshop mở đúng khổ in
+  const dpi = Math.min(1200, Math.max(36, Math.round(Number(page.dpi) || 300)))
+  psd.imageResources = { resolutionInfo: { horizontalResolution: dpi, horizontalResolutionUnit: 'PPI', widthUnit: 'Centimeters', verticalResolution: dpi, verticalResolutionUnit: 'PPI', heightUnit: 'Centimeters' } }
   // ảnh tổng hợp (Photoshop dùng cho xem trước nhanh): ghép các layer hiện
   if (psd.width * psd.height <= MAX_COMPOSITE_PIXELS) {
     const c = newCanvas(psd.width, psd.height)

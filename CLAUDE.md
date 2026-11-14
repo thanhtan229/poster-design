@@ -20,6 +20,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - **Trợ lý AI** (nút "Trợ lý AI" trên thanh trên): Gợi ý chữ, Sửa chữ, Tìm font, **Dựng theo mẫu** (chế độ *Giống mẫu* / *Viết nội dung mới*, tùy chọn tự tạo ảnh nền tương tự), Tạo ảnh (upstream), Lịch sử + chi phí, Cài đặt AI (model nhìn ảnh, đơn giá chữ/ảnh, giới hạn tháng).
 - **Tệp → Lưu thành mẫu (công khai)** (chỉ admin) biến thiết kế thành mẫu trong thẻ "Mẫu thiết kế".
 - Khung ảnh do AI dựng có `fit: 'cover'`: "Thay ảnh" giữ nguyên kích thước khung.
+- **Kích thước canvas px | cm** (cập nhật 2026-11-14): px là đơn vị gốc; cm quy đổi theo DPI lưu trong `page.dpi` (mặc định 300). Ảnh PNG/PSD xuất ra mang đúng DPI. Khổ lớn (> 10.000 px/cạnh hoặc > 60 triệu điểm ảnh) dễ quá thời gian chờ 30 giây khi xuất ảnh phía server.
 - Độ ổn định AI: `postWithRetry` (tự thử lại 429 quá tải/5xx, không thử lại khi hết quota), `modelErrorHint` (model bị ngừng/sai tên). Mọi lần gọi, kể cả tạo ảnh, ghi vào `ai_jobs` và tính vào giới hạn chi phí tháng.
 - Bộ tự kiểm tra offline: `npm run tinix:test` (AI nhà cung cấp giả + font + khóa i18n, DB tạm, không cần API key) — chạy sau mỗi thay đổi; riêng phần AI có `npm run tinix:test-ai`.
 - Thư mục `.runtime/` (log chạy thử, công cụ tạm) và `psd-test/` (PSD mẫu) không đưa vào git.

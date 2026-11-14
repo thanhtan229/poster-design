@@ -39,6 +39,8 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/store/design/widget/actions/template.ts` | `setTemplate()` không còn `constrainGroupToCanvas` | Mở mẫu nguyên trang từng bị co nhỏ cả mẫu (vd 937px → 204px) khi 1 lớp tràn mép, và co theo khổ trang cũ |
 | `src/components/business/create-design/sizeEditor.vue`, `designBoard/comps/resize.vue` | Giới hạn khổ trang 5000 → 10000px | Ô nhập tự cắt chiều cao trang về 5000 |
 | `service/src/utils/download-single.ts` | `maximum` 5000 → 10000, `maxPXs` 4,2M → 40M điểm ảnh | Ảnh xuất bị cắt ở 5000px và hạ độ phân giải (3761×5642 → ~750px) |
+| `src/components/business/create-design/sizeEditor.vue`, `createDesign.vue`, `designBoard/pageStyle.vue`, `src/views/components/HeaderOptions.vue`, `src/store/design/canvas/d.ts` | Kích thước canvas **px | cm**: công tắc đơn vị (nhớ trong `localStorage`), ô DPI (hộp thoại; panel chỉ hiển thị), dòng quy đổi + cảnh báo > 10.000 px/cạnh hoặc > 60 triệu điểm ảnh, nhóm "Khổ in (cm)" (A5/A4/A3/10×15/13×18/20×30/30×30/30×40/40×60). Thêm `dpi?` vào `TPageState` (lưu cùng thiết kế; không có → 300); `/home?mode=create&w_h=…&dpi=…`. px vẫn là đơn vị gốc, cm chỉ là lớp quy đổi | In ấn cần khổ vật lý (cm) |
+| `service/src/service/screenshots.ts`, `src/utils/tinix/psd-ag.ts`, `src/views/Psd.vue`, `src/utils/tinix/psd-export.ts` | Ghi DPI vào PNG xuất (client + server, chunk `pHYs`), xuất PSD có `resolutionInfo`, nhập PSD đọc DPI của file | Photoshop/tiệm in mở ảnh đúng khổ (không bị 72 DPI) |
 | `.gitignore` | Ignore `/psd-test/` | File PSD thử nghiệm cục bộ |
 
 ## File mới (không đụng file gốc)
@@ -68,6 +70,7 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
 | `src/utils/tinix/rebuild.ts` | Dựng theo mẫu (2 chế độ: **Giống mẫu** — chép đúng chữ/ngôn ngữ/font gần nhất/nét trang trí SVG, mặc định; **Viết nội dung mới** — học bố cục rồi viết lại; vùng `svg` do AI vẽ được lọc bởi `service/src/tinix/ai/svg.ts`; chữ Hán/Nhật/Hàn tự chọn font CJK trong kho, chữ Latin/Việt loại font CJK): vùng AI → lớp chữ / khung ảnh giữ chỗ (SVG xám) / khối màu (`wSvg`). Hộp chữ tự nới rộng để không xuống dòng; các chữ chồng nhau được đẩy xuống (`separateTexts`). Tùy chọn **Tự tạo ảnh nền tương tự bằng AI (không chữ)** (đặt trước nút Phân tích, nhớ trong `localStorage`): phân tích xong là tạo ảnh ở nền từ `photoPrompt` (sửa được, có nút Tạo lại ảnh, xem trước), tỉ lệ đúng vùng ảnh, chừa khoảng trống có tông tương phản với màu chữ; Dựng vào trang dùng ảnh có sẵn hoặc chờ; phân tích lại thì bỏ ảnh cũ. Tab dựng: tự đặt khổ trang theo tỉ lệ ảnh mẫu (cạnh dài 1920px) khi trang còn trống hoặc đã chọn xoá lớp; chỉ gửi ảnh trang hiện tại cho AI khi trang có lớp |
 | `src/utils/tinix/place-text.ts` | Xếp chữ AI vào vùng trống (0–1 → px, co chữ cho vừa, chỉnh màu dễ đọc) |
 | `scripts/tinix-ai-selftest/` | `npm run tinix:test-ai`: thử toàn bộ đường AI với nhà cung cấp giả, DB tạm |
+| `src/utils/tinix/units.ts`, `png-dpi.ts`, `service/src/tinix/pngDpi.ts`, `scripts/tinix-selftest/units.ts` | Quy đổi cm ↔ px theo DPI (`px = cm × DPI ÷ 2,54`), khổ in, cảnh báo kích thước; ghi DPI vào PNG không giải mã lại ảnh; kiểm thử trong `npm run tinix:test` |
 | `scripts/tinix-psd-dump.cjs` | In thông tin lớp chữ của file PSD để gỡ lỗi: `node scripts/tinix-psd-dump.cjs "psd-test/x.psd"` |
 | `CLAUDE.md`, `MVP-SPEC.md`, `TINIX.md` | Tài liệu |
 

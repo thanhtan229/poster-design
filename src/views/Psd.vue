@@ -220,7 +220,7 @@ async function loadPSD(file: File) {
     return false
   }
   // [TINIX] set the page size first: widgets added while the page is still the default 1920px get clamped to it
-  pageStore.setDPage(Object.assign(pageStore.dPage, { width: data.width, height: data.height }))
+  pageStore.setDPage(Object.assign(pageStore.dPage, { width: data.width, height: data.height }, data.dpi ? { dpi: data.dpi } : {})) // [TINIX] giữ DPI của PSD
   const library = await loadLibraryFonts() // [TINIX] map PSD fonts → library fonts
   const substituted = new Map<string, string>()
 

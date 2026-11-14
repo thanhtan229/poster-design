@@ -6,7 +6,7 @@
     </div>
     <el-collapse v-else v-model="state.activeNames">
       <el-collapse-item :title="$t('settings.pageStyle.canvasSize')" name="1">
-        <sizeEditor :params="state.innerElement">
+        <sizeEditor :params="state.innerElement" :allow-dpi-edit="false"><!-- [TINIX] panel: DPI chỉ hiển thị; đổi DPI trong hộp thoại "Sửa kích thước" -->
           <i @click="openSizeEdit" class="icon sd-edit"></i>
         </sizeEditor>
       </el-collapse-item>

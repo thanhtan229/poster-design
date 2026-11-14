@@ -88,5 +88,7 @@ export type TPageState = {
   opacity: number
   /** 强制刷新用 */
   tag: number
+  /** [TINIX] Độ phân giải in (px/inch) dùng để quy đổi cm ↔ px và ghi vào file xuất. Thiết kế cũ không có → 300 */
+  dpi?: number
 }
 
