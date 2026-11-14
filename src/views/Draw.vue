@@ -140,6 +140,20 @@ async function load() {
     } catch (e) {
       // console.log(e)
     }
+    // [TINIX] 'load' chỉ báo ảnh đã tải, chưa chắc đã giải mã/vẽ: ảnh rất lớn (vd 8268×11220) giải mã mất vài giây nên ảnh chụp ra trong suốt
+    // (bìa mẫu thành màu đen). Chờ giải mã xong cả ảnh các lớp lẫn ảnh nền (nền là CSS nên nạp trước một bản để dùng chung cache) rồi chờ 2 khung vẽ.
+    try {
+      const decodes: Promise<unknown>[] = imgsData.map((el: any) => (el && el.decode ? el.decode() : Promise.resolve()))
+      if (backgroundImage) {
+        const bg = new Image()
+        bg.src = backgroundImage
+        decodes.push(bg.decode())
+      }
+      await Promise.all(decodes.map((p) => p.catch(() => undefined)))
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    } catch (e) {
+      // không giải mã được: vẫn chụp như cũ
+    }
     loadFlag = true
     console.log('--> now u can start screenshot!')
     setTimeout(() => {

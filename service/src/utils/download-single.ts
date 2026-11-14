@@ -22,7 +22,7 @@ const forceTimeOut = 60 // 强制超时时间，单位：秒
 // 4K规格，总计约830万像素 3840 * 2160 2K规格，总计约830万像素 2048 * 1080
 // const maxPXs = 8294400 
 const maxPXs = 40000000 // [TINIX] was 4211840: single local user → keep print resolution (above this the dpr is lowered)
-const maximum = 10000 // [TINIX] was 5000 (max width/height, larger is clipped)
+const maximum = 12000 // [TINIX] was 5000 → 10000 → 12000: trang PSD 8268×11220 bị cắt mất ~11% phía dưới ở mức 10000 (larger is clipped)
 
 export const saveScreenshot = async (url: string, { path, width, height, thumbPath, size = 0, quality = 0, prevent, ua, devices, scale, wait }: any) => {
   return new Promise(async (resolve: Function, reject: Function) => {
