@@ -21,6 +21,7 @@ import './tinix/process-guard' // [TINIX] don't crash on a timed-out export
 import express from 'express'
 import bodyParser from 'body-parser'
 import fs from 'fs'
+import path from 'path' // [TINIX]
 import router from './control/router'
 import tinixAiRouter from './tinix/ai/routes' // [TINIX]
 import { filePath, servicePort } from './configs'
@@ -66,6 +67,27 @@ app.use(bodyParser.urlencoded({ limit: '100mb', extended: true, parameterLimit: 
 app.use(bodyParser.json({ limit: '100mb' }))
 app.use(router)
 app.use(tinixAiRouter) // [TINIX] /api/tinix/ai/*
+
+// [TINIX] Chế độ production một cổng (npm run tinix:prod): service tự phục vụ bản build của frontend (../dist) + SPA fallback.
+// Đặt SAU các router nên mọi route API vẫn được ưu tiên.
+if (process.env.TINIX_SERVE_DIST === '1') {
+  const dist = path.resolve(process.cwd(), '..', 'dist')
+  if (fs.existsSync(path.join(dist, 'index.html'))) {
+    // middleware gốc gắn Content-Type: application/json cho mọi phản hồi → gỡ để static/sendFile tự đặt đúng loại (JS module cần MIME JavaScript)
+    const clearType = (req: any, res: any, next: any) => {
+      res.removeHeader('Content-Type')
+      next()
+    }
+    app.use(clearType, express.static(dist))
+    app.get('*', clearType, (req: any, res: any, next: any) => {
+      if (/^\/(api|static|design)\//.test(req.path)) return next()
+      res.sendFile(path.join(dist, 'index.html'))
+    })
+    console.log('[tinix] phục vụ frontend từ', dist)
+  } else {
+    console.warn('[tinix] TINIX_SERVE_DIST=1 nhưng chưa có dist/index.html — chạy: npm run tinix:prod -- --build')
+  }
+}
 
 // [TINIX] bind to localhost only (override with HOST in service/.env)
 app.listen(Number(port), listenHost, () => console.log(`Screenshot Server start on http://${listenHost}:${port}`))

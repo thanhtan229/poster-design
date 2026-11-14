@@ -6,6 +6,7 @@
   "scripts": {
     "tinix:setup": "npm i && npm --prefix service i",
     "tinix:dev": "node scripts/tinix-dev.mjs",
+    "tinix:prod": "node scripts/tinix-prod.mjs",
     "tinix:fonts": "node scripts/tinix-import-fonts.mjs",
     "tinix:font-previews": "node scripts/tinix-font-previews.mjs",
     "tinix:winfonts": "node scripts/tinix-winfonts.mjs",

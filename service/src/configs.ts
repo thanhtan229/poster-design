@@ -22,7 +22,7 @@ export const servicePort = serviceComfig.port
 /**
  * 前端绘制页地址
  */
-export const drawLink = isDev ? 'http://127.0.0.1:5173/draw' : serviceComfig.website + '/draw'
+export const drawLink = process.env.TINIX_DRAW_URL || (isDev ? 'http://127.0.0.1:5173/draw' : serviceComfig.website + '/draw') // [TINIX] TINIX_DRAW_URL: chế độ production một cổng
 
 /**
  * 图片缓存目录位置，根据实际情况调整
