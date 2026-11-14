@@ -33,6 +33,7 @@ export type IGetTempListData = {
   top: number
   left: number
   data?: string
+  groups?: number[] // [TINIX] id các nhóm của mẫu
   listWidth?: number
   gap?: number
   thumb?: string
@@ -44,7 +45,9 @@ type IGetTempListResult = TPageRequestResult<IGetTempListData[]>
 
 // 获取模板列表
 export const getTempList = (params: IGetTempListParam) => fetch<IGetTempListResult>('design/list', params, 'get')
-export const getTemplateCategories = (type: 0 | 1 = 0) => fetch<{ list: { id: number; name: string }[] }>('design/template/categories', { type }, 'get')
+export type TTemplateGroup = { id: number; name: string; sort?: number; count?: number }
+// [TINIX] kèm count (số mẫu mỗi nhóm), uncategorized (chưa phân nhóm), total
+export const getTemplateCategories = (type: 0 | 1 = 0) => fetch<{ list: TTemplateGroup[]; uncategorized?: number; total?: number }>('design/template/categories', { type }, 'get')
 
 export type TGetTempDetail = {
   id: number

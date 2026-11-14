@@ -49,4 +49,21 @@ export function migrateTinix(db: Db): void {
   `)
 
   if (added.length) console.log(`[tinix:migrate] fonts + ${added.join(', ')}`)
+
+  // Nhóm mẫu thiết kế: một mẫu thuộc NHIỀU nhóm (liên kết theo id). templates.cate vẫn giữ tên nhóm chính (đầu tiên) để code cũ chạy được.
+  const hadLinks = !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_group_links'").get()
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS template_group_links (
+      template_id INTEGER NOT NULL,
+      category_id INTEGER NOT NULL,
+      PRIMARY KEY (template_id, category_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_tgl_category ON template_group_links(category_id);
+  `)
+  if (!hadLinks) {
+    // chuyển dữ liệu cũ (một nhóm theo tên trong templates.cate) sang bảng liên kết, chỉ làm một lần
+    const r = db.prepare(`INSERT OR IGNORE INTO template_group_links (template_id, category_id)
+      SELECT t.id, c.id FROM templates t JOIN template_categories c ON c.name = t.cate AND c.type = t.type WHERE t.cate != ''`).run()
+    if (r.changes) console.log(`[tinix:migrate] template_group_links: chuyển ${r.changes} mẫu từ nhóm cũ`)
+  }
 }

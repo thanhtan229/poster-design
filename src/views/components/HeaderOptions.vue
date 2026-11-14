@@ -141,6 +141,7 @@ async function saveTemp() {
       res = await api.home.saveTemp({ id: tempid, type, title: state.title || i18n.global.t('editor.header.untitledComponent'), data: JSON.stringify(dWidgets.value), width: dPage.value.width, height: dPage.value.height })
     } else res = await api.home.saveTemp({ id: tempid, title: state.title || i18n.global.t('editor.header.untitledTemplate'), data: JSON.stringify(data), width: dPage.value.width, height: dPage.value.height })
     if (res?.id || res?.result?.id || res?.stat) {
+      window.dispatchEvent(new Event('tinix:templates-changed')) // [TINIX] làm mới danh sách Mẫu thiết kế (bìa mới)
       useNotification(i18n.global.t('editor.header.saveSuccess'), i18n.global.t('editor.header.templateUpdated'))
     } else {
       useNotification(i18n.global.t('editor.header.saveFailed'), res?.msg || i18n.global.t('editor.header.templateSaveFailed'), { type: 'error' })

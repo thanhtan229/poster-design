@@ -41,6 +41,11 @@ const API = {
   addTemplateCategory: prefix + 'api/admin/template/category/add',
   deleteTemplateCategory: prefix + 'api/admin/template/category/delete',
   renameTemplateCategory: prefix + 'api/admin/template/category/rename',
+  reorderTemplateCategories: prefix + 'api/admin/template/category/reorder', // [TINIX] nhóm mẫu
+  setTemplateGroups: prefix + 'api/admin/template/groups/set',
+  bulkTemplateGroups: prefix + 'api/admin/template/groups/bulk',
+  suggestTemplateGroups: prefix + 'api/admin/template/groups/suggest',
+  applyTemplateGroupSuggestions: prefix + 'api/admin/template/groups/apply',
   fonts: prefix + 'api/admin/fonts',
   addFont: prefix + 'api/admin/font/add',
   updateFont: prefix + 'api/admin/font/update',
@@ -103,8 +108,16 @@ export const addCategory = (type: 'materials' | 'photos', name: string) => fetch
 export const renameCategory = (type: 'materials' | 'photos', cate: string, name: string) => fetch(API.renameCategory, { type, cate, name }, 'post')
 export const getTemplateCategories = (type: 0 | 1 = 0, params: Type.Object = {}) => fetch<{ list: any[]; total: number }>(API.templateCategories, { type, ...params })
 export const addTemplateCategory = (data: { name: string; type: 0 | 1 }) => fetch(API.addTemplateCategory, data, 'post')
-export const deleteTemplateCategory = (id: number) => fetch(API.deleteTemplateCategory, { id }, 'post')
+export const deleteTemplateCategory = (id: number, force = false) => fetch(API.deleteTemplateCategory, { id, force }, 'post') // [TINIX] force: gỡ nhóm khỏi các mẫu rồi xóa
 export const renameTemplateCategory = (data: { id: number; name: string }) => fetch(API.renameTemplateCategory, data, 'post')
+
+// [TINIX] Nhóm mẫu thiết kế (một mẫu thuộc nhiều nhóm)
+export const reorderTemplateCategories = (ids: number[], type: 0 | 1 = 0) => fetch(API.reorderTemplateCategories, { type, ids }, 'post')
+export const setTemplateGroups = (id: number, groupIds: number[]) => fetch(API.setTemplateGroups, { id, groupIds }, 'post')
+export const bulkTemplateGroups = (ids: number[], add: number[], remove: number[]) => fetch(API.bulkTemplateGroups, { ids, add, remove }, 'post')
+export type TGroupSuggestion = { id: number; title: string; cover: string; groups: string[] }
+export const suggestTemplateGroups = () => fetch<{ items: TGroupSuggestion[]; unmatched: number; toCreate: string[] }>(API.suggestTemplateGroups, {})
+export const applyTemplateGroupSuggestions = (ids: number[]) => fetch<{ assigned: number; created: string[] }>(API.applyTemplateGroupSuggestions, { ids }, 'post')
 
 /** 后台字体项：包含完整管理字段（lang/font_family/size/woff_size 等） */
 export type TAdminFontItem = {

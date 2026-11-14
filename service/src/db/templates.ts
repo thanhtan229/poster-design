@@ -16,11 +16,17 @@ import { TemplateListItem, TemplateRow } from './types'
 
 const LIST_FIELDS = 'id, title, cover, width, height, state'
 
-export function listPage(type: 0 | 1, options: { page: number; pageSize: number; cate?: string; search?: string }): { list: TemplateListItem[]; total: number } {
+export function listPage(type: 0 | 1, options: { page: number; pageSize: number; cate?: string; search?: string; categoryId?: number; uncategorized?: boolean }): { list: TemplateListItem[]; total: number } {
   const offset = (options.page - 1) * options.pageSize
   const params: Record<string, any> = { type, offset, pageSize: options.pageSize }
   const conditions = ['type = @type', 'state = 1']
-  if (options.cate) {
+  // [TINIX] lọc theo nhóm (liên kết theo id) hoặc "chưa phân nhóm"; lọc theo tên (cate) giữ lại cho tương thích
+  if (options.uncategorized) {
+    conditions.push('NOT EXISTS (SELECT 1 FROM template_group_links l WHERE l.template_id = templates.id)')
+  } else if (options.categoryId) {
+    conditions.push('EXISTS (SELECT 1 FROM template_group_links l WHERE l.template_id = templates.id AND l.category_id = @categoryId)')
+    params.categoryId = options.categoryId
+  } else if (options.cate) {
     conditions.push('cate = @cate')
     params.cate = options.cate
   }

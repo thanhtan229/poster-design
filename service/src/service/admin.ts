@@ -13,7 +13,8 @@
  */
 import { Response } from 'express'
 import axios from '../utils/http'
-import { serviceLink, staticLink } from '../configs'
+import fs from 'fs' // [TINIX]
+import { serviceLink, staticLink, filePath } from '../configs'
 import { send, isNumber } from '../utils/tools'
 import { listAllTemplates, softDeleteTemplate, deleteTemplate as deleteTemplateRow, deleteUserImage, listCategories, listAssets, addAsset as addAssetRow, saveAsset, moveAsset, deleteAsset as deleteAssetRow, deleteCategory, addCategory, renameCategory } from '../db/admin'
 import { listUserImages } from '../db/userImages'
@@ -23,6 +24,7 @@ import * as templatesRepo from '../db/templates'
 import * as usersRepo from '../db/users'
 import * as templateCategoriesRepo from '../db/templateCategories'
 import * as designsRepo from '../db/designs'
+import * as groups from '../tinix/templateGroups' // [TINIX] nhóm mẫu (nhiều nhóm / mẫu)
 
 function pageResult<T>(list: T[], pageValue: any, pageSizeValue: any) {
   const page = Math.max(1, Math.floor(Number(pageValue) || 1))
@@ -51,7 +53,12 @@ export default {
   async removeTemplate(req: any, res: Response) {
     const id = Number(req.body?.id)
     if (!Number.isInteger(id) || id <= 0) return send.error(res, 'Tham số không hợp lệ')
-    deleteTemplateRow(id) ? send.success(res, undefined) : send.error(res, 'Mẫu không tồn tại')
+    if (!deleteTemplateRow(id)) return send.error(res, 'Mẫu không tồn tại')
+    // [TINIX] xóa luôn ảnh bìa/ảnh chụp của mẫu (không còn dòng nào dùng tới), tránh file mồ côi trong static
+    for (const name of [`${id}-cover.jpg`, `${id}-screenshot.png`]) {
+      try { fs.unlinkSync(filePath + name) } catch (e) { /* không có file thì thôi */ }
+    }
+    send.success(res, undefined)
   },
 
   // 管理员保存模板（PSD 导入创建模板/组合），与原 /design/edit 等价但强制 admin 鉴权
@@ -78,6 +85,7 @@ export default {
     if (!isAdd && !templatesRepo.updateTemplate(tid, params)) {
       return send.error(res, 'Mẫu không tồn tại')
     }
+    isAdd && params.cate && groups.attachByName(savedId, params.type, params.cate) // [TINIX] mẫu mới kèm cate → gắn vào nhóm
 
     // 生成封面：调用截图服务，成功后回填 cover（失败不阻塞主流程）
     try {
@@ -87,7 +95,7 @@ export default {
         { responseType: 'arraybuffer' }
       )
       const cover = params.type === 1 ? `${staticLink}${savedId}-screenshot.png` : `${staticLink}${savedId}-cover.jpg`
-      templatesRepo.setCover(savedId, cover)
+      templatesRepo.setCover(savedId, isAdd ? cover : `${cover}?v=${Date.now()}`) // [TINIX] sửa mẫu có sẵn → chống bộ nhớ đệm ảnh bìa cũ
     } catch (error) {
       console.warn('[admin] 封面生成失败:', error)
     }
@@ -101,7 +109,11 @@ export default {
     const cate = typeof req.body?.cate === 'string' ? req.body.cate.trim() : ''
     if (!Number.isInteger(id) || id <= 0) return send.error(res, 'Tham số không hợp lệ')
     if (cate && !templateCategoriesRepo.listCategories(type).some((item) => item.name === cate)) return send.error(res, 'Danh mục không tồn tại')
-    templatesRepo.updateTemplateCategory(id, type, cate) ? send.success(res, undefined) : send.error(res, 'Mẫu không tồn tại')
+    if (!templatesRepo.updateTemplateCategory(id, type, cate)) return send.error(res, 'Mẫu không tồn tại')
+    // [TINIX] đồng bộ bảng liên kết: chọn một danh mục = mẫu chỉ thuộc nhóm đó; bỏ chọn = chưa phân nhóm
+    const target = cate ? templateCategoriesRepo.listCategories(type).find((item) => item.name === cate) : undefined
+    groups.setTemplateGroups(id, target ? [target.id] : [])
+    send.success(res, undefined)
   },
 
   // 用户上传图片列表
@@ -185,7 +197,43 @@ export default {
   },
 
   async getTemplateCategories(req: any, res: Response) {
-    send.success(res, pageResult(templateCategoriesRepo.listCategories(req.query?.type == 1 ? 1 : 0), req.query?.page, req.query?.pageSize))
+    // [TINIX] kèm số mẫu mỗi nhóm (count)
+    send.success(res, pageResult(groups.listGroupsWithCount(req.query?.type == 1 ? 1 : 0).list, req.query?.page, req.query?.pageSize))
+  },
+
+  // [TINIX] gán lại toàn bộ nhóm của một mẫu: { id, groupIds[] }
+  async setTemplateGroups(req: any, res: Response) {
+    const id = Number(req.body?.id)
+    if (!Number.isInteger(id) || id <= 0) return send.error(res, 'Tham số không hợp lệ')
+    const ids = groups.setTemplateGroups(id, req.body?.groupIds)
+    ids ? send.success(res, { groupIds: ids }) : send.error(res, 'Mẫu không tồn tại')
+  },
+
+  // [TINIX] gán/gỡ nhóm cho nhiều mẫu: { ids[], add[], remove[] }
+  async bulkTemplateGroups(req: any, res: Response) {
+    const ids = req.body?.ids
+    if (!Array.isArray(ids) || !ids.length || ids.length > 1000) return send.error(res, 'Tham số không hợp lệ')
+    send.success(res, { changed: groups.bulkAssign(ids, req.body?.add, req.body?.remove) })
+  },
+
+  // [TINIX] sắp xếp lại nhóm: { type, ids[] }
+  async reorderTemplateCategories(req: any, res: Response) {
+    const ids = req.body?.ids
+    if (!Array.isArray(ids)) return send.error(res, 'Tham số không hợp lệ')
+    groups.reorderGroups(req.body?.type == 1 ? 1 : 0, ids)
+    send.success(res, undefined)
+  },
+
+  // [TINIX] gợi ý nhóm theo tên cho các mẫu chưa phân nhóm; xem trước, chưa ghi gì
+  async suggestTemplateGroups(req: any, res: Response) {
+    send.success(res, groups.suggestForUngrouped())
+  },
+
+  // [TINIX] áp dụng gợi ý cho các mẫu đã duyệt: { ids[] } (tính lại theo tên mẫu ở server, chỉ thêm nhóm)
+  async applyTemplateGroupSuggestions(req: any, res: Response) {
+    const ids = req.body?.ids
+    if (!Array.isArray(ids) || !ids.length || ids.length > 1000) return send.error(res, 'Tham số không hợp lệ')
+    send.success(res, groups.applySuggestions(ids))
   },
 
   async addTemplateCategory(req: any, res: Response) {
@@ -193,6 +241,7 @@ export default {
     const type = req.body?.type == 1 ? 1 : 0
     const sort = Number(req.body?.sort)
     if (!name) return send.error(res, 'Tên danh mục không được để trống')
+    if (groups.nameTaken(type, name)) return send.error(res, 'Tên danh mục đã tồn tại') // [TINIX] không phân biệt hoa thường/dấu
     try {
       const id = templateCategoriesRepo.addCategory(name, type, Number.isFinite(sort) ? sort : 0)
       send.success(res, { id })
@@ -204,14 +253,19 @@ export default {
   async deleteTemplateCategory(req: any, res: Response) {
     const id = Number(req.body?.id)
     if (!Number.isInteger(id) || id <= 0) return send.error(res, 'Tham số không hợp lệ')
-    if (templateCategoriesRepo.countTemplateUsage(id) > 0) return send.error(res, 'Danh mục này vẫn đang được mẫu sử dụng, vui lòng đổi danh mục của mẫu trước')
-    templateCategoriesRepo.deleteCategory(id) ? send.success(res, undefined) : send.error(res, 'Danh mục không tồn tại')
+    // [TINIX] nhóm còn mẫu: không có force → từ chối (kèm số mẫu); có force → gỡ nhóm khỏi các mẫu rồi xóa nhóm (mẫu không bị xóa)
+    const used = groups.groupUsage(id)
+    if (used > 0 && !req.body?.force) return send.error(res, `Nhóm này đang được ${used} mẫu sử dụng. Hãy xác nhận gỡ nhóm khỏi các mẫu để xóa.`)
+    const affected = groups.deleteGroupDetach(id)
+    affected >= 0 ? send.success(res, { affected }) : send.error(res, 'Danh mục không tồn tại')
   },
 
   async renameTemplateCategory(req: any, res: Response) {
     const id = Number(req.body?.id)
     const name = typeof req.body?.name === 'string' ? req.body.name.trim() : ''
     if (!Number.isInteger(id) || id <= 0 || !name) return send.error(res, 'Tham số không hợp lệ')
+    const current = templateCategoriesRepo.getCategoryById(id, 0) || templateCategoriesRepo.getCategoryById(id, 1)
+    if (current && groups.nameTaken(current.type === 1 ? 1 : 0, name, id)) return send.error(res, 'Tên danh mục đã tồn tại') // [TINIX]
     try {
       templateCategoriesRepo.renameCategory(id, name) ? send.success(res, undefined) : send.error(res, 'Danh mục không tồn tại')
     } catch (error) {

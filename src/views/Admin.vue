@@ -1053,8 +1053,13 @@ async function addTemplateCategory() {
 async function onDelTemplateCategory(row: any) {
   try {
     await ElMessageBox.confirm(t('admin.confirm.deleteTplCategory', { name: row.name }), t('admin.msg.notice'), { type: 'warning' })
-    const res: any = await adminApi.deleteTemplateCategory(row.id)
-    res?.code === 200 ? (ElMessage.success(t('admin.msg.categoryDeleted')), await loadTab()) : ElMessage.error(res?.msg || t('admin.msg.deleteFailed'))
+    let res: any = await adminApi.deleteTemplateCategory(row.id)
+    // [TINIX] nhóm còn mẫu: server từ chối kèm số mẫu → hỏi lại, xác nhận thì gỡ nhóm khỏi các mẫu rồi xóa (mẫu không bị xóa)
+    if (res?.code && res.code !== 200 && /đang được \d+ mẫu/.test(String(res.msg || ''))) {
+      await ElMessageBox.confirm(res.msg, t('admin.msg.notice'), { type: 'warning' })
+      res = await adminApi.deleteTemplateCategory(row.id, true)
+    }
+    res?.code && res.code !== 200 ? ElMessage.error(res?.msg || t('admin.msg.deleteFailed')) : (ElMessage.success(t('admin.msg.categoryDeleted')), await loadTab())
   } catch (error) {
     // 忽略取消操作。
   }

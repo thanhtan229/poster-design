@@ -67,6 +67,11 @@ export default {
   ADMIN_TEMPLATE_CATEGORY_ADD: path + '/admin/template/category/add',
   ADMIN_TEMPLATE_CATEGORY_DELETE: path + '/admin/template/category/delete',
   ADMIN_TEMPLATE_CATEGORY_RENAME: path + '/admin/template/category/rename',
+  ADMIN_TEMPLATE_CATEGORY_REORDER: path + '/admin/template/category/reorder', // [TINIX] nhóm mẫu
+  ADMIN_TEMPLATE_GROUPS_SET: path + '/admin/template/groups/set',
+  ADMIN_TEMPLATE_GROUPS_BULK: path + '/admin/template/groups/bulk',
+  ADMIN_TEMPLATE_GROUPS_SUGGEST: path + '/admin/template/groups/suggest',
+  ADMIN_TEMPLATE_GROUPS_APPLY: path + '/admin/template/groups/apply',
   ADMIN_CATEGORY_DELETE: path + '/admin/category/delete',
   ADMIN_CATEGORY_ADD: path + '/admin/category/add',
   ADMIN_CATEGORY_RENAME: path + '/admin/category/rename',

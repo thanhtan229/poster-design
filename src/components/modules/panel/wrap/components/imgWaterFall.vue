@@ -11,8 +11,16 @@
     <div
       v-for="(item, i) in state.list" :key="i + 'iwf'"
       :style="{ top: item.top + 'px', left: item.left + 'px', width: state.width + 'px', height: item.height + 'px' }"
-      class="img-box" @click.stop="selectItem(item, i)"
+      :class="['img-box', { 'tinix-picked': selectMode && selected && selected.includes(item.id) }]" @click.stop="selectItem(item, i)"
     >
+      <!-- [TINIX] chế độ chọn nhiều (admin): ô tick ở góc trên trái -->
+      <span v-if="selectMode" class="tinix-check">{{ selected && selected.includes(item.id) ? '✓' : '' }}</span>
+      <!-- [TINIX] admin: nút "Sửa mẫu" (mở chế độ sửa mẫu ở tab mới, lưu sẽ ghi đè mẫu và tạo lại bìa) -->
+      <div v-if="adminEdit && !selectMode" class="tinix-card-actions">
+        <button type="button" class="tinix-edit-btn" :title="$t('tinix.ui.templateCard.sua_mau_tip')" @click.stop="emit('edit', item)">{{ $t('tinix.ui.templateCard.sua_mau') }}</button>
+        <button type="button" class="tinix-edit-btn grp" :title="$t('tinix.ui.templateGroups.nhom_tip')" @click.stop="emit('groups', item)">{{ $t('tinix.ui.templateCard.nhom') }}</button>
+        <button type="button" class="tinix-edit-btn danger" :title="$t('tinix.ui.templateCard.xoa_mau_tip')" @click.stop="emit('remove', item)">{{ $t('tinix.ui.templateCard.xoa_mau') }}</button>
+      </div>
       <edit-model v-if="edit" :options="props.edit" :data="{ item, i }">
         {{ item.isDelect }}
         <div v-if="item.isDelect" class="list__mask">{{ $t('common.deleted') }}</div>
@@ -32,6 +40,9 @@ import { reactive, watch } from 'vue'
 type TProps = {
   listData: IGetTempListData[]
   edit?: Record<string, any>
+  adminEdit?: boolean // [TINIX] hiện nút Sửa mẫu trên từng thẻ (chỉ admin)
+  selectMode?: boolean // [TINIX] chế độ chọn nhiều thẻ
+  selected?: number[] // [TINIX] id các mẫu đang chọn
 }
 
 type TState = {
@@ -42,6 +53,10 @@ type TState = {
 
 type TEmits = {
   (event: 'select', data: IGetTempListData): void
+  (event: 'edit', data: IGetTempListData): void // [TINIX]
+  (event: 'remove', data: IGetTempListData): void // [TINIX]
+  (event: 'groups', data: IGetTempListData): void // [TINIX] mở hộp chọn nhóm của mẫu
+  (event: 'toggle', data: IGetTempListData): void // [TINIX] tick/bỏ tick khi đang chọn nhiều
   (event: 'load'): void
 }
 
@@ -90,6 +105,7 @@ const load = () => {
   emit('load')
 }
 const selectItem = (value: IGetTempListData, index: number) => {
+  if (props.selectMode) return emit('toggle', value) // [TINIX]
   emit('select', value)
 }
 const loadError = (item: IGetTempListData) => {
@@ -115,6 +131,53 @@ defineExpose({
 .img-water-fall {
   position: relative;
   margin-left: 14px;
+  .tinix-card-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    display: none;
+    gap: 4px;
+  }
+  .img-box:hover .tinix-card-actions {
+    display: flex;
+  }
+  .tinix-edit-btn {
+    border: 0;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #fff;
+    background: rgba(63, 106, 247, 0.92);
+    cursor: pointer;
+    &.grp {
+      background: rgba(103, 194, 58, 0.95);
+    }
+    &.danger {
+      background: rgba(245, 108, 108, 0.95);
+    }
+  }
+  .tinix-check {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 3;
+    width: 18px;
+    height: 18px;
+    line-height: 16px;
+    text-align: center;
+    font-size: 12px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1.5px solid #3f6af7;
+    border-radius: 4px;
+  }
+  .img-box.tinix-picked {
+    outline: 2px solid #3f6af7;
+    .tinix-check {
+      background: #3f6af7;
+    }
+  }
   .img-box {
     position: absolute !important;
     cursor: pointer;
