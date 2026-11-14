@@ -672,14 +672,14 @@
     {
       "file": "HY-Thu Phap 1.otf",
       "family": "HY-Thu Phap 1",
-      "category": "display",
+      "category": "script",
       "tags": [
         "thư pháp",
         "cổ điển",
         "trang trí",
         "mạnh mẽ"
       ],
-      "tag_source": "vision",
+      "tag_source": "manual",
       "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
       "vietnamese": true,
       "lang": "en"
@@ -1718,14 +1718,14 @@
     {
       "file": "SVN-North-Carossela.otf",
       "family": "SVN-North Carossela",
-      "category": "sans",
+      "category": "display",
       "tags": [
         "thanh lịch",
         "tối giản",
         "thanh mảnh",
         "tạp chí"
       ],
-      "tag_source": "vision",
+      "tag_source": "manual",
       "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
       "vietnamese": true,
       "lang": "en"
@@ -2634,14 +2634,14 @@
     {
       "file": "UVNNhatKy.TTF",
       "family": "UVN Nhat Ky",
-      "category": "serif",
+      "category": "sans",
       "tags": [
         "cổ điển",
         "trang trọng",
         "dễ đọc",
         "nội dung"
       ],
-      "tag_source": "vision",
+      "tag_source": "manual",
       "license": "Không rõ (font Windows, kiểm tra trước khi dùng thương mại)",
       "vietnamese": true,
       "lang": "en"
