@@ -39,7 +39,7 @@ export const selectImageFile = async (state: TImageCutoutState, raw: Ref<HTMLEle
     state.progress = progress
   })
   if (blob) {
-    successCb(URL.createObjectURL(blob), file.name)
+    successCb?.(URL.createObjectURL(blob), file.name)
   } else {
     state.progressText = ''
     alert(i18n.global.t('business.cutout.failed'))

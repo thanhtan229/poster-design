@@ -19,7 +19,7 @@
 import { TGetFontItemData, getFonts } from '@/api/material'
 
 /** 字体item类型 */
-export type TFontItemData = { url: string } & Omit<TGetFontItemData, 'woff'>
+export type TFontItemData = { url: string; oid?: number } & Omit<TGetFontItemData, 'woff'>
 
 const fontList: TFontItemData[] = []
 export const useFontStore = {

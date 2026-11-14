@@ -160,7 +160,7 @@ const uploadTemplate = async () => {
   // const cover = await draw()
   const data = Number(type) == 1 ? JSON.stringify(widgets) : JSON.stringify({ page, widgets })
   try {
-    const { id } = await adminApi.saveTemplate({ title: i18n.global.t('editor.upload.ownTemplate'), type, data, width: page.width, height: page.height })
+    const { id } = await adminApi.saveTemplate({ title: i18n.global.t('editor.upload.ownTemplate'), type: type as string, data, width: page.width, height: page.height })
     useNotification(i18n.global.t('editor.header.saveSuccess'), '')
     router.push({ path: '/psd', query: { id }, replace: true })
   } catch (err: any) {

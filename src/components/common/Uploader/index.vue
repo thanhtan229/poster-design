@@ -85,7 +85,7 @@ const uploadQueue = async () => {
         tempSimpleRes = await qiNiuUpload(file) // 队列有文件，执行上传
         const { width, height } = await getImage(file)
         useNotification(i18n.global.t('business.uploader.success'), '', { position: 'bottom-left' })
-        emit('done', { width, height, url: tempSimpleRes?.url }) // 单个文件进行响应
+        emit('done', { width, height, url: tempSimpleRes?.url as string }) // 单个文件进行响应
       } else useNotification(i18n.global.t('business.uploader.tooBigTitle'), i18n.global.t('business.uploader.tooBig'), { type: 'error', position: 'bottom-left' })
       uploading = false
       handleRemove() // 移除已上传文件

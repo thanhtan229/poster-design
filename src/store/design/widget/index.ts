@@ -28,6 +28,7 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   text?: string
   editable?: boolean
   lock?: boolean
+  record?: any // [TINIX] { width, height, minWidth, minHeight, dir }: mọi widget đều có; khai báo ở đây (any để không buộc kiểm tra undefined ở ~25 chỗ dùng) — trước đây thiếu → ~28 lỗi vue-tsc
   hidden?: boolean // [TINIX] lớp bị ẩn: không hiện trên canvas và không xuất ảnh
   layerName?: string // [TINIX] tên lớp do người dùng đặt (ưu tiên hơn chữ/tên mặc định)
   imgUrl?: string

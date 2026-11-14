@@ -49,7 +49,7 @@ type TProps = {
 }
 
 type TEmits = {
-  (event: 'change', data: { downloadPercent: number; downloadText: string }): void
+  (event: 'change', data: { downloadPercent: number; downloadText: string; downloadMsg?: string }): void
   (event: 'update:modelValue', data: boolean): void
 }
 
@@ -260,13 +260,13 @@ async function load(cb: () => void) {
     cb()
     return
   }
-  const { data: content, title, state: _state, width, height } = await api.home[apiName]({ id: id || tempId, type })
+  const { data: content, title, state: _state, width, height } = await api.home[apiName]({ id: (id || tempId) as any, type: type as any })
   if (!content) return
   const data = JSON.parse(content)
   state.stateBollean = !!_state
   state.title = title
   controlStore.setShowMoveable(false) // 清理掉上一次的选择框
-  if (type == 1) {
+  if (Number(type) == 1) {
     // 加载文字组合组件
     dPage.value.width = width
     dPage.value.height = height

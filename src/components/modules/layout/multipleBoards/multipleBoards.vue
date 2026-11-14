@@ -90,7 +90,7 @@ onMounted(async () => {
   listRef.value?.addEventListener('wheel', (event) => {
     event.preventDefault()
     // 使用滚轮横向滚动
-    listRef.value.scrollLeft += event.deltaY
+    listRef.value!.scrollLeft += event.deltaY
   })
 })
 

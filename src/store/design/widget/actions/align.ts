@@ -35,8 +35,8 @@ export function updateAlign(store: TWidgetStore, { align, uuid, group }: TUpdate
 
   let left = target.left
   let top = target.top
-  let pw = parent.record.width || parent.width
-  let ph = parent.record.height || parent.height
+  let pw = (parent as any).record.width || parent.width
+  let ph = (parent as any).record.height || parent.height
 
   if (parent.uuid === '-1') {
     pw = parent.width

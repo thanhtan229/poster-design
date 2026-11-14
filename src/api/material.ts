@@ -53,7 +53,7 @@ export type TGetFontItemData = {
   preview: string
   woff: string
   ttf?: string
-  lang: 'zh' | 'en'
+  lang: 'zh' | 'en' | 'ko' // [TINIX] thêm ko (tiếng Hàn)
   font_family?: string
   size?: number
   woff_size?: number

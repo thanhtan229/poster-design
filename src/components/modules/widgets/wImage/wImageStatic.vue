@@ -19,7 +19,7 @@
   >
     <div :style="{ transform: params.flip ? `rotate${params.flip}(180deg)` : undefined, borderRadius: params.radius + 'px', '-webkit-mask-image': `${params.mask ? `url('${params.mask}')` : 'initial'}` }" :class="['img__box', { mask: params.mask }]">
       <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${params.imgUrl}') ${params.sliceData.left} round` }"></div>
-      <img v-else ref="targetRef" class="target" :style="{ transformOrigin: 'center', objectFit: params.fit || undefined }" :src="params.imgUrl" /> <!-- [TINIX] fit=cover: khung ảnh giữ kích thước, ảnh phủ kín -->
+      <img v-else ref="targetRef" class="target" :style="{ transformOrigin: 'center', objectFit: (params.fit || undefined) as any }" :src="params.imgUrl" /> <!-- [TINIX] fit=cover: khung ảnh giữ kích thước, ảnh phủ kín -->
     </div>
   </div>
 </template>

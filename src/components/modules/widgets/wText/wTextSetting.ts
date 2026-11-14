@@ -26,7 +26,7 @@ export type TwTextData = {
   textDecoration: string
   color: string
   textAlign: StyleProperty.TextAlign
-  textAlignLast: StyleProperty.TextAlign
+  textAlignLast?: StyleProperty.TextAlign
   text: string
   opacity: number
   backgroundColor: string

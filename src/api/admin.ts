@@ -133,10 +133,13 @@ export type TFontForm = {
   preview?: string
   woff: string
   ttf?: string
-  lang: 'zh' | 'en'
+  lang: 'zh' | 'en' | 'ko' // [TINIX]
   font_family?: string
   size?: number
   woff_size?: number
+  supports_vietnamese?: boolean // [TINIX]
+  category?: string // [TINIX]
+  tags?: string[] // [TINIX]
 }
 
 export const getFonts = (params: { page?: number; pageSize?: number; search?: string; lang?: string; vn?: string; category?: string } = {}) => fetch<{ list: TAdminFontItem[]; total: number }>(API.fonts, params)

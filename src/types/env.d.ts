@@ -2,6 +2,7 @@
 
 interface ImportMeta {
     url: string
+    readonly env: Record<string, any> // [TINIX] import.meta.env (DEV, PROD...)
   
     readonly hot?: {
       readonly data: any
@@ -227,3 +228,6 @@ interface ImportMeta {
     export default src
   }
   
+// [TINIX] khai báo bổ sung để vue-tsc sạch lỗi
+declare module 'psd.js'
+declare const process: { env: Record<string, any> }

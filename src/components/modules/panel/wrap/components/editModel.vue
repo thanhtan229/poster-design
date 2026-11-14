@@ -31,6 +31,7 @@ export default defineComponent({
   components: { ElDropdown, ElDropdownItem, ElDropdownMenu },
   props: {
     options: {
+      type: Array as () => Array<{ fn: (d: any) => void; name: string }>, // [TINIX] kiểu rõ ràng (trước đây suy ra never)
       default: () => [],
     },
     data: {},
