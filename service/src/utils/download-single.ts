@@ -33,15 +33,16 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     height = Number(height).toFixed(0)
 
     const puppeteerArgs = {
-      old: ['–no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}`, '–single-process', '–disable-gpu', '–no-zygote', '–disable-dev-shm-usage'],
-      new: [ '–no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}` ]
+      // [TINIX] trước đây dùng dấu gạch ngang dài (–) nên Chrome mới coi tham số là địa chỉ web ('Multiple targets are not supported in headless mode'); dùng '--' chuẩn
+      old: ['--no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}`, '--disable-gpu', '--disable-dev-shm-usage'],
+      new: [ '--no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}` ]
     }
     // 启动浏览器
     try {
       browser = await puppeteer.launch({
         headless: true, // !isDev,
         executablePath,
-        ignoreHTTPSErrors: true, // 忽略https安全提示
+        acceptInsecureCerts: true, // [TINIX] Puppeteer mới: thay cho ignoreHTTPSErrors
         args: puppeteerArgs.old, // 如puppeteer版本v20+报错请尝试使用新参数
         defaultViewport: null,
       })

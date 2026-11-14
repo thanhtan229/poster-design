@@ -60,7 +60,7 @@
 import i18n from '@/languages'
 import { reactive, onMounted, nextTick, onBeforeMount, ref, getCurrentInstance } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElSelect, ElOption, ElProgress, ElDialog } from 'element-plus' // [TINIX] ElSelect/ElOption/ElProgress/ElDialog cho hộp nhập nhiều PSD
 import { loadLibraryFonts, matchPsdFont } from '@/utils/tinix/psd-font-map' // [TINIX]
 import { fitPointText } from '@/utils/tinix/psd-fit' // [TINIX]
 import RightClickMenu from '@/components/business/right-click-menu/RcMenu.vue'
