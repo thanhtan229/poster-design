@@ -35,6 +35,7 @@ rRouter.get(api.USER_IMAGES, userService.getUserImages)
 rRouter.post(api.USER_IMAGE_DELETE, userService.deleteUserImage)
 rRouter.get(api.GET_TEMPLATE_LIST, designService.getTemplates)
 rRouter.get(api.GET_TEMPLATE_CATEGORIES, designService.getTemplateCategories)
+rRouter.get(api.GET_TEMPLATE_PHOTO_COUNTS, designService.getTemplatePhotoCounts) // [TINIX]
 rRouter.get(api.GET_TEMPLATE, designService.getDetail)
 rRouter.get(api.GET_MATERIAL, designService.getMaterial)
 rRouter.get(api.GET_PHOTOS, designService.getPhotos)

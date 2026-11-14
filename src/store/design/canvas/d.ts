@@ -90,5 +90,7 @@ export type TPageState = {
   tag: number
   /** [TINIX] Độ phân giải in (px/inch) dùng để quy đổi cm ↔ px và ghi vào file xuất. Thiết kế cũ không có → 300 */
   dpi?: number
+  /** [TINIX] id mẫu đã tự áp dụng vào trang này (để "Đổi mẫu khác") */
+  tinixAuto?: number
 }
 

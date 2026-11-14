@@ -17,6 +17,7 @@ import { serviceLink, staticLink } from '../configs'
 import { send } from '../utils/tools'
 import * as templatesRepo from '../db/templates'
 import { listGroupsWithCount, getGroupsByTemplates, attachByName } from '../tinix/templateGroups' // [TINIX]
+import { setPhotoSlots } from '../tinix/templateSlots' // [TINIX]
 import * as materialsRepo from '../db/materials'
 import * as fontsRepo from '../db/fonts'
 import * as templateCategoriesRepo from '../db/templateCategories'
@@ -46,10 +47,20 @@ export async function getTemplates(req: any, res: Response) {
     categoryId: category ? category.id : 0,
     uncategorized,
     search: typeof req.query.search === 'string' ? req.query.search.trim() : '',
+    photos: typeof req.query.photos === 'string' ? req.query.photos.trim() : '', // [TINIX] lọc theo số khung ảnh: '1'..'9' | '5+'
   })
   const groups = getGroupsByTemplates(result.list.map((i: any) => i.id))
   result.list = result.list.map((i: any) => ({ ...i, groups: groups[i.id] || [] }))
   send.success(res, result)
+}
+
+// [TINIX] design/template/photo-counts: số mẫu theo số ảnh (1, 2, 3, 4, 5+) trong nhóm đang chọn
+export async function getTemplatePhotoCounts(req: any, res: Response) {
+  const rawCate = typeof req.query?.cate === 'string' ? req.query.cate.trim() : ''
+  const categoryId = /^\d+$/.test(rawCate) ? Number(rawCate) : 0
+  const category = categoryId > 0 ? templateCategoriesRepo.getCategoryById(categoryId, 0) : undefined
+  const uncategorized = rawCate === 'none'
+  send.success(res, { counts: templatesRepo.photoCounts(0, { page: 1, pageSize: 1, categoryId: category ? category.id : 0, uncategorized, cate: uncategorized || category ? '' : rawCate }) })
 }
 
 export async function getTemplateCategories(req: any, res: Response) {
@@ -158,6 +169,7 @@ export async function saveTemplate(req: any, res: Response) {
     return send.error(res, 'Mẫu không tồn tại')
   }
   isAdd && params.cate && attachByName(savedId, params.type, params.cate) // [TINIX] mẫu mới kèm cate → gắn vào nhóm
+  params.type === 0 && setPhotoSlots(savedId, params.data) // [TINIX] cập nhật số khung ảnh của mẫu
 
   // 生成封面（调用截图服务，成功后回填 cover）
   // [TINIX] Sửa mẫu có sẵn → bìa tạo lại, thêm ?v=<thời điểm> để trình duyệt không dùng ảnh bìa cũ trong bộ nhớ đệm.
@@ -178,4 +190,4 @@ export async function saveTemplate(req: any, res: Response) {
   send.success(res, { id: savedId })
 }
 
-export default { getTemplates, getTemplateCategories, getDetail, getMaterial, getPhotos, getAssetCategories, getFonts, saveTemplate }
+export default { getTemplates, getTemplatePhotoCounts, getTemplateCategories, getDetail, getMaterial, getPhotos, getAssetCategories, getFonts, saveTemplate }

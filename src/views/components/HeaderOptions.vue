@@ -196,6 +196,7 @@ async function download() {
     return
   }
   state.loading = true
+  try { // [TINIX] luôn mở khóa nút xuất khi xảy ra lỗi
   const currentRecord = pageStore.dCurrentPage
   const backEndCapture: boolean = checkDownloadPoster(dLayouts.value[currentRecord])
   const fileName = `${state.title || i18n.global.t('editor.header.untitledWork')}.png`
@@ -203,7 +204,6 @@ async function download() {
     // 无特殊条件命中则直接从前端出图，无需登录保存
     const { blob } = await canvasImage.value?.createPoster()
     downloadBlob(await withPngDpi(blob, clampDpi(dPage.value.dpi || DEFAULT_DPI)), fileName) // [TINIX] ghi DPI vào PNG để Photoshop/tiệm in mở đúng khổ
-    state.loading = false
     return
   }
   // 服务端出图依赖作品数据，需先保存；无 id 的新作品在此静默创建，并返回新 id 供出图使用
@@ -240,7 +240,12 @@ async function download() {
     fileName,
   )
   emit('change', { downloadPercent: 100, downloadText: i18n.global.t('editor.header.downloadDone'), downloadMsg: '' })
-  state.loading = false
+  } catch (error: any) {
+    emit('update:modelValue', false)
+    useNotification(i18t('tinix.ui.photoAuto.xuat_loi'), error?.message || '', { type: 'error' })
+  } finally {
+    state.loading = false
+  }
 }
 function RandomNumber(min: number, max: number) {
   return Math.ceil(Math.random() * (max - min)) + min

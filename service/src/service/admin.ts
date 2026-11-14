@@ -25,6 +25,7 @@ import * as usersRepo from '../db/users'
 import * as templateCategoriesRepo from '../db/templateCategories'
 import * as designsRepo from '../db/designs'
 import * as groups from '../tinix/templateGroups' // [TINIX] nhóm mẫu (nhiều nhóm / mẫu)
+import { setPhotoSlots } from '../tinix/templateSlots' // [TINIX]
 
 function pageResult<T>(list: T[], pageValue: any, pageSizeValue: any) {
   const page = Math.max(1, Math.floor(Number(pageValue) || 1))
@@ -86,6 +87,7 @@ export default {
       return send.error(res, 'Mẫu không tồn tại')
     }
     isAdd && params.cate && groups.attachByName(savedId, params.type, params.cate) // [TINIX] mẫu mới kèm cate → gắn vào nhóm
+    params.type === 0 && setPhotoSlots(savedId, params.data) // [TINIX] cập nhật số khung ảnh của mẫu
 
     // 生成封面：调用截图服务，成功后回填 cover（失败不阻塞主流程）
     try {

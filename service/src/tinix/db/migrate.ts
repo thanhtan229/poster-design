@@ -6,6 +6,8 @@
  * - ai_jobs: history + cost log for every AI call (see MVP-SPEC.md §4.2)
  */
 
+import { recountAllSlots } from '../templateSlots'
+
 type Db = { prepare: (sql: string) => any; exec: (sql: string) => void }
 
 // [column name, DDL] — plain tuples: the service compiles with TypeScript 3.9 (no labeled tuple elements)
@@ -64,6 +66,13 @@ export function migrateTinix(db: Db): void {
   const cls = db.prepare(`UPDATE user_images SET source = CASE WHEN url LIKE '/static/template/%' THEN 'psd' ELSE 'other' END
     WHERE source = 'upload' AND url NOT LIKE '/static/user/%' AND url NOT LIKE '/static/photos/%'`).run()
   if (addedImg.length || cls.changes) console.log(`[tinix:migrate] user_images + ${addedImg.join(', ')}; phân loại lại ${cls.changes} ảnh (psd/other)`)
+
+  // Khung ảnh của mẫu: số lớp ảnh đánh dấu `slot` (0 = chưa đánh dấu → mẫu 1 ảnh mặc định). Tính lại cho mọi mẫu khi vừa thêm cột.
+  const addedSlots = addMissingColumns(db, 'templates', [['photo_slots', 'INTEGER NOT NULL DEFAULT 0']])
+  if (addedSlots.length) {
+    const n = recountAllSlots()
+    console.log(`[tinix:migrate] templates + photo_slots (${n} mẫu có khung ảnh đã đánh dấu)`)
+  }
 
   // Nhóm mẫu thiết kế: một mẫu thuộc NHIỀU nhóm (liên kết theo id). templates.cate vẫn giữ tên nhóm chính (đầu tiên) để code cũ chạy được.
   const hadLinks = !!db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_group_links'").get()

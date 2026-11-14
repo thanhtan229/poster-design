@@ -138,7 +138,10 @@ const loginUser = ref<TLoginUser | null>(JSON.parse(localStorage.getItem('xp_use
 
 function openLogin() {
   loginDialogRef.value?.open('login').then((result) => {
-    if (result) loginUser.value = { account: result.account, role: result.role }
+    if (result) {
+      loginUser.value = { account: result.account, role: result.role }
+      window.dispatchEvent(new Event('tinix:auth-changed')) // [TINIX] nạp lại thư viện ảnh sau đăng nhập
+    }
   })
 }
 
@@ -148,6 +151,7 @@ function openChangePassword() {
     if (result === true) {
       localStorage.removeItem('xp_user')
       loginUser.value = null
+      window.dispatchEvent(new Event('tinix:auth-changed')) // [TINIX]
     }
   })
 }
@@ -156,6 +160,7 @@ function logout() {
   localStorage.removeItem('xp_user')
   localStorage.removeItem('xp_token')
   loginUser.value = null
+  window.dispatchEvent(new Event('tinix:auth-changed')) // [TINIX]
 }
 
 function jump2admin() {

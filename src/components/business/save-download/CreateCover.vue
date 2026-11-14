@@ -17,6 +17,8 @@ import { storeToRefs } from 'pinia'
 import { useCanvasStore, useWidgetStore } from '@/store'
 import FontFaceObserver from 'fontfaceobserver'
 import { useOriginalImages } from '@/utils/tinix/hq-images' // [TINIX]
+import { ElMessage } from 'element-plus' // [TINIX]
+import i18n from '@/languages' // [TINIX]
 
 // const { dZoom } = useSetupMapGetters(['dZoom'])
 
@@ -81,17 +83,31 @@ async function createPoster() {
   // const style = document.createElement('style')
   // document.head.appendChild(style)
   // style.sheet?.insertRule('body > img { display: initial; }')
-  return new Promise(async (resolve) => { // [TINIX] async: chờ đổi sang ảnh gốc trước khi chụp
-    const clonePage = document.getElementById('page-design-canvas')?.cloneNode(true) as HTMLElement
-    if (!clonePage) return
-    clonePage.setAttribute('id', 'clone-page')
-    document.body.appendChild(clonePage)
+  const clonePage = document.getElementById('page-design-canvas')?.cloneNode(true) as HTMLElement
+  if (!clonePage) throw new Error('Canvas unavailable')
+  clonePage.setAttribute('id', 'clone-page')
+  document.body.appendChild(clonePage)
+  try {
     await useOriginalImages(clonePage, widgetStore.dWidgets) // [TINIX] xuất thành phẩm: dùng ảnh gốc thay cho ảnh nhẹ trên canvas
-    html2canvas(clonePage, opts).then((canvas) => {
-      canvas.toBlob(async (blob) => resolve({ blob }), `image/png`)
-      clonePage.remove()
-    })
-  })
+    let canvas = await html2canvas(clonePage, opts)
+    // [TINIX] Kích thước DOM ở mức zoom có thể bị làm tròn; PNG phải đúng khổ trang gốc.
+    const width = Math.round(Number(canvasStore.dPage.width))
+    const height = Math.round(Number(canvasStore.dPage.height))
+    if (width > 0 && height > 0 && (canvas.width !== width || canvas.height !== height)) {
+      const exact = document.createElement('canvas')
+      exact.width = width
+      exact.height = height
+      const context = exact.getContext('2d')
+      if (!context) throw new Error('Canvas unavailable')
+      context.drawImage(canvas, 0, 0, width, height)
+      canvas = exact
+    }
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+    if (!blob) throw new Error('PNG encoding failed')
+    return { blob }
+  } finally {
+    clonePage.remove()
+  }
 }
 
 // 检查字体是否加载完成
@@ -101,10 +117,11 @@ async function checkFonts() {
   widgets.forEach((item: any) => {
     if (item.fontClass && item.fontClass.value) {
       const loader = new FontFaceObserver(item.fontClass.value)
-      fontLoaders.push(loader.load(null, 120000)) // 延长超时让检测不会丢失字体
+      fontLoaders.push(loader.load(null, 5000)) // [TINIX] không chờ vô hạn khi font đã bị xóa
     }
   })
-  await Promise.all(fontLoaders)
+  const results = await Promise.allSettled(fontLoaders)
+  if (results.some((r) => r.status === 'rejected')) ElMessage.warning(i18n.global.t('tinix.ui.photoAuto.font_du_phong'))
 }
 
 defineExpose({

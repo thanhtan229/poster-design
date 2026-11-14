@@ -42,6 +42,8 @@ export type TImageSetting = {
   }
   cropEdit?: boolean
   origin?: { proxy: string; original: string } // [TINIX] ảnh gốc dùng khi xuất (imgUrl đang là bản nhẹ)
+  slot?: boolean // [TINIX] khung ảnh của mẫu
+  keepCover?: boolean // [TINIX] giữ ảnh phủ kín trang khi kéo
   fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
 }
 

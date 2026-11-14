@@ -307,6 +307,15 @@ onMounted(() => {
     dActiveElement.value.lock && stop()
   })
   .on('drag', ({ target, transform, left, top, inputEvent }) => {
+    // [TINIX] ảnh phủ kín trang (mẫu 1 ảnh mặc định): kéo di chuyển nhưng tới mép thì dừng, không để lộ khoảng trống
+    const cover = dActiveElement.value as any
+    if (cover && cover.keepCover) {
+      const { width: pw, height: ph } = useCanvasStore().dPage
+      const w = Number(cover.width)
+      const h = Number(cover.height)
+      if (w >= pw) left = Math.min(0, Math.max(pw - w, left))
+      if (h >= ph) top = Math.min(0, Math.max(ph - h, top))
+    }
     // target!.style.transform = transform]
     target!.style.left = `${left}px`
     target!.style.top = `${top}px`

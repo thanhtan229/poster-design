@@ -25,6 +25,7 @@ export default {
   USER_IMAGE_DELETE: '/design/user/image/del',
   GET_TEMPLATE_LIST: '/design/list',
   GET_TEMPLATE_CATEGORIES: '/design/template/categories',
+  GET_TEMPLATE_PHOTO_COUNTS: '/design/template/photo-counts', // [TINIX] số mẫu theo số ảnh
   GET_TEMPLATE: '/design/temp',
   GET_MATERIAL: '/design/material',
   GET_PHOTOS: '/design/imgs',

@@ -37,8 +37,21 @@ export const photoState = reactive({
   unauthorized: false,
   filter: 'all' as FilterKey,
   sort: 'taken' as SortKey,
+  // tự áp dụng mẫu cho lượt ảnh thêm vào trang (nhớ lại cho lần sau)
+  autoApply: localStorage.getItem('tinix.photoDock.auto') === '1',
+  autoCate: localStorage.getItem('tinix.photoDock.autoCate') || '', // id nhóm mẫu ('' = mọi nhóm)
+  lastAuto: null as null | { pageIndex: number; templateId: number; title: string; photos: any[]; cate: string },
   up: { active: false, total: 0, done: 0, failed: 0, dup: 0, errors: [] as string[] },
 })
+
+export function setAutoApply(v: boolean) {
+  photoState.autoApply = v
+  localStorage.setItem('tinix.photoDock.auto', v ? '1' : '0')
+}
+export function setAutoCate(c: string) {
+  photoState.autoCate = c
+  localStorage.setItem('tinix.photoDock.autoCate', c)
+}
 
 export async function reloadPhotos() {
   photoState.loading = true

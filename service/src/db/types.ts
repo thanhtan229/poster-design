@@ -33,6 +33,7 @@ export interface TemplateListItem {
   width: number
   height: number
   state: number
+  photo_slots?: number // [TINIX] số khung ảnh đã đánh dấu (0 = chưa đánh dấu → mẫu 1 ảnh mặc định)
 }
 
 /** 素材 / 照片分类（整块 JSON 存储） */

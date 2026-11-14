@@ -11,6 +11,7 @@ const suites = [
   { name: 'Font', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'fonts.ts'], cwd: root },
   { name: 'Đơn vị cm/DPI + PNG DPI', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'units.ts'], cwd: root },
   { name: 'Nhóm mẫu thiết kế', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'groups.ts'], cwd: root },
+  { name: 'Khung ảnh của mẫu (lọc theo số ảnh)', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'slots.ts'], cwd: root },
   { name: 'Ảnh tải lên (ảnh nhẹ, xóa an toàn, yêu thích)', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'photos.ts'], cwd: root },
   {
     name: 'Khóa i18n',

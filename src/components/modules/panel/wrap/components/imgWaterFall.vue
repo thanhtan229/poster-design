@@ -14,6 +14,7 @@
       :class="['img-box', { 'tinix-picked': selectMode && selected && selected.includes(item.id) }]" @click.stop="selectItem(item, i)"
     >
       <!-- [TINIX] chế độ chọn nhiều (admin): ô tick ở góc trên trái -->
+      <span v-if="item.photo_slots !== undefined" class="tinix-slots" :title="$t('tinix.ui.photoAuto.tip_so_anh')">{{ $t('tinix.ui.photoAuto.n_anh', { n: Math.max(1, item.photo_slots || 0) }) }}</span>
       <span v-if="selectMode" class="tinix-check">{{ selected && selected.includes(item.id) ? '✓' : '' }}</span>
       <!-- [TINIX] admin: nút "Sửa mẫu" (mở chế độ sửa mẫu ở tab mới, lưu sẽ ghi đè mẫu và tạo lại bìa) -->
       <div v-if="adminEdit && !selectMode" class="tinix-card-actions">
@@ -181,6 +182,18 @@ defineExpose({
     &.danger {
       background: rgba(245, 108, 108, 0.95);
     }
+  }
+  .tinix-slots {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    z-index: 2;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 8px;
+    pointer-events: none;
   }
   .tinix-check {
     position: absolute;

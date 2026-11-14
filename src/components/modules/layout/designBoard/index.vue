@@ -70,6 +70,7 @@ import { computed, onMounted } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
 import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
+import { placePhotos } from '@/utils/tinix/photo-place' // [TINIX]
 import PointImg from '@/utils/plugins/pointImg'
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
 import { debounce } from 'throttle-debounce'
@@ -225,6 +226,11 @@ async function drop(e: MouseEvent) {
 
   let setting: TSetting = {}
   if (!type) {
+    return
+  }
+  // [TINIX] kéo nhiều ảnh (hoặc bật "Tự áp dụng mẫu") từ dải ảnh: đặt cả lượt ảnh (xếp lưới / áp dụng mẫu), không đặt theo vị trí thả
+  if (type === 'image' && item && item.value && Array.isArray(item.value.group) && item.value.group.length) {
+    await placePhotos(item.value.group, !!item.value.auto)
     return
   }
   // 处理数据

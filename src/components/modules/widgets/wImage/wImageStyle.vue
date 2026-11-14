@@ -28,6 +28,11 @@
           </uploader> -->
           <el-button size="small" disabled plain @click="openCropper">{{ $t('editor.image.beautify') }}</el-button>
         </div>
+        <!-- [TINIX] chỉ khi sửa mẫu: đánh dấu lớp ảnh là KHUNG ẢNH (chỗ đặt ảnh khi "Tự áp dụng mẫu") -->
+        <div v-if="tempEditing" class="tinix-slot-box">
+          <el-checkbox :model-value="!!state.innerElement.slot" @change="(v: any) => finish('slot', !!v as any)">{{ $t('tinix.ui.photoAuto.khung_anh') }}</el-checkbox>
+          <div :class="['tinix-slot-hint', { suggest: looksLikeSlot }]">{{ looksLikeSlot ? $t('tinix.ui.photoAuto.goi_y_khung') : $t('tinix.ui.photoAuto.khung_mo_ta') }}</div>
+        </div>
         <container-wrap @change="changeContainer" />
         <div class="slide-wrap">
           <number-slider v-model="state.innerElement.opacity" style="font-size: 14px" :label="$t('editor.prop.opacity')" :step="0.05" :maxValue="1" @finish="(value) => finish('opacity', value)" />
@@ -78,7 +83,9 @@ import imageCutout from '@/components/business/image-cutout'
 import wImageSetting, { TImageSetting } from './wImageSetting'
 import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
-import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
+import { useCanvasStore, useControlStore, useForceStore, useUserStore, useWidgetStore } from '@/store'
+import { computed } from 'vue' // [TINIX]
+import { ElCheckbox } from 'element-plus' // [TINIX] không đăng ký toàn cục
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
 import { TUpdateAlignData } from '@/store/design/widget/actions/align'
@@ -132,6 +139,16 @@ const canvasStore = useCanvasStore()
 const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
 const { dActiveElement, dWidgets } = storeToRefs(widgetStore)
+// [TINIX] đang sửa mẫu → hiện ô "Khung ảnh"; gợi ý lớp có vẻ là chỗ đặt ảnh (đủ lớn, không phủ kín trang, tỉ lệ vừa phải)
+const { tempEditing } = storeToRefs(useUserStore())
+const looksLikeSlot = computed(() => {
+  const a = dActiveElement.value as any
+  if (!a || a.slot) return false
+  const { width: pw, height: ph } = canvasStore.dPage
+  const area = (Number(a.width) * Number(a.height)) / (pw * ph)
+  const ratio = Number(a.width) / (Number(a.height) || 1)
+  return area >= 0.08 && area <= 0.9 && ratio >= 0.4 && ratio <= 2.5
+})
 
 let lastUuid: string | undefined = undefined
 let tag: boolean
@@ -346,6 +363,21 @@ async function cutImageDone(url: string) {
 #w-image-style {
   height: 100%;
   width: 100%;
+}
+.tinix-slot-box {
+  margin: 4px 0 12px;
+  padding: 8px 10px;
+  background: #f6f8ff;
+  border-radius: 6px;
+  .tinix-slot-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #999;
+    &.suggest {
+      color: #e6a23c;
+    }
+  }
 }
 .line-layout {
   display: flex;

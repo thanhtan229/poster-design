@@ -18,6 +18,8 @@
     <search-header v-model="state.searchKeyword" type="none" @change="cateChange" /><!-- [TINIX] type="none": bỏ menu nhóm ẩn, dùng thanh nhóm bên dưới -->
     <tinix-group-bar ref="groupBarRef" v-model="groupId" :is-admin="isAdmin" :select-mode="selectMode" @change="onGroupChange" @changed="load(true, pageOptions.state)" @toggle-select="toggleSelect" />
 
+    <tinix-photo-count-bar v-model="photosFilter" :cate="groupId === 0 ? '' : groupId" @change="onPhotosChange" /><!-- [TINIX] lọc mẫu theo số ảnh -->
+
     <!-- [TINIX] chế độ chọn nhiều: thanh thao tác -->
     <div v-if="selectMode" class="tinix-select-bar">
       <span>{{ $t('tinix.ui.templateGroups.da_chon', { n: selected.length }) }}</span>
@@ -81,6 +83,7 @@ import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox, ElDialog, ElCheckbox, ElCheckboxGroup, ElButton } from 'element-plus' // [TINIX]
 import * as adminApi from '@/api/admin' // [TINIX]
 import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
+import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
 
 type TState = {
@@ -96,6 +99,7 @@ type TPageOptions = {
   pageSize: number
   cate: number | string
   state?: string
+  photos?: string // [TINIX] lọc theo số khung ảnh
 }
 
 const listRef = ref<HTMLElement | null>(null)
@@ -157,6 +161,7 @@ async function removeTemplate(item: IGetTempListData) {
 // ── [TINIX] Nhóm mẫu (một mẫu thuộc nhiều nhóm) ──
 const groupBarRef = ref<any>(null)
 const groupId = ref<number | 'none'>(0)
+const photosFilter = ref('') // '' | '1'..'4' | '5+'
 const selectMode = ref(false)
 const selected = ref<number[]>([])
 const allGroups = computed<Array<{ id: number; name: string }>>(() => (groupBarRef.value && groupBarRef.value.groups) || [])
@@ -166,6 +171,11 @@ const tt = (k: string, p?: any) => i18n.global.t(k, p) as string
 function onGroupChange(g: { id: number | 'none'; name: string }) {
   state.title = g.name || 'Mẫu thiết kế'
   pageOptions.cate = g.id === 0 ? '' : g.id
+  selected.value = []
+  load(true, pageOptions.state)
+}
+function onPhotosChange(v: string) {
+  pageOptions.photos = v || undefined
   selected.value = []
   load(true, pageOptions.state)
 }

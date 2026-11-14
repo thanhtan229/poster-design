@@ -13,12 +13,15 @@
  */
 import { getDB } from './index'
 import { TemplateListItem, TemplateRow } from './types'
+import { photosCondition, photoCountBuckets } from '../tinix/templateSlots' // [TINIX]
 
-const LIST_FIELDS = 'id, title, cover, width, height, state'
+const LIST_FIELDS = 'id, title, cover, width, height, state, photo_slots' // [TINIX] photo_slots: số khung ảnh đã đánh dấu
 
-export function listPage(type: 0 | 1, options: { page: number; pageSize: number; cate?: string; search?: string; categoryId?: number; uncategorized?: boolean }): { list: TemplateListItem[]; total: number } {
-  const offset = (options.page - 1) * options.pageSize
-  const params: Record<string, any> = { type, offset, pageSize: options.pageSize }
+type ListOptions = { page: number; pageSize: number; cate?: string; search?: string; categoryId?: number; uncategorized?: boolean; photos?: string }
+
+/** Điều kiện lọc dùng chung cho danh sách và bộ đếm (không gồm điều kiện số ảnh) */
+function baseConditions(type: 0 | 1, options: ListOptions): { conditions: string[]; params: Record<string, any> } {
+  const params: Record<string, any> = { type }
   const conditions = ['type = @type', 'state = 1']
   // [TINIX] lọc theo nhóm (liên kết theo id) hoặc "chưa phân nhóm"; lọc theo tên (cate) giữ lại cho tương thích
   if (options.uncategorized) {
@@ -34,6 +37,21 @@ export function listPage(type: 0 | 1, options: { page: number; pageSize: number;
     conditions.push('title LIKE @search')
     params.search = `%${options.search}%`
   }
+  return { conditions, params }
+}
+
+/** [TINIX] Số mẫu theo số ảnh (1, 2, 3, 4, 5+) trong phạm vi nhóm/tìm kiếm hiện tại */
+export function photoCounts(type: 0 | 1, options: ListOptions): Record<string, number> {
+  const { conditions, params } = baseConditions(type, options)
+  return photoCountBuckets(conditions.join(' AND '), params)
+}
+
+export function listPage(type: 0 | 1, options: ListOptions): { list: TemplateListItem[]; total: number } {
+  const offset = (options.page - 1) * options.pageSize
+  const { conditions, params: baseParams } = baseConditions(type, options)
+  const params: Record<string, any> = { ...baseParams, offset, pageSize: options.pageSize }
+  const photosCond = options.photos ? photosCondition(options.photos) : null // [TINIX] lọc theo số khung ảnh
+  photosCond && conditions.push(photosCond)
   const where = conditions.join(' AND ')
   const total = Number(getDB().prepare(`SELECT COUNT(*) AS total FROM templates WHERE ${where}`).get(params)?.total || 0)
   const list = getDB().prepare(`SELECT ${LIST_FIELDS} FROM templates WHERE ${where} ORDER BY id DESC LIMIT @pageSize OFFSET @offset`).all(params)
