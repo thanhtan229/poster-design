@@ -80,8 +80,6 @@ rRouter.post(api.ADMIN_TEMPLATE_CATEGORY_RENAME, requireAdmin, adminService.rena
 rRouter.post(api.ADMIN_TEMPLATE_CATEGORY_REORDER, requireAdmin, adminService.reorderTemplateCategories) // [TINIX] nhóm mẫu
 rRouter.post(api.ADMIN_TEMPLATE_GROUPS_SET, requireAdmin, adminService.setTemplateGroups)
 rRouter.post(api.ADMIN_TEMPLATE_GROUPS_BULK, requireAdmin, adminService.bulkTemplateGroups)
-rRouter.get(api.ADMIN_TEMPLATE_GROUPS_SUGGEST, requireAdmin, adminService.suggestTemplateGroups)
-rRouter.post(api.ADMIN_TEMPLATE_GROUPS_APPLY, requireAdmin, adminService.applyTemplateGroupSuggestions)
 rRouter.post(api.ADMIN_CATEGORY_DELETE, requireAdmin, adminService.deleteCategory)
 rRouter.post(api.ADMIN_CATEGORY_ADD, requireAdmin, adminService.addCategory)
 rRouter.post(api.ADMIN_CATEGORY_RENAME, requireAdmin, adminService.renameCategory)

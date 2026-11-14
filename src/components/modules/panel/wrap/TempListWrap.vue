@@ -16,7 +16,7 @@
 <template>
   <div class="wrap">
     <search-header v-model="state.searchKeyword" type="none" @change="cateChange" /><!-- [TINIX] type="none": bỏ menu nhóm ẩn, dùng thanh nhóm bên dưới -->
-    <tinix-group-bar ref="groupBarRef" v-model="groupId" :is-admin="isAdmin" :select-mode="selectMode" @change="onGroupChange" @changed="load(true, pageOptions.state)" @toggle-select="toggleSelect" @suggest="openSuggest" />
+    <tinix-group-bar ref="groupBarRef" v-model="groupId" :is-admin="isAdmin" :select-mode="selectMode" @change="onGroupChange" @changed="load(true, pageOptions.state)" @toggle-select="toggleSelect" />
 
     <!-- [TINIX] chế độ chọn nhiều: thanh thao tác -->
     <div v-if="selectMode" class="tinix-select-bar">
@@ -60,31 +60,6 @@
       </template>
     </el-dialog>
 
-    <!-- [TINIX] Gợi ý nhóm theo tên mẫu (xem lại rồi mới áp dụng) -->
-    <el-dialog v-model="suggest.visible" :title="$t('tinix.ui.templateGroups.goi_y_tieu_de')" width="460px" append-to-body>
-      <div v-loading="suggest.loading" class="tinix-suggest">
-        <template v-if="!suggest.loading && !suggest.items.length">
-          <div class="tinix-empty">{{ $t('tinix.ui.templateGroups.goi_y_khong_co') }}</div>
-        </template>
-        <template v-else-if="!suggest.loading">
-          <div class="tinix-note">{{ $t('tinix.ui.templateGroups.goi_y_tom_tat', { n: suggest.items.length, unmatched: suggest.unmatched }) }}</div>
-          <div v-if="suggest.toCreate.length" class="tinix-note">{{ $t('tinix.ui.templateGroups.goi_y_se_tao', { list: suggest.toCreate.join(', ') }) }}</div>
-          <div class="tinix-note dim">{{ $t('tinix.ui.templateGroups.goi_y_ghi_chu') }}</div>
-          <div class="tinix-suggest-list">
-            <label v-for="it in suggest.items" :key="it.id" class="tinix-suggest-row">
-              <el-checkbox :model-value="suggest.checked.includes(it.id)" @change="toggleSuggest(it.id)" />
-              <img :src="it.cover" alt="" />
-              <span class="title">{{ it.title }}</span>
-              <el-tag v-for="g in it.groups" :key="g" size="small" effect="plain">{{ g }}</el-tag>
-            </label>
-          </div>
-        </template>
-      </div>
-      <template #footer>
-        <el-button @click="suggest.visible = false">{{ $t('tinix.ui.templateGroups.huy') }}</el-button>
-        <el-button type="primary" :loading="suggest.applying" :disabled="!suggest.checked.length" @click="applySuggest">{{ $t('tinix.ui.templateGroups.goi_y_ap_dung', { n: suggest.checked.length }) }}</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -103,7 +78,7 @@ import imgWaterFall from './components/imgWaterFall.vue'
 import { IGetTempListData } from '@/api/home'
 import { useControlStore, useCanvasStore, useUserStore, useHistoryStore, useWidgetStore, useForceStore } from '@/store'
 import { storeToRefs } from 'pinia'
-import { ElMessage, ElMessageBox, ElDialog, ElCheckbox, ElCheckboxGroup, ElButton, ElTag } from 'element-plus' // [TINIX]
+import { ElMessage, ElMessageBox, ElDialog, ElCheckbox, ElCheckboxGroup, ElButton } from 'element-plus' // [TINIX]
 import * as adminApi from '@/api/admin' // [TINIX]
 import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
@@ -186,7 +161,6 @@ const selectMode = ref(false)
 const selected = ref<number[]>([])
 const allGroups = computed<Array<{ id: number; name: string }>>(() => (groupBarRef.value && groupBarRef.value.groups) || [])
 const groupDialog = reactive({ visible: false, mode: 'single' as 'single' | 'bulk', saving: false, item: null as IGetTempListData | null, ids: [] as number[], add: [] as number[], remove: [] as number[] })
-const suggest = reactive({ visible: false, loading: false, applying: false, items: [] as adminApi.TGroupSuggestion[], unmatched: 0, toCreate: [] as string[], checked: [] as number[] })
 const tt = (k: string, p?: any) => i18n.global.t(k, p) as string
 
 function onGroupChange(g: { id: number | 'none'; name: string }) {
@@ -231,37 +205,6 @@ async function saveGroupDialog() {
     groupDialog.saving = false
   }
 }
-async function openSuggest() {
-  Object.assign(suggest, { visible: true, loading: true, items: [], unmatched: 0, toCreate: [], checked: [] })
-  try {
-    const res: any = await adminApi.suggestTemplateGroups()
-    if (apiFailed(res)) throw new Error(apiMessage(res, tt('tinix.ui.templateGroups.that_bai')))
-    Object.assign(suggest, { items: res.items || [], unmatched: res.unmatched || 0, toCreate: res.toCreate || [], checked: (res.items || []).map((i: any) => i.id) })
-  } catch (e: any) {
-    ElMessage.error(e?.message || tt('tinix.ui.templateGroups.that_bai'))
-    suggest.visible = false
-  } finally {
-    suggest.loading = false
-  }
-}
-function toggleSuggest(id: number) {
-  suggest.checked = suggest.checked.includes(id) ? suggest.checked.filter((x) => x !== id) : suggest.checked.concat(id)
-}
-async function applySuggest() {
-  suggest.applying = true
-  try {
-    const res: any = await adminApi.applyTemplateGroupSuggestions(suggest.checked)
-    if (apiFailed(res)) return ElMessage.error(apiMessage(res, tt('tinix.ui.templateGroups.that_bai')))
-    suggest.visible = false
-    ElMessage.success(res.created && res.created.length ? tt('tinix.ui.templateGroups.goi_y_ket_qua', { assigned: res.assigned, created: res.created.join(', ') }) : tt('tinix.ui.templateGroups.goi_y_ket_qua_khong_tao', { assigned: res.assigned }))
-    window.dispatchEvent(new Event('tinix:templates-changed'))
-  } catch (e: any) {
-    ElMessage.error(e?.msg || e?.message || tt('tinix.ui.templateGroups.that_bai'))
-  } finally {
-    suggest.applying = false
-  }
-}
-
 function editTemplate(item: IGetTempListData) {
   const href = router.resolve({ path: '/home', query: { tempid: String(item.id), tempType: '0', edit: '1' } }).href
   window.open(href, '_blank')
@@ -410,48 +353,6 @@ defineExpose({
   color: #999;
   line-height: 1.5;
 }
-.tinix-note {
-  font-size: 12px;
-  color: #444;
-  line-height: 1.5;
-  margin-bottom: 6px;
-  &.dim {
-    color: #999;
-  }
-}
-.tinix-suggest {
-  min-height: 80px;
-}
-.tinix-suggest-list {
-  max-height: 320px;
-  overflow-y: auto;
-  border: 1px solid #ebeef5;
-  border-radius: 6px;
-  padding: 4px 8px;
-}
-.tinix-suggest-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  cursor: pointer;
-  img {
-    width: 34px;
-    height: 34px;
-    object-fit: cover;
-    border-radius: 3px;
-    background: #f1f2f4;
-  }
-  .title {
-    flex: 1;
-    min-width: 0;
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
 .infinite-list {
   height: 100%;
   margin-top: 1rem;

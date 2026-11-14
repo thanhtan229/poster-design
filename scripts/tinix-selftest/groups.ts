@@ -1,9 +1,8 @@
-// [TINIX] Kiểm thử nhóm mẫu thiết kế (nhiều nhóm / mẫu): liên kết, đếm, lọc, sắp xếp, xóa, gợi ý theo tên, chuyển dữ liệu cũ.
+// [TINIX] Kiểm thử nhóm mẫu thiết kế (nhiều nhóm / mẫu): liên kết, đếm, lọc, sắp xếp, xóa, chuyển dữ liệu cũ.
 // Chạy trên DB tạm (không đụng service/data). Dùng qua: npm run tinix:test
 import { initDB, getDB } from '../../service/src/db'
 import * as templatesRepo from '../../service/src/db/templates'
 import * as g from '../../service/src/tinix/templateGroups'
-import { suggestGroupsForTitle, normalizeText } from '../../service/src/tinix/groupSuggest'
 import { migrateTinix } from '../../service/src/tinix/db/migrate'
 
 let failed = 0
@@ -82,33 +81,6 @@ function main() {
   check('liên kết và nhóm đã bị xóa', g.groupUsage(portrait) === 0 && !db.prepare('SELECT id FROM template_categories WHERE id = ?').get(portrait))
   check('nhóm chính của mẫu chỉ còn nhóm cũ không bị ảnh hưởng', cateOf(noGroup) === '', cateOf(noGroup))
   check('xóa nhóm không tồn tại → -1', g.deleteGroupDetach(portrait) === -1)
-
-  console.log('Gợi ý nhóm theo tên')
-  check('bỏ dấu tiếng Việt', normalizeText('TẠP CHÍ — Đẹp') === 'tap chi dep')
-  check('BACKGROUND BABY → Nền + Em bé', suggestGroupsForTitle('BACKGROUND BABY SHOPDESIGNVN (30)').join() === 'Em bé & trẻ em,Nền')
-  check('TYPO BÌA TẠP CHÍ BABY → Em bé + Tạp chí', suggestGroupsForTitle('TYPO BÌA TẠP CHÍ BABY 2022 (7)').join() === 'Em bé & trẻ em,Tạp chí')
-  check('TẠP CHÍ THỜI TRANG TRẺ EM → Em bé & trẻ em + Tạp chí', suggestGroupsForTitle('41 TẠP CHÍ THỜI TRANG TRẺ EM 2022 (1)').join() === 'Em bé & trẻ em,Tạp chí')
-  check('TRUYỀN THÔNG → Truyền thông', suggestGroupsForTitle('TYPO TRUYỀN THÔNG 2022 SHOPDESIGNVN.COM (8)').join() === 'Truyền thông')
-  check('tên chỉ là số → không gợi ý', suggestGroupsForTitle('13').length === 0)
-  check('không khớp nhầm giữa từ ("nenh" không phải "nen")', suggestGroupsForTitle('Danh mục nenh').length === 0)
-
-  const s1 = mkTpl('BACKGROUND BABY (1)'), s2 = mkTpl('TYPO TRUYỀN THÔNG (2)'), s3 = mkTpl('13'), s4 = mkTpl('Tạp chí wedding đẹp')
-  const grouped = mkTpl('TẠP CHÍ đã có nhóm')
-  g.setTemplateGroups(grouped, [baby])
-  const sug = g.suggestForUngrouped()
-  check('gợi ý chỉ cho mẫu chưa có nhóm', !sug.items.some((i) => i.id === grouped) && sug.items.some((i) => i.id === s1))
-  check('mẫu không khớp được đếm là unmatched', sug.unmatched >= 1)
-  check('liệt kê nhóm sẽ tạo (chưa có)', sug.toCreate.includes('Nền') && sug.toCreate.includes('Truyền thông') && sug.toCreate.includes('Tạp chí') && !sug.toCreate.includes('Wedding'), sug.toCreate)
-  const before = db.prepare('SELECT COUNT(*) n FROM template_categories').get().n
-  g.suggestForUngrouped()
-  check('xem gợi ý không ghi gì vào DB', db.prepare('SELECT COUNT(*) n FROM template_categories').get().n === before)
-  const ap = g.applySuggestions([s1, s2, s4, grouped, s3])
-  check('áp dụng: tạo nhóm thiếu, gán cho mẫu đã duyệt', ap.created.includes('Nền') && ap.assigned === 3, ap)
-  check('mẫu đã có nhóm không bị đụng (vẫn chỉ nhóm cũ)', g.getGroupsByTemplates([grouped])[grouped]?.join() === String(baby))
-  check('mẫu không khớp (tên "13") vẫn chưa phân nhóm', !g.getGroupsByTemplates([s3])[s3])
-  check('mẫu "Tạp chí wedding" thuộc 2 nhóm', (g.getGroupsByTemplates([s4])[s4] || []).length === 2)
-  const again = g.applySuggestions([s1, s2, s4])
-  check('áp dụng lần hai không tạo thêm gì', again.created.length === 0 && again.assigned === 0, again)
 
   console.log(failed ? `\n✗ ${failed} kiểm tra lỗi` : '\n✓ tất cả kiểm tra nhóm mẫu đạt')
   process.exit(failed ? 1 : 0)

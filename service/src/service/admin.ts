@@ -224,18 +224,6 @@ export default {
     send.success(res, undefined)
   },
 
-  // [TINIX] gợi ý nhóm theo tên cho các mẫu chưa phân nhóm; xem trước, chưa ghi gì
-  async suggestTemplateGroups(req: any, res: Response) {
-    send.success(res, groups.suggestForUngrouped())
-  },
-
-  // [TINIX] áp dụng gợi ý cho các mẫu đã duyệt: { ids[] } (tính lại theo tên mẫu ở server, chỉ thêm nhóm)
-  async applyTemplateGroupSuggestions(req: any, res: Response) {
-    const ids = req.body?.ids
-    if (!Array.isArray(ids) || !ids.length || ids.length > 1000) return send.error(res, 'Tham số không hợp lệ')
-    send.success(res, groups.applySuggestions(ids))
-  },
-
   async addTemplateCategory(req: any, res: Response) {
     const name = typeof req.body?.name === 'string' ? req.body.name.trim() : ''
     const type = req.body?.type == 1 ? 1 : 0

@@ -1,10 +1,20 @@
 // [TINIX] Nhóm mẫu thiết kế: một mẫu thuộc nhiều nhóm (bảng template_group_links, khóa theo id).
 // templates.cate luôn được đồng bộ = tên nhóm đầu tiên (theo sort, id) hoặc '' để trang quản trị/nhập PSD cũ còn chạy.
 import { getDB } from '../db/index'
-import { GROUP_RULES, groupKey, suggestGroupsForTitle } from './groupSuggest'
 
 type TemplateType = 0 | 1
 export type GroupRow = { id: number; name: string; type: number; sort: number; created_at: string; count: number }
+
+/** Tên nhóm để so trùng: không phân biệt hoa thường/dấu thanh, gộp khoảng trắng, chỉ giữ chữ-số */
+export function groupKey(name: string): string {
+  return String(name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
 
 const placeholders = (n: number) => new Array(n).fill('?').join(',')
 const uniqInts = (xs: any): number[] => {
@@ -146,53 +156,4 @@ export function deleteGroupDetach(id: number): number {
     syncPrimary(tids)
   })()
   return affected
-}
-
-// ── Gợi ý theo tên ──
-export type Suggestion = { id: number; title: string; cover: string; groups: string[] }
-
-/** Mẫu chưa có nhóm nào + nhóm gợi ý theo tên (chỉ mẫu có gợi ý). Không bao giờ đụng mẫu đã có nhóm. */
-export function suggestForUngrouped(): { items: Suggestion[]; unmatched: number; toCreate: string[] } {
-  const db = getDB()
-  const rows: Array<{ id: number; title: string; cover: string }> = db.prepare(`SELECT t.id, t.title, t.cover FROM templates t
-    WHERE t.type = 0 AND t.state = 1 AND NOT EXISTS (SELECT 1 FROM template_group_links l WHERE l.template_id = t.id) ORDER BY t.id DESC`).all()
-  const items: Suggestion[] = []
-  let unmatched = 0
-  for (const r of rows) {
-    const groups = suggestGroupsForTitle(r.title)
-    if (groups.length) items.push({ id: r.id, title: r.title, cover: r.cover, groups })
-    else unmatched++
-  }
-  const have: string[] = db.prepare('SELECT name FROM template_categories WHERE type = 0').all().map((c: any) => groupKey(c.name))
-  const need: string[] = []
-  for (const it of items) for (const g of it.groups) if (have.indexOf(groupKey(g)) < 0 && need.indexOf(g) < 0) need.push(g)
-  const toCreate = GROUP_RULES.map((r) => r.group).filter((g) => need.indexOf(g) >= 0)
-  return { items, unmatched, toCreate }
-}
-
-/** Áp dụng gợi ý cho các mẫu đã duyệt: tạo nhóm còn thiếu rồi thêm liên kết (chỉ THÊM, tính lại theo tên mẫu ở server, mẫu đã có nhóm bị bỏ qua) */
-export function applySuggestions(templateIds: number[]): { assigned: number; created: string[] } {
-  const db = getDB()
-  const wanted = uniqInts(templateIds)
-  const sug = suggestForUngrouped().items.filter((i) => wanted.indexOf(i.id) >= 0)
-  const created: string[] = []
-  let assigned = 0
-  db.transaction(() => {
-    const cats: Array<{ id: number; name: string }> = db.prepare('SELECT id, name FROM template_categories WHERE type = 0').all()
-    let maxSort = Number(db.prepare('SELECT COALESCE(MAX(sort), 0) AS m FROM template_categories WHERE type = 0').get().m)
-    const idFor = (name: string): number => {
-      const found = cats.find((c) => groupKey(c.name) === groupKey(name))
-      if (found) return found.id
-      maxSort += 1
-      const id = Number(db.prepare('INSERT INTO template_categories (name, type, sort) VALUES (?, 0, ?)').run(name, maxSort).lastInsertRowid)
-      cats.push({ id, name })
-      created.push(name)
-      return id
-    }
-    for (const it of sug) {
-      const ids = it.groups.map(idFor)
-      assigned += bulkAssign([it.id], ids, []) ? 1 : 0
-    }
-  })()
-  return { assigned, created }
 }

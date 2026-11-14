@@ -1,6 +1,6 @@
 <!--
  [TINIX] Thanh nhóm mẫu thiết kế: Tất cả · Chưa phân nhóm · các nhóm (có số mẫu).
- Admin: thêm nhóm, đổi tên / đưa lên-xuống / xóa nhóm đang chọn, chọn nhiều thẻ, gợi ý nhóm theo tên.
+ Admin: thêm nhóm, đổi tên / đưa lên-xuống / xóa nhóm đang chọn, chọn nhiều thẻ.
  Một mẫu có thể thuộc nhiều nhóm (server: service/src/tinix/templateGroups.ts).
 -->
 <template>
@@ -30,7 +30,6 @@
     </div>
     <div v-if="isAdmin" class="tools">
       <el-button size="small" link :type="selectMode ? 'primary' : 'default'" @click="emit('toggle-select')">{{ selectMode ? $t('tinix.ui.templateGroups.xong_chon') : $t('tinix.ui.templateGroups.chon_nhieu') }}</el-button>
-      <el-button size="small" link @click="emit('suggest')">{{ $t('tinix.ui.templateGroups.goi_y') }}</el-button>
     </div>
   </div>
 </template>
@@ -50,7 +49,6 @@ const emit = defineEmits<{
   (e: 'change', v: { id: number | 'none'; name: string }): void
   (e: 'changed'): void // đã thêm/đổi tên/xóa/sắp xếp nhóm → danh sách mẫu cần làm mới
   (e: 'toggle-select'): void
-  (e: 'suggest'): void
 }>()
 
 const t = (k: string, p?: any) => i18n.global.t(k, p) as string
