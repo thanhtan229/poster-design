@@ -4,12 +4,13 @@
 //   - gốc      static/photos/<hash>.<ext>        (giữ nguyên chất lượng, chỉ dùng khi XUẤT thành phẩm)
 //   - nhẹ      static/photos/web/<hash>.jpg|webp (cạnh dài ≤ WEB_MAX, dùng trên canvas để thiết kế không bị nặng/lag)
 //   - thu nhỏ  static/photos/thumb/<hash>.jpg    (dải ảnh phía dưới editor)
-// "Yêu thích" = sao chép cả 3 tệp sang static/favorites/ và thêm vào nhóm "Yêu thích" của thư viện Ảnh (bảng photos) → còn nguyên khi xóa tất cả.
+// ★ = sao chép cả 3 tệp sang static/favorites/ và thêm vào một nhóm trong thư viện "Ảnh" của app (bảng photos) → còn nguyên khi xóa tất cả.
 import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { getDB } from '../../db/index'
 import { filePath } from '../../configs'
+import { ensureAssetCategory, listAssetCategories } from '../../db/assetCategories'
 
 const sharp = require('sharp')
 sharp.cache(false) // không giữ tệp mở trong bộ nhớ đệm libvips: trên Windows tệp đang mở thì không xóa được (xóa ảnh vừa xem), và đỡ tốn RAM với ảnh lớn
@@ -17,7 +18,6 @@ sharp.cache(false) // không giữ tệp mở trong bộ nhớ đệm libvips: t
 export const WEB_MAX = Math.max(800, Number(process.env.TINIX_PHOTO_WEB_MAX) || 1600) // cạnh dài tối đa của ảnh nhẹ trên canvas
 export const THUMB_MAX = 360
 export const MAX_BYTES = 50 * 1024 * 1024 // tối đa mỗi ảnh
-export const FAVORITES_CATE = 'favorites'
 const EXT: Record<string, string> = { jpeg: 'jpg', png: 'png', webp: 'webp', gif: 'gif', tiff: 'tif', avif: 'avif' }
 
 export type PhotoRow = {
@@ -227,9 +227,11 @@ export function clearAll(userId: number, inUse: string[]): { removed: number; fi
   return { removed: rows.length, filesDeleted, kept }
 }
 
-// ───────────────────────── Yêu thích = bộ sưu tập cố định ─────────────────────────
-function readCollection(): any[] {
-  const row = getDB().prepare('SELECT list FROM photos WHERE cate = ?').get(FAVORITES_CATE)
+// ───────────────────────── Yêu thích = thêm vào thư viện "Ảnh" của app ─────────────────────────
+// ★ trên một ảnh tải lên → sao chép tệp sang static/favorites/ và thêm vào MỘT NHÓM CÓ SẴN trong tab "Ảnh" (bảng photos / asset_categories),
+// hoặc nhóm mới do người dùng đặt tên. Mục thư viện: url = ảnh nhẹ, hq = ảnh gốc, hash để nhận ra ảnh đã ★. Còn nguyên khi xóa tất cả.
+function readList(cate: string): any[] {
+  const row = getDB().prepare('SELECT list FROM photos WHERE cate = ?').get(cate)
   if (!row) return []
   try {
     const v = JSON.parse(row.list)
@@ -238,17 +240,40 @@ function readCollection(): any[] {
     return []
   }
 }
-function writeCollection(list: any[]) {
-  const db = getDB()
-  db.prepare('INSERT OR IGNORE INTO asset_categories (cate, name, type) VALUES (?, ?, ?)').run(FAVORITES_CATE, 'Yêu thích', 'photos')
+function writeList(cate: string, list: any[]) {
   const json = JSON.stringify(list)
-  const r = db.prepare('UPDATE photos SET list = ? WHERE cate = ?').run(json, FAVORITES_CATE)
-  if (!r.changes) db.prepare('INSERT INTO photos (cate, list) VALUES (?, ?)').run(FAVORITES_CATE, json)
+  const r = getDB().prepare('UPDATE photos SET list = ? WHERE cate = ?').run(json, cate)
+  if (!r.changes) getDB().prepare('INSERT INTO photos (cate, list) VALUES (?, ?)').run(cate, json)
 }
 
-/** Hash của các ảnh đang nằm trong bộ sưu tập (để hiện sao đặc) */
-export function favoriteHashes(): string[] {
-  return readCollection().map((x) => x && x.hash).filter(Boolean)
+const nameKey = (n: string) => String(n || '').trim().replace(/\s+/g, ' ').toLowerCase()
+
+/** Nhóm ảnh trong tab "Ảnh" */
+export function listLibraryCategories(): Array<{ cate: string; name: string }> {
+  return listAssetCategories('photos').map((c: any) => ({ cate: String(c.cate), name: c.name }))
+}
+
+/** Tạo nhóm mới trong tab "Ảnh" (tên không trùng, không phân biệt hoa thường). Trả về mã nhóm. */
+export function createLibraryCategory(name: string): string {
+  const clean = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 40)
+  if (!clean) throw new Error('Tên nhóm không được để trống')
+  const cats = listLibraryCategories()
+  const same = cats.find((c) => nameKey(c.name) === nameKey(clean))
+  if (same) return same.cate // đã có nhóm cùng tên → dùng lại
+  const nums = cats.map((c) => Number(c.cate)).filter((n) => Number.isFinite(n))
+  const cate = String((nums.length ? Math.max(...nums) : 0) + 1)
+  ensureAssetCategory('photos', cate, clean)
+  return cate
+}
+
+export type LibraryFavorite = { hash: string; url: string; hq: string; cate: string }
+/** Các ảnh trong thư viện "Ảnh" xuất phát từ ảnh tải lên (có hash) — để hiện sao đặc và tính "đã dùng" */
+export function libraryFavorites(): LibraryFavorite[] {
+  const out: LibraryFavorite[] = []
+  for (const c of listLibraryCategories()) {
+    for (const x of readList(c.cate)) if (x && x.hash) out.push({ hash: x.hash, url: x.url, hq: x.hq || '', cate: c.cate })
+  }
+  return out
 }
 
 function copyKeep(srcUrl: string, destRel: string): string {
@@ -258,14 +283,25 @@ function copyKeep(srcUrl: string, destRel: string): string {
   return '/static/' + destRel
 }
 
-/** Thêm ảnh vào bộ sưu tập (sao chép tệp). Đã có thì trả về mục cũ. */
-export function addFavorite(id: number, userId: number): { item: any; created: boolean } | null {
+/**
+ * Thêm ảnh vào thư viện "Ảnh": `cate` = nhóm có sẵn, hoặc `newName` = tạo nhóm mới.
+ * Ảnh đã nằm trong thư viện (cùng hash) thì không thêm lần hai.
+ */
+export function addFavorite(id: number, userId: number, target: { cate?: string; newName?: string }): { item: any; created: boolean; cate: string; catName: string } | null {
   const row = getPhoto(id, userId)
   if (!row) return null
   if (!row.hash) throw new Error('Ảnh cũ chưa được xử lý (thiếu hash), hãy tải lại danh sách ảnh')
-  const list = readCollection()
-  const exist = list.find((x) => x && x.hash === row.hash)
-  if (exist) return { item: exist, created: false }
+  let cate = String(target.cate || '')
+  if (!cate && target.newName) cate = createLibraryCategory(target.newName)
+  const cats = listLibraryCategories()
+  const cat = cats.find((c) => c.cate === cate)
+  if (!cat) throw new Error('Hãy chọn nhóm ảnh trong tab Ảnh')
+  const exist = libraryFavorites().find((f) => f.hash === row.hash)
+  if (exist) {
+    const item = readList(exist.cate).find((x) => x && x.hash === row.hash)
+    const c0 = cats.find((c) => c.cate === exist.cate)
+    return { item, created: false, cate: exist.cate, catName: c0 ? c0.name : '' }
+  }
   const ext = path.extname(row.url).slice(1) || 'jpg'
   const webExt = path.extname(row.web_url || row.url).slice(1) || 'jpg'
   const hq = copyKeep(row.url, `favorites/${row.hash}.${ext}`)
@@ -283,16 +319,23 @@ export function addFavorite(id: number, userId: number): { item: any; created: b
     color: '#EFEFEF',
     created_time: new Date().toISOString(),
   }
-  writeCollection([item].concat(list))
-  return { item, created: true }
+  writeList(cate, [item].concat(readList(cate)))
+  return { item, created: true, cate, catName: cat.name }
 }
 
-/** Gỡ khỏi bộ sưu tập. Tệp chỉ bị xóa khi không còn thiết kế/mẫu nào dùng. */
+/** Gỡ khỏi thư viện "Ảnh" (mọi nhóm). Tệp chỉ bị xóa khi không còn thiết kế/mẫu nào dùng. */
 export function removeFavorite(hash: string, inUse: string[]): { removed: boolean; filesDeleted: boolean } {
-  const list = readCollection()
-  const item = list.find((x) => x && x.hash === hash)
+  if (!hash) return { removed: false, filesDeleted: false }
+  let item: any = null
+  for (const c of listLibraryCategories()) {
+    const list = readList(c.cate)
+    const hit = list.filter((x) => x && x.hash === hash)
+    if (hit.length) {
+      item = item || hit[0]
+      writeList(c.cate, list.filter((x) => !(x && x.hash === hash)))
+    }
+  }
   if (!item) return { removed: false, filesDeleted: false }
-  writeCollection(list.filter((x) => x !== item))
   const refs = referencedPaths(inUse)
   const used = refs.has(staticPath(item.hq)) || refs.has(staticPath(item.url))
   if (item.thumb !== item.url && item.thumb !== item.hq) unlinkQuiet(item.thumb)

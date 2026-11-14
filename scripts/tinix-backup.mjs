@@ -1,5 +1,7 @@
 // [TINIX] Sao lưu dữ liệu: database (bản sao nhất quán bằng SQLite backup API) + file tĩnh người dùng (ảnh bìa, ảnh tải lên...).
 // Không sao lưu service/static/fonts và font-previews (dựng lại được bằng tinix:fonts / tinix:winfonts / tinix:font-previews).
+// Ảnh người dùng tải lên chỉ là ĐẦU VÀO để thiết kế: không sao lưu service/static/photos/ và bản sao DB không chứa danh sách ảnh tải lên
+// (user_images.source = 'upload') nên khôi phục không bị dòng ảnh trỏ vào tệp đã mất. Ảnh đã ★ vào thư viện "Ảnh" (static/favorites/) vẫn được sao lưu.
 //
 //   npm run tinix:backup            → tạo backups/<ngày-giờ>/poster.db và static.tar.gz, giữ 10 bản mới nhất
 //   npm run tinix:backup -- --keep 5
@@ -34,12 +36,25 @@ try {
 } finally {
   db.close()
 }
+// bỏ danh sách ảnh tải lên khỏi BẢN SAO (không đụng DB đang chạy)
+const copy = new Database(path.join(dest, 'poster.db'))
+try {
+  const cols = copy.prepare('PRAGMA table_info(user_images)').all().map((c) => c.name)
+  if (cols.includes('source')) {
+    const n = copy.prepare("DELETE FROM user_images WHERE source = 'upload'").run().changes
+    copy.exec('VACUUM')
+    copy.pragma('journal_mode = DELETE') // bản sao gọn một tệp, không để lại poster.db-wal/-shm
+    if (n) console.log(`- bản sao DB không gồm ${n} dòng ảnh tải lên (đầu vào thiết kế)`)
+  }
+} finally {
+  copy.close()
+}
 console.log(`✓ poster.db → ${path.relative(root, path.join(dest, 'poster.db'))}`)
 
 if (fs.existsSync(staticDir)) {
   // chạy trong thư mục đích + đường dẫn tương đối: GNU tar coi 'D:\...' là tên máy từ xa
-  const r = spawnSync('tar', ['-czf', 'static.tar.gz', '--exclude=./fonts', '--exclude=./font-previews', '-C', staticDir, '.'], { stdio: 'inherit', cwd: dest })
-  if (r.status === 0) console.log(`✓ static.tar.gz (không gồm fonts/, font-previews/)`)
+  const r = spawnSync('tar', ['-czf', 'static.tar.gz', '--exclude=./fonts', '--exclude=./font-previews', '--exclude=./photos', '-C', staticDir, '.'], { stdio: 'inherit', cwd: dest })
+  if (r.status === 0) console.log(`✓ static.tar.gz (không gồm fonts/, font-previews/, photos/)`)
   else console.warn('! Không nén được thư mục static (cần lệnh tar). Đã có bản sao DB.')
 }
 

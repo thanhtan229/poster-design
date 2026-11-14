@@ -5,6 +5,7 @@ import path from 'path'
 import { initDB, getDB } from '../../service/src/db'
 import * as p from '../../service/src/tinix/photos/core'
 import { filePath } from '../../service/src/configs'
+import { ensureAssetCategory } from '../../service/src/db/assetCategories'
 const sharp = require('../../service/node_modules/sharp')
 
 let failed = 0
@@ -72,13 +73,27 @@ async function main() {
   db.prepare("INSERT INTO user_images (user_id, url, width, height, source) VALUES (1, '/static/template/a.png', 10, 10, 'psd')").run()
   check('ảnh nguồn psd không nằm trong danh sách ảnh album', p.listPhotos(1).length === 4)
 
-  console.log('Yêu thích = sao chép vào bộ sưu tập')
-  const fav = p.addFavorite(ph.id, 1)
-  check('thêm yêu thích: tạo bản sao 3 tệp trong static/favorites', !!fav && fav.created && exists(fav.item.hq) && exists(fav.item.url) && exists(fav.item.thumb) && fav.item.hq.indexOf('/static/favorites/') === 0, fav && fav.item)
-  check('mục bộ sưu tập: url=ảnh nhẹ, hq=ảnh gốc, có hash', !!fav && fav.item.url === fav.item.hq === false && fav.item.hash === ph.hash && fav.item.width === 4000)
-  check('thêm lại không nhân đôi', !p.addFavorite(ph.id, 1)!.created && p.favoriteHashes().length === 1)
-  check('nhóm "Yêu thích" có trong danh mục ảnh', !!db.prepare("SELECT id FROM asset_categories WHERE type = 'photos' AND cate = 'favorites'").get())
-  check('hash yêu thích khớp để hiện sao đặc', p.favoriteHashes().join() === ph.hash)
+  console.log('Yêu thích = thêm vào nhóm có sẵn trong tab Ảnh')
+  ensureAssetCategory('photos', '1', 'Phong cảnh')
+  ensureAssetCategory('photos', '2', 'Nhân văn')
+  const cat = (c: string) => JSON.parse((db.prepare('SELECT list FROM photos WHERE cate = ?').get(c) || { list: '[]' }).list)
+  const fav = p.addFavorite(ph.id, 1, { cate: '2' })
+  check('★ vào nhóm có sẵn: tạo bản sao 3 tệp trong static/favorites, mục nằm trong nhóm đó', !!fav && fav.created && fav.cate === '2' && fav.catName === 'Nhân văn' && exists(fav.item.hq) && exists(fav.item.url) && exists(fav.item.thumb) && cat('2').length === 1 && cat('1').length === 0, fav && fav.item)
+  check('mục thư viện: url=ảnh nhẹ, hq=ảnh gốc, có hash', !!fav && fav.item.url !== fav.item.hq && fav.item.hash === ph.hash && fav.item.width === 4000 && fav.item.hq.indexOf('/static/favorites/') === 0)
+  check('KHÔNG tạo nhóm "Yêu thích" riêng', !db.prepare("SELECT id FROM asset_categories WHERE type = 'photos' AND cate = 'favorites'").get() && p.listLibraryCategories().length === 2)
+  const again = p.addFavorite(ph.id, 1, { cate: '1' })
+  check('ảnh đã có trong thư viện: không thêm lần hai, trả về nhóm hiện có', !!again && !again.created && again.cate === '2' && cat('1').length === 0 && cat('2').length === 1)
+  check('libraryFavorites báo hash + nhóm (để hiện sao đặc)', JSON.stringify(p.libraryFavorites().map((f) => [f.hash, f.cate])) === JSON.stringify([[ph.hash, '2']]))
+  let badErr = ''
+  try { p.addFavorite(rx.id, 1, { cate: '99' }) } catch (e) { badErr = String((e as Error).message) }
+  check('nhóm không tồn tại → báo lỗi, không ghi gì', /chọn nhóm/i.test(badErr) && p.libraryFavorites().length === 1, badErr)
+  const nf = p.addFavorite(rx.id, 1, { newName: '  Album Minh   Lan ' })
+  check('tạo nhóm mới ngay khi ★: nhóm xuất hiện trong tab Ảnh, mã số tiếp theo', !!nf && nf.created && nf.cate === '3' && nf.catName === 'Album Minh Lan' && p.listLibraryCategories().some((c) => c.cate === '3' && c.name === 'Album Minh Lan'), nf && nf.catName)
+  const same = p.createLibraryCategory('album minh lan')
+  check('tên nhóm trùng (khác hoa thường) → dùng lại, không tạo thêm', same === '3' && p.listLibraryCategories().length === 3)
+  let emptyErr = ''
+  try { p.createLibraryCategory('   ') } catch (e) { emptyErr = String((e as Error).message) }
+  check('tên nhóm rỗng bị từ chối', /không được để trống/.test(emptyErr))
 
   console.log('Xóa an toàn')
   const design = JSON.stringify({ page: {}, widgets: [{ type: 'w-image', imgUrl: 'http://127.0.0.1:7001' + rs.web_url, origin: { proxy: rs.web_url, original: rs.url } }] })
@@ -93,14 +108,16 @@ async function main() {
   check('xóa ảnh đang được thiết kế dùng: bỏ khỏi danh sách nhưng GIỮ tệp gốc + nhẹ, xóa thu nhỏ', delUsed.removed && !delUsed.filesDeleted && exists(rs.url) && exists(rs.web_url) && !exists(rs.thumb_url))
   const cl = p.clearAll(1, [])
   check('xóa tất cả: danh sách trống, tệp không ai dùng bị xóa', cl.removed === 2 && cl.filesDeleted === 2 && p.listPhotos(1).length === 0 && !exists(ph.url) && !exists(rx.url), cl)
-  check('bản sao yêu thích còn nguyên sau khi xóa tất cả', !!fav && exists(fav.item.hq) && exists(fav.item.url) && exists(fav.item.thumb) && p.favoriteHashes().length === 1)
+  check('ảnh đã ★ trong tab Ảnh còn nguyên sau khi xóa tất cả', !!fav && exists(fav.item.hq) && exists(fav.item.url) && exists(fav.item.thumb) && !!nf && exists(nf.item.hq) && p.libraryFavorites().length === 2)
 
-  console.log('Gỡ yêu thích')
+  console.log('Gỡ khỏi thư viện Ảnh')
   const used = JSON.stringify({ widgets: [{ imgUrl: fav!.item.url, origin: { proxy: fav!.item.url, original: fav!.item.hq } }] })
   db.prepare("INSERT INTO designs (user_id, template_id, title, data, cover, width, height) VALUES (1, 0, 't2', ?, '', 100, 100)").run(used)
   const un = p.removeFavorite(ph.hash, [])
-  check('gỡ yêu thích: bỏ khỏi bộ sưu tập, giữ tệp vì thiết kế còn dùng', un.removed && !un.filesDeleted && p.favoriteHashes().length === 0 && exists(fav!.item.hq))
-  check('gỡ mục không có → removed=false', !p.removeFavorite('khong-co', []).removed)
+  check('gỡ: bỏ khỏi nhóm trong tab Ảnh, giữ tệp vì thiết kế còn dùng', un.removed && !un.filesDeleted && cat('2').length === 0 && exists(fav!.item.hq))
+  const un2 = p.removeFavorite(rx.hash, [])
+  check('gỡ ảnh không ai dùng: xóa cả bản sao tệp', un2.removed && un2.filesDeleted && cat('3').length === 0 && !exists(nf!.item.hq) && p.libraryFavorites().length === 0)
+  check('gỡ mục không có → removed=false', !p.removeFavorite('khong-co', []).removed && !p.removeFavorite('', []).removed)
 
   console.log('Ảnh tải lên từ trước (chưa có hash/ảnh nhẹ)')
   fs.mkdirSync(filePath + 'user', { recursive: true })
@@ -116,7 +133,7 @@ async function main() {
   check('bổ sung 2 ảnh cũ: có hash, ảnh nhẹ, ảnh thu nhỏ, thời gian', nb === 2 && !!g1.hash && g1.hash === g2.hash && exists(g1.web_url) && exists(g1.thumb_url) && !!g1.taken_at, g1)
   check('tệp gốc cũ giữ nguyên vị trí', exists(g1.url) && exists(g2.url) && g1.url === '/static/user/legacy1.jpg')
   check('bổ sung lần hai không làm lại', (await p.backfillLegacy(2)) === 0)
-  check('ảnh cũ sau bổ sung yêu thích được', !!p.addFavorite(l1, 2)!.created)
+  check('ảnh cũ sau bổ sung ★ được vào thư viện Ảnh', !!p.addFavorite(l1, 2, { cate: '1' })!.created)
   const d1 = p.deletePhoto(l1, 2, [])
   check('xóa một trong hai ảnh trùng nội dung: giữ ảnh nhẹ/thu nhỏ dùng chung của ảnh còn lại', d1.removed && !exists(g1.url) && exists(g2.web_url) && exists(g2.thumb_url) && exists(g2.url))
   const d2 = p.deletePhoto(l2, 2, [])

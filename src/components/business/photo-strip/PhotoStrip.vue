@@ -13,10 +13,6 @@
       <span class="count">{{ summary }}</span>
 
       <div class="seg" role="group">
-        <button type="button" :class="{ on: photoState.source === 'uploads' }" @click="setSource('uploads')">{{ $t('tinix.ui.photoDock.da_tai') }}</button>
-        <button type="button" :class="{ on: photoState.source === 'collection' }" @click="setSource('collection')">{{ $t('tinix.ui.photoDock.bo_suu_tap') }}</button>
-      </div>
-      <div class="seg" role="group">
         <button type="button" :class="{ on: photoState.filter === 'all' }" @click="photoState.filter = 'all'">{{ $t('tinix.ui.photoDock.tat_ca') }}</button>
         <button type="button" :class="{ on: photoState.filter === 'unused' }" @click="photoState.filter = 'unused'">{{ $t('tinix.ui.photoDock.chua_dung') }}</button>
         <button type="button" :class="{ on: photoState.filter === 'used' }" @click="photoState.filter = 'used'">{{ $t('tinix.ui.photoDock.da_dung') }}</button>
@@ -29,11 +25,9 @@
 
       <span class="spacer" />
       <span v-if="photoState.up.active" class="progress">{{ $t('tinix.ui.photoDock.dang_tai', { done: photoState.up.done, total: photoState.up.total }) }}</span>
-      <template v-if="photoState.source === 'uploads'">
-        <el-button size="small" :disabled="photoState.up.active" @click="pickFiles">{{ $t('tinix.ui.photoDock.tai_anh') }}</el-button>
-        <el-button size="small" :disabled="photoState.up.active" @click="pickFolder">{{ $t('tinix.ui.photoDock.chon_thu_muc') }}</el-button>
-        <el-button size="small" type="danger" plain :disabled="photoState.up.active || !photoState.photos.length" @click="clearAllPhotos">{{ $t('tinix.ui.photoDock.xoa_tat_ca') }}</el-button>
-      </template>
+      <el-button size="small" :disabled="photoState.up.active" @click="pickFiles">{{ $t('tinix.ui.photoDock.tai_anh') }}</el-button>
+      <el-button size="small" :disabled="photoState.up.active" @click="pickFolder">{{ $t('tinix.ui.photoDock.chon_thu_muc') }}</el-button>
+      <el-button size="small" type="danger" plain :disabled="photoState.up.active || !photoState.photos.length" @click="clearAllPhotos">{{ $t('tinix.ui.photoDock.xoa_tat_ca') }}</el-button>
     </div>
     <div v-if="photoState.up.active" class="up-bar"><i :style="{ width: (photoState.up.total ? (photoState.up.done / photoState.up.total) * 100 : 0) + '%' }" /></div>
 
@@ -42,16 +36,15 @@
         {{ $t('tinix.ui.photoDock.can_dang_nhap') }} <el-button size="small" link type="primary" @click="reload">{{ $t('tinix.ui.photoDock.tai_lai') }}</el-button>
       </div>
       <div v-else-if="!items.length" class="empty">
-        <template v-if="photoState.source === 'collection'">{{ $t('tinix.ui.photoDock.bst_trong') }}</template>
-        <template v-else-if="photoState.photos.length">{{ $t('tinix.ui.photoDock.khong_co_anh_loc') }}</template>
+        <template v-if="photoState.photos.length">{{ $t('tinix.ui.photoDock.khong_co_anh_loc') }}</template>
         <template v-else>{{ $t('tinix.ui.photoDock.chua_co_anh') }}</template>
       </div>
       <div v-else class="row">
         <div v-for="it in items" :key="it.key" :class="['ph', { used: countFor(it) > 0 }]" :style="{ width: tileW(it) + 'px', height: rowH + 'px' }" :title="tip(it)" @click="onClick($event, it)" @contextmenu.prevent="openMenu($event, it)">
           <img :src="it.thumb" alt="" draggable="false" loading="lazy" @mousedown="onDown($event, it)" />
           <span v-if="countFor(it) > 0" class="badge">{{ $t('tinix.ui.photoDock.da_dung_n', { n: countFor(it) }) }}</span>
-          <button type="button" :class="['star', { on: isFav(it) }]" :title="isFav(it) ? $t('tinix.ui.photoDock.go_yeu_thich') : $t('tinix.ui.photoDock.them_yeu_thich')" @click.stop="toggleFav(it)" @mousedown.stop>{{ isFav(it) ? '★' : '☆' }}</button>
-          <button v-if="!it.fromCollection" type="button" class="del" :title="$t('tinix.ui.photoDock.xoa_khoi_thu_vien')" @click.stop="removePhoto(it)" @mousedown.stop>×</button>
+          <button type="button" :class="['star', { on: isFav(it) }]" :title="isFav(it) ? $t('tinix.ui.photoDock.go_yeu_thich') : $t('tinix.ui.photoDock.them_yeu_thich')" @click.stop="onStar($event, it)" @mousedown.stop>{{ isFav(it) ? '★' : '☆' }}</button>
+          <button type="button" class="del" :title="$t('tinix.ui.photoDock.xoa_khoi_thu_vien')" @click.stop="removePhoto(it)" @mousedown.stop>×</button>
         </div>
       </div>
     </div>
@@ -63,7 +56,14 @@
     <div v-if="menu" class="dock-menu" :style="{ left: menu.x + 'px', top: menu.y + 'px' }" @click.stop @contextmenu.prevent>
       <div class="mi" @click="menuDo('add')">{{ $t('tinix.ui.photoDock.them_vao_canvas') }}</div>
       <div class="mi" @click="menuDo('fav')">{{ isFav(menu.item) ? $t('tinix.ui.photoDock.go_yeu_thich') : $t('tinix.ui.photoDock.them_yeu_thich') }}</div>
-      <div v-if="!menu.item.fromCollection" class="mi danger" @click="menuDo('del')">{{ $t('tinix.ui.photoDock.xoa_khoi_thu_vien') }}</div>
+      <div class="mi danger" @click="menuDo('del')">{{ $t('tinix.ui.photoDock.xoa_khoi_thu_vien') }}</div>
+    </div>
+
+    <!-- chọn nhóm trong tab Ảnh khi bấm ★ -->
+    <div v-if="catPick" class="dock-menu" :style="{ left: catPick.x + 'px', top: catPick.y + 'px' }" @click.stop @contextmenu.prevent>
+      <div class="mh">{{ $t('tinix.ui.photoDock.chon_nhom_anh') }}</div>
+      <div v-for="c in catPick.cats" :key="c.cate" class="mi" @click="favTo(catPick.item, { cate: c.cate })">{{ c.name }}</div>
+      <div class="mi add" @click="favNew(catPick.item)">＋ {{ $t('tinix.ui.photoDock.nhom_moi') }}</div>
     </div>
   </div>
 </template>
@@ -82,7 +82,8 @@ import { usePanelResize } from '@/utils/tinix/panel-resize'
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result'
 import { useCanvasStore, useControlStore, useWidgetStore } from '@/store'
 import * as photosApi from '@/api/tinix-photos'
-import { photoState, reloadCollection, reloadPhotos, placeValue, sortItems, toStripItems, uploadFiles, type StripItem } from '@/utils/tinix/photo-strip'
+import { photoState, reloadPhotos, placeValue, sortItems, toStripItems, uploadFiles, type StripItem } from '@/utils/tinix/photo-strip'
+import api from '@/api'
 
 const HEAD_H = 38
 const t = (k: string, p?: any) => i18n.global.t(k, p) as string
@@ -119,15 +120,15 @@ const usedCounts = computed(() => {
   }
   return m
 })
-const collectionByHash = computed(() => {
-  const m = new Map<string, photosApi.TCollectionItem>()
-  for (const c of photoState.collection) if (c.hash) m.set(c.hash, c)
+const favoriteByHash = computed(() => {
+  const m = new Map<string, photosApi.TLibraryFavorite>()
+  for (const f of photoState.favorites) if (f.hash) m.set(f.hash, f)
   return m
 })
 function countFor(it: StripItem): number {
   const keys = new Set<string>([staticPathOf(it.web)])
   if (it.hq) keys.add(staticPathOf(it.hq))
-  const fav = it.hash ? collectionByHash.value.get(it.hash) : undefined // ảnh đã đặt từ bản sao trong bộ sưu tập vẫn tính là đã dùng
+  const fav = it.hash ? favoriteByHash.value.get(it.hash) : undefined // ảnh đã đặt từ bản sao trong thư viện "Ảnh" vẫn tính là đã dùng
   if (fav) {
     keys.add(staticPathOf(fav.url))
     if (fav.hq) keys.add(staticPathOf(fav.hq))
@@ -150,16 +151,9 @@ const summary = computed(() => {
 })
 const tileW = (it: StripItem) => Math.round(rowH.value * Math.min(1.8, Math.max(0.6, it.width / (it.height || 1))))
 const tip = (it: StripItem) => [it.name, it.width && it.height ? `${it.width}×${it.height}` : ''].filter(Boolean).join(' · ')
-const isFav = (it: StripItem) => it.fromCollection || (!!it.hash && photoState.favorites.includes(it.hash))
+const isFav = (it: StripItem) => !!it.hash && favoriteByHash.value.has(it.hash)
 
-function setSource(s: 'uploads' | 'collection') {
-  photoState.source = s
-  if (s === 'collection') reloadCollection()
-}
-const reload = async () => {
-  await reloadPhotos()
-  await reloadCollection()
-}
+const reload = reloadPhotos
 
 // ── thêm vào canvas: bấm hoặc kéo thả ──
 const dragHelper = new DragHelper()
@@ -190,22 +184,54 @@ async function addToCanvas(it: StripItem) {
   widgetStore.addWidget(setting)
 }
 
-// ── yêu thích / xóa ──
-async function toggleFav(it: StripItem) {
+// ── ★ = thêm ảnh vào thư viện "Ảnh" của app (chọn nhóm có sẵn hoặc nhóm mới); bấm lại để gỡ ──
+const catPick = ref<{ x: number; y: number; item: StripItem; cats: Array<{ cate: string; name: string }> } | null>(null)
+async function onStar(e: MouseEvent | null, it: StripItem, at?: { x: number; y: number }) {
+  if (isFav(it)) return unfav(it)
   try {
-    if (isFav(it)) {
-      const res: any = await photosApi.unfavorite(it.hash, usedUrls.value)
-      if (apiFailed(res)) return ElMessage.error(apiMessage(res, t('tinix.ui.photoDock.that_bai')))
-      photoState.favorites = photoState.favorites.filter((h) => h !== it.hash)
-      photoState.collection = photoState.collection.filter((c) => c.hash !== it.hash)
-      ElMessage.success(t('tinix.ui.photoDock.da_go_yeu_thich'))
-    } else {
-      const res: any = await photosApi.favorite(it.id)
-      if (apiFailed(res)) return ElMessage.error(apiMessage(res, t('tinix.ui.photoDock.that_bai')))
-      photoState.favorites.push(it.hash)
-      await reloadCollection()
-      ElMessage.success(t('tinix.ui.photoDock.da_them_yeu_thich'))
-    }
+    const res: any = await api.material.getAssetCategories('photos')
+    const cats = Array.isArray(res?.list) ? res.list.map((c: any) => ({ cate: String(c.cate), name: c.name })) : []
+    const x = Math.min(e ? e.clientX : at ? at.x : 200, window.innerWidth - 200)
+    const y = Math.max(8, (e ? e.clientY : at ? at.y : 300) - 40 - cats.length * 32)
+    catPick.value = { x, y, item: it, cats }
+  } catch (err) {
+    ElMessage.error(t('tinix.ui.photoDock.tai_nhom_loi'))
+  }
+}
+async function favTo(it: StripItem, target: { cate?: string; newName?: string }) {
+  catPick.value = null
+  try {
+    const res: any = await photosApi.favorite(it.id, target)
+    if (apiFailed(res)) return ElMessage.error(apiMessage(res, t('tinix.ui.photoDock.that_bai')))
+    if (!photoState.favorites.some((f) => f.hash === it.hash)) photoState.favorites.push({ hash: it.hash, url: res.item.url, hq: res.item.hq || '', cate: res.cate })
+    ElMessage.success(t('tinix.ui.photoDock.da_them_vao_nhom', { name: res.catName }))
+    eventBus.emit('tinix:photos-library-changed', undefined) // tab Ảnh tải lại danh sách
+  } catch (e: any) {
+    ElMessage.error((e && (e.message || e.msg)) || t('tinix.ui.photoDock.that_bai'))
+  }
+}
+async function favNew(it: StripItem) {
+  catPick.value = null
+  let name = ''
+  try {
+    const r: any = await ElMessageBox.prompt(t('tinix.ui.photoDock.nhap_ten_nhom'), t('tinix.ui.photoDock.nhom_moi'), {
+      confirmButtonText: t('tinix.ui.photoDock.them'),
+      cancelButtonText: t('tinix.ui.photoDock.huy'),
+      inputValidator: (v: string) => (v && v.trim() ? true : t('tinix.ui.photoDock.ten_trong')),
+    })
+    name = String(r.value || '').trim()
+  } catch (e) {
+    return
+  }
+  if (name) await favTo(it, { newName: name })
+}
+async function unfav(it: StripItem) {
+  try {
+    const res: any = await photosApi.unfavorite(it.hash, usedUrls.value)
+    if (apiFailed(res)) return ElMessage.error(apiMessage(res, t('tinix.ui.photoDock.that_bai')))
+    photoState.favorites = photoState.favorites.filter((f) => f.hash !== it.hash)
+    ElMessage.success(t('tinix.ui.photoDock.da_go_yeu_thich'))
+    eventBus.emit('tinix:photos-library-changed', undefined)
   } catch (e: any) {
     ElMessage.error((e && (e.message || e.msg)) || t('tinix.ui.photoDock.that_bai'))
   }
@@ -255,12 +281,11 @@ async function onPicked(e: Event) {
 }
 async function onDropFiles(e: DragEvent) {
   const files = Array.from((e.dataTransfer && e.dataTransfer.files) || [])
-  if (files.length && photoState.source === 'uploads') await doUpload(files)
+  if (files.length) await doUpload(files)
 }
 async function doUpload(files: File[]) {
   if (!files.length) return
   if (collapsed.value) toggleCollapsed()
-  photoState.source = 'uploads'
   const r = await uploadFiles(files)
   if (!r.total) return ElMessage.warning(t('tinix.ui.photoDock.khong_co_anh_hop_le'))
   const ok = r.done - r.failed - r.dup
@@ -276,14 +301,18 @@ function openMenu(e: MouseEvent, it: StripItem) {
   menu.value = { x: Math.min(e.clientX, window.innerWidth - 190), y: Math.max(8, e.clientY - 110), item: it }
 }
 function menuDo(act: 'add' | 'fav' | 'del') {
-  const it = menu.value && menu.value.item
+  const m = menu.value
+  const it = m && m.item
   menu.value = null
   if (!it) return
   if (act === 'add') addToCanvas(it)
-  else if (act === 'fav') toggleFav(it)
+  else if (act === 'fav') onStar(null, it, m ? { x: m.x, y: m.y + 110 } : undefined)
   else removePhoto(it)
 }
-const closeMenu = () => (menu.value = null)
+const closeMenu = () => {
+  menu.value = null
+  catPick.value = null
+}
 
 // ── cuộn ngang bằng con lăn ──
 const rowRef = ref<HTMLElement | null>(null)
@@ -509,6 +538,14 @@ onBeforeUnmount(() => {
     }
     .mi.danger {
       color: #f56c6c;
+    }
+    .mi.add {
+      color: #3f6af7;
+    }
+    .mh {
+      padding: 6px 14px 4px;
+      font-size: 12px;
+      color: #999;
     }
   }
 }

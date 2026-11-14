@@ -42,6 +42,7 @@ import api from '@/api'
 
 import setImageData from '@/common/methods/DesignFeatures/setImage'
 import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
+import eventBus from '@/utils/plugins/eventBus' // [TINIX]
 import { storeToRefs } from 'pinia'
 import { useControlStore, useCanvasStore, useWidgetStore } from '@/store'
 import { TGetImageListResult } from '@/api/material'
@@ -81,7 +82,7 @@ const state = reactive<TState>({
 })
 let loading = false
 
-onMounted(async () => {
+async function loadTypes() {
   if (state.types.length <= 0) {
     const categoryRes: any = await api.material.getAssetCategories('photos')
     state.types = Array.isArray(categoryRes?.list) ? categoryRes.list : []
@@ -90,6 +91,13 @@ onMounted(async () => {
       state.showList.push(list)
     }
   }
+}
+onMounted(loadTypes)
+// [TINIX] dải ảnh phía dưới vừa ★ / gỡ ảnh khỏi thư viện: tải lại nhóm + ảnh để thấy ngay
+eventBus.on('tinix:photos-library-changed', () => {
+  Object.assign(state, { types: [], showList: [], recommendImgList: [], page: 0, loadDone: false, currentCategory: null })
+  loading = false
+  loadTypes()
 })
 
 const selectImg = async (index: number, list: TGetImageListResult[]) => {

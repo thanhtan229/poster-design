@@ -19,13 +19,15 @@ export type TPhoto = {
   name: string
   created_at: string
 }
-export type TCollectionItem = { id: number; url: string; thumb: string; hq: string; width: number; height: number; hash: string; name?: string }
+/** Ảnh đã ★ vào thư viện "Ảnh" của app (xuất phát từ ảnh tải lên) */
+export type TLibraryFavorite = { hash: string; url: string; hq: string; cate: string }
 
-export const listPhotos = () => fetch<{ list: TPhoto[]; favorites: string[]; total: number }>(base, {}, 'get')
+export const listPhotos = () => fetch<{ list: TPhoto[]; favorites: TLibraryFavorite[]; total: number }>(base, {}, 'get')
 export const deletePhoto = (id: number, inUse: string[]) => fetch<{ removed: boolean; filesDeleted: boolean }>(`${base}/delete`, { id, inUse }, 'post')
 export const clearPreview = (inUse: string[]) => fetch<{ total: number; deletable: number; kept: number }>(`${base}/clear-preview`, { inUse }, 'post')
 export const clearAll = (inUse: string[]) => fetch<{ removed: number; filesDeleted: number; kept: number }>(`${base}/clear`, { inUse }, 'post')
-export const favorite = (id: number) => fetch<{ item: TCollectionItem; created: boolean }>(`${base}/favorite`, { id }, 'post')
+/** ★: thêm ảnh vào một nhóm có sẵn (cate) hoặc nhóm mới (newName) trong tab Ảnh */
+export const favorite = (id: number, target: { cate?: string; newName?: string }) => fetch<{ item: any; created: boolean; cate: string; catName: string }>(`${base}/favorite`, { id, ...target }, 'post')
 export const unfavorite = (hash: string, inUse: string[]) => fetch<{ removed: boolean; filesDeleted: boolean }>(`${base}/unfavorite`, { hash, inUse }, 'post')
 
 /** Tải một ảnh lên (multipart). Server tạo ảnh nhẹ + ảnh thu nhỏ, bỏ qua ảnh trùng. */

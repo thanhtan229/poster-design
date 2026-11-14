@@ -3,7 +3,6 @@
  * UI: src/components/business/photo-strip/PhotoStrip.vue. Server: service/src/tinix/photos/.
  */
 import { reactive } from 'vue'
-import api from '@/api'
 import * as photosApi from '@/api/tinix-photos'
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result'
 
@@ -29,16 +28,13 @@ export type StripItem = {
 
 export type FilterKey = 'all' | 'unused' | 'used'
 export type SortKey = 'taken' | 'name' | 'new'
-export type SourceKey = 'uploads' | 'collection'
 
 export const photoState = reactive({
   photos: [] as TPhoto[],
-  favorites: [] as string[], // hash các ảnh đã nằm trong bộ sưu tập
-  collection: [] as photosApi.TCollectionItem[],
+  favorites: [] as photosApi.TLibraryFavorite[], // ảnh đã ★ vào thư viện "Ảnh" (hash, url nhẹ, url gốc, nhóm)
   loading: false,
   loaded: false,
   unauthorized: false,
-  source: 'uploads' as SourceKey,
   filter: 'all' as FilterKey,
   sort: 'taken' as SortKey,
   up: { active: false, total: 0, done: 0, failed: 0, dup: 0, errors: [] as string[] },
@@ -63,32 +59,7 @@ export async function reloadPhotos() {
   }
 }
 
-export async function reloadCollection() {
-  try {
-    const res: any = await api.material.getImagesList({ cate: 'favorites', page: 1, pageSize: 1000 })
-    photoState.collection = Array.isArray(res?.list) ? res.list : []
-  } catch (e) {
-    photoState.collection = []
-  }
-}
-
 export function toStripItems(): StripItem[] {
-  if (photoState.source === 'collection') {
-    return photoState.collection.map((c, i) => ({
-      key: 'c' + c.id,
-      id: 0,
-      fromCollection: true,
-      thumb: c.thumb || c.url,
-      web: c.url,
-      hq: c.hq && c.hq !== c.url ? c.hq : '',
-      width: c.width,
-      height: c.height,
-      hash: c.hash || '',
-      name: c.name || '',
-      taken: '',
-      order: i,
-    }))
-  }
   return photoState.photos.map((p) => ({
     key: 'p' + p.id,
     id: p.id,

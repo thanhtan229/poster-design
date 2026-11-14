@@ -2,11 +2,11 @@
  * [TINIX] Ảnh người dùng tải lên (dải ảnh phía dưới editor). Mọi route cần đăng nhập.
  *
  *   POST /api/tinix/photos/upload          multipart: file, lastModified?, name?   → { duplicate, photo }
- *   GET  /api/tinix/photos                  → { list, favorites: [hash], total }
+ *   GET  /api/tinix/photos                  → { list, favorites: [{hash,url,hq,cate}], total }
  *   POST /api/tinix/photos/delete           { id, inUse?: [url] }
  *   POST /api/tinix/photos/clear-preview    { inUse?: [url] }   → { total, deletable, kept }
  *   POST /api/tinix/photos/clear            { inUse?: [url] }   → { removed, filesDeleted, kept }
- *   POST /api/tinix/photos/favorite         { id }              → { item, created }
+ *   POST /api/tinix/photos/favorite         { id, cate? | newName? } → { item, created, cate, catName }  (thêm vào nhóm trong tab Ảnh)
  *   POST /api/tinix/photos/unfavorite       { hash, inUse?: [url] }
  * `inUse`: các URL ảnh đang nằm trên canvas (kể cả thiết kế chưa lưu) — không bao giờ xóa tệp của chúng.
  */
@@ -14,7 +14,7 @@ import express from 'express'
 import multiparty from 'multiparty'
 import { send } from '../../utils/tools'
 import { getRequestUser } from '../../utils/auth'
-import { MAX_BYTES, addFavorite, backfillLegacy, clearAll, clearPreview, deletePhoto, favoriteHashes, ingestPhoto, listPhotos, removeFavorite } from './core'
+import { MAX_BYTES, addFavorite, backfillLegacy, clearAll, clearPreview, deletePhoto, ingestPhoto, libraryFavorites, listPhotos, removeFavorite } from './core'
 
 const router = express.Router()
 const PREFIX = '/api/tinix/photos'
@@ -57,13 +57,13 @@ router.post(`${PREFIX}/upload`, requireLogin, (req: any, res: any) => {
 router.get(`${PREFIX}`, requireLogin, handle(async (_b, req) => {
   await backfillLegacy(uid(req)) // ảnh tải lên từ trước: bổ sung hash/ảnh nhẹ/ảnh thu nhỏ (một lần)
   const list = listPhotos(uid(req))
-  return { list, favorites: favoriteHashes(), total: list.length }
+  return { list, favorites: libraryFavorites(), total: list.length }
 }))
 router.post(`${PREFIX}/delete`, requireLogin, handle(async (b, req) => deletePhoto(Number(b.id), uid(req), urls(b.inUse))))
 router.post(`${PREFIX}/clear-preview`, requireLogin, handle(async (b, req) => clearPreview(uid(req), urls(b.inUse))))
 router.post(`${PREFIX}/clear`, requireLogin, handle(async (b, req) => clearAll(uid(req), urls(b.inUse))))
 router.post(`${PREFIX}/favorite`, requireLogin, handle(async (b, req) => {
-  const r = addFavorite(Number(b.id), uid(req))
+  const r = addFavorite(Number(b.id), uid(req), { cate: b.cate ? String(b.cate) : '', newName: b.newName ? String(b.newName) : '' })
   if (!r) throw new Error('Không tìm thấy ảnh')
   return r
 }))

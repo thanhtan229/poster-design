@@ -34,7 +34,7 @@
           <div class="item-idx">{{ li + 1 }}</div>
           <i @click.stop="removePoster(li)" class="icon sd-quxiao" />
         </div>
-        <div v-show="dLayouts.length < 9" @click="addLayer" class="item-add"><i class="iconfont icon-add" /></div>
+        <div @click="addLayer" class="item-add"><i class="iconfont icon-add" /></div><!-- [TINIX] bỏ giới hạn 9 trang (album nhiều trang); thanh trang cuộn ngang -->
       </div>
     </div>
   </div>
@@ -135,6 +135,11 @@ function addLayer() {
   canvasStore.setDPage(getInitPage())
   canvasStore.updateDPage()
   widgetStore.selectWidget({ uuid: '-1' })
+  // [TINIX] cuộn thanh trang tới trang vừa thêm
+  nextTick(() => {
+    const el = listRef.value
+    el && (el.scrollLeft = el.scrollWidth)
+  })
 }
 
 function selectPoster(i: number) {
@@ -175,9 +180,11 @@ function removePoster(removeIndex: number) {
   .list {
     display: flex;
     align-items: center;
+    flex: none; /* [TINIX] giữ đủ chiều rộng nội dung để thanh bên ngoài cuộn ngang khi nhiều trang */
   }
   .item-box,
   .item-add {
+    flex: none; /* [TINIX] không co lại khi có nhiều trang */
     position: relative;
     width: 72px;
     height: 72px;
