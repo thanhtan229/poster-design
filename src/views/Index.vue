@@ -38,6 +38,8 @@
         <HeaderOptions ref="optionsRef" v-model="state.isContinue" @change="optionsChange">
           <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('header.save') }}</el-button>
           <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('download')">{{ $t('header.download') }}</el-button>
+          <!-- [TINIX] xuất PSD (mỗi lớp một layer) -->
+          <el-button size="large" class="primary-btn" plain :loading="psdState.loading" @click="exportPsd">{{ psdState.loading ? $t('tinix.ui.psdExport.dang_xuat', { n: psdState.done, total: psdState.total }) : $t('tinix.ui.psdExport.xuat_psd') }}</el-button>
           <template v-if="loginUser">
             <span class="user-name">{{ loginUser.account }}</span>
             <el-divider direction="vertical" />
@@ -114,6 +116,9 @@ import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore } from '@/store'
 import type { ButtonInstance } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
+import downloadBlob from '@/common/methods/download/downloadBlob'
 import Tour from './components/Tour.vue'
 import createDesign from '@/components/business/create-design'
 import loginDialog from '@/components/business/login-dialog/index.vue'
@@ -322,6 +327,27 @@ const fns: any = {
     createDesignRef.value?.open()
   }
 }
+// [TINIX] Xuất PSD: dựng layer từ các widget đang hiển thị trên canvas
+const psdState = reactive({ loading: false, done: 0, total: 0 })
+async function exportPsd() {
+  if (psdState.loading) return
+  psdState.loading = true
+  psdState.done = 0
+  psdState.total = 0
+  try {
+    widgetStore.selectWidget({ uuid: '-1' }) // bỏ khung chọn để không lọt vào ảnh
+    await nextTick()
+    const blob = await exportPsdBlob(JSON.parse(JSON.stringify(dPage.value)), widgetStore.dWidgets as any, (d, t) => { psdState.done = d; psdState.total = t })
+    const title = (optionsRef.value as any)?.getTitle?.() || ''
+    downloadBlob(blob, `${String(title).trim() || i18n.global.t('editor.header.untitledWork')}.psd`)
+    ElMessage.success(i18n.global.t('tinix.ui.psdExport.xuat_xong'))
+  } catch (e: any) {
+    ElMessage.error(i18n.global.t('tinix.ui.psdExport.xuat_loi', { msg: String((e && e.message) || e).slice(0, 120) }))
+  } finally {
+    psdState.loading = false
+  }
+}
+
 const dealWith = (fnName: string, params?: any) => {
   fns[fnName](params)
 }

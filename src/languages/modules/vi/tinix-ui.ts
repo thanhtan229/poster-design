@@ -192,6 +192,12 @@ export default {
     textDefault: 'chữ',
     yourPhoto: 'Ảnh của bạn',
   },
+  psdExport: {
+    xuat_psd: 'Xuất PSD',
+    dang_xuat: 'Đang xuất {n}/{total}…',
+    xuat_xong: 'Đã xuất PSD',
+    xuat_loi: 'Xuất PSD không thành công: {msg}',
+  },
   logo: {
     logo_studio: 'Logo studio',
     tai_logo_len: 'Tải logo lên',

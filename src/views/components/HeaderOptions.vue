@@ -306,6 +306,7 @@ defineExpose({
   save,
   saveTemp,
   saveAsTemplate, // [TINIX]
+  getTitle: () => state.title, // [TINIX] tên file khi xuất PSD
   stateChange,
   load,
 })
