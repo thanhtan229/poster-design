@@ -35,7 +35,7 @@
 <script lang="ts" setup>
 // const NAME = 'img-water-fall'
 import { IGetTempListData } from '@/api/home';
-import { reactive, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 type TProps = {
   listData: IGetTempListData[]
@@ -70,36 +70,61 @@ const state = reactive<TState>({
 })
 
 const columnHeights: number[] = [] // 列的高度
-const columnNums = 2 // 总共有多少列
+const columnNums = ref(2) // [TINIX] số cột: tự tính theo độ rộng panel (kéo rộng panel → nhiều cột hơn)
 const gap = 7 // 图片之间的间隔
+const BASE_WIDTH = 146 // [TINIX] độ rộng thẻ tối thiểu mong muốn (mặc định cũ)
+const SIDE_SPACE = 28 // [TINIX] lề trái 14px + chừa phải 14px của danh sách
+const imgWaterFall = ref<HTMLElement | null>(null)
+let observer: ResizeObserver | null = null
 
-watch(
-  () => props.listData,
-  () => {
-    columnHeights.length = 0
-    const widthLimit = state.width * columnNums //  + gap * (columnNums - 1) // 每行宽度
-    const cloneList = JSON.parse(JSON.stringify(props.listData))
-    for (let i = 0; i < cloneList.length; i++) {
-      let index = i % columnNums
-      const item = cloneList[i]
-      item.height = (item.height / item.width) * state.width // 图片高度
-      item.left = index * (widthLimit / columnNums + gap) // 定位
-      item.top = columnHeights[index] + gap || 0 // 定位
-      // columnHeights[index] = isNaN(columnHeights[index]) ? item.height : item.height + columnHeights[index] + gap // 记录列高度
-      // 找出最短边
-      if (isNaN(columnHeights[index])) {
-        columnHeights[index] = item.height
-      } else {
-        index = columnHeights.indexOf(Math.min(...columnHeights))
-        item.left = index * (widthLimit / columnNums + gap)
-        item.top = columnHeights[index] + gap || 0
-        columnHeights[index] = item.height + columnHeights[index] + gap
-      }
+// [TINIX] Bố cục theo số cột hiện tại; gọi lại khi danh sách hoặc số cột/độ rộng thẻ đổi
+function layout() {
+  const nums = columnNums.value
+  columnHeights.length = 0
+  const cloneList = JSON.parse(JSON.stringify(props.listData))
+  for (let i = 0; i < cloneList.length; i++) {
+    let index = i % nums
+    const item = cloneList[i]
+    item.height = (item.height / item.width) * state.width // 图片高度
+    item.left = index * (state.width + gap) // 定位
+    item.top = columnHeights[index] + gap || 0 // 定位
+    // 找出最短边
+    if (isNaN(columnHeights[index])) {
+      columnHeights[index] = item.height
+    } else {
+      index = columnHeights.indexOf(Math.min(...columnHeights))
+      item.left = index * (state.width + gap)
+      item.top = columnHeights[index] + gap || 0
+      columnHeights[index] = item.height + columnHeights[index] + gap
     }
-    state.countHeight = Math.max(...columnHeights)
-    state.list = cloneList
-  },
-)
+  }
+  state.countHeight = columnHeights.length ? Math.max(...columnHeights) : 0
+  state.list = cloneList
+}
+
+watch(() => props.listData, layout)
+watch([columnNums, () => state.width], layout)
+
+// [TINIX] Panel rộng thêm thì thêm cột (thẻ giữ ~146px); panel hẹp lại thì thẻ thu nhỏ vừa 2 cột
+function measure(panelWidth: number) {
+  if (panelWidth < 100) return // panel đang ẩn
+  const avail = panelWidth - SIDE_SPACE
+  const cols = Math.max(2, Math.floor((avail + gap) / (BASE_WIDTH + gap)))
+  const w = Math.max(60, Math.floor((avail - gap * (cols - 1)) / cols))
+  columnNums.value = cols
+  state.width = w
+}
+
+onMounted(() => {
+  const host = imgWaterFall.value && imgWaterFall.value.parentElement
+  if (!host) return
+  measure(host.clientWidth)
+  if (typeof ResizeObserver !== 'undefined') {
+    observer = new ResizeObserver((entries) => entries[0] && measure(entries[0].contentRect.width))
+    observer.observe(host)
+  }
+})
+onBeforeUnmount(() => observer && observer.disconnect())
 
 const load = () => {
   emit('load')

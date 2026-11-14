@@ -225,6 +225,9 @@ export default {
   capture: {
     khong_tim_thay_trang_thiet: 'Không tìm thấy trang thiết kế',
   },
+  panelResize: {
+    keo_chinh: 'Kéo để đổi độ rộng, nhấp đúp để về mặc định',
+  },
   templateGroups: {
     tat_ca: 'Tất cả',
     chua_phan_nhom: 'Chưa phân nhóm',
