@@ -192,6 +192,10 @@ export default {
     textDefault: 'chữ',
     yourPhoto: 'Ảnh của bạn',
   },
+  layer: {
+    an: 'Ẩn lớp',
+    hien: 'Hiện lớp',
+  },
   placeText: {
     hashtag: 'Hashtag',
     tieu_de: 'Tiêu đề',

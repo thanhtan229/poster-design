@@ -28,6 +28,8 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   text?: string
   editable?: boolean
   lock?: boolean
+  hidden?: boolean // [TINIX] lớp bị ẩn: không hiện trên canvas và không xuất ảnh
+  layerName?: string // [TINIX] tên lớp do người dùng đặt (ưu tiên hơn chữ/tên mặc định)
   imgUrl?: string
   rotate?: string
   transform?: string

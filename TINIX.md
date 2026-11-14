@@ -92,10 +92,11 @@ Dùng khi cập nhật từ repo gốc: `git fetch origin && git merge origin/ma
   | Gợi ý chữ: 3 phong cách, tiêu đề/phụ đề/nội dung/hashtag/chữ ký | ✅ | chữ ký lấy từ tên studio trong Cài đặt AI |
   | Dựng theo mẫu thành lớp chỉnh sửa được | ✅ | 2 chế độ; ảnh nền tương tự bằng AI |
   | Tìm font bằng AI | ✅ | |
-  | Bảng lớp: danh sách, kéo đổi thứ tự, khóa | ✅ | ⚠ chưa có nút ẩn/hiện và đổi tên lớp; chuột phải: sao chép/dán/lên/xuống/xóa |
+  | Bảng lớp: danh sách, kéo đổi thứ tự, khóa, ẩn/hiện, đổi tên | ✅ | ẩn/hiện (nút ●/○, lưu `hidden`, không xuất ảnh khi ẩn) và đổi tên (bấm đúp, lưu `layerName`) đã làm 2026-11-14; chuột phải: sao chép/dán/lên/xuống/xóa |
   | Logo | ⚠ | thêm như ảnh thường (Ảnh/Của tôi); chưa có "logo mặc định" tự chèn |
   | Thư viện mẫu | ⚠ | đã nhập 9 PSD vào thư viện; còn ít so với 100+ tài nguyên của Tizino |
-  Việc thiếu (backlog, chưa làm): nút ẩn/hiện + đổi tên lớp; logo mặc định theo studio.
+  Việc thiếu (backlog, chưa làm): logo mặc định theo studio.
+- **Ẩn/hiện + đổi tên lớp** (sửa file gốc, có `[TINIX]`): `src/components/modules/panel/components/layerList.vue` (nút ●/○, bấm đúp tên để đổi, Enter lưu / Esc hủy / để trống = tên mặc định), `src/components/modules/layout/designBoard/index.vue` (`display:none` cho lớp `hidden`, cả lớp con trong nhóm; `/draw` dùng cùng thành phần nên ảnh xuất cũng bỏ lớp ẩn), `src/store/design/widget/index.ts` (kiểu `hidden`, `layerName`).
 - **Kiểm thử:** `npm run tinix:test` chạy 3 nhóm (AI nhà cung cấp giả, font, khóa i18n) trên DB tạm trong `.runtime/`; mã thoát khác 0 nếu lỗi. File: `scripts/tinix-test.cjs`, `scripts/tinix-selftest/fonts.ts`, `scripts/tinix-selftest/run-ts.cjs`. Checklist thử tay sau khi sửa giao diện: tạo thiết kế → thêm chữ → lưu → mở lại → xuất ảnh; trang admin → Quản lý font (lọc, sửa nhóm/tag, nút tạo ảnh xem trước).
 - **Sao lưu:** `npm run tinix:backup` → `backups/<ngày-giờ>/poster.db` (SQLite backup API) + `static.tar.gz` (không gồm `fonts/`, `font-previews/`), giữ 10 bản mới nhất (`-- --keep N`). `backups/` nằm trong .gitignore.
 - **Nút tạo ảnh xem trước còn thiếu** (trang admin → Quản lý font): gọi `POST /api/admin/fonts/previews` → `service/src/tinix/fontPreviews.ts` chạy `scripts/tinix-font-previews.mjs` (chỉ font chưa có ảnh). Sửa file gốc: `service/src/control/api.ts`, `service/src/control/router.ts` (route + import), `src/api/admin.ts`, `src/views/Admin.vue`, `src/languages/modules/vi/tinix-ui.ts`.
