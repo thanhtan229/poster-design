@@ -1,23 +1,26 @@
+import { FontProfile } from '../../../../shared/font-profile'
+import { verifiedFontProfile } from '../fontProfiles'
 /**
  * [TINIX] Font library helpers for AI prompts and font matching.
  */
 import { getDB } from '../../db'
 
-export type LibFont = { id: number; alias: string; value: string; woff: string; category: string; tags: string[]; supports_vietnamese: boolean }
+export type LibFont = { id: number; alias: string; value: string; woff: string; category: string; tags: string[]; supports_vietnamese: boolean; profile?: FontProfile }
 
 export function libraryFonts(onlyVietnamese = false): LibFont[] {
   const rows: any[] = getDB()
-    .prepare(`SELECT id, alias, value, woff, category, tags, supports_vietnamese FROM fonts ${onlyVietnamese ? 'WHERE supports_vietnamese = 1' : ''} ORDER BY id`)
+    .prepare(`SELECT id, alias, value, woff, category, tags, supports_vietnamese, technical FROM fonts ${onlyVietnamese ? 'WHERE supports_vietnamese = 1' : ''} ORDER BY id`)
     .all()
   return rows.map((r) => ({
     id: r.id,
     alias: r.alias,
     value: r.value,
     woff: r.woff,
+    profile: verifiedFontProfile(r) || undefined,
     category: r.category || '',
     tags: parseTags(r.tags),
     supports_vietnamese: Number(r.supports_vietnamese) === 1,
-  }))
+  })).filter(f => !!f.profile)
 }
 
 function parseTags(s: any): string[] {
@@ -31,7 +34,7 @@ function parseTags(s: any): string[] {
 
 /** Compact one-line-per-font list for prompts: "Great Vibes | script | lãng mạn, thư pháp". */
 export function fontListForPrompt(fonts: LibFont[]): string {
-  return fonts.map((f) => `${f.value} | ${f.category || '?'} | ${f.tags.join(', ')}`).join('\n')
+  return fonts.map((f) => { const p=f.profile,axis=p?.axes?.find(a=>a.tag==='wght');return `${f.value} | id=${f.id} | ${f.category || '?'} | ${f.tags.join(', ')} | weight=${axis?axis.min+'..'+axis.max:p?.weight||'?'} | ${p?.italic?'italic':'normal'} | width=${p?.width||5}` }).join('\n')
 }
 
 const norm = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '')

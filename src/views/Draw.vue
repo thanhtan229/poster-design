@@ -11,6 +11,7 @@
 <script lang="ts" setup>
 import { StyleValue, onMounted, reactive, nextTick } from 'vue'
 import api from '@/api'
+import {loadLibraryFont} from '@/utils/tinix/font-loader'
 import Preload from '@/utils/plugins/preload'
 import { swapToOriginalInData } from '@/utils/tinix/photo-source' // [TINIX]
 import FontFaceObserver from 'fontfaceobserver'
@@ -84,6 +85,8 @@ async function load() {
       }
     }
 
+    try { await Promise.all(widgets.filter((w:any)=>w.type==='w-text'&&w.fontClass?.url).map((w:any)=>loadLibraryFont(w.fontClass))) }
+    catch(error){ loadFlag=true;(window as any).loadFinishToInject({error:'Không tải được font yêu cầu: '+String(error)});return }
     await nextTick()
 
     const imgsData: HTMLImageElement[] = []

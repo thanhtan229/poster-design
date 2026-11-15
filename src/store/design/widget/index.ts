@@ -45,6 +45,7 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   sliceData?: Record<string, any>
   flip?: boolean
   cropEdit?: boolean
+  fontStyle?: string
   fontClass?: Record<string, any>
   writingMode?: string
 }

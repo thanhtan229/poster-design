@@ -39,3 +39,29 @@ Các mẫu minh họa dùng ảnh thư viện hiện có: Be Yourself (trắng �
 - Chuột phải trên vùng chọn giữ nguyên các lớp đang chọn. Menu có sao chép/dán/nhân đôi, nhóm/bỏ nhóm, sắp lớp, căn chỉnh, phân bố đều, khóa/ẩn và xóa. Phân bố đều cần ít nhất 3 lớp.
 - Menu danh sách lớp có hiện/mở khóa tất cả, chọn tất cả/đảo lựa chọn và xóa tất cả trong trang hiện tại. Xóa tất cả có hoàn tác/làm lại và không tác động trang khác.
 - `npm run tinix:test-ui` kiểm tra tương tác bằng trình duyệt tự động trên app đang chạy, không dùng chuột hệ thống. Có thể đặt `TINIX_APP_URL` để đổi địa chỉ. Các fixture chỉ nằm trong bộ nhớ trình duyệt, không lưu vào dữ liệu người dùng.
+
+## Hồ sơ kỹ thuật font trước khi AI chọn font
+
+Vào **Quản lý font → Chuẩn hóa font**, hoặc chạy `npm run tinix:normalize-fonts` khi server đang mở. Cần Python có `fontTools` và hỗ trợ Brotli để đọc WOFF2. Tiến trình sao lưu SQLite trước khi cập nhật và ghi báo cáo trong `.runtime/font-normalize/`.
+
+Hồ sơ `fonts.technical` phiên bản 1 được trích từ tệp: family/subfamily, weight, width, italic, các trục biến thiên, đơn vị em, cap-height/x-height khi tệp có cung cấp và các dải Unicode. Từng nguồn được tải thử qua FontFace trong trình duyệt. Bốn nguồn font bên ngoài được lưu bản xác minh cục bộ để editor và server dùng cùng tệp. Tên định danh, alias, nhóm, tag và nguồn tag không bị thay đổi; cờ tiếng Việt được tính lại khi hồ sơ xác minh thành công.
+
+AI chỉ nhận font có hồ sơ hợp lệ và còn khớp URL, kích thước và thời gian sửa tệp. Khi thêm font hoặc thay tệp, hãy chuẩn hóa lại. Lọc ứng viên theo từng ký tự nội dung (NFC), không suy đoán ngôn ngữ chỉ từ tên font. Font thiếu metadata vẫn có thể chọn thủ công, nhưng không được AI tự chọn. Khi AI dùng font thay thế hoặc điều chỉnh về biến thể thực có sẵn, kết quả dựng ghi chú rõ; gợi ý chữ đánh dấu font thay thế.
+
+Editor, đo chữ và trang xuất PNG dùng chung đăng ký FontFace với weight/style/stretch chính xác; font biến thiên khai báo dải weight/width. Không ưu tiên font cùng tên đã cài trên hệ điều hành. Nếu trang xuất không tải được font có URL được yêu cầu, xuất ảnh báo lỗi thay vì âm thầm chụp font dự phòng.
+
+Kết quả chuẩn hóa tại thời điểm triển khai: 1.275 bản ghi, 1.274 xác minh đầy đủ và 1 metadata chưa đủ; sửa 5 cờ tiếng Việt thành tổng 283 font. Đây là chuẩn hóa đầu vào; chưa triển khai so sánh hình ảnh để tìm font giống mẫu. Hồ sơ kỹ thuật không xác minh độ giống mẫu hoặc độ chính xác của các tag phong cách.
+
+## So khớp hình ảnh chữ khi dựng theo mẫu
+
+Trong **Trợ lý AI → Dựng theo mẫu**, chọn ảnh tham chiếu và bấm **Phân tích mẫu**. Tùy chọn **Tự so khớp ảnh chữ sau phân tích** được bật mặc định. Có thể tắt để phân tích bố cục trước rồi dùng **Tìm font gần mẫu** trên từng khối, hoặc **So khớp các khối chưa khóa**.
+
+Mỗi khối chữ dùng hai lượt AI có ghi lịch sử/chi phí: phân tích ảnh vùng chữ; sau đó so sánh ảnh mẫu với bảng chữ được render bằng tệp font đã chuẩn hóa. Kho được lọc theo độ phủ ký tự của cả nội dung gốc và nội dung mới, rồi lấy tối đa 36 họ font theo nhóm/tag/tên nghi ngờ. Các biến thể có thật được render; đo tỉ lệ khối chữ để chọn tối đa 12 ứng viên đưa vào ảnh so sánh. AI chỉ được trả nhãn ứng viên hợp lệ, không được tạo tên font mới.
+
+Kết quả hiển thị ảnh vùng chữ gốc, 3–5 lựa chọn gần nhất nếu có, ảnh render, lý do và độ tin cậy do AI đánh giá. Đây không phải xác suất thống kê hoặc cam kết đúng font gốc. Từ mức 65% app áp dụng ứng viên đầu; dưới mức này giữ font hiện tại để người dùng chọn. Nếu nhà cung cấp lỗi, giữ nguyên font hiện tại và hiện lỗi ngay tại khối chữ.
+
+**Giữ font đã chọn** khóa lựa chọn của một khối trong phiên dựng; so khớp lại sẽ bỏ qua nó. Phân tích lại cùng ảnh giữ khóa khi nội dung và vai trò khối khớp. Chọn ảnh tham chiếu mới xóa kết quả cũ. Các preview so sánh dùng chữ đọc từ ảnh mẫu; chữ mới trong thiết kế vẫn được giữ nguyên.
+
+Khi dựng, đo lại bằng font đã chọn và giới hạn chiều rộng khối chữ theo trang để tránh cắt chữ sau đổi font. Kết quả là lớp chữ sửa được, lưu và xuất PNG qua cùng cơ chế nạp biến thể font đã chuẩn hóa.
+
+Kiểm thử: `npm run tinix:test` kiểm tra crop, danh sách hợp lệ, độ phủ ký tự, render thực qua Chromium và payload so sánh với nhà cung cấp giả. `npm run tinix:test-font-ui` dùng app đang chạy để kiểm tra auto/chọn tay, mức tin cậy thấp, khóa qua phân tích lại, lỗi nhà cung cấp và dựng chữ trong trang; không gọi AI trả phí và không lưu fixture vào dữ liệu người dùng. Đã kiểm thử riêng bằng nhà cung cấp thật với vùng chữ Be Yourself, lưu/mở lại và xuất PNG.

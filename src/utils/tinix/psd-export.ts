@@ -1,3 +1,4 @@
+import {fontFaceCss} from './font-loader'
 /**
  * [TINIX] Xuất thiết kế hiện tại thành file PSD (mỗi lớp cấp cao nhất là một layer).
  *
@@ -110,7 +111,7 @@ async function rasterizeWidget(root: HTMLElement, w: W, fonts: Array<{ value: st
       onclone: async (doc: Document) => {
         if (!fonts.length) return
         const st = doc.createElement('style')
-        st.textContent = fonts.map((f) => `@font-face{font-family:"${f.value}";src:url(${JSON.stringify(f.url)});}`).join(' ')
+        st.textContent = fonts.map((f) => fontFaceCss(f)).join(' ')
         doc.head.appendChild(st)
         try {
           await Promise.all(fonts.map((f) => doc.fonts.load(`40px "${f.value}"`, 'Aa')))

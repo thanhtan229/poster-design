@@ -160,3 +160,7 @@ export const updateAiSettings = (data: { api_key?: string; text_model?: string; 
   fetch(API.aiSettings, data, 'post')
 
 export const testAiConnection = () => fetch<{ content: string }>(API.aiTest, {}, 'post')
+
+export type TFontNormalizationStatus={running:boolean;exitCode:number|null;log:string}
+export const startFontNormalization=()=>fetch<TFontNormalizationStatus>(prefix+'api/admin/fonts/normalize',{},'post')
+export const getFontNormalizationStatus=()=>fetch<TFontNormalizationStatus>(prefix+'api/admin/fonts/normalize',{})

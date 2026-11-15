@@ -1,3 +1,4 @@
+import { supportsText, actualFontStyle } from '../../../../shared/font-profile'
 /**
  * [TINIX] AI features: suggest text, rewrite text, find font, tag fonts.
  * Coordinates returned to the editor are ratios 0..1 (CLAUDE.md); the frontend converts to px.
@@ -26,7 +27,7 @@ const ROLE_FALLBACK: Record<PartKey, string[]> = {
   signature: ['Allura', 'Great Vibes', 'Corinthia'],
 }
 
-const fontClass = (f: LibFont) => ({ id: f.id, alias: f.alias, value: f.value, url: f.woff })
+const fontClass = (f: LibFont) => ({ id: f.id, alias: f.alias, value: f.value, url: f.profile?.local_url || f.woff, technical: JSON.stringify({...f.profile,coverage:[]}) })
 
 // [TINIX] font có chữ Hán (font Trung Quốc có sẵn trong kho: tên font viết bằng chữ Hán)
 const CJK_CHAR = /[぀-ヿ㐀-鿿가-힯]/
@@ -40,7 +41,7 @@ function pickFont(name: string, role: PartKey, fonts: LibFont[]): LibFont | null
 export async function suggestText(input: { image: string; width: number; height: number; lang?: string }) {
   const lang = input.lang === 'en' ? 'en' : 'vi'
   const fonts = libraryFonts(lang === 'vi')
-  if (!fonts.length) throw new Error('Kho font trống — chạy "npm run tinix:fonts" trước.')
+  if (!fonts.length) throw new Error('Kho font chưa có hồ sơ hợp lệ — chạy "npm run tinix:normalize-fonts" trước.')
   const image = await prepareImage(input.image)
   const studio = getTinixAiSettings().studio_name
 
@@ -90,7 +91,14 @@ export async function suggestText(input: { image: string; width: number; height:
     for (const key of PART_KEYS) {
       const part = opt.parts[key]
       if (!part) continue
-      const f = pickFont(part.fontFamily, key, fonts)
+      part.text=String(part.text||'').normalize('NFC')
+      const pool=fonts.filter(f=>supportsText(f.profile||null,part.text))
+      const requested=part.fontFamily
+      const f = pickFont(requested, key, pool)
+      if(!f)throw new Error('Không có font đã xác minh hiển thị đủ nội dung. Hãy chuẩn hóa kho font hoặc đổi nội dung.')
+      const actual=actualFontStyle(f.profile||null,part.weight||400,!!part.italic)
+      part.weight=actual.weight;part.italic=actual.italic
+      part.fontMatch={requested,selected:f.value,fallback:!resolveFont(requested,pool)}
       part.fontClass = f ? fontClass(f) : null
       part.fontFamily = f ? f.value : part.fontFamily
     }
@@ -154,7 +162,7 @@ export async function findFont(input: { image: string }) {
     },
   })
   const items = data.items.map((it) => {
-    const candidates = rankFonts(it, fonts, 5).map((f) => ({ ...fontClass(f), category: f.category, tags: f.tags, score: f.score, supports_vietnamese: f.supports_vietnamese }))
+    const candidates = rankFonts(it, fonts.filter(f=>supportsText(f.profile||null,it.text||'')), 5).map((f) => ({ ...fontClass(f), category: f.category, tags: f.tags, score: f.score, supports_vietnamese: f.supports_vietnamese }))
     const libNames = new Set(fonts.map((f) => f.value.toLowerCase()))
     const notInLibrary = it.suspected.filter((s) => !libNames.has(s.toLowerCase()) && !resolveFont(s, fonts))
     return { ...it, candidates, notInLibrary }
@@ -172,7 +180,7 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
   const lang = input.lang === 'en' ? 'en' : 'vi'
   // Giống mẫu: lấy cả font chữ Hán (mẫu có thể là tiếng Trung/Nhật/Hàn); sau đó ép đúng loại font theo chữ thực tế
   const fonts = libraryFonts(faithful ? false : lang === 'vi')
-  if (!fonts.length) throw new Error('Kho font trống — chạy "npm run tinix:fonts" trước.')
+  if (!fonts.length) throw new Error('Kho font chưa có hồ sơ hợp lệ — chạy "npm run tinix:normalize-fonts" trước.')
   const reference = await prepareImage(input.reference, faithful ? 1600 : 1280)
   const photo = !faithful && input.photo ? await prepareImage(input.photo, 768) : ''
   const images = photo ? [reference, photo] : [reference]
@@ -263,16 +271,26 @@ export async function rebuildFromReference(input: { reference: string; photo?: s
     },
   })
 
+  const fontWarnings:string[]=[]
   for (const r of data.regions as any[]) {
     if (r.type !== 'text') continue
     // chữ Hán/Nhật/Hàn → chỉ font CJK; chữ Latin/Việt → loại font CJK (chữ Hán sẽ rỗng/vỡ nếu sai loại)
     const cjkText = CJK_CHAR.test(String(r.text))
-    const pool = faithful ? fonts.filter((x) => isCjkFont(x) === cjkText) : fonts
+    r.text=String(r.text||'').normalize('NFC')
+    const pool = fonts.filter(f=>supportsText(f.profile||null,r.text))
     const cjkDefault = pool.find((x) => x.category === 'display') || pool[0]
-    const f = (cjkText && faithful ? resolveFont(r.fontFamily, pool) || cjkDefault : null) || pickFont(r.fontFamily, ROLE_TO_PART[r.role] || 'body', pool.length ? pool : fonts)
+    const f = (cjkText && faithful ? resolveFont(r.fontFamily, pool) || cjkDefault : null) || pickFont(r.fontFamily, ROLE_TO_PART[r.role] || 'body', pool)
+    if(!f)throw new Error('Không có font đã xác minh hiển thị đủ đoạn chữ: '+String(r.text).slice(0,60))
+    const requested=r.fontFamily,actual=actualFontStyle(f.profile||null,r.weight||400,!!r.italic)
+    const fallback=!resolveFont(requested,pool)
+    r.fontMatch={requested,selected:f.value,fallback}
+    if(fallback)fontWarnings.push(`Dùng ${f.alias} thay ${requested||'font chưa xác định'}: font yêu cầu không có hoặc không đủ ký tự.`)
+    if(actual.weight!==r.weight||actual.italic!==!!r.italic)fontWarnings.push(`${f.alias}: dùng biến thể thực có sẵn (${actual.weight}, ${actual.italic?'nghiêng':'thẳng'}).`)
+    r.weight=actual.weight;r.italic=actual.italic
     r.fontClass = f ? fontClass(f) : null
     r.fontFamily = f ? f.value : r.fontFamily
   }
+  if(fontWarnings.length)data.notes=[data.notes,...Array.from(new Set(fontWarnings))].filter(Boolean).join(' ')
   data.regions.sort((a: any, b: any) => a.z - b.z)
   return { ...data, jobId, model }
 }

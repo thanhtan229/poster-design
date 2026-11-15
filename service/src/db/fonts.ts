@@ -14,6 +14,7 @@
 import { getDB } from './index'
 
 export interface FontRow {
+  technical: string
   id: number
   alias: string
   value: string
@@ -34,7 +35,7 @@ export interface FontRow {
 /** [TINIX] nhóm font hợp lệ (cũng dùng cho AI chọn font) */
 export const CATEGORIES = ['serif', 'sans', 'script', 'display', 'handwriting']
 
-const LIST_FIELDS = 'id, alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese, category, tags, license, created_at'
+const LIST_FIELDS = 'id, alias, value, preview, woff, ttf, lang, font_family, size, woff_size, supports_vietnamese, category, tags, license, technical, created_at'
 
 /** 分页查询字体；搜索名称、value 和 font-family。 */
 export function listFonts(page = 1, pageSize = 20, search = '', filters: { lang?: string; vn?: string; category?: string } = {}): { list: FontRow[]; total: number } {

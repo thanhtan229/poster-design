@@ -228,6 +228,7 @@
               <el-option :label="t('tinix.ui.adminExtra.chuaPhanNhom')" value="none" />
             </el-select>
             <span class="toolbar-spacer"></span>
+            <FontNormalization @done="reloadFromPage1" />
             <!-- [TINIX] tạo ảnh xem trước còn thiếu cho font (chạy scripts/tinix-font-previews.mjs trên service) -->
             <el-button size="small" :loading="previewRunning" @click="onFontPreviews">{{ previewRunning ? t('tinix.ui.adminExtra.dangTaoAnh') : t('tinix.ui.adminExtra.taoAnhXemTruoc') }}</el-button>
             <el-button type="primary" size="small" @click="openFontDialog()">
@@ -258,7 +259,8 @@
               </template>
             </el-table-column>
             <!-- [TINIX] cờ hỗ trợ tiếng Việt (AI chỉ gợi ý font có cờ này ở chế độ tiếng Việt) -->
-            <el-table-column :label="t('tinix.ui.adminExtra.tiengViet')" width="110">
+            <el-table-column label="Hồ sơ font" width="165"><template #default="{row}"><span>{{ fontTechnicalLabel(row) }}</span></template></el-table-column>
+              <el-table-column :label="t('tinix.ui.adminExtra.tiengViet')" width="110">
               <template #default="{ row }">
                 <el-tag v-if="row.supports_vietnamese" size="small" type="success">{{ t('tinix.ui.adminExtra.coDau') }}</el-tag>
                 <el-tag v-else size="small" type="info">{{ t('tinix.ui.adminExtra.khongHoTro') }}</el-tag>
@@ -497,6 +499,9 @@
 </template>
 
 <script lang="ts" setup>
+import FontNormalization from '@/components/business/FontNormalization.vue'
+import {readFontProfile} from '../../shared/font-profile'
+function fontTechnicalLabel(row:any){const p=readFontProfile(row.technical,row.woff);if(!p){try{if(JSON.parse(row.technical||'{}').status==='partial')return 'Metadata chưa đủ'}catch{}return 'Cần chuẩn hóa'};return `${p.axes?.some(a=>a.tag==='wght')?'Biến thiên':p.weight} · ${p.italic?'nghiêng':'thẳng'} · đã xác minh`}
 /*
  * SPDX-License-Identifier: AGPL-3.0-or-later
  * Copyright (C) 2026 palxiao https://xpai.design

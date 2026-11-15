@@ -78,17 +78,18 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
       // AI gives the cap height as a ratio of the image height; CSS font-size ≈ cap height / 0.7
       let size = Math.max(10, (Number(r.fontSize) || 0.03) * H / 0.7)
       const font = (s: number) => ({ family, size: s, weight: String(r.weight || 400), style: r.italic ? 'italic' : 'normal', letterSpacing: r.letterSpacing || 0 })
-      for (let i = 0; i < 30 && measureLines(text, font(size)) > width * 1.02 && size > 10; i++) size *= 0.93
-      size = Math.round(size * 10) / 10
+      // [TINIX] Match the real selected face before placing the box. The generic
+      // addWidget constraint only resizes geometry, so never hand it an oversized text box.
+      const available=Math.max(10,Math.min(width,W-Math.max(0,left)))
+      const measured=measureLines(text,font(size))
+      if(measured>available*.98)size*=available*.98/Math.max(1,measured)
+      size=Math.max(1,Math.floor(size*10)/10)
       const lines = text.split(/\r\n|\r|\n/).length
-      // [TINIX] the box is approximate: widen it a little so a line that fits on the reference never wraps here
-      const need = Math.ceil(measureLines(text, font(size)) * 1.1)
-      let boxLeft = left, boxWidth = width
-      if (need > boxWidth) {
-        boxWidth = need
-        const diff = need - width
-        boxLeft = Math.max(0, Math.round(r.align === 'right' ? left - diff : r.align === 'left' ? left : left - diff / 2))
-      }
+      const need=Math.ceil(measureLines(text,font(size))*1.02)
+      const boxWidth=Math.min(W,Math.max(Math.min(width,W),need))
+      const expansion=boxWidth-width
+      const anchored=r.align==='right'?left-expansion:r.align==='left'?left:left-expansion/2
+      const boxLeft=Math.max(0,Math.min(W-boxWidth,Math.round(anchored)))
       const w = JSON.parse(JSON.stringify(wTextSetting))
       Object.assign(w, {
         name: i18t('tinix.ui.rebuildUtil.textName', { role: r.role || i18t('tinix.ui.rebuildUtil.textDefault') }),

@@ -22,6 +22,7 @@
           <div v-if="opt.parts[key]" class="tx-part">
             <el-checkbox v-model="state.picks[i][key]" size="small">{{ PART_LABEL[key] }}</el-checkbox>
             <span class="tx-part-text" :style="partStyle(opt, key)">{{ partText(opt, key) }}</span>
+            <span v-if="opt.parts[key]?.fontMatch?.fallback" class="tx-hint" :title="'Font yêu cầu: '+opt.parts[key]?.fontMatch?.requested">Đã dùng font thay thế</span>
             <el-select v-model="state.fontPick[i][key]" size="small" filterable class="tx-font" placeholder="Font" @change="(v: string) => changeFont(i, key, v)">
               <el-option v-for="f in fonts" :key="f.value" :label="f.alias" :value="f.value" />
             </el-select>

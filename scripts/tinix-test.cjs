@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, '..')
 const node = process.execPath
 
 const suites = [
+  { name: 'So khớp ảnh chữ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-match.ts'], cwd: root },
+  { name: 'Hồ sơ kỹ thuật font', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-profiles.ts'], cwd: root },
   { name: 'Hoàn tác khi xóa nhiều lớp', args: [path.join(root, 'scripts/tinix-selftest/history-removals.cjs')], cwd: root },
   { name: 'Hiệu ứng và nền ảnh liên kết', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'image-effects.ts'], cwd: root },
   { name: 'Không gian cá nhân, giữ dữ liệu cũ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'personal-workspace.ts'], cwd: root },

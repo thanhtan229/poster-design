@@ -1,3 +1,4 @@
+import {verifiedFontProfile} from '../tinix/fontProfiles'
 /*
  * SPDX-License-Identifier: AGPL-3.0-or-later
  * Copyright (C) 2026 palxiao https://xpai.design
@@ -293,7 +294,9 @@ export default {
     const search = typeof req.query?.search === 'string' ? req.query.search : ''
     const q = req.query || {}
     const str = (v: any) => (typeof v === 'string' ? v : '')
-    send.success(res, fontsRepo.listFonts(page, pageSize, search, { lang: str(q.lang), vn: str(q.vn), category: str(q.category) })) // [TINIX] bộ lọc
+    const result=fontsRepo.listFonts(page, pageSize, search, { lang: str(q.lang), vn: str(q.vn), category: str(q.category) })
+    for(const row of result.list){try{const profile=JSON.parse(row.technical||'{}');if(profile.status==='verified'&&!verifiedFontProfile(row))row.technical=JSON.stringify({...profile,status:'stale'})}catch{row.technical='{}'}}
+    send.success(res,result) // [TINIX] bộ lọc
   },
 
   // 新增字体

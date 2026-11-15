@@ -8,7 +8,7 @@
 
 export default async (req: any, res: any, next: any) => {
   const { queueList } = require('../utils/node-queue.ts')
-  const time = req.path === '/api/screenshots' ? 75000 : 30000
+  const time = req.path.startsWith('/api/tinix/ai/') ? 240000 : req.path === '/api/screenshots' ? 75000 : 30000
   res.setTimeout(time, () => {
     const statusCode = 408
     const index = req._queueSign ? queueList.findIndex((x: any) => x.sign === req._queueSign) : -1

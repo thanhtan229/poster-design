@@ -31,6 +31,7 @@
 </template>
 
 <script lang="ts" setup>
+import {readFontProfile,actualFontStyle} from '../../../../shared/font-profile'
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { storeToRefs } from 'pinia'
@@ -83,7 +84,10 @@ async function run(image: string) {
 function useFont(c: TFontCandidate) {
   const el: any = dActiveElement.value
   if (!el || el.type !== 'w-text') return ElMessage.warning(i18t('tinix.ui.fontTab.hay_chon_mot_lop_chu'))
-  widgetStore.updateWidgetData({ uuid: el.uuid, key: 'fontClass', value: { id: c.id, alias: c.alias, value: c.value, url: c.url } })
+  const actual=actualFontStyle(readFontProfile(c.technical),Number(el.fontWeight)||400,el.fontStyle==='italic')
+  widgetStore.updateWidgetData({uuid:el.uuid,key:'fontWeight',value:String(actual.weight)})
+  widgetStore.updateWidgetData({uuid:el.uuid,key:'fontStyle',value:actual.italic?'italic':'normal'})
+  widgetStore.updateWidgetData({ uuid: el.uuid, key: 'fontClass', value: { id: c.id, alias: c.alias, value: c.value, url: c.url, technical:c.technical } })
   ElMessage.success(i18t('tinix.ui.fontTab.changed', { name: c.alias }))
 }
 </script>

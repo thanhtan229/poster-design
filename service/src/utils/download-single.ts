@@ -96,7 +96,8 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
       })
     }
     // 主动模式下注入全局方法
-    await page.exposeFunction('loadFinishToInject', async () => {
+    await page.exposeFunction('loadFinishToInject', async (result: any) => {
+      if(result && result.error){clearTimeout(regulators);browserClose();reject(new Error(result.error));return}
       // console.log('-> 开始截图')
       // await page.evaluate(() => document.body.style.background = 'transparent');
       await page.screenshot({ path, omitBackground: true })

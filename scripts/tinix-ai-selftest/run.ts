@@ -1,9 +1,10 @@
+import assert from 'node:assert/strict'
 // [TINIX] Offline self-test of the AI pipeline with a faked provider — runs on a TEMP database in .runtime/ai-selftest (never your real data).
 // Run: npm run tinix:test-ai
 import http from '../../service/src/utils/http'
 import * as settings from '../../service/src/db/settings'
 import { initDB, getDB } from '../../service/src/db'
-import { suggestText, rewriteText, findFont, tagFonts, tagFontsFromPreview } from '../../service/src/tinix/ai/tasks'
+import { suggestText, rewriteText, findFont, tagFonts, tagFontsFromPreview, rebuildFromReference } from '../../service/src/tinix/ai/tasks'
 import { monthUsage } from '../../service/src/tinix/ai/cost-log'
 import { saveTinixAiSettings } from '../../service/src/tinix/ai/settings'
 
@@ -11,6 +12,12 @@ initDB()
 const db = getDB()
 for (const [v, cat, tags] of [['Great Vibes', 'script', '["lãng mạn","thư pháp"]'], ['Playfair Display', 'serif', '["sang trọng","tạp chí"]'], ['Montserrat', 'sans', '["hiện đại"]'], ['Allura', 'script', '["chữ ký"]'], ['Be Vietnam Pro', 'sans', '["nội dung"]'], ['ZCOOL', '', '[]']]) {
   db.prepare("INSERT INTO fonts (alias, value, woff, category, tags, supports_vietnamese, lang) VALUES (?,?,?,?,?,?, 'en')").run(v, v, `/static/fonts/${v}.ttf`, cat, tags, v === 'ZCOOL' ? 0 : 1)
+  // Fake verified files/profiles for the fake provider; no production font data is used.
+  const fs=require('fs'),path=require('path'),file=path.join(process.cwd(),'static/fonts',v+'.ttf')
+  fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,'offline-font-fixture')
+  const stat=fs.statSync(file),profile={version:1,status:'verified',source_url:`/static/fonts/${v}.ttf`,browser_loaded:true,weight:400,width:5,italic:false,axes:[],bytes:stat.size,mtime_ms:stat.mtimeMs,checked_at:new Date().toISOString(),coverage:v==='ZCOOL'?[[32,126],[19968,40959]]:[[32,767],[7840,7935]]}
+  db.prepare('UPDATE fonts SET technical=? WHERE value=?').run(JSON.stringify(profile),v)
+
 }
 saveTinixAiSettings({ price_in_per_1m: 2000, price_out_per_1m: 8000, studio_name: 'Tinix Studio' })
 ;(settings as any).getAiSettings = () => ({ api_key: 'test-key', base_url: 'https://fake.local/v1', text_model: 'fake-text', image_model: 'x', image_size_mode: 'openai', enabled: true })
@@ -37,6 +44,9 @@ async function main() {
   console.log('suggest ok:', s.options.length, 'options; title font =', s.options[0].parts.title.fontClass?.value, '; unknown signature font →', s.options[0].parts.signature.fontClass?.value, '; bad colour →', s.options[0].palette.secondary, '; region clamp →', s.options[1].regionIndex, '; align →', s.options[1].align, '; "great vibes" →', s.options[1].parts.title.fontClass?.value)
   console.log('request model =', lastRequest.body.model, '; content parts =', lastRequest.body.messages[1].content.map((c: any) => c.type).join(','), '; image bytes ≈', Math.round(lastRequest.body.messages[1].content[1].image_url.url.length * 0.75 / 1024) + 'KB', '; retry msg sent =', lastRequest.body.messages.length === 3)
 
+  assert.equal(s.options[0].parts.title.weight,400,'Use the actual static face rather than synthetic bold')
+  assert.equal(s.options[0].parts.signature.fontMatch.fallback,true,'Report fallback explicitly')
+
   // 2) rewrite: one replacement with an unknown uuid must be dropped
   answers = [JSON.stringify({ options: [{ styleName: 'A', replacements: [{ uuid: 'u1', text: 'Mới' }, { uuid: 'zzz', text: 'x' }] }] })]
   const r = await rewriteText({ image: img, layers: [{ uuid: 'u1', text: 'Cũ\nhai dòng' }], lang: 'keep' })
@@ -56,6 +66,13 @@ async function main() {
   ] })]
   const rb: any = await (require('../../service/src/tinix/ai/tasks') as any).rebuildFromReference({ reference: img, photo: img, lang: 'vi' })
   console.log('rebuild ok:', rb.regions.map((r: any) => `${r.type}${r.fontClass ? '/' + r.fontClass.value : ''}`).join(' → '), '; images sent =', lastRequest.body.messages[1].content.filter((c: any) => c.type === 'image_url').length, '; bg =', rb.background)
+
+  answers=[JSON.stringify({background:'#fff',regions:[{type:'text',bbox:{x:.1,y:.1,w:.8,h:.2},role:'title',text:'你好',fontFamily:'Montserrat',fontSize:.06}]})]
+  const coverageResult=await rebuildFromReference({reference:img,mode:'faithful'})
+  assert.equal(coverageResult.regions[0].fontClass.value,'ZCOOL','Content coverage beats a guessed Latin font')
+  assert.equal(coverageResult.regions[0].fontMatch.fallback,true)
+  assert.match(coverageResult.notes,/ZCOOL/)
+  console.log('coverage and explicit fallback ok: Chinese text uses a verified font with Chinese glyphs')
 
   // 4) tag fonts (text model): only the untagged font
   answers = [JSON.stringify({ fonts: [{ family: 'ZCOOL', category: 'display', tags: ['vui tươi'] }] })]

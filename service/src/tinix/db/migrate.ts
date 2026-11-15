@@ -12,6 +12,7 @@ type Db = { prepare: (sql: string) => any; exec: (sql: string) => void }
 
 // [column name, DDL] — plain tuples: the service compiles with TypeScript 3.9 (no labeled tuple elements)
 const FONT_COLUMNS: Array<[string, string]> = [
+  ['technical', "TEXT NOT NULL DEFAULT '{}'"],
   ['category', "TEXT NOT NULL DEFAULT ''"], // serif | sans | script | display | handwriting
   ['tags', "TEXT NOT NULL DEFAULT '[]'"], // JSON array, e.g. ["sang trọng","lãng mạn"]
   ['supports_vietnamese', 'INTEGER NOT NULL DEFAULT 0'],

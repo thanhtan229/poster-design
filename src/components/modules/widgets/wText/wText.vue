@@ -51,6 +51,7 @@
 </template>
 
 <script lang="ts" setup>
+import { loadLibraryFont } from '@/utils/tinix/font-loader'
 // 文本组件
 // const NAME = 'w-text'
 
@@ -105,35 +106,17 @@ onMounted(() => {
   // store.commit('updateRect')
 })
 
-watch(
-  () => props.params,
-  async (nval) => {
-    updateText()
-    if (state.loading) {
-      return
-    }
-    let font = nval.fontClass
-    const isDone = font.value === state.loadFontDone
-
-    if (font.url && !isDone) {
-      if (font.id && isDraw.value) {
-        state.loading = false
-      }
-      if (fontMinWithDraw) {
-        return
-      }
-      state.loading = !isDraw.value
-      const loadFont = new window.FontFace(font.value, `url(${font.url})`)
-      await loadFont.load()
-      document.fonts.add(loadFont)
-      state.loadFontDone = font.value
-      state.loading = false
-    } else {
-      state.loading = false
-    }
-  },
-  { immediate: true, deep: true },
-)
+watch(() => props.params, () => updateText(), {immediate:true,deep:true})
+let fontLoadRequest=0
+watch(() => props.params.fontClass, async font => {
+ const request=++fontLoadRequest
+ const key=JSON.stringify([font.value,font.url,(font as any).technical])
+ if(!font.url||key===state.loadFontDone||fontMinWithDraw){state.loading=false;return}
+ state.loading=!isDraw.value
+ try {await loadLibraryFont(font);if(request===fontLoadRequest)state.loadFontDone=key}
+ catch(error){console.warn('[tinix:font] Cannot load requested font',font.value,error)}
+ finally{if(request===fontLoadRequest)state.loading=false}
+},{immediate:true,deep:true})
 
 watch(
   () => state.editable,

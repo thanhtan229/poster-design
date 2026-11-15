@@ -49,7 +49,8 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted, ref } from 'vue'
+import {loadLibraryFont} from '@/utils/tinix/font-loader'
+import { reactive, onMounted, ref, watch } from 'vue'
 import getGradientOrImg from './getGradientOrImg'
 import { wTextSetting } from './wTextSetting'
 
@@ -70,6 +71,7 @@ type TProps = {
 
 const props = defineProps<TProps>()
 const widget = ref<HTMLElement | null>(null)
+watch(()=>props.params.fontClass,async font=>{if(font?.url)try{await loadLibraryFont(font)}catch(e){console.warn('[tinix:font] Static font failed',font.value,e)}},{immediate:true,deep:true})
 
 onMounted(() => {
   if (!widget.value) return

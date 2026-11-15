@@ -47,6 +47,7 @@ export type TGetFontParam = {
 
 /** 字体 item 数据（公开接口返回：不含 created_at 等管理字段） */
 export type TGetFontItemData = {
+  technical?: string
   id: number
   alias: string
   value: string

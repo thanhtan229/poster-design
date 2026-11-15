@@ -1,3 +1,4 @@
+import {loadLibraryFont} from './font-loader'
 /**
  * [TINIX] Resize imported PSD point-text boxes to fit the substitute font.
  *
@@ -19,20 +20,8 @@ type TextCloud = {
 
 let ctx: CanvasRenderingContext2D | null = null
 
-const registered = new Set<string>()
-
-/** Make sure the library font is usable by canvas before measuring (widgets register it later). */
-export async function ensureFont(family: string, url: string) {
-  if (!url || registered.has(family)) return
-  registered.add(family)
-  try {
-    const face = new FontFace(family, `url(${JSON.stringify(url)})`)
-    await face.load()
-    document.fonts.add(face)
-  } catch (e) {
-    console.warn('[tinix:psd-fit] cannot load font', family, e)
-  }
-}
+/** Use exactly the registration used by the editor and export renderer. */
+export async function ensureFont(family:string,url:string){await loadLibraryFont({value:family,url})}
 
 export async function fitPointText(x: TextCloud, fontClass: { value: string; url: string }, pageWidth: number): Promise<void> {
   const family = fontClass.value

@@ -67,7 +67,7 @@ export async function screenshots(req: any, res: any) {
         type === 'file' || !thumbPath ? res.sendFile(path) : res.sendFile(thumbPath)
       })
       .catch((e: any) => {
-        if (!res.headersSent) res.status(500).json({ code: 500, msg: 'Lỗi khi tạo ảnh' })
+        if (!res.headersSent) res.status(500).json({ code: 500, msg: e && String(e.message).startsWith('Không tải được font yêu cầu') ? e.message : 'Lỗi khi tạo ảnh' })
       })
   } else {
     res.json({ code: 500, msg: 'Thiếu tham số, vui lòng kiểm tra' })

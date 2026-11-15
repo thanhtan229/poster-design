@@ -37,7 +37,7 @@ export const useFontStore = {
         const alias = typeof x?.alias === 'string' ? x.alias : ''
         const preview = typeof x?.preview === 'string' ? x.preview : ''
         const lang = x?.lang === 'en' || x?.lang === 'ko' ? x.lang : 'zh' // [TINIX] ko
-        return { id, oid: 0, value, preview, alias, url, lang }
+        return { id, oid: 0, value, preview, alias, url, lang, technical: x.technical }
       }),
     )
   },

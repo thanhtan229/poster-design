@@ -2,7 +2,7 @@
 <template>
   <div class="tx-tab">
     <div class="tx-row">
-      <el-button size="small" @click="pick">{{ $t('tinix.ui.rebuildTab.chon_anh_thiet_ke_mau') }}</el-button>
+      <el-button size="small" :disabled="state.loading||matchingFonts" @click="pick">{{ $t('tinix.ui.rebuildTab.chon_anh_thiet_ke_mau') }}</el-button>
       <input ref="fileRef" type="file" accept="image/*" style="display: none" @change="onFile" />
       <el-radio-group v-model="state.mode" size="small">
         <el-radio-button value="faithful">{{ $t('tinix.ui.rebuildTab.giong_mau') }}</el-radio-button>
@@ -21,6 +21,8 @@
     <div v-if="state.mode === 'faithful'" class="tx-row">
       <el-checkbox v-model="state.genPhoto" size="small">{{ $t('tinix.ui.rebuildTab.tu_tao_anh_nen_tuong') }}</el-checkbox>
     </div>
+    <el-checkbox v-model="autoVisualFonts" size="small" :disabled="state.loading||matchingFonts">{{$t('tinix.ui.visualFont.auto')}}</el-checkbox>
+    <p class="tx-hint">{{$t('tinix.ui.visualFont.cost')}}</p>
     <div class="tx-row" v-if="state.reference">
       <img :src="state.reference" style="max-height: 150px; max-width: 45%; border-radius: 6px" />
       <el-button type="primary" size="small" :loading="state.loading" @click="analyze">{{ state.loading ? $t('tinix.ui.rebuildTab.ai_dang_phan_tich_30') : $t('tinix.ui.rebuildTab.phan_tich_mau') }}</el-button>
@@ -29,11 +31,13 @@
     <div v-if="state.result" class="tx-result">
       <div class="tx-card">
         <div class="tx-card-head"><b>{{ $t('tinix.ui.rebuildTab.ket_qua') }}</b> <span class="tx-swatch" :style="{ background: state.result.background }" /> <span class="tx-label">{{ counts }}</span></div>
-        <div v-for="(r, i) in textRegions" :key="i" class="tx-part">
+        <el-button size="small" :loading="matchingFonts" :disabled="state.loading" @click="matchAllFonts">{{$t('tinix.ui.visualFont.all')}}</el-button>
+        <p v-if="matchingFonts" role="status">{{$t('tinix.ui.visualFont.progress',{current:fontProgress,total:textRegions.length})}}</p>
+        <div v-for="(r, i) in textRegions" :key="resultVersion+'-'+i"><div class="tx-part">
           <span class="tx-label" style="min-width: 70px">{{ r.role }}</span>
           <span class="tx-part-text" :style="{ fontFamily: `'${r.fontFamily}'`, fontWeight: String(r.weight), fontStyle: r.italic ? 'italic' : 'normal', fontSize: '15px' }">{{ r.uppercase ? r.text.toUpperCase() : r.text }}</span>
           <span class="tx-label">{{ r.fontFamily }}</span>
-        </div>
+        </div><VisualFontMatch ref="fontMatchers" :reference="state.reference" :region="r" :disabled="state.loading||matchingFonts" /></div>
         <p v-if="state.result.notes" class="tx-hint">ℹ {{ state.result.notes }}</p>
 
         <!-- [TINIX] ảnh nền tương tự: tạo ở nền ngay sau khi phân tích, xem trước, sửa mô tả rồi tạo lại -->
@@ -57,7 +61,7 @@
           <el-checkbox v-model="state.clearFirst" size="small">{{ $t('tinix.ui.rebuildTab.xoa_cac_lop_hien_co') }}</el-checkbox>
         </div>
         <div class="tx-row">
-          <el-button type="primary" size="small" :loading="state.building" @click="build">{{ state.building && state.photoLoading ? $t('tinix.ui.rebuildTab.dang_cho_anh_nen') : $t('tinix.ui.rebuildTab.dung_vao_trang') }}</el-button>
+          <el-button type="primary" size="small" :loading="state.building" :disabled="state.loading||matchingFonts" @click="build">{{ state.building && state.photoLoading ? $t('tinix.ui.rebuildTab.dang_cho_anh_nen') : $t('tinix.ui.rebuildTab.dung_vao_trang') }}</el-button>
         </div>
       </div>
       <p class="tx-meta">{{ $t('tinix.ui.rebuildTab.meta', { model: state.result.model, job: state.result.jobId }) }}</p>
@@ -66,7 +70,8 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref, computed, nextTick, watch } from 'vue'
+import VisualFontMatch from './VisualFontMatch.vue'
+import { reactive, ref, computed, nextTick, watch, onBeforeUnmount } from 'vue'
 import { ElMessage, ElCheckbox, ElRadioGroup, ElRadioButton } from 'element-plus'
 import { storeToRefs } from 'pinia'
 import api from '@/api'
@@ -78,6 +83,11 @@ import { ensureFont } from '@/utils/tinix/psd-fit'
 import i18n from '@/languages'
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
+const autoVisualFonts=ref(true),matchingFonts=ref(false),fontProgress=ref(0),resultVersion=ref(0)
+const fontMatchers=ref<any[]>([])
+let fontRun=0
+async function matchAllFonts(){if(matchingFonts.value)return;const run=++fontRun;matchingFonts.value=true;try{await nextTick();const controls=[...fontMatchers.value];for(let i=0;i<controls.length;i++){if(run!==fontRun)break;fontProgress.value=i+1;await controls[i].match()}}finally{if(run===fontRun)matchingFonts.value=false}}
+onBeforeUnmount(()=>{fontRun++})
 const GEN_PHOTO_KEY = 'tinix_rebuild_gen_photo' // nhớ lựa chọn "tự tạo ảnh nền"
 
 const widgetStore = useWidgetStore()
@@ -103,6 +113,8 @@ const state = reactive({
   photoLoading: false,
   photoError: '',
 })
+
+watch(()=>state.reference,()=>{fontRun++;matchingFonts.value=false;state.result=null;resultVersion.value++})
 
 /** Lần tạo ảnh đang chạy (Dựng vào trang chờ nó) và số thứ tự để bỏ kết quả cũ khi phân tích lại / tạo lại. */
 let photoJob: Promise<void> | null = null
@@ -244,10 +256,13 @@ async function analyze() {
     const photo = state.mode === 'creative' && state.usePage && widgetStore.dWidgets.length > 0 ? await capturePage({ maxEdge: 768, hideText: true }) : undefined
     const res: any = await tinixAi.rebuild({ reference: state.reference, photo, lang: state.lang, mode: state.mode })
     if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.rebuildTab.phan_tich_khong_thanh_cong'))
-    state.result = res
+    const locked=(state.result?.regions||[]).filter((r:any)=>r.type==='text'&&r.fontLocked)
+    for(const region of res.regions){const prior=locked.find((r:any)=>r.text===region.text&&r.role===region.role);if(prior)Object.assign(region,{fontClass:prior.fontClass,fontFamily:prior.fontFamily,weight:prior.weight,italic:prior.italic,fontLocked:true,visualFontMatch:prior.visualFontMatch})}
+    state.result = res;resultVersion.value++
     for (const r of res.regions) if (r.fontClass) ensureFont(r.fontClass.value, r.fontClass.url)
     // [TINIX] tự tạo ảnh nền ngay (chạy ở nền trong lúc bạn xem kết quả)
     if (state.mode === 'faithful' && state.genPhoto) startPhoto()
+    if(autoVisualFonts.value)await matchAllFonts()
   } catch (e: any) {
     ElMessage.error(e?.message || i18t('tinix.ui.rebuildTab.loi_khi_goi_ai'))
   } finally {

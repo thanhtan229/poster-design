@@ -1,3 +1,4 @@
+import {fontFaceCss} from '@/utils/tinix/font-loader'
 interface TextItem {
   text: string
   [porpname: string]: any
@@ -65,7 +66,7 @@ export function generateFontStyle(name: string, url: string): HTMLStyleElement {
   const el = document.createElement('style')
   el.id = name
   // el.classList.add('font-face');
-  el.innerHTML = `@font-face { font-family: "${name}"; src: local("${name}"), url("${url}"); }`
+  el.textContent = fontFaceCss({value:name,url})
   return el
 }
 

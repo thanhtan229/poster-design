@@ -7,8 +7,8 @@ import fetch from '@/utils/axios'
 const slow = { _noLoading: true }
 const long = { timeout: 120000 }
 
-export type TFontClass = { id: number; alias: string; value: string; url: string }
-export type TSuggestPart = { text: string; fontFamily: string; fontClass: TFontClass | null; weight: number; italic: boolean; uppercase: boolean }
+export type TFontClass = { technical?: string; id: number; alias: string; value: string; url: string }
+export type TSuggestPart = { fontMatch?: {requested:string;selected:string;fallback:boolean}; text: string; fontFamily: string; fontClass: TFontClass | null; weight: number; italic: boolean; uppercase: boolean }
 export type TSuggestOption = {
   styleName: string
   regionIndex: number
@@ -53,3 +53,7 @@ export const getUsage = (p: { month?: string } = {}) => fetch<{ month: string; j
 /** [TINIX] Admin còn dùng mật khẩu mặc định? */
 export const getSettings = () => fetch<TAiSettings | TErr>('api/tinix/ai/settings', {}, 'get')
 export const saveSettings = (p: Partial<TAiSettings>) => fetch<TAiSettings | TErr>('api/tinix/ai/settings', p, 'post')
+
+export type TVisualFontCandidate={fontClass:TFontClass;weight:number;italic:boolean;preview:string}
+export type TVisualFontMatch={candidates:TVisualFontCandidate[];confidence:number;reason:string;observedText:string;referenceCrop:string;compared:number;jobIds:number[];model:string}
+export const matchFontImage=(p:{reference:string;text:string;bbox:{x:number;y:number;w:number;h:number};fontFamily?:string;weight?:number;italic?:boolean})=>fetch<TVisualFontMatch|TErr>('api/tinix/ai/match-font',{...p,...slow},'post',{}, {timeout:240000})

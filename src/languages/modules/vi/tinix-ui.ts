@@ -1,6 +1,13 @@
 // [TINIX] Chuỗi giao diện của code TinixPoster (Trợ lý AI, lưu thành mẫu...). Tạo bằng công cụ trích xuất; sửa tay được.
 export default {
+  visualFont: {
+    auto:'Tự so khớp ảnh chữ sau phân tích',cost:'Mỗi khối chữ dùng thêm hai lượt AI: phân tích nét và so sánh bản render. Chi phí ghi vào lịch sử.',
+    match:'Tìm font gần mẫu',matching:'Đang so sánh ảnh chữ…',all:'So khớp các khối chưa khóa',lock:'Giữ font đã chọn',alternatives:'Font gần mẫu',
+    confidence:'Độ tin cậy do AI đánh giá',low:'Chưa đủ chắc chắn — hãy xem các bản chữ trước khi áp dụng.',crop:'Vùng chữ trong mẫu',choose:'Dùng font này',
+    failed:'Không so khớp được. Font hiện tại được giữ nguyên.',progress:'Đang so khớp khối {current}/{total}',selected:'Đang dùng',
+  },
   aiAssistant: {
+    goi_y_chu: 'Gợi ý chữ',
     sua_chu: 'Sửa chữ',
     tim_font: 'Tìm font',
     dung_theo_mau: 'Dựng theo mẫu',

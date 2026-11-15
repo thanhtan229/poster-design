@@ -1,3 +1,4 @@
+import { renderFontProfile } from '../tinix/fontProfiles'
 /*
  * SPDX-License-Identifier: AGPL-3.0-or-later
  * Copyright (C) 2026 palxiao https://xpai.design
@@ -135,6 +136,7 @@ export async function getFonts(req: any, res: Response) {
     font_family: row.font_family,
     size: row.size,
     woff_size: row.woff_size,
+    technical: renderFontProfile(row),
   }))
   send.success(res, { list })
 }
