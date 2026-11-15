@@ -6,7 +6,9 @@
  * @LastEditTime: 2024-12-28 14:12:33
 -->
 <template>
-  <div id="main">
+  <div class="board-shell">
+    <div v-if="needTools" id="tinix-ruler-toolbar" />
+    <div id="main">
     <div id="page-design" ref="page_design" :style="{ paddingTop: dPaddingTop + 'px', minWidth:  (dPage.width * dZoom) / 100 + (padding ?? dPresetPadding) * 2 + 'px' }">
       <div
         id="out-page"
@@ -43,6 +45,7 @@
             @mouseup="drop($event)"
           >
             <CanvasRuler v-if="needTools" :page="dPage" :zoom="dZoom" />
+            <div class="canvas-content-clip">
             <!-- <grid-size /> -->
             <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools }, { 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
               <template v-if="layer.isContainer">
@@ -55,6 +58,7 @@
                 <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools }, { 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" :style="widget.hidden ? { display: 'none' } : undefined" />
               </template>
             </component>
+            </div>
 
             <!-- <ref-line v-if="dSelectWidgets.length === 0" /> -->
             <!-- <size-control v-if="dSelectWidgets.length === 0" /> -->
@@ -63,6 +67,7 @@
       </div>
     </div>
     <slot name="bottom" />
+    </div>
   </div>
 </template>
 
@@ -408,7 +413,11 @@ function getChilds(uuid: string) {
 </script>
 
 <style lang="less" scoped>
+.board-shell { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+#tinix-ruler-toolbar { flex: none; min-height: 42px; background: #fff; border-bottom: 1px solid #ddd; }
 #main {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   position: relative;
 }
@@ -423,6 +432,7 @@ function getChilds(uuid: string) {
     // padding: 60px;
     position: relative;
     .design-canvas {
+      z-index: 11;
       // 解决拖拽残影问题
       outline: 1px solid transparent;
       // transition: all 0.3s;
@@ -440,5 +450,10 @@ function getChilds(uuid: string) {
     //   display: none; /* Chrome Safari */
     // }
   }
+}
+.canvas-content-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 </style>

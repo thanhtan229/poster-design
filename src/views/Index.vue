@@ -69,7 +69,6 @@
     <!-- [TINIX] dải ảnh ngang phía dưới: ảnh đã tải, đánh dấu đã dùng, yêu thích -->
     <photo-strip />
     <!-- 标尺 -->
-    <line-guides :show="state.showLineGuides" />
     <!-- 缩放控制 -->
     <zoom-control ref="zoomControlRef" />
     <!-- 右键菜单 -->
@@ -110,7 +109,7 @@ import RightClickMenu from '@/components/business/right-click-menu/RcMenu.vue'
 import Moveable from '@/components/business/moveable/Moveable.vue'
 import designBoard from '@/components/modules/layout/designBoard/index.vue'
 import zoomControl from '@/components/modules/layout/zoomControl/index.vue'
-import lineGuides from '@/components/modules/layout/lineGuides.vue'
+
 import shortcuts from '@/mixins/shortcuts'
 import HeaderOptions from './components/HeaderOptions.vue'
 import Folder from './components/Folder.vue'
@@ -287,7 +286,7 @@ function handleHistory(data: "undo" | "redo") {
 }
 
 function changeLineGuides() {
-  state.showLineGuides = !state.showLineGuides
+  window.dispatchEvent(new Event('tinix-toggle-ruler'))
 }
 
 function downloadCancel() {
