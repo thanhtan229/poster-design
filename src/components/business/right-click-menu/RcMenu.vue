@@ -1,29 +1,10 @@
 <template>
-  <div v-show="showMenuBg" id="menu-bg" class="menu-bg" @click="closeMenu">
-    <ul ref="menuList" class="menu-list" :style="styleObj">
-      <li
-        v-for="(item, index) in menuListData.list"
-        :key="index"
-        :data-action="item.type"
-        :aria-haspopup="item.children ? 'menu' : undefined"
-        :aria-expanded="item.children ? activeSubmenu === item.type : undefined"
-        :aria-disabled="item.disabled || (dCopyElement.length === 0 && item.type === 'paste')"
-        :title="item.type === 'distribute' && item.disabled ? $t('business.menu.distributeHint') : undefined"
-        :class="{ 'menu-item': true, 'disable-menu': item.disabled || (dCopyElement.length === 0 && item.type === 'paste') }"
-        @mouseenter="openSubmenu(item, $event)"
-        @mouseleave="activeSubmenu = null"
-        @click.stop="!item.disabled && (item.children ? openSubmenu(item, $event) : selectMenu(item.type))"
-      >
-        {{ item.text }}
-        <span v-if="item.children" class="submenu-arrow" aria-hidden="true">›</span>
-        <ul v-if="item.children && activeSubmenu === item.type" class="submenu" :style="submenuPosition">
-          <li v-for="child in item.children" :key="child.type" class="menu-item" :data-action="child.type" @click.stop="selectMenu(child.type)">
-            {{ child.text }}
-          </li>
-        </ul>
-      </li>
+  <div v-show="showMenuBg" id="menu-bg" class="menu-bg" data-photo-history @click="closeMenu">
+    <ul ref="menuList" class="menu-list" role="menu" tabindex="-1" :aria-label="$t('business.menu.contextMenu')" :style="styleObj" @keydown="menuKeydown">
+      <ContextMenuItems :items="menuListData.list" @select="selectMenu" />
     </ul>
   </div>
+  <ActionFeedback v-if="feedback" :key="feedback.id" :text="feedback.text" :can-undo="canUndo" @undo="undoFeedback" @close="dismissFeedback" />
 </template>
 
 <script lang="ts" setup>
@@ -33,6 +14,7 @@ import {
   widgetMenu as widget, 
   pageMenu as page,
   menuList as menu, 
+  organizeMenu,
   TMenuItemData, TWidgetItemData, 
 } from './rcMenuData'
 import { getTarget } from '@/common/methods/target'
@@ -40,12 +22,17 @@ import { storeToRefs } from 'pinia';
 import { useCanvasStore, useControlStore, useForceStore, useGroupStore, useWidgetStore } from '@/store';
 import type { TdWidgetData } from '@/store/design/widget'
 import type { TDistributeAxis, TUpdateAlignData } from '@/store/design/widget/actions/align'
+import ContextMenuItems from './ContextMenuItems.vue'
+import ActionFeedback from './ActionFeedback.vue'
+import useActionFeedback from './useActionFeedback'
+import { primaryModifierLabel, selectionShortcut } from '@/common/methods/selectionShortcuts'
+
+const { feedback, canUndo, run, undo, close: dismissFeedback } = useActionFeedback()
 
 const menuListData = ref<TMenuItemData>({...menu})
 const showMenuBg = ref<boolean>(false)
 const menuList = ref<HTMLUListElement | null>(null)
-const activeSubmenu = ref<string | null>(null)
-const submenuPosition = ref({ left: '0px', top: '0px' })
+let previousFocus: HTMLElement | null = null
 let unlockTargetId: string | null = null
 let showTargetId: string | null = null
 const widgetMenu = ref<TWidgetItemData[]>([...widget])
@@ -67,8 +54,19 @@ const styleObj = computed(() => {
 
 onMounted(() => {
   document.addEventListener('contextmenu', mouseRightClick)
+  document.addEventListener('keydown', handleSelectionShortcut)
 })
-onBeforeUnmount(() => document.removeEventListener('contextmenu', mouseRightClick))
+onBeforeUnmount(() => {
+  document.removeEventListener('contextmenu', mouseRightClick)
+  document.removeEventListener('keydown', handleSelectionShortcut)
+})
+
+function handleSelectionShortcut(event: KeyboardEvent) {
+  const command = selectionShortcut(event)
+  if (!command || widgetStore.dWidgets.some(item => item.editable)) return
+  event.preventDefault()
+  if (!event.repeat) void selectMenu(command)
+}
 
 function canvasLayerAtPoint(e: MouseEvent): HTMLElement | null {
   const target = e.target as HTMLElement
@@ -164,7 +162,7 @@ async function mouseRightClick(e: MouseEvent) {
 }
 
 async function showMenu(e: MouseEvent, contextWidget: TdWidgetData | null = dActiveElement.value, multiple = dSelectWidgets.value.length > 1) {
-  activeSubmenu.value = null
+  previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
   let isPage = !multiple && contextWidget?.uuid === '-1'
   menuListData.value.list = isPage ? pageMenu.value : widgetMenu.value
   if (multiple) {
@@ -188,9 +186,14 @@ async function showMenu(e: MouseEvent, contextWidget: TdWidgetData | null = dAct
     const showItem: TWidgetItemData = { type: 'show', text: i18n.global.t('business.menu.show') }
     menuListData.value.list = unlockTargetId ? [showItem, ...menuListData.value.list] : [showItem]
   }
-  menuListData.value.list = menuListData.value.list.map(item => item.type === 'distribute'
-    ? { ...item, disabled: dSelectWidgets.value.filter(widget => !widget.lock && !widget.hidden).length < 3 }
-    : item)
+  menuListData.value.list = menuListData.value.list.map(item => {
+    if (item.type === 'paste') return { ...item, disabled: !dCopyElement.value.length }
+    if (item.type === 'distribute') {
+      const disabled = dSelectWidgets.value.filter(widget => !widget.lock && !widget.hidden).length < 3
+      return { ...item, disabled, hint: disabled ? i18n.global.t('business.menu.distributeHint') : undefined }
+    }
+    return item
+  })
   if ((e.target as HTMLElement).closest('#style-panel .layer-wrap')) {
     menuListData.value.list = [...menuListData.value.list, {
       type: 'show-all',
@@ -211,10 +214,12 @@ async function showMenu(e: MouseEvent, contextWidget: TdWidgetData | null = dAct
     }, {
       type: 'select-all',
       text: i18n.global.t('business.menu.selectAll'),
+      shortcut: `${primaryModifierLabel}+A`,
       disabled: !selectableWidgets.value.length,
     }, {
       type: 'deselect-all',
       text: i18n.global.t('business.menu.deselectAll'),
+      shortcut: 'Esc',
       disabled: !dSelectWidgets.value.length && (!dActiveElement.value || dActiveElement.value.uuid === '-1'),
     }, {
       type: 'invert-selection',
@@ -226,6 +231,7 @@ async function showMenu(e: MouseEvent, contextWidget: TdWidgetData | null = dAct
       disabled: !dWidgets.value.length,
     }]
   }
+  menuListData.value.list = organizeMenu(menuListData.value.list)
   showMenuBg.value = true
   menuListData.value.left = e.clientX
   menuListData.value.top = e.clientY
@@ -233,31 +239,32 @@ async function showMenu(e: MouseEvent, contextWidget: TdWidgetData | null = dAct
   const rect = menuList.value?.getBoundingClientRect()
   menuListData.value.left = Math.max(0, Math.min(e.clientX, window.innerWidth - (rect?.width || 170)))
   menuListData.value.top = Math.max(0, Math.min(e.clientY, window.innerHeight - (rect?.height || 150)))
+  menuList.value?.focus({ preventScroll: true })
 }
 
 function closeMenu() {
+  if (menuList.value?.contains(document.activeElement)) {
+    (document.activeElement as HTMLElement)?.blur()
+    if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true })
+  }
   showMenuBg.value = false
-  activeSubmenu.value = null
 }
 
-async function openSubmenu(item: TWidgetItemData, event: MouseEvent) {
-  if (item.disabled) {
-    activeSubmenu.value = null
-    return
-  }
-  activeSubmenu.value = item.children ? item.type : null
-  if (!item.children) return
-  const parent = event.currentTarget as HTMLElement
-  await nextTick()
-  const submenu = parent.querySelector<HTMLElement>('.submenu')
-  if (!submenu || activeSubmenu.value !== item.type) return
-  const rect = parent.getBoundingClientRect()
-  const width = submenu.offsetWidth
-  const left = rect.right + width > window.innerWidth ? rect.left - width + 4 : rect.right - 4
-  submenuPosition.value = {
-    left: Math.max(0, Math.min(left, window.innerWidth - width)) + 'px',
-    top: Math.max(0, Math.min(rect.top, window.innerHeight - submenu.offsetHeight)) + 'px',
-  }
+function menuKeydown(event: KeyboardEvent) {
+  if (event.key === 'Tab') { closeMenu(); return }
+  if (!menuList.value || event.target !== menuList.value || event.isComposing ||
+    !['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End', 'Enter', ' '].includes(event.key)) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (event.key === 'ArrowLeft') return
+  const items = Array.from(menuList.value.querySelectorAll<HTMLElement>(':scope > [role="menuitem"]:not([aria-disabled="true"])'))
+  const index = event.key === 'ArrowUp' || event.key === 'End' ? items.length - 1 : 0
+  items[index]?.focus({ preventScroll: true })
+}
+
+async function undoFeedback() {
+  closeMenu()
+  await undo()
 }
 
 function moveSelection(value: 1 | -1) {
@@ -279,6 +286,10 @@ function moveSelection(value: 1 | -1) {
 
 /** 点击菜单触发事件 */
 async function selectMenu(type: TWidgetItemData['type']) {
+  await run(type, () => performMenuAction(type))
+}
+
+async function performMenuAction(type: TWidgetItemData['type']) {
   if (type.startsWith('distribute-')) {
     widgetStore.distributeSelection(type.slice(11) as TDistributeAxis)
     closeMenu()
@@ -410,35 +421,15 @@ async function selectMenu(type: TWidgetItemData['type']) {
   position: fixed;
   inset: 0;
   z-index: 99999;
-  .menu-list, .submenu {
+  .menu-list {
     background-color: @color-white;
     box-shadow: 1px 0px 10px 3px rgba(0, 0, 0, 0.1);
     padding: 5px;
     position: absolute;
     width: 220px;
-    .menu-item {
-      cursor: pointer;
-      font-size: 14px;
-      line-height: 1;
-      padding: 5px 15px;
-      width: 100%;
-      white-space: nowrap;
-      &:hover {
-        background-color: #ececec;
-      }
-    }
-    .menu-item.disable-menu {
-      background-color: @color-white;
-      color: #aaaaaa;
-      cursor: not-allowed;
-    }
-  }
-  .submenu {
-    position: fixed;
-    width: 200px;
-  }
-  .submenu-arrow {
-    float: right;
+    margin: 0;
+    border-radius: 6px;
+    list-style: none;
   }
 }
 </style>

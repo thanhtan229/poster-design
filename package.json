@@ -22,6 +22,10 @@
     "v-build-hard": "cross-env NODE_ENV=production vue-tsc --noEmit && vite build",
     "tinix:test-ui": "node scripts/tinix-ui-test.cjs",
     "tinix:normalize-fonts": "node scripts/tinix-normalize-fonts.mjs",
+    "tinix:test-ui:selection": "node scripts/tinix-ui-test.cjs selection",
+    "tinix:test-ui:menu": "node scripts/tinix-ui-test.cjs menu",
+    "tinix:test-ui:arrangement": "node scripts/tinix-ui-test.cjs arrangement",
+    "tinix:test-ui:undo": "node scripts/tinix-ui-test.cjs undo",
     "tinix:test-font-ui": "node scripts/tinix-selftest/visual-font-ui.cjs"
   },
   "dependencies": {

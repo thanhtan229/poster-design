@@ -73,7 +73,11 @@ export default [
     info: `${ctrlKey} + G`,
   },
   {
+    feat: i18n.global.t('business.menu.selectAll'),
+    info: `${ctrlKey} + A`,
+  },
+  {
     feat: i18n.global.t('editor.shortcut.deselect'),
-    info: `ESC`,
+    info: `Esc`,
   },
 ]

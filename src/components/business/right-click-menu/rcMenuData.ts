@@ -21,10 +21,34 @@ export const menuList: TMenuItemData = {
 }
 
 export type TWidgetItemData = {
-  type: 'copy' | 'paste' | 'duplicate' | 'index-up' | 'index-down' | 'index-front' | 'index-back' | 'del' | 'delete-all' | 'group' | 'ungroup' | 'lock' | 'lock-all' | 'unlock' | 'unlock-all' | 'hide' | 'hide-all' | 'show' | 'show-all' | 'select-all' | 'deselect-all' | 'invert-selection' | 'align' | `align-${TUpdateAlignData['align']}` | 'distribute' | `distribute-${TDistributeAxis}`
+  type: 'copy' | 'paste' | 'duplicate' | 'index-up' | 'index-down' | 'index-front' | 'index-back' | 'del' | 'delete-all' | 'group' | 'ungroup' | 'lock' | 'lock-all' | 'unlock' | 'unlock-all' | 'hide' | 'hide-all' | 'show' | 'show-all' | 'select-all' | 'deselect-all' | 'invert-selection' | 'selection-menu' | 'arrange-menu' | 'visibility-menu' | 'locking-menu' | 'align' | `align-${TUpdateAlignData['align']}` | 'distribute' | `distribute-${TDistributeAxis}`
   text: string
   children?: TWidgetItemData[]
   disabled?: boolean
+  hint?: string
+  danger?: boolean
+  separatorBefore?: boolean
+  shortcut?: string
+}
+
+export function organizeMenu(items: TWidgetItemData[]): TWidgetItemData[] {
+  const find = (type: TWidgetItemData['type']) => items.find(item => item.type === type)
+  const result: TWidgetItemData[] = []
+  const add = (type: TWidgetItemData['type']) => { const item = find(type); if (item) result.push(item) }
+  const category = (type: TWidgetItemData['type'], label: string, types: TWidgetItemData['type'][]) => {
+    const children = types.map(find).filter((item): item is TWidgetItemData => !!item)
+    if (children.length) result.push({ type, text: i18n.global.t(label), children })
+  }
+  ;(['copy', 'paste', 'duplicate', 'group', 'ungroup'] as const).forEach(add)
+  category('selection-menu', 'business.menu.selectionMenu', ['select-all', 'deselect-all', 'invert-selection'])
+  category('arrange-menu', 'business.menu.arrangeMenu', ['index-up', 'index-down', 'index-front', 'index-back', 'align', 'distribute'])
+  category('visibility-menu', 'business.menu.visibilityMenu', ['hide', 'show', 'show-all', 'hide-all'])
+  category('locking-menu', 'business.menu.lock', ['lock', 'unlock', 'lock-all', 'unlock-all'])
+  for (const type of ['del', 'delete-all'] as const) {
+    const item = find(type)
+    if (item) result.push({ ...item, danger: true, separatorBefore: type === 'del' || !find('del') })
+  }
+  return result
 }
 
 export const widgetMenu: TWidgetItemData[] = [

@@ -13,10 +13,21 @@ const ops: any = {
   CREATE: 'add',
   REMOVE: 'remove',
 }
-let cloneData = ''
+export function historyPatches(before: any, after: any) {
+  const changes = diff(before, after)
+  const ordered = changes.filter(item => item.type !== 'REMOVE')
+    .concat(changes.filter(item => item.type === 'REMOVE').reverse())
+    .map(item => ({ ...item, op: ops[item.type] }))
+  let result: { patches: any[]; inversePatches: any[] } = { patches: [], inversePatches: [] }
+  produce(before, draft => { applyPatches(draft, ordered as any) }, (patches, inversePatches) => {
+    result = { patches, inversePatches }
+  })
+  return result
+}
 
 export default class {
   private notifi: any
+  private cloneData = ''
   constructor() { }
   /**
    * onmessage
@@ -27,29 +38,9 @@ export default class {
   public postMessage(e: any) {
     if (!e) return
     if (e.op === 'done') {
-      if (!cloneData) return
-      let fork = JSON.parse(cloneData)
-      let curArray = JSON.parse(e.data)
-      // 比较数据差异
-      let diffData: any = diff(fork, curArray)
-      // Array removals shift subsequent indexes. Apply them from the end so the
-      // generated redo patches represent the actual final state after bulk deletion.
-      diffData = diffData.filter((item: any) => item.type !== 'REMOVE')
-        .concat(diffData.filter((item: any) => item.type === 'REMOVE').reverse())
-      // 生成差分补丁
-      fork = produce(
-        fork,
-        (draft) => {
-          for (const d of diffData) {
-            d.op = ops[d.type]
-          }
-          draft = applyPatches(draft, diffData)
-        },
-        (patches, inversePatches) => {
-          this.notifi({ patches, inversePatches })
-        },
-      )
-      cloneData = ''
-    } else cloneData = e.data
+      if (!this.cloneData) return
+      this.notifi(historyPatches(JSON.parse(this.cloneData), JSON.parse(e.data)))
+      this.cloneData = ''
+    } else this.cloneData = e.data
   }
 }

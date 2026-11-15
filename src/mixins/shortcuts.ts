@@ -9,8 +9,7 @@ import keyCodeOptions from './methods/keyCodeOptions'
 import dealWithCtrl from './methods/dealWithCtrl'
 import { TControlStore } from '@/store/design/control'
 import { useControlStore, useWidgetStore } from '@/store'
-
-const ignoreNode = ['INPUT', 'TEXTAREA']
+import { isTextInput } from '@/common/methods/selectionShortcuts'
 
 let hadDown = false
 const appContainer: any = document.querySelector('#app')
@@ -21,8 +20,7 @@ const shortcuts = {
   methods: {
     handleKeydowm(store: TControlStore, checkCtrl: number | undefined, instance: any, dealCtrl: (e: any, instance: any) => void) {
       return (e: any) => {
-        const nodeName = e.target.nodeName
-        if (ignoreNode.indexOf(nodeName) !== -1 || (nodeName === 'DIV' && e.target.contentEditable === 'true')) {
+        if (e.defaultPrevented || isTextInput(e.target)) {
           return
         }
         // if (hadDown || this.showMenuBg) {

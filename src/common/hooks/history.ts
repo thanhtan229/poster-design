@@ -16,13 +16,19 @@ import { useHistoryStore, useWidgetStore } from '@/store'
 const blackClass: string[] = ['operation-item', 'icon-undo', 'icon-redo']
 const whiteKey: string[] = ['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', 'Backspace', 'Delete', 'v']
 
-const historyStore = useHistoryStore()
-const widgetStore = useWidgetStore()
 // const historyWorker = new WebWorker('history')
 const diffLayouts = new historyFactory()
 
 let processing = false
 let historyTimer: any = null
+
+/** Finish any earlier mouse gesture before an explicitly recorded menu command. */
+export function flushHistory() {
+  const widgetStore = useWidgetStore()
+  clearTimeout(historyTimer)
+  if (processing) diffLayouts.postMessage({ op: 'done', data: JSON.stringify(widgetStore.dLayouts) })
+  processing = false
+}
 
 function noPutHistory(target: any) {
   if (target.closest && target.closest('[data-photo-history]')) return true
@@ -31,6 +37,8 @@ function noPutHistory(target: any) {
 }
 
 export default () => {
+  const historyStore = useHistoryStore()
+  const widgetStore = useWidgetStore()
   // historyWorker.start(null, (changes: any) => {
   //   changes.patches.length > 0 && historyStore.changeHistory(changes)
   //   processing = false
