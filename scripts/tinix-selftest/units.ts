@@ -15,9 +15,9 @@ async function main() {
   check('30 cm @300 = 3543 px', cmToPx(30, 300) === 3543, cmToPx(30, 300))
   check('A4 21 × 29.7 cm @300 = 2480 × 3508 px', cmToPx(21, 300) === 2480 && cmToPx(29.7, 300) === 3508, [cmToPx(21, 300), cmToPx(29.7, 300)])
   check('3543 px @300 = 30.0 cm', pxToCm(3543, 300) === 30, pxToCm(3543, 300))
-  check('vòng cm → px → cm ổn định với mọi khổ in', PRINT_SIZES.every((s) => pxToCm(cmToPx(s.w, 300), 300) === s.w && pxToCm(cmToPx(s.h, 150), 150) === s.h), PRINT_SIZES.filter((s) => pxToCm(cmToPx(s.w, 300), 300) !== s.w).map((s) => s.key))
+  check('vòng cm → px → cm sai số tối đa 0,011 cm', PRINT_SIZES.every((s) => Math.abs(pxToCm(cmToPx(s.w, 300), 300) - s.w) <= 0.011 && Math.abs(pxToCm(cmToPx(s.h, 150), 150) - s.h) <= 0.011))
   check('DPI sai/rỗng → mặc định, bị kẹp 36..1200', clampDpi(0) === DEFAULT_DPI && clampDpi('x') === DEFAULT_DPI && clampDpi(5) === 36 && clampDpi(99999) === 1200 && clampDpi('150') === 150)
-  check('cảnh báo cạnh > 10000 và > 60 triệu điểm ảnh', sizeWarning(10001, 100) === 'side' && sizeWarning(8268, 11220) === 'side' && sizeWarning(7000, 9000) === 'pixels' && sizeWarning(3543, 4724) === '')
+  check('cảnh báo cạnh > 12000 và > 60 triệu điểm ảnh', sizeWarning(12001, 100) === 'side' && sizeWarning(8268, 11220) === 'pixels' && sizeWarning(7000, 9000) === 'pixels' && sizeWarning(3543, 4724) === '')
 
   console.log('Ghi DPI vào PNG (pHYs)')
   const base: Buffer = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#ff0000' } }).png().toBuffer()

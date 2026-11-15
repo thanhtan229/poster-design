@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..')
 const node = process.execPath
 
 const suites = [
+  { name: 'Thư viện kích thước canvas', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'canvas-sizes.ts'], cwd: root },
   { name: 'AI (nhà cung cấp giả)', args: [path.join(root, 'scripts/tinix-ai-selftest/index.cjs')], cwd: root },
   { name: 'Font', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'fonts.ts'], cwd: root },
   { name: 'Đơn vị cm/DPI + PNG DPI', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'units.ts'], cwd: root },

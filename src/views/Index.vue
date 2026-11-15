@@ -20,6 +20,7 @@
       <div class="top-nav-wrap">
         <div class="top-left">
           <div class="name" @click="jump2home">{{ state.APP_NAME }}</div>
+          <el-button class="canvas-library-button" plain type="primary" @click="canvasLibraryRef?.open()">Thư viện kích thước</el-button>
           <div class="operation">
             <div :class="['operation-item', { disable: !undoable }]" @click="undoable ? handleHistory('undo') : ''"><i class="iconfont icon-undo" /></div>
             <div :class="['operation-item', { disable: !redoable }]" @click="redoable ? handleHistory('redo') : ''"><i class="iconfont icon-redo" /></div>
@@ -88,6 +89,7 @@
     <Tour ref="tourRef" :steps="[ref1, ref2, ref3, ref4]" />
     <!-- 创建设计 -->
     <createDesign ref="createDesignRef" />
+    <createDesign ref="canvasLibraryRef" :params="dPage" library-mode />
     <!-- 登录 / 注册弹窗 -->
     <login-dialog ref="loginDialogRef" />
     <!-- 修改密码弹窗 -->
@@ -208,6 +210,7 @@ const optionsRef = ref<typeof HeaderOptions | null>(null)
 const zoomControlRef = ref<typeof zoomControl | null>(null)
 const controlStore = useControlStore()
 const createDesignRef: Ref<typeof createDesign | null> = ref(null)
+const canvasLibraryRef = ref<InstanceType<typeof createDesign> | null>(null)
 const aiAssistantRef: Ref<typeof AiAssistant | null> = ref(null)
 
 function openAiAssistant() {
@@ -367,6 +370,48 @@ defineExpose({
 
 <style lang="less" scoped>
 @import url('@/assets/styles/design.less');
+#page-design-index {
+  min-width: 0;
+  .top-nav {
+    height: auto;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+}
+#page-design-index .top-nav .top-nav-wrap {
+  position: relative;
+  height: auto;
+  min-height: 54px;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 8px;
+  .top-left { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; gap: 4px 0; }
+  .top-left .operation-item { padding: 8px; white-space: nowrap; }
+  .top-left .name { margin: 0 8px; }
+  .canvas-library-button { flex-shrink: 0; margin-left: 8px; }
+  :deep(.top-title) { flex: 1 1 140px; min-width: 0; padding-left: 0; }
+  :deep(.top-title .input-wrap) { width: 100%; }
+  :deep(.top-icon-wrap) {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-right: 0;
+  }
+  :deep(.top-icon-wrap .el-button) { margin-left: 0; flex-shrink: 0; transform: none; }
+  :deep(.top-icon-wrap .operation-item) { white-space: nowrap; }
+  :deep(.el-divider--vertical) { margin: 0 6px; }
+}
+@media (max-width: 1100px) {
+  #page-design-index .top-nav .top-nav-wrap {
+    :deep(.top-icon-wrap) { flex-basis: 100%; }
+    .canvas-library-button { margin-left: 4px; }
+  }
+}
 .user-name {
   display: flex;
   align-items: center;

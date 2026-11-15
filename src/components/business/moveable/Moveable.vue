@@ -178,7 +178,7 @@ watch(
   () => guidelines.value,
   (lines) => {
     if (!moveable) return
-    console.log(lines)
+    moveable.snappable = lines.verticalGuidelines.length > 0 || lines.horizontalGuidelines.length > 0
     moveable.verticalGuidelines = lines.verticalGuidelines
     moveable.horizontalGuidelines = lines.horizontalGuidelines
   }
@@ -278,6 +278,11 @@ onMounted(() => {
   // moveable = new Moveable(document.body, moveableOptions)
   const containerEl = document.querySelector('#main') as HTMLElement | SVGElement;
   moveable = new Moveable(containerEl, moveableOptions)
+  moveable.snapContainer = document.querySelector('.design-canvas') as HTMLElement
+  moveable.snapCenter = true
+  moveable.snapThreshold = 6
+  moveable.verticalGuidelines = guidelines.value.verticalGuidelines
+  moveable.horizontalGuidelines = guidelines.value.horizontalGuidelines
 
   const helper = new MoveableHelper()
 
@@ -301,6 +306,12 @@ onMounted(() => {
   moveable
   .on('dragStart', ({ inputEvent, target, stop }) => {
     if (!dActiveElement.value) return
+    if (moveable && moveable.snappable) {
+      moveable.elementGuidelines = dWidgets.value
+        .filter((w) => !w.hidden && w.uuid !== dActiveElement.value?.uuid && w.parent === '-1')
+        .map((w) => document.getElementById(w.uuid))
+        .filter((el): el is HTMLElement => !!el) as any
+    }
     if (inputEvent.target.nodeName === 'PRE') {
       dActiveElement.value.editable && stop()
     }
@@ -445,7 +456,7 @@ onMounted(() => {
     if (!moveable) return
     moveable.resizable = true
     // moveable.scalable = true
-    moveable.snappable = true
+    moveable.snappable = guidelines.value.verticalGuidelines.length > 0 || guidelines.value.horizontalGuidelines.length > 0
     if (e.lastEvent) {
       // setTimeout(() => {
       // if (this.dActiveElement.type === 'w-group') {
@@ -554,6 +565,14 @@ onMounted(() => {
         String(d) === '1,1' && (dActiveElement.value.fontSize = Number(dActiveElement.value.fontSize) * resetRatio)
       }
     } catch (err) {}
+  })
+  .on('dragGroupStart', (e) => {
+    if (!moveable || !moveable.snappable) return
+    const selected = new Set(e.targets.map((target: any) => target.getAttribute('data-uuid')))
+    moveable.elementGuidelines = dWidgets.value
+      .filter((w) => !w.hidden && !selected.has(w.uuid) && w.parent === '-1')
+      .map((w) => document.getElementById(w.uuid))
+      .filter((el): el is HTMLElement => !!el) as any
   })
   .on('dragGroup', (e) => {
     e.inputEvent.stopPropagation()

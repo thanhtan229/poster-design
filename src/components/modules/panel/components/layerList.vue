@@ -7,6 +7,11 @@
 -->
 <template>
   <ul class="widget-list">
+    <!-- [TINIX] Chọn nhiều lớp ảnh để đánh dấu khung khi sửa mẫu -->
+    <li v-if="tempEditing" class="slot-actions">
+      <button type="button" :disabled="!selectedSlots.length" @click="setSlots(true)">{{ $t('tinix.ui.photoAuto.danh_dau_nhieu') }}</button>
+      <button type="button" :disabled="!selectedSlots.length" @click="setSlots(false)">{{ $t('tinix.ui.photoAuto.bo_danh_dau') }}</button>
+    </li>
     <!-- <li v-for="widget in getWidgets" :key="widget.uuid" :class="['widget', { active: getIsActive(widget.uuid) }, 'item-one']" @click="selectLayer(widget)" @mouseover="hoverLayer(widget.uuid)" @mouseout="hoverLayer('-1')">
       <span v-show="widget.parent !== '-1'" :class="['widget-type icon', `sd-xiaji`]"></span>
       <img v-if="widget.imgUrl" class="widget-type widget-type__img" :src="widget.imgUrl" />
@@ -17,6 +22,7 @@
     <draggable v-model="widgets" group="type" item-key="uuid" v-bind="dragOptions" :move="onMove" @start="drag = true" @end="onDone">
       <template #item="{ element }">
         <li :class="['widget', { active: getIsActive(element.uuid), disable: !showItem(element) }, 'item-one']" @click="selectLayer(element)" @dblclick="startRename(element)" @mouseover="hoverLayer(element)" @mouseout="hoverLayer('-1')">
+          <input v-if="tempEditing && element.type === 'w-image'" v-model="selectedSlots" class="slot-select" type="checkbox" :value="element.uuid" @click.stop @mousedown.stop />
           <!-- <span v-show="+element.parent !== -1" :class="['widget-type icon', `sd-xiaji`]"></span> -->
           <span v-show="+element.parent !== -1" class="second-layer"></span>
           <img v-if="element.imgUrl" class="widget-type widget-type__img" :src="element.imgUrl" />
@@ -42,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import { useWidgetStore } from '@/store'
+import { useUserStore, useWidgetStore } from '@/store'
 import { TdWidgetData } from '@/store/design/widget'
 import { defineComponent, computed, reactive, ref, toRefs } from 'vue'
 
@@ -54,6 +60,16 @@ export default defineComponent({
   emits: ['change'],
   setup(props, context) {
     const widgetStore = useWidgetStore()
+    const tempEditing = computed(() => useUserStore().tempEditing)
+    const selectedSlots = ref<string[]>([])
+    const setSlots = (value: boolean) => {
+      for (const uuid of selectedSlots.value) {
+        if (widgetStore.dWidgets.some((w) => w.uuid === uuid && w.type === 'w-image')) {
+          widgetStore.updateWidgetData({ uuid, key: 'slot', value })
+        }
+      }
+      selectedSlots.value = []
+    }
     let widgets = ref<TdWidgetData[]>([])
     const state = reactive<{drag: boolean}>({
       drag: false,
@@ -174,7 +190,7 @@ export default defineComponent({
       widgetStore.updateWidgetData({ uuid: item.uuid, key: 'layerName', value: v === original ? '' : v })
     }
 
-    return { toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
+    return { tempEditing, selectedSlots, setSlots, toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
   },
   watch: {
     data: {
@@ -252,6 +268,8 @@ export default defineComponent({
   //   padding-left: 40px;
   // }
 }
+.slot-actions { display: flex; gap: 6px; padding: 8px; }
+.slot-select { position: relative; z-index: 2; margin-right: 6px; }
 
 .w-group {
   font-weight: 600;

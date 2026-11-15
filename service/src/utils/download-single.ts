@@ -21,7 +21,7 @@ const { executablePath } = require('../configs.ts')
 const forceTimeOut = 60 // 强制超时时间，单位：秒
 // 4K规格，总计约830万像素 3840 * 2160 2K规格，总计约830万像素 2048 * 1080
 // const maxPXs = 8294400 
-const maxPXs = 40000000 // [TINIX] was 4211840: single local user → keep print resolution (above this the dpr is lowered)
+const maxPXs = 80000000 // exported canvas keeps its original pixels up to the supported limit
 const maximum = 12000 // [TINIX] was 5000 → 10000 → 12000: trang PSD 8268×11220 bị cắt mất ~11% phía dưới ở mức 10000 (larger is clipped)
 
 export const saveScreenshot = async (url: string, { path, width, height, thumbPath, size = 0, quality = 0, prevent, ua, devices, scale, wait }: any) => {
@@ -31,6 +31,10 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     // 格式化浏览器宽高
     width = Number(width).toFixed(0)
     height = Number(height).toFixed(0)
+    if (Number(width) < 1 || Number(height) < 1 || Number(width) > maximum || Number(height) > maximum || Number(width) * Number(height) > maxPXs) {
+      reject(new Error('Kích thước xuất vượt giới hạn 12000 px mỗi cạnh hoặc 80 triệu pixel'))
+      return
+    }
 
     const puppeteerArgs = {
       // [TINIX] trước đây dùng dấu gạch ngang dài (–) nên Chrome mới coi tham số là địa chỉ web ('Multiple targets are not supported in headless mode'); dùng '--' chuẩn
@@ -66,7 +70,7 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     function limiter(w: number, h: number) {
       return w*h < maxPXs ? 1 : +(1/(w*h) * maxPXs).toFixed(2)
     }
-    page.setViewport({
+    await page.setViewport({
       width: Number(width) > maximum ? maximum : Number(width),
       height: Number(height) > maximum ? maximum : Number(height),
       deviceScaleFactor: !isNaN(scale) ? (+scale > 4 ? 4 : +scale) : limiter(Number(width), Number(height)),

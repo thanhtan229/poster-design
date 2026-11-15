@@ -45,6 +45,8 @@ export type TImageSetting = {
   slot?: boolean // [TINIX] khung ảnh của mẫu
   keepCover?: boolean // [TINIX] giữ ảnh phủ kín trang khi kéo
   fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
+  cropX?: number
+  cropY?: number
 }
 
 const setting: TImageSetting = {

@@ -33,6 +33,9 @@
     <div v-show="!collapsed" class="dock-tools" :style="{ height: TOOL_H + 'px' }">
       <span v-if="selected.length" class="sel-info">{{ $t('tinix.ui.photoAuto.da_chon_n', { n: selected.length }) }} <button type="button" class="lk" @click="clearSelection">{{ $t('tinix.ui.photoAuto.bo_chon') }}</button></span>
       <span v-else class="sel-hint">{{ $t('tinix.ui.photoAuto.huong_dan') }}</span>
+      <span data-photo-history><el-button size="small" type="primary" :disabled="!selected.length || changingPage" @click="addToCurrentPage">Thêm vào trang</el-button></span>
+      <span data-photo-history><el-button size="small" :disabled="!selectedPagePhotos.length || changingPage" @click="removeFromCurrentPage">Bỏ khỏi trang</el-button></span>
+      <span data-photo-history><el-button size="small" :disabled="changingPage" @click="changeLayout">Đổi bố cục</el-button></span>
       <span class="spacer" />
       <label class="auto-sw" :title="$t('tinix.ui.photoAuto.tip')">
         <el-switch :model-value="photoState.autoApply" size="small" @change="(v: any) => setAutoApply(!!v)" />
@@ -95,13 +98,13 @@ import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
 import i18n from '@/languages'
 import DragHelper from '@/common/hooks/dragHelper'
 import setImageData from '@/common/methods/DesignFeatures/setImage'
-import { placePhotos, rerollAutoTemplate } from '@/utils/tinix/photo-place'
+import { placePhotos, rerollAutoTemplate, changePagePhotos } from '@/utils/tinix/photo-place'
 import { ElSwitch } from 'element-plus'
 import eventBus from '@/utils/plugins/eventBus'
 import { collectUsedUrls, staticPathOf } from '@/utils/tinix/photo-source'
 import { usePanelResize } from '@/utils/tinix/panel-resize'
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result'
-import { useCanvasStore, useControlStore, useWidgetStore } from '@/store'
+import { useCanvasStore, useControlStore, useWidgetStore, useHistoryStore } from '@/store'
 import * as photosApi from '@/api/tinix-photos'
 import { photoState, reloadPhotos, placeValue, setAutoApply, setAutoCate, sortItems, toStripItems, uploadFiles, type StripItem } from '@/utils/tinix/photo-strip'
 import api from '@/api'
@@ -186,6 +189,43 @@ const clearSelection = () => {
   selected.value = []
   anchorKey = ''
 }
+const changingPage = ref(false)
+const pageLayout = ref<{ page: number; id: number } | null>(null)
+const selectedPagePhotos = computed(() => {
+  const chosen = widgetStore.dSelectWidgets.length ? widgetStore.dSelectWidgets : [widgetStore.dActiveElement]
+  return chosen.filter((w: any) => w && w.type === 'w-image' && (w.slot || w.keepCover || toStripItems().some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
+})
+async function changeCurrent(add: ReturnType<typeof placeValue>[], remove: string[], reroll = false) {
+  changingPage.value = true
+  const page = canvasStore.dCurrentPage
+  const before = JSON.stringify(widgetStore.dWidgets)
+  try {
+    if (photoState.autoApply || reroll) {
+      const previous = pageLayout.value?.page === page ? pageLayout.value.id : undefined
+      const id = await changePagePhotos(add, remove, reroll ? previous : undefined, previous)
+      pageLayout.value = { page, id }
+    } else {
+      if (remove.length) {
+        const ids = new Set(remove)
+        widgetStore.setDWidgets(widgetStore.dWidgets.filter((w) => !ids.has(w.uuid)))
+        widgetStore.selectWidget({ uuid: '-1' })
+        canvasStore.reChangeCanvas()
+      }
+      if (add.length) await placePhotos(add, false)
+    }
+    const after = JSON.stringify(widgetStore.dWidgets)
+    if (before !== after) useHistoryStore().changeHistory({
+      patches: [{ op: 'replace', path: [page, 'layers'], value: JSON.parse(after) }],
+      inversePatches: [{ op: 'replace', path: [page, 'layers'], value: JSON.parse(before) }],
+    })
+    clearSelection()
+  } catch (e: any) {
+    ElMessage.warning(e?.message || 'Không thể đổi bố cục ảnh.')
+  } finally { changingPage.value = false }
+}
+function addToCurrentPage() { return changeCurrent(selectedItems().map(placeValue), []) }
+function removeFromCurrentPage() { return changeCurrent([], selectedPagePhotos.value.map((w) => w.uuid)) }
+function changeLayout() { return changeCurrent([], [], true) }
 function select(e: MouseEvent, it: StripItem) {
   if (e.shiftKey && anchorKey) {
     const a = items.value.findIndex((x) => x.key === anchorKey)

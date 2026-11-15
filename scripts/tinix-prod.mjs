@@ -50,7 +50,7 @@ const env = {
   TINIX_DRAW_URL: `http://127.0.0.1:${port}/draw`, // trang vẽ để Puppeteer xuất ảnh
   TS_NODE_TRANSPILE_ONLY: 'true',
 }
-const child = spawn(`${npx} ts-node src/main.ts`, { cwd: path.join(root, 'service'), shell: true, env, stdio: 'inherit' })
+const child = spawn(`${npx} ts-node src/main.ts --serve-dist`, { cwd: path.join(root, 'service'), shell: true, env, stdio: 'inherit' })
 child.on('exit', (code) => process.exit(code ?? 0))
 const stop = () => {
   if (process.platform === 'win32') spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'])

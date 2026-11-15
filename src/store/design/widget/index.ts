@@ -32,6 +32,8 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   hidden?: boolean // [TINIX] lớp bị ẩn: không hiện trên canvas và không xuất ảnh
   origin?: { proxy: string; original: string } // [TINIX] lớp ảnh dùng ảnh nhẹ (imgUrl = proxy) trên canvas; xuất thì đổi sang original (ảnh gốc)
   slot?: boolean // [TINIX] (chỉ trong mẫu) lớp ảnh là KHUNG ẢNH: chỗ đặt ảnh khi "Tự áp dụng mẫu"
+  cropX?: number
+  cropY?: number
   keepCover?: boolean // [TINIX] lớp ảnh phủ kín trang: kéo di chuyển nhưng luôn phủ kín trang (mẫu 1 ảnh mặc định)
   layerName?: string // [TINIX] tên lớp do người dùng đặt (ưu tiên hơn chữ/tên mặc định)
   imgUrl?: string

@@ -25,6 +25,7 @@ let processing = false
 let historyTimer: any = null
 
 function noPutHistory(target: any) {
+  if (target.closest && target.closest('[data-photo-history]')) return true
   const classList = Array.from(target.classList)
   return classList.filter((v: any) => blackClass.includes(v)).length > 0
 }

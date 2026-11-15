@@ -41,6 +41,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { ElSelect, ElOption } from 'element-plus'
 import numberInput from '@/components/modules/settings/numberInput.vue'
 import i18n from '@/languages'
@@ -81,7 +82,8 @@ function onCmInput(key: 'width' | 'height', cm: number | string) {
   if (!isFinite(n) || n <= 0) return
   const px = cmToPx(n, dpi.value)
   if (px < 1) return
-  props.params[key] = Math.min(px, MAX_SIDE_PX)
+  if (px > MAX_SIDE_PX) { ElMessage.error('Vượt giới hạn 12000 px mỗi cạnh'); return }
+  props.params[key] = px
   props.params.dpi = dpi.value // lưu DPI cùng thiết kế để lần sau còn đúng cm
 }
 
@@ -89,6 +91,7 @@ function onCmInput(key: 'width' | 'height', cm: number | string) {
 function onDpiChange(v: any) {
   const nd = clampDpi(v)
   const w = wCm.value, h = hCm.value
+  if (cmToPx(w, nd) > MAX_SIDE_PX || cmToPx(h, nd) > MAX_SIDE_PX || cmToPx(w, nd)*cmToPx(h, nd) > 80000000) { ElMessage.error('DPI này vượt giới hạn canvas. Hãy chọn DPI thấp hơn.'); return }
   props.params.dpi = nd
   if (w > 0) props.params.width = Math.min(cmToPx(w, nd), MAX_SIDE_PX)
   if (h > 0) props.params.height = Math.min(cmToPx(h, nd), MAX_SIDE_PX)

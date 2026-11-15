@@ -77,6 +77,7 @@ export function getDetail(id: number, type: 0 | 1): any | null {
       height: row.height,
       state: row.state,
       type: row.type,
+      groups: getDB().prepare('SELECT category_id FROM template_group_links WHERE template_id = ? ORDER BY category_id').all(id).map((g: any) => g.category_id),
       data: designData,
     }
   } catch (e) {

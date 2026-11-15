@@ -7,7 +7,7 @@ export const DEFAULT_DPI = 300
 export const MIN_DPI = 36
 export const MAX_DPI = 1200
 /** Giới hạn mỗi cạnh canvas (khớp maxValue của ô nhập) */
-export const MAX_SIDE_PX = 10000
+export const MAX_SIDE_PX = 12000
 /** Trên ngưỡng này việc xuất ảnh dễ quá thời gian chờ của server (30 giây) */
 export const WARN_PIXELS = 60_000_000
 
@@ -23,7 +23,7 @@ export function cmToPx(cm: number, dpi: number): number {
 
 /** cm với 1 chữ số thập phân (đủ cho in ấn; px vẫn là nguồn sự thật) */
 export function pxToCm(px: number, dpi: number): number {
-  return Math.round(((Number(px) * CM_PER_INCH) / clampDpi(dpi)) * 10) / 10
+  return Math.round(((Number(px) * CM_PER_INCH) / clampDpi(dpi)) * 100) / 100
 }
 
 /** Kích thước vượt giới hạn cạnh / dễ quá tải khi xuất */

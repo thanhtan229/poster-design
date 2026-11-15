@@ -191,6 +191,11 @@ export default {
     xuat_xong: 'Đã xuất PSD',
     xuat_loi: 'Xuất PSD không thành công: {msg}',
   },
+  batch: {
+    title: 'Xuất nhiều trang', select: 'Chọn trang cần xuất', page: 'Trang {n}', format: 'Định dạng', resolution: 'Độ phân giải',
+    progress: 'Đã xử lý {n}/{total} trang', failed: 'Trang lỗi: {pages}', retry: 'Xuất lại trang lỗi', start: 'Xuất ảnh',
+    design_only: 'Hãy lưu mẫu thành thiết kế trước khi xuất nhiều trang.', save_failed: 'Không lưu được thiết kế để xuất.',
+  },
   logo: {
     logo_studio: 'Logo studio',
     tai_logo_len: 'Tải logo lên',
@@ -226,6 +231,8 @@ export default {
     khong_tim_thay_trang_thiet: 'Không tìm thấy trang thiết kế',
   },
   photoAuto: {
+    danh_dau_nhieu: 'Đánh dấu khung ảnh',
+    bo_danh_dau: 'Bỏ đánh dấu khung',
     font_du_phong: 'Không tải được một số font; ảnh xuất dùng font dự phòng.',
     xuat_loi: 'Không xuất được ảnh. Vui lòng thử lại.',
     huong_dan: 'Bấm ảnh để chọn (Ctrl: thêm/bớt, Shift: chọn dải). Kéo ảnh vào trang hoặc chuột phải → Thêm vào trang.',

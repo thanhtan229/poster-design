@@ -22,10 +22,26 @@
       <div class="divide__line">|</div>
     </template>
     <watermark-option style="margin-right: 0.5rem" />
+    <el-button plain @click="openBatch">{{ i18t('tinix.ui.batch.title') }}</el-button>
     <slot />
   </div>
   <!-- 生成图片组件 -->
   <SaveImage ref="canvasImage" />
+  <el-dialog v-model="batch.open" :title="i18t('tinix.ui.batch.title')" width="480px" append-to-body>
+    <p>{{ i18t('tinix.ui.batch.select') }}</p>
+    <el-checkbox-group v-model="batch.pages" :disabled="batch.running">
+      <el-checkbox v-for="(_, i) in dLayouts" :key="i" :label="i">{{ i18t('tinix.ui.batch.page', { n: i + 1 }) }}</el-checkbox>
+    </el-checkbox-group>
+    <p>{{ i18t('tinix.ui.batch.format') }} <el-select v-model="batch.format" :disabled="batch.running"><el-option label="PNG" value="png" /><el-option label="JPG" value="jpg" /></el-select></p>
+    <p>{{ i18t('tinix.ui.batch.resolution') }} <el-select v-model="batch.scale" :disabled="batch.running"><el-option label="100%" :value="1" /><el-option label="50%" :value="0.5" /></el-select></p>
+    <p v-if="batch.running || batch.done">{{ i18t('tinix.ui.batch.progress', { n: batch.done, total: batch.total }) }}</p>
+    <p v-if="batch.failed.length">{{ i18t('tinix.ui.batch.failed', { pages: batch.failed.map((n) => n + 1).join(', ') }) }}</p>
+    <template #footer>
+      <el-button :disabled="batch.running" @click="batch.open = false">{{ i18t('common.cancel') }}</el-button>
+      <el-button v-if="batch.failed.length" :disabled="batch.running" @click="runBatch(true)">{{ i18t('tinix.ui.batch.retry') }}</el-button>
+      <el-button type="primary" :disabled="batch.running || !batch.pages.length" @click="runBatch(false)">{{ i18t('tinix.ui.batch.start') }}</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -33,6 +49,7 @@ import i18n from '@/languages'
 import api from '@/api'
 import * as adminApi from '@/api/admin' // [TINIX]
 import { reactive, ref } from 'vue'
+import { ElCheckbox, ElCheckboxGroup, ElOption, ElSelect } from 'element-plus' // [TINIX] điều khiển chọn trang và định dạng
 import { useRoute, useRouter } from 'vue-router'
 import _dl from '@/common/methods/download'
 import useNotification from '@/common/methods/notification'
@@ -44,6 +61,7 @@ import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
 import { clampDpi, DEFAULT_DPI } from '@/utils/tinix/units' // [TINIX]
 import { withPngDpi } from '@/utils/tinix/png-dpi' // [TINIX]
+import { zipImages } from '@/utils/tinix/zip' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 type TProps = {
@@ -84,6 +102,62 @@ const state = reactive<TState>({
   title: '',
   loading: false,
 })
+
+// [TINIX] Xuất tuần tự để tránh các lần chụp dùng chung tệp ảnh tạm trên server.
+const batch = reactive({ open: false, running: false, pages: [] as number[], failed: [] as number[], done: 0, total: 0, format: 'png', scale: 1 })
+function openBatch() {
+  batch.pages = dLayouts.value.map((_, i) => i)
+  batch.failed = []
+  batch.done = 0
+  batch.open = true
+}
+async function convertBatchImage(blob: Blob, format: string, scale: number, dpi: number): Promise<Blob> {
+  const image = await createImageBitmap(blob)
+  try {
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale))
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas unavailable')
+    if (format === 'jpg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height) }
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+    const result = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95))
+    if (!result) throw new Error('Image encoding failed')
+    return format === 'png' ? withPngDpi(result, dpi) : result
+  } finally { image.close() }
+}
+async function runBatch(retry: boolean) {
+  if (batch.running) return
+  const pages = (retry ? batch.failed : batch.pages).slice().sort((a, b) => a - b)
+  batch.running = true; batch.failed = []; batch.done = 0; batch.total = pages.length
+  const files: Array<{ name: string; blob: Blob }> = []
+  try {
+    if (tempEditing.value) throw new Error(i18t('tinix.ui.batch.design_only'))
+    const id = await save(true)
+    if (!id) throw new Error(i18t('tinix.ui.batch.save_failed'))
+    for (const index of pages) {
+      try {
+        const page = dLayouts.value[index]?.global
+        if (!page) throw new Error('Page unavailable')
+        const url = api.home.download({ id, width: page.width, height: page.height, index, dpi: clampDpi(page.dpi || DEFAULT_DPI), token: localStorage.getItem('xp_token') || '' })
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 90000)
+        let response: Response
+        try { response = await fetch(url, { signal: controller.signal }) } finally { clearTimeout(timer) }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        let blob = await response.blob()
+        const signature = new Uint8Array(await blob.slice(0, 8).arrayBuffer())
+        if (signature[0] !== 137 || signature[1] !== 80 || signature[2] !== 78 || signature[3] !== 71) throw new Error('Invalid PNG')
+        if (batch.format === 'jpg' || batch.scale !== 1) blob = await convertBatchImage(blob, batch.format, batch.scale, clampDpi(page.dpi || DEFAULT_DPI))
+        files.push({ name: `trang-${String(index + 1).padStart(3, '0')}.${batch.format}`, blob })
+      } catch (e) { batch.failed.push(index) }
+      batch.done++
+    }
+    if (files.length) downloadBlob(await zipImages(files), `${state.title || 'TinixPoster'}-trang.zip`)
+  } catch (e: any) {
+    batch.failed = pages
+    useNotification(i18t('tinix.ui.photoAuto.xuat_loi'), e?.message || '', { type: 'error' })
+  } finally { batch.running = false }
+}
 
 // 保存作品，返回保存后的作品 id（新建作品时返回创建后的新 id；失败返回 undefined）
 async function save(silent: boolean = false) {

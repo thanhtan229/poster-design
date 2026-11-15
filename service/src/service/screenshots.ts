@@ -54,8 +54,11 @@ export async function screenshots(req: any, res: any) {
     const targetUrl = url + id + `${tempType ? '&tempType=' + tempType : ''}` + `&index=${index}${renderToken}` + (type === 'file' ? '&hq=1' : '') // [TINIX] xuất thành phẩm dùng ảnh gốc
     // /draw 会在模板、图片和字体完成加载后主动调用 loadFinishToInject；
     // 禁止 load 事件提前截图，否则会得到空白页面。
-    queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true })
+    const sign = uuid()
+    req._queueSign = sign
+    queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true }, sign)
       .then(() => {
+        if (res.headersSent) return
         type === 'file' && dpi && setPngFileDpi(path, Number(dpi)) // [TINIX] ảnh tải về mang đúng DPI (khổ in)
         res.setHeader('Content-Type', 'image/jpg')
         // const stats = fs.statSync(path)
@@ -64,7 +67,7 @@ export async function screenshots(req: any, res: any) {
         type === 'file' || !thumbPath ? res.sendFile(path) : res.sendFile(thumbPath)
       })
       .catch((e: any) => {
-        res.json({ code: 500, msg: 'Lỗi khi tạo ảnh' })
+        if (!res.headersSent) res.status(500).json({ code: 500, msg: 'Lỗi khi tạo ảnh' })
       })
   } else {
     res.json({ code: 500, msg: 'Thiếu tham số, vui lòng kiểm tra' })
@@ -109,12 +112,10 @@ export async function printscreen(req: any, res: any) {
           // const stats = fs.statSync(path)
           // res.setHeader('Cache-Control', stats.size)
           res.json({ code: 200, msg: 'Chụp ảnh thành công', data: { path, thumbPath } })
-        } else {
-          res.json({ code: 200, msg: 'ok' })
         }
       })
       .catch((e: any) => {
-        res.json({ code: 500, msg: 'Lỗi khi tạo ảnh!' })
+        if (!res.headersSent) res.status(500).json({ code: 500, msg: 'Lỗi khi tạo ảnh!' })
       })
   } else {
     res.json({ code: 500, msg: 'Thiếu tham số, vui lòng kiểm tra' })

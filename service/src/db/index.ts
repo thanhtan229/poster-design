@@ -17,6 +17,7 @@ import path from 'path'
 const Database = require('better-sqlite3')
 import bootstrapDatabase from './bootstrap'
 import { migrateTinix } from '../tinix/db/migrate' // [TINIX]
+import { migrateCanvasSizes } from '../tinix/canvasSizes'
 
 let instance: any = null
 
@@ -39,6 +40,7 @@ export function initDB(): void {
   createTables(instance)
   bootstrapDatabase(instance)
   migrateTinix(instance) // [TINIX] font metadata columns + ai_jobs table
+  migrateCanvasSizes(instance)
 }
 
 function createTables(db: any): void {

@@ -15,8 +15,8 @@ import i18n from '@/languages'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
 import setImageData from '@/common/methods/DesignFeatures/setImage'
 import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
-import { applyImageSource } from './photo-source'
-import { photoState } from './photo-strip'
+import { applyImageSource, staticPathOf } from './photo-source'
+import { photoState, toStripItems, placeValue } from './photo-strip'
 
 const nanoid = customAlphabet('1234567890abcdef', 12)
 const t = (k: string, p?: any) => i18n.global.t(k, p) as string
@@ -182,8 +182,8 @@ export function placeGrid(values: PhotoValue[]) {
 // ───────────────────────── Tự áp dụng mẫu ─────────────────────────
 const recent = new Map<string, number[]>() // các mẫu vừa chọn theo (nhóm, số ảnh) để tránh lặp lại liền kề
 
-async function listCandidates(cate: string, n: number): Promise<Array<{ id: number; title: string }>> {
-  const all: Array<{ id: number; title: string }> = []
+async function listCandidates(cate: string, n: number): Promise<Array<{ id: number; title: string; groups?: number[] }>> {
+  const all: Array<{ id: number; title: string; groups?: number[] }> = []
   const pageSize = 100 // API giới hạn mỗi trang 100 mẫu
   for (let page = 1; ; page++) {
     const res: any = await api.home.getTempList({ search: '', page, pageSize, cate: cate || '', photos: String(n) } as any)
@@ -263,6 +263,72 @@ async function applyTemplateToPage(pageIndex: number, tpl: { id: number; title: 
 async function loadTemplate(id: number): Promise<{ id: number; title: string; data: string } | null> {
   const res: any = await api.home.getTempDetail({ id } as any)
   return res && res.data ? { id, title: res.title || '', data: res.data } : null
+}
+
+/** Thay bố cục ảnh của trang hiện tại, giữ nguyên các lớp khác. */
+export async function changePagePhotos(add: PhotoValue[], removeIds: string[], avoidId?: number, currentId?: number): Promise<number> {
+  const store = useWidgetStore()
+  const canvas = useCanvasStore()
+  const pageIndex = canvas.dCurrentPage
+  const before = JSON.stringify(store.dWidgets)
+  const items = toStripItems()
+  const photoWidgets = store.dWidgets.filter((w: any) => w.type === 'w-image' && (w.slot || w.keepCover || items.some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
+  if (photoWidgets.some((w) => w.parent && w.parent !== '-1')) throw new Error('Ảnh trong nhóm cần được bỏ nhóm trước khi đổi bố cục.')
+  const remaining = photoWidgets.filter((w) => !removeIds.includes(w.uuid))
+  const photos: PhotoValue[] = remaining.map((w): PhotoValue => {
+    const it = items.find((p) => [p.web, p.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || '')))
+    return it ? placeValue(it) : { url: w.imgUrl, hq: w.origin?.original, width: Number(w.width) || 1, height: Number(w.height) || 1 }
+  }).concat(add)
+  if (!photos.length) throw new Error('Trang cần giữ ít nhất một ảnh.')
+  const candidates = await listCandidates(photoState.autoCate, photos.length)
+  const originalId = currentId || Number((canvas.dPage as any).tinixAuto) || 0
+  const original: any = originalId ? await api.home.getTempDetail({ id: originalId }) : null
+  const groups: number[] = Array.isArray(original?.groups) ? original.groups : []
+  const pw = Number(canvas.dPage.width), ph = Number(canvas.dPage.height)
+  let slots: any[] | null = null
+  let chosenId = 0
+  let best = Infinity
+  let bestGroup = -1
+  for (const candidate of candidates) {
+    const tpl = await loadTemplate(candidate.id)
+    if (!tpl || candidate.id === avoidId) continue
+    let parsed: any
+    try { parsed = JSON.parse(tpl.data) } catch { continue }
+    const page = Array.isArray(parsed) ? parsed[0]?.global : parsed?.page
+    const layers = Array.isArray(parsed) ? parsed[0]?.layers : parsed?.widgets
+    if (!page || !Array.isArray(layers) || !(page.width > 0 && page.height > 0)) continue
+    if (Math.abs(page.width / page.height - pw / ph) > 0.01) continue
+    const found = layers.filter((w: any) => w.type === 'w-image' && w.slot === true && !w.hidden && w.width > 0 && w.height > 0)
+    if (found.length === photos.length && found.every((w: any) => !w.parent || w.parent === '-1')) {
+      const score = found.reduce((sum: number, w: any, i: number) => sum + Math.abs(Math.log((w.width / w.height) / (photos[i].width / (photos[i].height || 1)))), 0)
+      const sameGroup = groups.some((g) => (candidate.groups || []).includes(g)) ? 1 : 0
+      if (sameGroup > bestGroup || (sameGroup === bestGroup && score < best)) {
+        best = score
+        bestGroup = sameGroup
+        chosenId = candidate.id
+        slots = found.map((w: any) => ({ left: w.left * pw / page.width, top: w.top * ph / page.height, width: w.width * pw / page.width, height: w.height * ph / page.height }))
+      }
+    }
+    if (photos.length === 1 && found.length === 0 && !slots) { chosenId = candidate.id; slots = [{ left: 0, top: 0, width: pw, height: ph }] }
+  }
+  if (!slots) throw new Error(`Không tìm thấy mẫu phù hợp có ${photos.length} khung ảnh.`)
+  if (canvas.dCurrentPage !== pageIndex || JSON.stringify(store.dWidgets) !== before) throw new Error('Trang đã thay đổi trong lúc tải mẫu. Hãy thử lại.')
+  const next = photos.map((p, i) => {
+    const w = remaining[i] ? JSON.parse(JSON.stringify(remaining[i])) : newImageWidget(p, slots![i])
+    if (!remaining[i]) w.uuid = nanoid()
+    Object.assign(w, slots![i], { slot: true, keepCover: false, fit: 'cover', cropX: 50, cropY: 50, zoom: 1, transform: '' })
+    applyImageSource(w, p)
+    return w
+  })
+  const ids = new Set(photoWidgets.map((w) => w.uuid))
+  const first = store.dWidgets.findIndex((w) => ids.has(w.uuid))
+  const layers = store.dWidgets.filter((w) => !ids.has(w.uuid))
+  layers.splice(first < 0 ? 0 : first, 0, ...next)
+  store.setDWidgets(layers)
+  store.selectWidget({ uuid: '-1' })
+  canvas.reChangeCanvas()
+  photoState.lastAuto = null
+  return chosenId
 }
 
 /**

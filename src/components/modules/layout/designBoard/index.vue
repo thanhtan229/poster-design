@@ -42,6 +42,7 @@
             @drop="drop($event)"
             @mouseup="drop($event)"
           >
+            <CanvasRuler v-if="needTools" :page="dPage" :zoom="dZoom" />
             <!-- <grid-size /> -->
             <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools }, { 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
               <template v-if="layer.isContainer">
@@ -80,6 +81,7 @@ import { storeToRefs } from 'pinia'
 import { TPageState } from '@/store/design/canvas/d'
 import resizePage from './comps/resize.vue'
 import watermark from './comps/pageWatermark.vue'
+import CanvasRuler from './comps/CanvasRuler.vue'
 import { TdWidgetData } from '@/store/design/widget'
 import { useRoute } from 'vue-router'
 const route = useRoute()

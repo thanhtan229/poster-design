@@ -25,6 +25,7 @@ import path from 'path' // [TINIX]
 import router from './control/router'
 import tinixAiRouter from './tinix/ai/routes' // [TINIX]
 import tinixPhotosRouter from './tinix/photos/routes' // [TINIX]
+import canvasSizesRouter from './tinix/canvasSizes'
 import { filePath, servicePort } from './configs'
 import handleTimeout from './utils/timeout'
 import { initDB } from './db'
@@ -69,10 +70,11 @@ app.use(bodyParser.json({ limit: '100mb' }))
 app.use(router)
 app.use(tinixAiRouter) // [TINIX] /api/tinix/ai/*
 app.use(tinixPhotosRouter) // [TINIX] /api/tinix/photos/*
+app.use(canvasSizesRouter)
 
 // [TINIX] Chế độ production một cổng (npm run tinix:prod): service tự phục vụ bản build của frontend (../dist) + SPA fallback.
 // Đặt SAU các router nên mọi route API vẫn được ưu tiên.
-if (process.env.TINIX_SERVE_DIST === '1') {
+if (process.argv.includes('--serve-dist') || process.env.TINIX_SERVE_DIST === '1') {
   const dist = path.resolve(process.cwd(), '..', 'dist')
   if (fs.existsSync(path.join(dist, 'index.html'))) {
     // middleware gốc gắn Content-Type: application/json cho mọi phản hồi → gỡ để static/sendFile tự đặt đúng loại (JS module cần MIME JavaScript)

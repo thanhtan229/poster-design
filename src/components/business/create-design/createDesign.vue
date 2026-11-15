@@ -7,26 +7,14 @@
 -->
 <template>
   <div>
-    <el-dialog v-model="dialogVisible" center destroy-on-close :align-center="false" :title="params ? $t('business.create.editSize') : $t('business.create.newBlank')" width="380" draggable>
+    <el-dialog v-model="dialogVisible" center destroy-on-close :align-center="false" :title="libraryMode ? 'Thư viện kích thước' : params ? $t('business.create.editSize') : $t('business.create.newBlank')" width="780" draggable>
       <!-- <el-divider content-position="left">自定义尺寸</el-divider> -->
       <el-checkbox v-if="params" v-model="isAdaptive" :label="$t('business.create.adaptive')" size="large" />
       <sizeEditor :params="page" :class="params ? 'editor-mode' : 'add-mode'">
         <el-button @click="finish" plain size="large" type="primary">{{ params ? $t('business.create.apply') : $t('business.create.create') }}</el-button>
       </sizeEditor>
-      <!-- [TINIX] Khổ in thông dụng (cm): bấm để áp dụng theo DPI đang chọn -->
-      <el-divider content-position="left">{{ $t('tinix.ui.sizeUnit.kho_in') }}</el-divider>
-      <ul class="print-list">
-        <li @click="applyPrintSize(s)" class="chip" v-for="s in PRINT_SIZES" :key="'p' + s.key">{{ s.key }} <span class="info">{{ s.w }} × {{ s.h }}</span></li>
-      </ul>
-      <el-divider content-position="left">{{ $t('business.create.recommended') }}</el-divider>
-      <ul class="pre-list">
-        <li @click="applySize(s)" class="item" v-for="(s, si) in sizes" :key="'s' + si">
-          <i :class="['icon', s.icon]" /> {{ s.name }} <span class="info">{{ s.width }} × {{ s.height }} px</span>
-        </li>
-      </ul>
-      <!-- <template #footer>
-        <el-button type="primary" @click="dialogVisible = false"> Confirm </el-button>
-      </template> -->
+      <el-button size="small" @click="swapSize">Đảo rộng / cao</el-button>
+      <canvas-sizes ref="sizesRef" :page="page" :unit="unit" :manage-initial="libraryMode" @choose="chooseSize" />
     </el-dialog>
   </div>
 </template>
@@ -36,9 +24,10 @@ import { ref, Ref } from 'vue'
 import { ElCheckbox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import sizeEditor from './sizeEditor.vue'
-import sizes from '@/assets/data/PageSizeData'
+import CanvasSizes from './CanvasSizes.vue'
+import { ElMessage } from 'element-plus'
 import { useWidgetStore, useControlStore } from '@/store';
-import { PRINT_SIZES, cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units' // [TINIX]
+import { cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units' // [TINIX]
 
 const router = useRouter()
 const controlStore = useControlStore()
@@ -46,6 +35,7 @@ const widgetStore = useWidgetStore()
 const props = withDefaults(
   defineProps<{
     params?: any
+    libraryMode?: boolean
   }>(),
   {
     params: undefined,
@@ -54,20 +44,10 @@ const props = withDefaults(
 const dialogVisible: Ref<boolean> = ref(false)
 const isAdaptive: Ref<boolean> = ref(true)
 const page: any = ref({ width: 100, height: 100, dpi: DEFAULT_DPI }) // [TINIX] dpi
-const { setUnit } = useSizeUnit()
-
-const applySize = ({ width, height }: any) => {
-  page.value.width = width
-  page.value.height = height
-}
-// [TINIX] khổ in cm → px theo DPI hiện tại của hộp thoại, chuyển ô nhập sang cm để thấy đúng khổ
-const applyPrintSize = ({ w, h }: { w: number; h: number }) => {
-  const dpi = clampDpi(page.value.dpi)
-  page.value.dpi = dpi
-  page.value.width = Math.min(cmToPx(w, dpi), MAX_SIDE_PX)
-  page.value.height = Math.min(cmToPx(h, dpi), MAX_SIDE_PX)
-  setUnit('cm')
-}
+const { setUnit, unit } = useSizeUnit()
+const sizesRef = ref<any>()
+function swapSize() { const w = page.value.width; page.value.width = page.value.height; page.value.height = w }
+function chooseSize(s: any) { const dpi = s.unit === 'cm' ? clampDpi(s.dpi) : clampDpi(page.value.dpi); const w = s.unit === 'cm' ? cmToPx(s.width,dpi) : s.width; const h = s.unit === 'cm' ? cmToPx(s.height,dpi) : s.height; if (w > MAX_SIDE_PX || h > MAX_SIDE_PX || w*h > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas; hãy giảm DPI hoặc kích thước.'); return } page.value.dpi=dpi; page.value.width=w; page.value.height=h; setUnit(s.unit) }
 
 const open = () => {
   controlStore.setShowMoveable(false) // 清理掉上一次的选择框
@@ -77,16 +57,19 @@ const open = () => {
   }
   page.value.dpi = clampDpi(props.params?.dpi || DEFAULT_DPI) // [TINIX]
   dialogVisible.value = true
+  sizesRef.value?.load()
 }
 
 function finish() {
   const { width, height } = page.value
+  if (!width || !height || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 80 triệu pixel).'); return }
   if (props.params) {
     const lastPageData = JSON.parse(JSON.stringify(props.params))
     props.params.width = width
     props.params.height = height
     props.params.dpi = clampDpi(page.value.dpi) // [TINIX]
     isAdaptive.value && widgetStore.autoResizeAll(lastPageData)
+    dialogVisible.value = false
   } else window.open(router.resolve(`/home?mode=create&w_h=${width}*${height}&dpi=${clampDpi(page.value.dpi)}`).href, '_blank')
 }
 
