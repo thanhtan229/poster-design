@@ -42,7 +42,7 @@ const handle = (fn: (body: any, req: any) => Promise<any>) => async (req: any, r
 router.post(`${PREFIX}/suggest-text`, requireLogin, handle((b) => suggestText({ image: b.image, width: Number(b.width) || 0, height: Number(b.height) || 0, lang: b.lang })))
 router.post(`${PREFIX}/rewrite-text`, requireLogin, handle((b) => rewriteText({ image: b.image, layers: Array.isArray(b.layers) ? b.layers : [], lang: b.lang })))
 router.post(`${PREFIX}/find-font`, requireLogin, handle((b) => findFont({ image: b.image })))
-router.post(`${PREFIX}/match-font`, requireLogin, handle(b=>matchFontFromReference({reference:b.reference,text:b.text,bbox:b.bbox,fontFamily:b.fontFamily,weight:b.weight,italic:b.italic})))
+router.post(`${PREFIX}/match-font`, requireLogin, handle(b=>matchFontFromReference({reference:b.reference,text:b.text,referenceText:b.referenceText,bbox:b.bbox,fontFamily:b.fontFamily,weight:b.weight,italic:b.italic})))
 router.post(`${PREFIX}/rebuild`, requireLogin, handle((b) => rebuildFromReference({ reference: b.reference, photo: b.photo, lang: b.lang, mode: b.mode })))
 router.post(`${PREFIX}/tag-fonts`, requireLogin, handle((b) => (b.mode === 'vision' ? tagFontsFromPreview({ limit: Number(b.limit) || undefined, ids: Array.isArray(b.ids) ? b.ids : undefined }) : tagFonts({ all: !!b.all })))) // [TINIX] mode:'vision' = nhìn ảnh xem trước
 router.get(`${PREFIX}/jobs`, requireLogin, handle(async (_b, req) => ({ list: listJobs(Number(req.query.limit) || 30, req.query.kind ? String(req.query.kind) : undefined) })))

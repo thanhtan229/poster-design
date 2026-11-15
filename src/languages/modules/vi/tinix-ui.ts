@@ -1,7 +1,12 @@
 // [TINIX] Chuỗi giao diện của code TinixPoster (Trợ lý AI, lưu thành mẫu...). Tạo bằng công cụ trích xuất; sửa tay được.
 export default {
   visualFont: {
-    auto:'Tự so khớp ảnh chữ sau phân tích',cost:'Mỗi khối chữ dùng thêm hai lượt AI: phân tích nét và so sánh bản render. Chi phí ghi vào lịch sử.',
+    review:'Các cách đánh giá chưa thống nhất hoặc nét chữ chưa đủ rõ. Font hiện tại được giữ nguyên; hãy chọn bản chữ gần mẫu nhất.',detail:'Xem so sánh chi tiết ký tự',rank:'Theo nét: #{shape} · AI: #{ai} · Chi tiết: #{detail}',
+    editCrop:'Chỉnh vùng chữ và nội dung mẫu',cropHint:'Kéo trên ảnh để khoanh lại vùng chữ. Có thể nhập X/Y/W/H theo phần trăm.',
+    sourceText:'Chữ trong ảnh mẫu',sourceHint:'Sửa chữ AI đọc sai hoặc để trống để AI tự đọc. Không thay nội dung chữ trong thiết kế.',
+    caution:'Đây là lựa chọn gần giống. Độ tin cậy AI chưa bảo đảm đúng font gốc; hãy kiểm tra bản chữ trước khi áp dụng.',resetCrop:'Khôi phục vùng chữ ban đầu',edited:'Vùng chữ đã thay đổi; hãy so khớp lại.',
+
+    auto:'Tự so khớp ảnh chữ sau phân tích',cost:'Mỗi khối chữ dùng 2–3 lượt AI: phân tích nét, so sánh và kiểm tra chi tiết ứng viên gần nhất. Chi phí ghi vào lịch sử.',
     match:'Tìm font gần mẫu',matching:'Đang so sánh ảnh chữ…',all:'So khớp các khối chưa khóa',lock:'Giữ font đã chọn',alternatives:'Font gần mẫu',
     confidence:'Độ tin cậy do AI đánh giá',low:'Chưa đủ chắc chắn — hãy xem các bản chữ trước khi áp dụng.',crop:'Vùng chữ trong mẫu',choose:'Dùng font này',
     failed:'Không so khớp được. Font hiện tại được giữ nguyên.',progress:'Đang so khớp khối {current}/{total}',selected:'Đang dùng',

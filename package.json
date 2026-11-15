@@ -26,7 +26,10 @@
     "tinix:test-ui:menu": "node scripts/tinix-ui-test.cjs menu",
     "tinix:test-ui:arrangement": "node scripts/tinix-ui-test.cjs arrangement",
     "tinix:test-ui:undo": "node scripts/tinix-ui-test.cjs undo",
-    "tinix:test-font-ui": "node scripts/tinix-selftest/visual-font-ui.cjs"
+    "tinix:test-font-ui": "node scripts/tinix-selftest/visual-font-ui.cjs",
+    "tinix:font-quality-expanded": "node scripts/tinix-font-quality-expanded.cjs",
+    "tinix:font-quality-fixtures": "node scripts/tinix-font-quality-fixtures.cjs",
+    "tinix:font-quality": "node scripts/tinix-font-quality.cjs"
   },
   "dependencies": {
     "@bunnio/rembg-web": "^1.0.2",

@@ -54,6 +54,6 @@ export const getUsage = (p: { month?: string } = {}) => fetch<{ month: string; j
 export const getSettings = () => fetch<TAiSettings | TErr>('api/tinix/ai/settings', {}, 'get')
 export const saveSettings = (p: Partial<TAiSettings>) => fetch<TAiSettings | TErr>('api/tinix/ai/settings', p, 'post')
 
-export type TVisualFontCandidate={fontClass:TFontClass;weight:number;italic:boolean;preview:string}
-export type TVisualFontMatch={candidates:TVisualFontCandidate[];confidence:number;reason:string;observedText:string;referenceCrop:string;compared:number;jobIds:number[];model:string}
-export const matchFontImage=(p:{reference:string;text:string;bbox:{x:number;y:number;w:number;h:number};fontFamily?:string;weight?:number;italic?:boolean})=>fetch<TVisualFontMatch|TErr>('api/tinix/ai/match-font',{...p,...slow},'post',{}, {timeout:240000})
+export type TVisualFontCandidate={comparisonLabel?:string;fontClass:TFontClass;weight:number;italic:boolean;preview:string;letterSpacing?:number;shapeRank?:number;aiRank?:number|null;detailRank?:number|null;combinedScore?:number}
+export type TVisualFontMatch={candidates:TVisualFontCandidate[];confidence:number;reason:string;observedText:string;referenceCrop:string;compared:number;jobIds:number[];model:string;needsReview?:boolean;canAutoApply?:boolean;disagreement?:boolean;detailPreview?:string;detailLabels?:Array<{label:string;name:string}>;algorithm?:string}
+export const matchFontImage=(p:{reference:string;text:string;referenceText?:string;bbox:{x:number;y:number;w:number;h:number};fontFamily?:string;weight?:number;italic?:boolean})=>fetch<TVisualFontMatch|TErr>('api/tinix/ai/match-font',{...p,...slow},'post',{}, {timeout:240000})
