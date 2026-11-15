@@ -19,7 +19,8 @@
     "dev": "cross-env NODE_ENV=development vite",
     "build": "cross-env NODE_ENV=production && vite build",
     "v-build": "cross-env NODE_ENV=production && vite build",
-    "v-build-hard": "cross-env NODE_ENV=production vue-tsc --noEmit && vite build"
+    "v-build-hard": "cross-env NODE_ENV=production vue-tsc --noEmit && vite build",
+    "tinix:test-ui": "node scripts/tinix-ui-test.cjs"
   },
   "dependencies": {
     "@bunnio/rembg-web": "^1.0.2",

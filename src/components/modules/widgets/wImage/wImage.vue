@@ -204,7 +204,7 @@ function touchstart(e: MouseEvent) {
 
 // Marked photo frames pan their contents by default; Shift moves the frame itself.
 function startFramePan(e: MouseEvent) {
-  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || widgetStore.dSelectWidgets.length > 1 || props.params.lock || props.params.fit !== 'cover' || !(props.params.slot || props.params.linkedPhotoId) || controlStore.dDraging || controlStore.dSpaceDown || isDraw.value) return
+  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || widgetStore.dSelectWidgets.length > 1 || props.params.lock || props.params.fit !== 'cover' || (props.params.frameDragMode === 'frame' && !cropEdit.value) || controlStore.dDraging || controlStore.dSpaceDown || isDraw.value) return
   if (e.shiftKey) {
     // Shift normally selects multiple layers; inside one photo frame it moves the frame.
     controlStore.updateAltDown(false)

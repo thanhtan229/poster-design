@@ -7,6 +7,7 @@
 -->
 <template>
   <div class="board-shell">
+    <TemplatePhotoStatus v-if="needTools" />
     <div v-if="needTools" id="tinix-ruler-toolbar" />
     <div id="main">
     <div id="page-design" ref="page_design" :style="{ paddingTop: dPaddingTop + 'px', minWidth:  (dPage.width * dZoom) / 100 + (padding ?? dPresetPadding) * 2 + 'px' }">
@@ -72,6 +73,7 @@
 </template>
 
 <script lang="ts" setup>
+import TemplatePhotoStatus from './comps/TemplatePhotoStatus.vue'
 import { computed, onMounted } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'

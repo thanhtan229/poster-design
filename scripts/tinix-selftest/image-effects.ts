@@ -14,3 +14,11 @@ main.origin={proxy:'new',original:'original'};swapToOriginalInData(layers);asser
 assert.equal(resolveLinkedImage({uuid:'x',linkedPhotoId:'missing'},layers).uuid,'x')
 const cycle:any[]=[{uuid:'a',linkedPhotoId:'b'},{uuid:'b',linkedPhotoId:'a'}];assert.ok(resolveLinkedImage(cycle[0],cycle))
 console.log('PASS appearance defaults, linked slot count, replace, HQ export, remap, missing/cyclic links')
+
+import { photoRole, templatePhotoStatus } from '../../src/utils/tinix/template-photo'
+assert.equal(photoRole({slot:true}),'main')
+assert.equal(photoRole({slot:true,linkedPhotoId:'main'}),'linked')
+assert.equal(templatePhotoStatus([{uuid:'main',type:'w-image',slot:true},{uuid:'bg',type:'w-image',linkedPhotoId:'main'}]).count,1)
+assert.equal(templatePhotoStatus([{type:'w-image',linkedPhotoId:'missing'}]).issues.length,1)
+assert.equal(templatePhotoStatus([{uuid:'main',type:'w-image',slot:true,hidden:true},{type:'w-image',linkedPhotoId:'main'}]).issues.length,1)
+console.log('PASS template roles and missing/hidden source diagnostics')

@@ -20,7 +20,6 @@
         <!-- <el-button size="mini" style="width: 100%; margin-top: 0.5rem" plain @click="openCropper">替换图片</el-button> -->
         <el-button style="width: 100%; margin-bottom: 12px" plain :disabled="!!state.innerElement.linkedPhotoId" @click="openPicBox">{{ $t('editor.image.replace') }}</el-button>
         <p v-if="state.innerElement.linkedPhotoId" style="font-size:12px;color:#64748b">Thay ảnh ở khung chính, hoặc tách liên kết để dùng ảnh riêng.</p>
-        <p v-if="(state.innerElement.slot || state.innerElement.linkedPhotoId) && state.innerElement.fit === 'cover'" style="font-size:12px;line-height:1.5;color:#64748b">Kéo ảnh để căn trong khung. Giữ Shift khi kéo để di chuyển cả khung. Ảnh chỉ dịch chuyển theo chiều có phần dư.</p>
         <div class="options">
           <el-button v-if="state.innerElement.cropEdit" plain type="primary" @click="imgCrop(false)">{{ $t('editor.image.done') }}</el-button>
           <el-button v-else plain type="primary" @click="imgCrop(true)"><i class="icon sd-caijian" /> {{ $t('editor.image.crop') }}</el-button>
@@ -30,11 +29,7 @@
           </uploader> -->
           <el-button size="small" disabled plain @click="openCropper">{{ $t('editor.image.beautify') }}</el-button>
         </div>
-        <!-- [TINIX] chỉ khi sửa mẫu: đánh dấu lớp ảnh là KHUNG ẢNH (chỗ đặt ảnh khi "Tự áp dụng mẫu") -->
-        <div v-if="tempEditing && !state.innerElement.linkedPhotoId" class="tinix-slot-box">
-          <el-checkbox :model-value="!!state.innerElement.slot" @change="(v: any) => finish('slot', !!v as any)">{{ $t('tinix.ui.photoAuto.khung_anh') }}</el-checkbox>
-          <div :class="['tinix-slot-hint', { suggest: looksLikeSlot }]">{{ looksLikeSlot ? $t('tinix.ui.photoAuto.goi_y_khung') : $t('tinix.ui.photoAuto.khung_mo_ta') }}</div>
-        </div>
+        <ImageFramePanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
         <ImageEffectsPanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
         <container-wrap @change="changeContainer" />
         <div class="slide-wrap">
@@ -66,6 +61,7 @@
 <script lang="ts" setup>
 // 图片组件样式
 // const NAME = 'w-image-style'
+import ImageFramePanel from './ImageFramePanel.vue'
 import ImageEffectsPanel from './ImageEffectsPanel.vue'
 import i18n from '@/languages'
 import { nextTick, reactive, ref, watch, onBeforeUnmount } from 'vue'

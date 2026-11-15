@@ -32,6 +32,7 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   hidden?: boolean // [TINIX] lớp bị ẩn: không hiện trên canvas và không xuất ảnh
   origin?: { proxy: string; original: string } // [TINIX] lớp ảnh dùng ảnh nhẹ (imgUrl = proxy) trên canvas; xuất thì đổi sang original (ảnh gốc)
   slot?: boolean // [TINIX] (chỉ trong mẫu) lớp ảnh là KHUNG ẢNH: chỗ đặt ảnh khi "Tự áp dụng mẫu"
+  frameDragMode?: 'pan' | 'frame'
   effects?: import('@/utils/tinix/image-effects').ImageEffects
   linkedPhotoId?: string
   cropX?: number

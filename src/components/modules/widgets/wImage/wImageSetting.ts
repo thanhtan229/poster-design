@@ -41,6 +41,7 @@ export type TImageSetting = {
     ratio: number
     left: number
   }
+  frameDragMode?: 'pan' | 'frame'
   effects?: Partial<ImageEffects>
   linkedPhotoId?: string
   cropEdit?: boolean
