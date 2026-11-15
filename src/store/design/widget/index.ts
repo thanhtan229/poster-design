@@ -16,9 +16,9 @@ import { addGroup } from "./actions/group";
 import { setTemplate } from "./actions/template";
 import { copyWidget, pasteWidget, duplicateWidget } from "./actions/clone";
 import { TSelectWidgetData, TselectItem, selectItem, selectWidget, selectWidgetsInOut } from "./actions/select";
-import { TUpdateAlignData, updateAlign } from "./actions/align";
+import { TUpdateAlignData, TDistributeAxis, updateAlign, alignSelection, distributeSelection } from "./actions/align";
 // import { TWidgetJsonData, widgetJsonData } from "./getter";
-import { TupdateLayerIndexData, ungroup, updateLayerIndex } from "./actions/layer";
+import { TupdateLayerIndexData, TMoveLayersToEdgeData, moveLayersToEdge, ungroup, updateLayerIndex } from "./actions/layer";
 import pageDefault from "../canvas/page-default";
 import { TCanvasStore } from "../canvas";
 
@@ -127,8 +127,11 @@ type TAction = {
   selectWidgetsInOut: (data: TSelectWidgetData) => void
   /** updateAlign */
   updateAlign: (data: TUpdateAlignData) => void
+  alignSelection: (align: TUpdateAlignData['align']) => void
+  distributeSelection: (axis: TDistributeAxis) => void
   /** updateLayerIndex */
   updateLayerIndex: (data: TupdateLayerIndexData) => void
+  moveLayersToEdge: (data: TMoveLayersToEdgeData) => void
   /** ungroup */
   ungroup: (uuid: string) => void
   /** 设置拖拽时在哪个图层 */
@@ -200,7 +203,10 @@ const WidgetStore = defineStore<"widgetStore", TWidgetState, TGetter, TAction>("
     selectWidget(data) { selectWidget(this, data) },
     selectWidgetsInOut(data) { selectWidgetsInOut(this, data) },
     updateAlign(data) { updateAlign(this, data) },
+    alignSelection(align) { alignSelection(this, align) },
+    distributeSelection(axis) { distributeSelection(this, axis) },
     updateLayerIndex(data) { updateLayerIndex(this, data) },
+    moveLayersToEdge(data) { moveLayersToEdge(this, data) },
     ungroup(uuid) { ungroup(this, uuid) },
     setDropOver(uuid) { setDropOver(this, uuid) },
     setSelectItem(data: TselectItem) { selectItem(this, data) },

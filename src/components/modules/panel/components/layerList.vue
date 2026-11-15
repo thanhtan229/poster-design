@@ -21,7 +21,7 @@
     </li> -->
     <draggable v-model="widgets" group="type" item-key="uuid" v-bind="dragOptions" :move="onMove" @start="drag = true" @end="onDone">
       <template #item="{ element }">
-        <li :class="['widget', { active: getIsActive(element.uuid), disable: !showItem(element) }, 'item-one']" @click="selectLayer(element)" @dblclick="startRename(element)" @mouseover="hoverLayer(element)" @mouseout="hoverLayer('-1')">
+        <li :class="['widget', { active: getIsActive(element.uuid), disable: !showItem(element) }, 'item-one']" :data-uuid="element.uuid" :data-type="element.type" @click="selectLayer(element)" @dblclick="startRename(element)" @mouseover="hoverLayer(element)" @mouseout="hoverLayer('-1')">
           <input v-if="tempEditing && element.type === 'w-image'" v-model="selectedSlots" class="slot-select" type="checkbox" :value="element.uuid" @click.stop @mousedown.stop />
           <!-- <span v-show="+element.parent !== -1" :class="['widget-type icon', `sd-xiaji`]"></span> -->
           <span v-show="+element.parent !== -1" class="second-layer"></span>

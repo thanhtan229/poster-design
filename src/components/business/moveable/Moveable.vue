@@ -15,6 +15,7 @@ import Moveable, { EVENTS } from 'moveable' // PROPERTIES, METHODS,
 import MoveableHelper from 'moveable-helper'
 // import { setTransformAttribute } from '@/common/methods/handleTransform'
 import useSelecto from './Selecto'
+import useCtrlMarquee from './CtrlMarquee'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useWidgetStore, useForceStore, useHistoryStore } from '@/store'
 
@@ -40,6 +41,8 @@ watch(
       return
     }
     if (!moveable) return
+    // A marquee owns the group target; selecting the page must not replace it.
+    if (dSelectWidgets.value.length > 1) return
     // 选中非面板 并且不是组合内的元素
     if (Number(val.uuid) != -1) {
       await nextTick()
@@ -78,7 +81,7 @@ watch(
       moveable.target = `[id="empty"]`
       if (moveable.target !== `[id="empty"]`) {
         setTimeout(() => {
-          if (!moveable) return
+          if (!moveable || dSelectWidgets.value.length || dActiveElement.value?.uuid !== '-1') return
           moveable.target = `[id="empty"]`
         }, 210)
       }
@@ -125,11 +128,13 @@ watch(
 watch(
   () => updateSelect.value,
   () => {
-    const items = widgetStore.dSelectWidgets
     setTimeout(async () => {
       if (!moveable) return
+      const items = widgetStore.dSelectWidgets
+      if (!items.length) return
       moveable.updateRect()
       await nextTick()
+      document.querySelectorAll('.widget-selected').forEach(el => el.classList.remove('widget-selected'))
       for (let i = 0; i < items.length; i++) {
         console.log(items[i].uuid)
         document.getElementById(items[i].uuid)?.classList.add('widget-selected')
@@ -152,11 +157,17 @@ watch(
   () => dSelectWidgets.value,
   (items) => {
     if (!moveable) return
+    // Locking the selection must also remove the group overlay and its drag target.
+    if (!items.length && dActiveElement.value?.uuid === '-1') {
+      moveable.target = document.getElementById('empty')
+      return
+    }
     const alt = dAltDown.value
     // if (items.length > 1) {
     //   console.log('打开组合面板')
     // }
-    if (alt) {
+    if (alt || items.length > 1) {
+      document.querySelectorAll('.widget-selected').forEach(el => el.classList.remove('widget-selected'))
       for (let i = 0; i < items.length; i++) {
         document.getElementById(items[i].uuid)?.classList.add('widget-selected')
       }
@@ -655,6 +666,7 @@ onMounted(() => {
 
   // -- 选择功能 Start --
   useSelecto(moveable)
+  useCtrlMarquee(moveable)
   // -- 选择功能 END --
 
 })

@@ -61,6 +61,14 @@ export default [
     info: `${ctrlKey} / Shift + ${i18n.global.t('editor.shortcut.click')}`,
   },
   {
+    feat: i18n.global.t('editor.shortcut.marquee'),
+    info: `Ctrl + ${i18n.global.t('editor.shortcut.mouseDrag')}`,
+  },
+  {
+    feat: i18n.global.t('editor.shortcut.marqueeAdd'),
+    info: `Ctrl + Shift + ${i18n.global.t('editor.shortcut.mouseDrag')}`,
+  },
+  {
     feat: i18n.global.t('editor.shortcut.group'),
     info: `${ctrlKey} + G`,
   },

@@ -204,14 +204,15 @@ export function deleteWidget(store: TWidgetStore) {
 
   let count = 0 // 记录容器里的组件数量
   if (selectWidgets.length !== 0) {
-    for (let i = 0; i < selectWidgets.length; ++i) {
-      const uuid = selectWidgets[i].uuid
-      const index = widgets.findIndex((item) => item.uuid === uuid)
-      widgets.splice(index, 1)
-      // try {
-      //   // 清除掉可能存在的中框
-      //   document.getElementById(uuid)?.classList.remove('widget-selected')
-      // } catch (e) {}
+    const ids = new Set(selectWidgets.map(item => item.uuid))
+    // Include children of selected groups without leaving orphan layers behind.
+    let previousSize = -1
+    while (previousSize !== ids.size) {
+      previousSize = ids.size
+      widgets.forEach(item => { if (item.parent && ids.has(item.parent)) ids.add(item.uuid) })
+    }
+    for (let i = widgets.length - 1; i >= 0; --i) {
+      if (ids.has(widgets[i].uuid)) widgets.splice(i, 1)
     }
     store.dSelectWidgets = []
     store.selectWidget({

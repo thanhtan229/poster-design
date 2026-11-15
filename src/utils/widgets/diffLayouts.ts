@@ -32,6 +32,10 @@ export default class {
       let curArray = JSON.parse(e.data)
       // 比较数据差异
       let diffData: any = diff(fork, curArray)
+      // Array removals shift subsequent indexes. Apply them from the end so the
+      // generated redo patches represent the actual final state after bulk deletion.
+      diffData = diffData.filter((item: any) => item.type !== 'REMOVE')
+        .concat(diffData.filter((item: any) => item.type === 'REMOVE').reverse())
       // 生成差分补丁
       fork = produce(
         fork,
