@@ -1,3 +1,4 @@
+import { syncLinkedImages } from '@/utils/tinix/image-effects'
 /*
  * @Author: Jeremy Yu
  * @Date: 2024-03-28 21:00:00
@@ -127,6 +128,7 @@ export function updateWidgetData(store: TWidgetStore, { uuid, key, value }: TUpd
         break
     }
     ;(widget[key] as TUpdateWidgetPayload['value']) = value
+    if (key === 'imgUrl' || key === 'origin') syncLinkedImages(store.dWidgets)
   }
 }
 
@@ -254,6 +256,11 @@ export function deleteWidget(store: TWidgetStore) {
     }
   }
 
+  // A linked backdrop belongs to its photo; deleting that photo removes the backdrop too.
+  for (let i = widgets.length - 1; i >= 0; i--) {
+    if (widgets[i].linkedPhotoId && !widgets.some(w => w.uuid === widgets[i].linkedPhotoId)) widgets.splice(i, 1)
+  }
+
   if (count === 0) {
     // 重置 activeElement
     const pageStore = useCanvasStore()
@@ -298,6 +305,7 @@ export function setDLayouts(state: TWidgetStore, data: any[]) {
 }
 
 export function updateDWidgets(state: TWidgetStore) {
+  syncLinkedImages(state.dWidgets)
   const pageStore = useCanvasStore()
   const { dCurrentPage } = pageStore
   state.dLayouts[dCurrentPage].layers = state.dWidgets

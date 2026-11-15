@@ -14,7 +14,7 @@ import { TInitResize, TSize, TdResizePayload, dResize, initDResize, resize, auto
 import { TUpdateWidgetMultiplePayload, TUpdateWidgetPayload, TsetWidgetStyleData, addWidget, deleteWidget, setDWidgets, updateDWidgets, setWidgetStyle, updateWidgetData, updateWidgetMultiple, lockWidgets, setDLayouts } from "./actions/widget";
 import { addGroup } from "./actions/group";
 import { setTemplate } from "./actions/template";
-import { copyWidget, pasteWidget } from "./actions/clone";
+import { copyWidget, pasteWidget, duplicateWidget } from "./actions/clone";
 import { TSelectWidgetData, TselectItem, selectItem, selectWidget, selectWidgetsInOut } from "./actions/select";
 import { TUpdateAlignData, updateAlign } from "./actions/align";
 // import { TWidgetJsonData, widgetJsonData } from "./getter";
@@ -32,6 +32,8 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   hidden?: boolean // [TINIX] lớp bị ẩn: không hiện trên canvas và không xuất ảnh
   origin?: { proxy: string; original: string } // [TINIX] lớp ảnh dùng ảnh nhẹ (imgUrl = proxy) trên canvas; xuất thì đổi sang original (ảnh gốc)
   slot?: boolean // [TINIX] (chỉ trong mẫu) lớp ảnh là KHUNG ẢNH: chỗ đặt ảnh khi "Tự áp dụng mẫu"
+  effects?: import('@/utils/tinix/image-effects').ImageEffects
+  linkedPhotoId?: string
   cropX?: number
   cropY?: number
   keepCover?: boolean // [TINIX] lớp ảnh phủ kín trang: kéo di chuyển nhưng luôn phủ kín trang (mẫu 1 ảnh mặc định)
@@ -117,6 +119,7 @@ type TAction = {
   deleteWidget: () => void
   /** 拷贝组件 */
   copyWidget: () => void
+  duplicateWidget: () => void
   /** 粘贴组件 */
   pasteWidget: () => void
   selectWidget: (data: TSelectWidgetData) => void
@@ -192,6 +195,7 @@ const WidgetStore = defineStore<"widgetStore", TWidgetState, TGetter, TAction>("
     setTemplate(template) { setTemplate(this, template) },
     deleteWidget() { deleteWidget(this) },
     copyWidget() { copyWidget(this) },
+    duplicateWidget() { duplicateWidget(this) },
     pasteWidget() { pasteWidget(this) },
     selectWidget(data) { selectWidget(this, data) },
     selectWidgetsInOut(data) { selectWidgetsInOut(this, data) },

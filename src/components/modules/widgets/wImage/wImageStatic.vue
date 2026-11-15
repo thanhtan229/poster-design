@@ -15,17 +15,23 @@
       width: params.width + 'px',
       height: params.height + 'px',
       opacity: params.opacity,
+      ...imageFrameStyle(params),
     }"
   >
     <div :style="{ transform: params.flip ? `rotate${params.flip}(180deg)` : undefined, borderRadius: params.radius + 'px', '-webkit-mask-image': `${params.mask ? `url('${params.mask}')` : 'initial'}` }" :class="['img__box', { mask: params.mask }]">
-      <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${params.imgUrl}') ${params.sliceData.left} round` }"></div>
-      <img v-else ref="targetRef" class="target" :style="{ transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', transform: params.transform || undefined, objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="params.imgUrl" /> <!-- [TINIX] giữ vùng cắt của ảnh khi vẽ trang tĩnh -->
+      <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${source.imgUrl}') ${params.sliceData.left} round` }"></div>
+      <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', transform: params.transform || undefined, objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ vùng cắt của ảnh khi vẽ trang tĩnh -->
     </div>
+    <ImageAppearance :image="params" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { CSSProperties, reactive, ref } from 'vue'
+import ImageAppearance from './ImageAppearance.vue'
+import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
+
+import { CSSProperties, computed, reactive, ref } from 'vue'
+import { useWidgetStore } from '@/store'
 import setting from "./wImageSetting"
 
 type TProps = {
@@ -50,6 +56,7 @@ type TState = {
 }
 
 const props = defineProps<TProps>()
+const source = computed(() => resolveLinkedImage(props.params, useWidgetStore().dWidgets))
 const state = reactive<TState>({
   position: 'absolute', // 'absolute'relative
   editBoxStyle: {
@@ -77,6 +84,7 @@ const targetRef = ref<HTMLImageElement | null>(null)
   -webkit-mask-position: center;
 }
 .img__box {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;

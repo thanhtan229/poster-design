@@ -1,3 +1,4 @@
+import type { ImageEffects } from '@/utils/tinix/image-effects'
 import i18n from '@/languages'
 /*
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -40,6 +41,8 @@ export type TImageSetting = {
     ratio: number
     left: number
   }
+  effects?: Partial<ImageEffects>
+  linkedPhotoId?: string
   cropEdit?: boolean
   origin?: { proxy: string; original: string } // [TINIX] ảnh gốc dùng khi xuất (imgUrl đang là bản nhẹ)
   slot?: boolean // [TINIX] khung ảnh của mẫu

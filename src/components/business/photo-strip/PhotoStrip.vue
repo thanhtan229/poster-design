@@ -138,7 +138,7 @@ const usedCounts = computed(() => {
   for (const l of layouts.value as any[]) {
     if (l.global && l.global.backgroundImage) m.set(staticPathOf(l.global.backgroundImage), (m.get(staticPathOf(l.global.backgroundImage)) || 0) + 1)
     for (const w of l.layers || []) {
-      if (!w || !w.imgUrl) continue
+      if (!w || !w.imgUrl || w.linkedPhotoId) continue
       const k = staticPathOf(w.imgUrl)
       m.set(k, (m.get(k) || 0) + 1)
     }
@@ -193,7 +193,7 @@ const changingPage = ref(false)
 const pageLayout = ref<{ page: number; id: number } | null>(null)
 const selectedPagePhotos = computed(() => {
   const chosen = widgetStore.dSelectWidgets.length ? widgetStore.dSelectWidgets : [widgetStore.dActiveElement]
-  return chosen.filter((w: any) => w && w.type === 'w-image' && (w.slot || w.keepCover || toStripItems().some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
+  return chosen.filter((w: any) => w && w.type === 'w-image' && !w.linkedPhotoId && (w.slot || w.keepCover || toStripItems().some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
 })
 async function changeCurrent(add: ReturnType<typeof placeValue>[], remove: string[], reroll = false) {
   changingPage.value = true
@@ -207,7 +207,7 @@ async function changeCurrent(add: ReturnType<typeof placeValue>[], remove: strin
     } else {
       if (remove.length) {
         const ids = new Set(remove)
-        widgetStore.setDWidgets(widgetStore.dWidgets.filter((w) => !ids.has(w.uuid)))
+        widgetStore.setDWidgets(widgetStore.dWidgets.filter((w) => !ids.has(w.uuid) && !(w.linkedPhotoId && ids.has(w.linkedPhotoId))))
         widgetStore.selectWidget({ uuid: '-1' })
         canvasStore.reChangeCanvas()
       }

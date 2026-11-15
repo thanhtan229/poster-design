@@ -20,6 +20,7 @@
       width: params.width + 'px',
       height: params.height + 'px',
       opacity: params.opacity,
+      ...imageFrameStyle(params),
     }"
   >
     <div
@@ -29,12 +30,13 @@
       :style="state.editBoxStyle"
       class="svg__edit__wrap"
     >
-      <img class="edit__model" :src="params.imgUrl" />
+      <img class="edit__model" :src="source.imgUrl" />
     </div>
     <div :style="{ transform: params.flip ? `rotate${params.flip}(180deg)` : undefined, borderRadius: params.radius + 'px', '-webkit-mask-image': `${params.mask ? `url('${params.mask}')` : 'initial'}` }" :class="['img__box', { mask: params.mask }]">
-      <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${params.imgUrl}') ${params.sliceData.left} round` }"></div>
-      <img v-else ref="targetRef" class="target" :style="{ transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="params.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
+      <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${source.imgUrl}') ${params.sliceData.left} round` }"></div>
+      <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
     </div>
+    <ImageAppearance :image="params" />
     <div v-if="isMask" class="drop__mask">
       <div putIn="true" :style="{ fontSize: params.width / 12 + 'px' }" class="drop__btn">{{ $t('editor.image.dropHere') }}</div>
     </div>
@@ -42,6 +44,9 @@
 </template>
 
 <script lang="ts" setup>
+import ImageAppearance from './ImageAppearance.vue'
+import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
+
 // 图片组件
 // const NAME = 'w-image'
 import { CSSProperties, StyleValue, computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
@@ -75,6 +80,7 @@ type TState = {
 }
 
 const props = defineProps<TProps>()
+const source = computed(() => resolveLinkedImage(props.params, useWidgetStore().dWidgets))
 const state = reactive<TState>({
   position: 'absolute', // 'absolute'relative
   editBoxStyle: {
@@ -198,7 +204,7 @@ function touchstart(e: MouseEvent) {
 
 // Marked photo frames pan their contents by default; Shift moves the frame itself.
 function startFramePan(e: MouseEvent) {
-  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || widgetStore.dSelectWidgets.length > 1 || props.params.lock || props.params.fit !== 'cover' || !props.params.slot || controlStore.dDraging || controlStore.dSpaceDown || isDraw.value) return
+  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || widgetStore.dSelectWidgets.length > 1 || props.params.lock || props.params.fit !== 'cover' || !(props.params.slot || props.params.linkedPhotoId) || controlStore.dDraging || controlStore.dSpaceDown || isDraw.value) return
   if (e.shiftKey) {
     // Shift normally selects multiple layers; inside one photo frame it moves the frame.
     controlStore.updateAltDown(false)
@@ -403,6 +409,7 @@ function lockOthers(isCrop: boolean) {
 }
 
 .img__box {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;

@@ -241,7 +241,7 @@ async function drop(e: MouseEvent) {
     const bounds = canvas?.getBoundingClientRect()
     const inCanvas = bounds && e.clientX >= bounds.left && e.clientX <= bounds.right && e.clientY >= bounds.top && e.clientY <= bounds.bottom
     const slot = inCanvas && [...dWidgets.value].reverse().find((w: any) => {
-      if (w.type !== 'w-image' || !w.slot || w.hidden || w.lock) return false
+      if (w.type !== 'w-image' || !w.slot || w.linkedPhotoId || w.hidden || w.lock) return false
       const r = document.getElementById(w.uuid)?.getBoundingClientRect()
       return r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
     })

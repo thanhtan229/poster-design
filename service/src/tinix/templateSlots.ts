@@ -16,7 +16,7 @@ export function countPhotoSlots(data: string): number {
   }
   const layers: any[] = Array.isArray(d) ? (d[0] && d[0].layers) || [] : Array.isArray(d && d.widgets) ? d.widgets : []
   let n = 0
-  for (const w of layers) if (w && w.type === 'w-image' && w.slot === true && !w.hidden) n++
+  for (const w of layers) if (w && w.type === 'w-image' && w.slot === true && !w.linkedPhotoId && !w.hidden) n++
   return n
 }
 

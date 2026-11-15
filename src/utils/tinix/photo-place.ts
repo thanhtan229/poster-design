@@ -1,3 +1,4 @@
+import { remapImageLinks } from './image-effects'
 /**
  * [TINIX] Đặt ảnh vào trang cho thiết kế album.
  *
@@ -115,7 +116,7 @@ const isFullPageImage = (w: any, pw: number, ph: number) => w && w.type === 'w-i
 function reuuid(widgets: any[]): any[] {
   const map = new Map<string, string>()
   for (const w of widgets) map.set(String(w.uuid), nanoid())
-  return widgets.map((w) => {
+  const result = widgets.map((w) => {
     const c = JSON.parse(JSON.stringify(w))
     c.uuid = map.get(String(w.uuid))
     if (c.parent !== undefined && map.has(String(c.parent))) c.parent = map.get(String(c.parent))
@@ -128,6 +129,8 @@ function reuuid(widgets: any[]): any[] {
     }
     return c
   })
+  remapImageLinks(result, map)
+  return result
 }
 
 function switchToPage(index: number) {
@@ -225,7 +228,7 @@ async function applyTemplateToPage(pageIndex: number, tpl: { id: number; title: 
   const ph = Number(page.height)
 
   const slotIdx: number[] = []
-  list.forEach((w, i) => w.type === 'w-image' && w.slot === true && !w.hidden && slotIdx.push(i))
+  list.forEach((w, i) => w.type === 'w-image' && w.slot === true && !w.linkedPhotoId && !w.hidden && slotIdx.push(i))
   if (slotIdx.length === n && n >= 1) {
     // mẫu có khung ảnh: ghép theo hướng ảnh gần nhất, ảnh phủ kín khung (không méo)
     const slotAspects = slotIdx.map((i) => Number(list[i].width) / (Number(list[i].height) || 1))
@@ -272,7 +275,7 @@ export async function changePagePhotos(add: PhotoValue[], removeIds: string[], a
   const pageIndex = canvas.dCurrentPage
   const before = JSON.stringify(store.dWidgets)
   const items = toStripItems()
-  const photoWidgets = store.dWidgets.filter((w: any) => w.type === 'w-image' && (w.slot || w.keepCover || items.some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
+  const photoWidgets = store.dWidgets.filter((w: any) => w.type === 'w-image' && !w.linkedPhotoId && (w.slot || w.keepCover || items.some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
   if (photoWidgets.some((w) => w.parent && w.parent !== '-1')) throw new Error('Ảnh trong nhóm cần được bỏ nhóm trước khi đổi bố cục.')
   const remaining = photoWidgets.filter((w) => !removeIds.includes(w.uuid))
   const photos: PhotoValue[] = remaining.map((w): PhotoValue => {
@@ -298,7 +301,7 @@ export async function changePagePhotos(add: PhotoValue[], removeIds: string[], a
     const layers = Array.isArray(parsed) ? parsed[0]?.layers : parsed?.widgets
     if (!page || !Array.isArray(layers) || !(page.width > 0 && page.height > 0)) continue
     if (Math.abs(page.width / page.height - pw / ph) > 0.01) continue
-    const found = layers.filter((w: any) => w.type === 'w-image' && w.slot === true && !w.hidden && w.width > 0 && w.height > 0)
+    const found = layers.filter((w: any) => w.type === 'w-image' && w.slot === true && !w.linkedPhotoId && !w.hidden && w.width > 0 && w.height > 0)
     if (found.length === photos.length && found.every((w: any) => !w.parent || w.parent === '-1')) {
       const score = found.reduce((sum: number, w: any, i: number) => sum + Math.abs(Math.log((w.width / w.height) / (photos[i].width / (photos[i].height || 1)))), 0)
       const sameGroup = groups.some((g) => (candidate.groups || []).includes(g)) ? 1 : 0
@@ -322,7 +325,8 @@ export async function changePagePhotos(add: PhotoValue[], removeIds: string[], a
   })
   const ids = new Set(photoWidgets.map((w) => w.uuid))
   const first = store.dWidgets.findIndex((w) => ids.has(w.uuid))
-  const layers = store.dWidgets.filter((w) => !ids.has(w.uuid))
+  const kept = new Set(next.map(w => w.uuid))
+  const layers = store.dWidgets.filter((w) => !ids.has(w.uuid) && !(w.linkedPhotoId && ids.has(w.linkedPhotoId) && !kept.has(w.linkedPhotoId)))
   layers.splice(first < 0 ? 0 : first, 0, ...next)
   store.setDWidgets(layers)
   store.selectWidget({ uuid: '-1' })

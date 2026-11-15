@@ -89,6 +89,7 @@ export default {
     params.type === 0 && setPhotoSlots(savedId, params.data) // [TINIX] cập nhật số khung ảnh của mẫu
 
     // 生成封面：调用截图服务，成功后回填 cover（失败不阻塞主流程）
+    void (async () => {
     try {
       const size = w > h ? 640 : 320
       await axios.get(
@@ -100,6 +101,7 @@ export default {
     } catch (error) {
       console.warn('[admin] 封面生成失败:', error)
     }
+    })()
 
     send.success(res, { id: savedId })
   },

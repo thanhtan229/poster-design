@@ -1,3 +1,4 @@
+import { syncLinkedImages } from './image-effects'
 /**
  * [TINIX] Ảnh nhẹ trên canvas, ảnh gốc khi xuất thành phẩm.
  *
@@ -31,6 +32,7 @@ export function exportUrlOf(w: any): string {
 
 /** Thay `imgUrl` bằng ảnh gốc trong dữ liệu dùng để xuất (trang vẽ của Puppeteer). Trả về số lớp đã đổi. */
 export function swapToOriginalInData(widgets: any[]): number {
+  syncLinkedImages(widgets)
   let n = 0
   for (const w of widgets || []) {
     if (w && w.type === 'w-image' && hasOriginal(w)) {

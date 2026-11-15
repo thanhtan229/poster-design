@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..')
 const node = process.execPath
 
 const suites = [
+  { name: 'Hiệu ứng và nền ảnh liên kết', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'image-effects.ts'], cwd: root },
   { name: 'Không gian cá nhân, giữ dữ liệu cũ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'personal-workspace.ts'], cwd: root },
   { name: 'Thư viện kích thước canvas', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'canvas-sizes.ts'], cwd: root },
   { name: 'AI (nhà cung cấp giả)', args: [path.join(root, 'scripts/tinix-ai-selftest/index.cjs')], cwd: root },
