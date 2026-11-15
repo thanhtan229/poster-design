@@ -5,11 +5,6 @@
       <bg-img-list-wrap style="padding-top: 2rem" model="stylePanel" />
     </div>
     <el-collapse v-else v-model="state.activeNames">
-      <el-collapse-item :title="$t('settings.pageStyle.canvasSize')" name="1">
-        <sizeEditor :params="state.innerElement" :allow-dpi-edit="false"><!-- [TINIX] panel: DPI chỉ hiển thị; đổi DPI trong hộp thoại "Sửa kích thước" -->
-          <i @click="openSizeEdit" class="icon sd-edit"></i>
-        </sizeEditor>
-      </el-collapse-item>
       <el-collapse-item :title="$t('settings.pageStyle.background')" name="2">
         <el-button style="width: 100%; margin: 0 0 1rem 0" type="primary" link @click="state.showBgLib = true">{{ $t('settings.pageStyle.pickFromLibrary') }}</el-button>
         <Tabs :value="state.mode" @update:value="onChangeMode">
@@ -46,7 +41,6 @@
         <el-button v-show="state.mode === 'image' && state.innerElement.backgroundImage" class="btn-wrap" @click="shiftOut">{{ $t('settings.pageStyle.detachToLayer') }}</el-button>
       </el-collapse-item>
     </el-collapse>
-    <createDesign ref="sizeEditRef" :params="state.innerElement" />
   </div>
 </template>
 
@@ -65,8 +59,6 @@ import { TPageState } from '@/store/design/canvas/d'
 import { storeToRefs } from 'pinia'
 import { Delete as iconDelete, Download as iconDownload } from '@element-plus/icons-vue'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
-import sizeEditor from '@/components/business/create-design/sizeEditor.vue'
-import createDesign from '@/components/business/create-design'
 
 type TBgMode = 'color' | 'image'
 
@@ -93,7 +85,6 @@ const state = reactive<TState>({
   modes: ['color', 'image'],
   showBgLib: false,
 })
-const sizeEditRef: Ref<typeof createDesign | null> = ref(null)
 // const { dActiveElement } = useSetupMapGetters(['dActiveElement'])
 const { dActiveElement } = storeToRefs(widgetStore)
 let _localTempBG: string | null = null
@@ -200,9 +191,6 @@ async function shiftOut() {
 }
 
 // 打开
-function openSizeEdit() {
-  sizeEditRef.value?.open()
-}
 </script>
 
 <style lang="less" scoped>

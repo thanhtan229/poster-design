@@ -20,7 +20,7 @@
       <div class="top-nav-wrap">
         <div class="top-left">
           <div class="name" @click="jump2home">{{ state.APP_NAME }}</div>
-          <el-button class="canvas-library-button" plain type="primary" @click="canvasLibraryRef?.open()">Thư viện kích thước</el-button>
+          <CanvasSizeToolbar />
           <div class="operation">
             <div :class="['operation-item', { disable: !undoable }]" @click="undoable ? handleHistory('undo') : ''"><i class="iconfont icon-undo" /></div>
             <div :class="['operation-item', { disable: !redoable }]" @click="redoable ? handleHistory('redo') : ''"><i class="iconfont icon-redo" /></div>
@@ -79,7 +79,6 @@
     <Tour ref="tourRef" :steps="[ref1, ref2, ref3, ref4]" />
     <!-- 创建设计 -->
     <createDesign ref="createDesignRef" />
-    <createDesign ref="canvasLibraryRef" :params="dPage" library-mode />
     <!-- AI 助手 -->
     <AiAssistant ref="aiAssistantRef" />
   </div>
@@ -111,6 +110,7 @@ import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import Tour from './components/Tour.vue'
 import createDesign from '@/components/business/create-design'
+import CanvasSizeToolbar from '@/components/business/create-design/CanvasSizeToolbar.vue'
 import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
 import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
@@ -162,7 +162,6 @@ const optionsRef = ref<typeof HeaderOptions | null>(null)
 const zoomControlRef = ref<typeof zoomControl | null>(null)
 const controlStore = useControlStore()
 const createDesignRef: Ref<typeof createDesign | null> = ref(null)
-const canvasLibraryRef = ref<InstanceType<typeof createDesign> | null>(null)
 const aiAssistantRef: Ref<typeof AiAssistant | null> = ref(null)
 
 function openAiAssistant() {

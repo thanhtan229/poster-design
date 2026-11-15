@@ -10,10 +10,10 @@
     <el-dialog v-model="dialogVisible" center destroy-on-close :align-center="false" :title="libraryMode ? 'Thư viện kích thước' : params ? $t('business.create.editSize') : $t('business.create.newBlank')" width="780" draggable>
       <!-- <el-divider content-position="left">自定义尺寸</el-divider> -->
       <el-checkbox v-if="params" v-model="isAdaptive" :label="$t('business.create.adaptive')" size="large" />
-      <sizeEditor :params="page" :class="params ? 'editor-mode' : 'add-mode'">
-        <el-button @click="finish" plain size="large" type="primary">{{ params ? $t('business.create.apply') : $t('business.create.create') }}</el-button>
+      <p v-if="params" class="resize-hint">{{ $t('business.create.adaptiveHint') }}</p>
+      <sizeEditor :params="page" show-swap :class="params ? 'editor-mode' : 'add-mode'">
+        <el-button data-photo-history @click="finish" plain size="large" type="primary">{{ params ? $t('business.create.apply') : $t('business.create.create') }}</el-button>
       </sizeEditor>
-      <el-button size="small" @click="swapSize">Đảo rộng / cao</el-button>
       <canvas-sizes ref="sizesRef" :page="page" :unit="unit" :manage-initial="libraryMode" @choose="chooseSize" />
     </el-dialog>
   </div>
@@ -27,6 +27,7 @@ import sizeEditor from './sizeEditor.vue'
 import CanvasSizes from './CanvasSizes.vue'
 import { ElMessage } from 'element-plus'
 import { useWidgetStore, useControlStore } from '@/store';
+import { resizeCanvas } from '@/common/methods/resizeCanvas'
 import { cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units' // [TINIX]
 
 const router = useRouter()
@@ -46,7 +47,6 @@ const isAdaptive: Ref<boolean> = ref(true)
 const page: any = ref({ width: 100, height: 100, dpi: DEFAULT_DPI }) // [TINIX] dpi
 const { setUnit, unit } = useSizeUnit()
 const sizesRef = ref<any>()
-function swapSize() { const w = page.value.width; page.value.width = page.value.height; page.value.height = w }
 function chooseSize(s: any) { const dpi = s.unit === 'cm' ? clampDpi(s.dpi) : clampDpi(page.value.dpi); const w = s.unit === 'cm' ? cmToPx(s.width,dpi) : s.width; const h = s.unit === 'cm' ? cmToPx(s.height,dpi) : s.height; if (w > MAX_SIDE_PX || h > MAX_SIDE_PX || w*h > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas; hãy giảm DPI hoặc kích thước.'); return } page.value.dpi=dpi; page.value.width=w; page.value.height=h; setUnit(s.unit) }
 
 const open = () => {
@@ -62,13 +62,9 @@ const open = () => {
 
 function finish() {
   const { width, height } = page.value
-  if (!width || !height || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 80 triệu pixel).'); return }
+  if (![width, height].every(n => Number.isFinite(n) && n > 0) || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 80 triệu pixel).'); return }
   if (props.params) {
-    const lastPageData = JSON.parse(JSON.stringify(props.params))
-    props.params.width = width
-    props.params.height = height
-    props.params.dpi = clampDpi(page.value.dpi) // [TINIX]
-    isAdaptive.value && widgetStore.autoResizeAll(lastPageData)
+    resizeCanvas(page.value, isAdaptive.value)
     dialogVisible.value = false
   } else window.open(router.resolve(`/home?mode=create&w_h=${width}*${height}&dpi=${clampDpi(page.value.dpi)}`).href, '_blank')
 }
@@ -79,6 +75,12 @@ defineExpose({
 </script>
 
 <style lang="less" scoped>
+.resize-hint {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
 :deep(.el-dialog__header) {
   padding-bottom: 7px !important;
 }
