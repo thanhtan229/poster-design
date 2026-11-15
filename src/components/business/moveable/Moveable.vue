@@ -306,6 +306,8 @@ onMounted(() => {
   moveable
   .on('dragStart', ({ inputEvent, target, stop }) => {
     if (!dActiveElement.value) return
+    const image = dActiveElement.value as any
+    if (image.type === 'w-image' && image.slot && image.fit === 'cover' && !inputEvent.shiftKey) { stop(); return }
     if (moveable && moveable.snappable) {
       moveable.elementGuidelines = dWidgets.value
         .filter((w) => !w.hidden && w.uuid !== dActiveElement.value?.uuid && w.parent === '-1')

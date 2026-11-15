@@ -11,6 +11,7 @@
   <div
     :id="params.uuid"
     ref="widgetRef"
+    @mousedown.capture="startFramePan"
     :class="['w-image', { 'layer-lock': params.lock }]"
     :style="{
       position: state.position,
@@ -177,6 +178,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('mouseup', touchend, false)
+  document.removeEventListener('mousemove', handlemousemove, true)
 })
 
 // ...mapActions(['updateWidgetData']),
@@ -192,6 +194,19 @@ function touchstart(e: MouseEvent) {
   }
   // 绑定鼠标移动事件
   document.addEventListener('mousemove', handlemousemove, true)
+}
+
+// Marked photo frames pan their contents by default; Shift moves the frame itself.
+function startFramePan(e: MouseEvent) {
+  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || widgetStore.dSelectWidgets.length > 1 || props.params.lock || props.params.fit !== 'cover' || !props.params.slot || controlStore.dDraging || controlStore.dSpaceDown || isDraw.value) return
+  if (e.shiftKey) {
+    // Shift normally selects multiple layers; inside one photo frame it moves the frame.
+    controlStore.updateAltDown(false)
+    return
+  }
+  e.preventDefault()
+  // Keep mousedown bubbling so the normal selection and undo transaction run.
+  touchstart(e)
 }
 
 /** 取消鼠标移动事件 */

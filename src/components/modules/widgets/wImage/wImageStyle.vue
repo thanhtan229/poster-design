@@ -19,6 +19,7 @@
       <el-collapse-item :title="$t('editor.prop.settings')" name="2">
         <!-- <el-button size="mini" style="width: 100%; margin-top: 0.5rem" plain @click="openCropper">替换图片</el-button> -->
         <el-button style="width: 100%; margin-bottom: 12px" plain @click="openPicBox">{{ $t('editor.image.replace') }}</el-button>
+        <p v-if="state.innerElement.slot && state.innerElement.fit === 'cover'" style="font-size:12px;line-height:1.5;color:#64748b">Kéo ảnh để căn trong khung. Giữ Shift khi kéo để di chuyển cả khung. Ảnh chỉ dịch chuyển theo chiều có phần dư.</p>
         <div class="options">
           <el-button v-if="state.innerElement.cropEdit" plain type="primary" @click="imgCrop(false)">{{ $t('editor.image.done') }}</el-button>
           <el-button v-else plain type="primary" @click="imgCrop(true)"><i class="icon sd-caijian" /> {{ $t('editor.image.crop') }}</el-button>

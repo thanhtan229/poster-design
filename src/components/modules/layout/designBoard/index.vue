@@ -235,6 +235,25 @@ async function drop(e: MouseEvent) {
   if (!type) {
     return
   }
+  // A single photo dropped on a marked slot replaces that slot before auto-layout handling.
+  if (type === 'image' && item?.value && (!Array.isArray(item.value.group) || item.value.group.length === 1)) {
+    const canvas = document.getElementById(props.pageDesignCanvasId)
+    const bounds = canvas?.getBoundingClientRect()
+    const inCanvas = bounds && e.clientX >= bounds.left && e.clientX <= bounds.right && e.clientY >= bounds.top && e.clientY <= bounds.bottom
+    const slot = inCanvas && [...dWidgets.value].reverse().find((w: any) => {
+      if (w.type !== 'w-image' || !w.slot || w.hidden || w.lock) return false
+      const r = document.getElementById(w.uuid)?.getBoundingClientRect()
+      return r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+    })
+    if (slot) {
+      const photo = item.value.group?.[0] || item.value
+      applyImageSource(slot, photo)
+      Object.assign(slot, { fit: 'cover', cropX: 50, cropY: 50, zoom: 1, transform: '', isNinePatch: false })
+      widgetStore.updateDWidgets()
+      widgetStore.selectWidget({ uuid: slot.uuid })
+      return
+    }
+  }
   // [TINIX] kéo nhiều ảnh (hoặc bật "Tự áp dụng mẫu") từ dải ảnh: đặt cả lượt ảnh (xếp lưới / áp dụng mẫu), không đặt theo vị trí thả
   if (type === 'image' && item && item.value && Array.isArray(item.value.group) && item.value.group.length) {
     await placePhotos(item.value.group, !!item.value.auto)
