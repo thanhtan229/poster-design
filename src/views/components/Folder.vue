@@ -41,13 +41,7 @@ import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
 const router = useRouter()
 
 // [TINIX] chỉ admin thấy mục "Lưu thành mẫu"
-const isAdmin = () => {
-  try {
-    return JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
-  } catch (e) {
-    return false
-  }
-}
+const isAdmin = () => true
 
 const openPSD = () => {
   window.open(router.resolve('/psd').href, '_blank')

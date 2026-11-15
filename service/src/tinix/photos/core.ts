@@ -61,13 +61,13 @@ function sha1OfFile(p: string): Promise<string> {
 
 // ───────────────────────── Truy vấn ─────────────────────────
 export function listPhotos(userId: number): PhotoRow[] {
-  return getDB().prepare(`SELECT ${COLS} FROM user_images WHERE user_id = ? AND source = 'upload' ORDER BY id DESC`).all(userId)
+  return getDB().prepare(`SELECT ${COLS} FROM user_images WHERE source = 'upload' ORDER BY id DESC`).all()
 }
 export function getPhoto(id: number, userId: number): PhotoRow | undefined {
-  return getDB().prepare(`SELECT ${COLS} FROM user_images WHERE id = ? AND user_id = ? AND source = 'upload'`).get(id, userId)
+  return getDB().prepare(`SELECT ${COLS} FROM user_images WHERE id = ? AND source = 'upload'`).get(id)
 }
 function findByHash(userId: number, hash: string): PhotoRow | undefined {
-  return getDB().prepare(`SELECT ${COLS} FROM user_images WHERE user_id = ? AND hash = ? AND source = 'upload'`).get(userId, hash)
+  return getDB().prepare(`SELECT ${COLS} FROM user_images WHERE hash = ? AND source = 'upload'`).get(hash)
 }
 
 // ───────────────────────── Ảnh nhẹ + thu nhỏ ─────────────────────────
@@ -94,7 +94,7 @@ async function makeDerivatives(srcPath: string, hash: string, hasAlpha: boolean)
  */
 export async function backfillLegacy(userId: number): Promise<number> {
   const db = getDB()
-  const rows: PhotoRow[] = db.prepare(`SELECT ${COLS} FROM user_images WHERE user_id = ? AND source = 'upload' AND hash = ''`).all(userId)
+  const rows: PhotoRow[] = db.prepare(`SELECT ${COLS} FROM user_images WHERE source = 'upload' AND hash = ''`).all()
   let n = 0
   for (const r of rows) {
     try {

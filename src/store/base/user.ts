@@ -29,33 +29,25 @@ type TUserAction = {
   managerEdit: (status: boolean) => void
 }
 
-/** 读取本地登录用户信息（由 login-dialog 写入） */
-function readLocalUser(): { account?: string; role?: number } | null {
-  try {
-    return JSON.parse(localStorage.getItem('xp_user') || 'null')
-  } catch {
-    return null
-  }
-}
+/** Compatibility state for the local personal workspace. */
+
 
 /** User全局状态管理 */
 const useUserStore = defineStore<'userStore', TUserStoreState, {}, TUserAction>('userStore', {
   state: () => ({
-    online: !!localStorage.getItem('xp_token'), // 登录状态：以是否存在登录 token 为准
+    online: true, // Local workspace is always available.
     user: {
-      name: readLocalUser()?.account ?? null,
+      name: null,
     }, // 储存用户信息
     manager: '', // 是否为管理员模式
     tempEditing: false, // 管理员是否正在编辑模板
   }),
   actions: {
-    changeOnline(status: boolean) {
-      this.online = status
+    changeOnline(_status: boolean) {
+      this.online = true
     },
     changeUser(name: string) {
       this.user.name = name
-      const info = readLocalUser()
-      localStorage.setItem('xp_user', JSON.stringify({ ...(info || {}), account: name }))
     },
     managerEdit(status: boolean) {
       this.tempEditing = status

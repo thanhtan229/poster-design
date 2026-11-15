@@ -21,7 +21,6 @@ import userService from '../service/user'
 import { startPreviews, getPreviewStatus } from '../tinix/fontPreviews' // [TINIX]
 import { send } from '../utils/tools' // [TINIX]
 import designService from '../service/design'
-import authService from '../service/auth'
 import adminService from '../service/admin'
 import aiService from '../service/ai'
 import api from './api'
@@ -46,9 +45,6 @@ rRouter.post(api.SAVE_DESIGN, userService.saveDesign)
 rRouter.get(api.MY_DESIGNS, userService.getMyDesigns)
 rRouter.get(api.DESIGN_DETAIL, userService.getDesign)
 rRouter.post(api.DELETE_DESIGN, userService.deleteDesign)
-rRouter.post(api.REGISTER, authService.register)
-rRouter.post(api.LOGIN, authService.login)
-rRouter.post(api.CHANGE_PASSWORD, authService.changePassword)
 // AI 能力（登录用户可用，鉴权在 service 内完成）
 rRouter.post(api.AI_TEXT, aiService.textGenerate)
 rRouter.post(api.AI_IMAGE, aiService.imageGenerate)
@@ -63,11 +59,9 @@ rRouter.post(api.ADMIN_TEMPLATE_REMOVE, requireAdmin, adminService.removeTemplat
 rRouter.post(api.ADMIN_TEMPLATE_SAVE, requireAdmin, adminService.saveTemplate)
 rRouter.post(api.ADMIN_TEMPLATE_CATEGORY_UPDATE, requireAdmin, adminService.updateTemplateCategory)
 rRouter.get(api.ADMIN_USER_IMAGES, requireAdmin, adminService.getUserImages)
-rRouter.get(api.ADMIN_USERS, requireAdmin, adminService.getUsers)
 // 管理员用户作品管理
 rRouter.get(api.ADMIN_DESIGNS, requireAdmin, adminService.getDesigns)
 rRouter.post(api.ADMIN_DESIGN_DELETE, requireAdmin, adminService.deleteDesign)
-rRouter.post(api.ADMIN_USER_DELETE, requireAdmin, adminService.deleteUser)
 rRouter.post(api.ADMIN_USER_IMAGE_DELETE, requireAdmin, adminService.deleteUserImage)
 rRouter.get(api.ADMIN_CATEGORIES, requireAdmin, adminService.getCategories)
 rRouter.get(api.ADMIN_ASSETS, requireAdmin, adminService.getAssets)

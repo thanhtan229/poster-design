@@ -1,6 +1,5 @@
 const fs=require('fs'),p=require('../../service/node_modules/puppeteer');
-require('../../service/node_modules/ts-node').register({transpileOnly:true,compilerOptions:{module:'commonjs',esModuleInterop:true}});process.loadEnvFile('service/.env');const db=new(require('../../service/node_modules/better-sqlite3'))('service/data/poster.db',{readonly:true});const u=db.prepare('SELECT id,account FROM users LIMIT 1').get();const token=require('../../service/src/utils/auth').createToken(u.id,u.account);db.close();
-(async()=>{const b=await p.launch({headless:true,args:['--no-sandbox']});const page=await b.newPage();await page.setViewport({width:1440,height:1100});await page.evaluateOnNewDocument(t=>localStorage.setItem('xp_token',t),token);await page.goto('http://127.0.0.1:7001',{waitUntil:'networkidle2'});await page.click('.canvas-library-button');await new Promise(r=>setTimeout(r,700));const assert=require('assert');
+(async()=>{const b=await p.launch({headless:true,args:['--no-sandbox']});const page=await b.newPage();await page.setViewport({width:1440,height:1100});await page.goto('http://127.0.0.1:7001',{waitUntil:'networkidle2'});await page.click('.canvas-library-button');await new Promise(r=>setTimeout(r,700));const assert=require('assert');
 assert(await page.$('.sizes .el-select'));assert(await page.$('.sizes .el-checkbox input'));
 await page.type('.sizes input[placeholder="Tìm tên hoặc kích thước"]','60x90');
 await new Promise(r=>setTimeout(r,200));assert.equal(await page.$$eval('.sizes .row',r=>r.length),1);

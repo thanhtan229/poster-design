@@ -19,15 +19,15 @@ export function updateDesign(id: number, userId: number, data: Partial<Pick<Desi
   if (!fields.length) return false
   const params: any = { id, user_id: userId, ...data }
   const set = fields.map((field) => `${field} = @${field}`).join(', ')
-  return getDB().prepare(`UPDATE designs SET ${set}, updated_at = datetime('now', 'localtime') WHERE id = @id AND user_id = @user_id`).run(params).changes > 0
+  return getDB().prepare(`UPDATE designs SET ${set}, updated_at = datetime('now', 'localtime') WHERE id = @id`).run(params).changes > 0
 }
-export function getDesign(id: number, userId: number): DesignRow | undefined { return getDB().prepare('SELECT * FROM designs WHERE id = ? AND user_id = ?').get(id, userId) }
+export function getDesign(id: number, userId: number): DesignRow | undefined { return getDB().prepare('SELECT * FROM designs WHERE id = ?').get(id) }
 export function listDesigns(userId: number, page: number, pageSize: number) {
-  const total = Number(getDB().prepare('SELECT COUNT(*) AS total FROM designs WHERE user_id = ?').get(userId)?.total || 0)
-  const list = getDB().prepare('SELECT id, title, cover, width, height, created_at, updated_at FROM designs WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?').all(userId, pageSize, (page - 1) * pageSize)
+  const total = Number(getDB().prepare('SELECT COUNT(*) AS total FROM designs').get()?.total || 0)
+  const list = getDB().prepare('SELECT id, title, cover, width, height, created_at, updated_at FROM designs ORDER BY id DESC LIMIT ? OFFSET ?').all(pageSize, (page - 1) * pageSize)
   return { list, total }
 }
-export function deleteDesign(id: number, userId: number): boolean { return getDB().prepare('DELETE FROM designs WHERE id = ? AND user_id = ?').run(id, userId).changes > 0 }
+export function deleteDesign(id: number, userId: number): boolean { return getDB().prepare('DELETE FROM designs WHERE id = ?').run(id).changes > 0 }
 export function listAllDesigns() {
   return getDB().prepare('SELECT designs.id, designs.user_id, users.account, designs.title, designs.cover, designs.width, designs.height, designs.created_at, designs.updated_at FROM designs LEFT JOIN users ON users.id = designs.user_id ORDER BY designs.id DESC').all()
 }

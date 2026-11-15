@@ -14,16 +14,6 @@ import { NavigationGuardNext, RouteLocationNormalized, Router } from "vue-router
         //  $store.commit('changeRoute', from.path)
 
          // 后台管理页仅管理员可见，非管理员跳回编辑器
-         if (to.path === '/admin') {
-             let isAdmin = false
-             try {
-                 isAdmin = JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
-             } catch { }
-             if (!isAdmin) {
-                 next('/home')
-                 return
-             }
-         }
 
          if (/\/http/.test(to.path) || /\/https/.test(to.path)) {
              const url = to.path.split('http')[1]

@@ -21,7 +21,6 @@ import { listUserImages } from '../db/userImages'
 import * as fontsRepo from '../db/fonts'
 import { cleanCategory, cleanTags } from '../tinix/fontMeta' // [TINIX]
 import * as templatesRepo from '../db/templates'
-import * as usersRepo from '../db/users'
 import * as templateCategoriesRepo from '../db/templateCategories'
 import * as designsRepo from '../db/designs'
 import * as groups from '../tinix/templateGroups' // [TINIX] nhóm mẫu (nhiều nhóm / mẫu)
@@ -124,9 +123,6 @@ export default {
   },
 
   // 用户列表（不返回密码、salt 等敏感字段）
-  async getUsers(req: any, res: Response) {
-    send.success(res, pageResult(usersRepo.listUsers(), req.query?.page, req.query?.pageSize))
-  },
 
   async getDesigns(req: any, res: Response) {
     send.success(res, pageResult(designsRepo.listAllDesigns(), req.query?.page, req.query?.pageSize))
@@ -139,15 +135,6 @@ export default {
   },
 
   // 仅允许删除普通用户，管理员账号不可通过该接口删除
-  async deleteUser(req: any, res: Response) {
-    const id = Number(req.body?.id)
-    const currentUserId = Number(req.user?.id)
-    if (!Number.isInteger(id) || id <= 0 || id === currentUserId) {
-      send.error(res, 'Tham số không hợp lệ hoặc không thể xóa tài khoản hiện tại')
-      return
-    }
-    usersRepo.deleteUser(id) ? send.success(res, undefined) : send.error(res, 'Người dùng không tồn tại hoặc tài khoản quản trị không thể bị xóa')
-  },
 
   // 删除用户图片记录
   async deleteUserImage(req: any, res: Response) {

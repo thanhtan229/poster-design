@@ -41,16 +41,7 @@
           <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('download')">{{ $t('header.download') }}</el-button>
           <!-- [TINIX] xuất PSD (mỗi lớp một layer) -->
           <el-button size="large" class="primary-btn" plain :loading="psdState.loading" @click="exportPsd">{{ psdState.loading ? $t('tinix.ui.psdExport.dang_xuat', { n: psdState.done, total: psdState.total }) : $t('tinix.ui.psdExport.xuat_psd') }}</el-button>
-          <template v-if="loginUser">
-            <span class="user-name">{{ loginUser.account }}</span>
-            <el-divider direction="vertical" />
-            <div class="operation-item" @click="openChangePassword"><span class="text">{{ $t('tinix.menu.changePassword') }}</span></div>
-            <el-divider direction="vertical" />
-            <div v-if="loginUser.role === 1" class="operation-item" @click="jump2admin"><span class="text">{{ $t('tinix.menu.admin') }}</span></div>
-            <el-divider v-if="loginUser.role === 1" direction="vertical" />
-            <div class="operation-item" @click="logout"><span class="text">{{ $t('tinix.menu.logout') }}</span></div>
-          </template>
-          <el-button v-else size="large" type="primary" plain @click="openLogin">{{ $t('tinix.menu.login') }}</el-button>
+          <div class="operation-item" @click="jump2admin"><span class="text">{{ $t('tinix.menu.admin') }}</span></div>
         </HeaderOptions>
       </div>
     </div>
@@ -89,10 +80,6 @@
     <!-- 创建设计 -->
     <createDesign ref="createDesignRef" />
     <createDesign ref="canvasLibraryRef" :params="dPage" library-mode />
-    <!-- 登录 / 注册弹窗 -->
-    <login-dialog ref="loginDialogRef" />
-    <!-- 修改密码弹窗 -->
-    <ChangePassword ref="changePasswordRef" />
     <!-- AI 助手 -->
     <AiAssistant ref="aiAssistantRef" />
   </div>
@@ -124,45 +111,11 @@ import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import Tour from './components/Tour.vue'
 import createDesign from '@/components/business/create-design'
-import loginDialog from '@/components/business/login-dialog/index.vue'
-import ChangePassword from '@/components/business/login-dialog/ChangePassword.vue'
 import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
 import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
 import useHistory from '@/common/hooks/history'
 useHistory()
-
-type TLoginUser = { account: string; role: number }
-const loginDialogRef = ref<InstanceType<typeof loginDialog>>()
-const changePasswordRef = ref<InstanceType<typeof ChangePassword>>()
-const loginUser = ref<TLoginUser | null>(JSON.parse(localStorage.getItem('xp_user') || 'null'))
-
-function openLogin() {
-  loginDialogRef.value?.open('login').then((result) => {
-    if (result) {
-      loginUser.value = { account: result.account, role: result.role }
-      window.dispatchEvent(new Event('tinix:auth-changed')) // [TINIX] nạp lại thư viện ảnh sau đăng nhập
-    }
-  })
-}
-
-/** 修改密码：成功后清除本地登录态，强制重新登录 */
-function openChangePassword() {
-  changePasswordRef.value?.open().then((result) => {
-    if (result === true) {
-      localStorage.removeItem('xp_user')
-      loginUser.value = null
-      window.dispatchEvent(new Event('tinix:auth-changed')) // [TINIX]
-    }
-  })
-}
-
-function logout() {
-  localStorage.removeItem('xp_user')
-  localStorage.removeItem('xp_token')
-  loginUser.value = null
-  window.dispatchEvent(new Event('tinix:auth-changed')) // [TINIX]
-}
 
 function jump2admin() {
   window.location.href = './admin'

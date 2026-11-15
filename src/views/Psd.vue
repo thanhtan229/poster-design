@@ -117,15 +117,6 @@ const { dZoom } = storeToRefs(useCanvasStore())
 const zoomControlRef = ref<typeof zoomControl | null>()
 
 // 管理员守卫：导入 PSD 功能已移至管理后台，仅管理员可访问
-try {
-  const user = JSON.parse(localStorage.getItem('xp_user') || 'null')
-  if (!user || user.role !== 1) {
-    ElMessage.warning(i18t('tinix.ui.psdPage.chi_tai_khoan_quan_tri')) // [TINIX]
-    setTimeout(() => (window.location.href = './'), 600)
-  }
-} catch (e) {
-  setTimeout(() => (window.location.href = './'), 600)
-}
 
 let loading: ReturnType<typeof useLoading> | null = null
 const myWorker = new useWorker(psdWorker)

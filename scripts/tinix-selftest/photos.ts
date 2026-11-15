@@ -67,7 +67,7 @@ async function main() {
   let err = ''
   try { await p.ingestPhoto(text, 'x.txt', 0, 1) } catch (e) { err = String((e as Error).message) }
   check('tệp không phải ảnh bị từ chối kèm thông báo', /Không đọc được ảnh|chưa hỗ trợ/.test(err), err)
-  check('chỉ liệt kê ảnh upload của đúng người dùng', p.listPhotos(1).length === 4 && p.listPhotos(2).length === 0)
+  check('không gian cá nhân liệt kê toàn bộ ảnh upload, giữ nguyên ID chủ sở hữu', p.listPhotos(1).length === 4 && p.listPhotos(2).length === 4 && p.listPhotos(2).every(photo => photo.user_id === 1))
 
   console.log('Phân loại nguồn (ảnh PSD/logo không vào danh sách)')
   db.prepare("INSERT INTO user_images (user_id, url, width, height, source) VALUES (1, '/static/template/a.png', 10, 10, 'psd')").run()

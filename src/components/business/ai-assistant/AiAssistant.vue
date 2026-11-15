@@ -92,7 +92,7 @@ import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ElTabs, ElTabPane, ElSelect, ElOption } from 'element-plus'
 import api from '@/api'
-import { useWidgetStore, useCanvasStore, useUserStore, useControlStore } from '@/store'
+import { useWidgetStore, useCanvasStore, useControlStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
@@ -130,14 +130,9 @@ const state = reactive({
 
 const widgetStore = useWidgetStore()
 const canvasStore = useCanvasStore()
-const userStore = useUserStore()
 const { dPage } = storeToRefs(canvasStore)
 
-function checkLogin(): boolean {
-  if (userStore.online) return true
-  ElMessage.warning(i18n.global.t('business.ai.needLogin'))
-  return false
-}
+
 
 function open() {
   // 清理选中框，避免 moveable 操作框遮挡弹窗（与其他弹窗行为一致）
@@ -153,7 +148,6 @@ function handleClose() {
 
 // ---------- 文案生成 ----------
 async function generateText() {
-  if (!checkLogin()) return
   const prompt = state.textPrompt.trim()
   if (!prompt) return ElMessage.warning(i18n.global.t('business.ai.needTopic'))
   state.textLoading = true
@@ -184,7 +178,6 @@ function insertText(text: string) {
 
 // ---------- 文生图 ----------
 async function generateImage() {
-  if (!checkLogin()) return
   const prompt = state.imagePrompt.trim()
   if (!prompt) return ElMessage.warning(i18n.global.t('business.ai.needImagePrompt'))
   state.imageLoading = true
@@ -220,7 +213,6 @@ async function insertImage() {
 
 // ---------- 智能配色 ----------
 async function generateColor() {
-  if (!checkLogin()) return
   const prompt = state.colorPrompt.trim()
   if (!prompt) return ElMessage.warning(i18n.global.t('business.ai.needColorTheme'))
   state.colorLoading = true

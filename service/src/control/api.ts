@@ -44,9 +44,6 @@ export default {
   ADMIN_AI_SETTINGS: path + '/admin/ai/settings',
   ADMIN_AI_TEST: path + '/admin/ai/test',
   // 用户系统
-  REGISTER: path + '/user/register',
-  LOGIN: path + '/user/login',
-  CHANGE_PASSWORD: path + '/user/changePassword',
   // 后台管理
   ADMIN_TEMPLATES: path + '/admin/templates',
   ADMIN_TEMPLATE_DELETE: path + '/admin/template/delete',
@@ -54,8 +51,6 @@ export default {
   ADMIN_TEMPLATE_SAVE: path + '/admin/template/save',
   ADMIN_TEMPLATE_CATEGORY_UPDATE: path + '/admin/template/category/update',
   ADMIN_USER_IMAGES: path + '/admin/user/images',
-  ADMIN_USERS: path + '/admin/users',
-  ADMIN_USER_DELETE: path + '/admin/user/delete',
   ADMIN_DESIGNS: path + '/admin/designs',
   ADMIN_DESIGN_DELETE: path + '/admin/design/delete',
   ADMIN_USER_IMAGE_DELETE: path + '/admin/user/image/delete',

@@ -138,7 +138,7 @@ async function runBatch(retry: boolean) {
       try {
         const page = dLayouts.value[index]?.global
         if (!page) throw new Error('Page unavailable')
-        const url = api.home.download({ id, width: page.width, height: page.height, index, dpi: clampDpi(page.dpi || DEFAULT_DPI), token: localStorage.getItem('xp_token') || '' })
+        const url = api.home.download({ id, width: page.width, height: page.height, index, dpi: clampDpi(page.dpi || DEFAULT_DPI) })
         const controller = new AbortController()
         const timer = setTimeout(() => controller.abort(), 90000)
         let response: Response
@@ -163,10 +163,6 @@ async function runBatch(retry: boolean) {
 async function save(silent: boolean = false) {
   if (tempEditing.value) {
     await saveTemp()
-    return
-  }
-  if (!localStorage.getItem('xp_token')) {
-    useNotification(i18n.global.t('editor.header.saveFailed'), i18n.global.t('editor.header.needLoginSave'), { type: 'warning' })
     return
   }
   const { id, tempid } = route.query
@@ -230,16 +226,6 @@ async function saveTemp() {
 // [TINIX] Lưu thiết kế hiện tại thành MẪU CÔNG KHAI (bảng templates, hiện ở thẻ "Mẫu thiết kế") — chỉ admin
 async function saveAsTemplate() {
   if (state.loading) return
-  let isAdmin = false
-  try {
-    isAdmin = JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
-  } catch (e) {
-    isAdmin = false
-  }
-  if (!isAdmin) {
-    useNotification(i18t('tinix.ui.headerOptions.chua_luu_duoc'), i18t('tinix.ui.headerOptions.chi_tai_khoan_admin_moi'), { type: 'warning' })
-    return
-  }
   state.loading = true
   try {
     const { id } = await adminApi.saveTemplate({
@@ -288,7 +274,6 @@ async function download() {
   // 后台模板编辑页可能保留之前作品的 id；模板编辑时必须只使用 tempid，
   // 否则截图服务会按 id 优先加载另一条用户作品。
   const screenshotId = route.query.edit === '1' && tempid ? undefined : (savedId || id)
-  const screenshotToken = screenshotId ? localStorage.getItem('xp_token') || '' : ''
   emit('update:modelValue', true)
   emit('change', { downloadPercent: 1, downloadText: i18n.global.t('editor.header.processing') })
   let timerCount = 0
@@ -301,7 +286,7 @@ async function download() {
     }
   }, 800)
   await _dl.downloadImg(
-      api.home.download({ id: screenshotId, tempid, width, height, index: pageStore.dCurrentPage, token: screenshotToken, dpi: clampDpi(dPage.value.dpi || DEFAULT_DPI) }) + '&r=' + Math.random(),
+      api.home.download({ id: screenshotId, tempid, width, height, index: pageStore.dCurrentPage, dpi: clampDpi(dPage.value.dpi || DEFAULT_DPI) }) + '&r=' + Math.random(),
     (progress: number, xhr: any) => {
       if (props.modelValue) {
         clearInterval(animation)

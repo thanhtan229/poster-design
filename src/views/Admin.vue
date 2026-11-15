@@ -9,14 +9,12 @@
 -->
 <template>
   <div class="admin-shell">
-    <AdminSidebar :active="activeTab" :user="adminUser" @select="onSelectTab" @logout="onLogout" />
+    <AdminSidebar :active="activeTab" @select="onSelectTab" />
 
     <div class="admin-main">
       <AdminTopbar :title="pageMeta.title" :description="pageMeta.description" @home="jump2home" />
 
       <main class="admin-body">
-        <!-- [TINIX] cảnh báo khi admin còn dùng mật khẩu mặc định -->
-        <el-alert v-if="defaultPassword" type="warning" show-icon :closable="false" style="margin-bottom: 12px" :title="$t('tinix.ui.adminExtra.tai_khoan_admin_dang_dung')" :description="$t('tinix.ui.adminExtra.hay_doi_mat_khau_bam')" />
         <!-- 总览：平台内容规模 + 常用管理入口 -->
         <section v-if="activeTab === 'overview'" class="overview-pane">
           <div v-loading="loading" class="overview-stats">
@@ -318,32 +316,6 @@
           </el-table>
         </section>
 
-        <!-- 用户管理 -->
-        <section v-else-if="activeTab === 'users'" class="pane">
-          <div class="pane-toolbar">
-            <span class="toolbar-spacer"></span>
-            <el-button size="small" :loading="loading" @click="loadTab">
-              <el-icon><Refresh /></el-icon>
-              {{ t('admin.v.refresh') }}
-            </el-button>
-          </div>
-          <el-table class="admin-table" :data="users" size="small" stripe v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80" />
-            <el-table-column prop="account" :label="t('admin.v.account')" min-width="200" show-overflow-tooltip />
-            <el-table-column :label="t('admin.v.role')" width="120">
-              <template #default="{ row }">
-                <el-tag :type="row.role === 1 ? 'danger' : 'info'" size="small">{{ row.role === 1 ? t('admin.v.admin') : t('admin.v.user') }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="created_at" :label="t('admin.v.registeredAt')" width="180" />
-            <el-table-column :label="t('admin.v.actions')" width="110" fixed="right">
-              <template #default="{ row }">
-                <el-button v-if="row.role !== 1" type="danger" size="small" link @click="onDelUser(row)">{{ t('admin.v.delete') }}</el-button>
-                <span v-else class="muted-text">{{ t('admin.v.protected') }}</span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </section>
 
         <!-- 用户作品 -->
         <section v-else-if="activeTab === 'designs'" class="pane">
@@ -356,7 +328,6 @@
           </div>
           <el-table class="admin-table" :data="designs" size="small" stripe v-loading="loading">
             <el-table-column prop="id" label="ID" width="70" />
-            <el-table-column prop="account" :label="t('admin.v.userLabel')" width="150" />
             <el-table-column :label="t('admin.v.cover')" width="100">
               <template #default="{ row }">
                 <el-image v-if="row.cover" :src="row.cover" :preview-src-list="[row.cover]" fit="cover" style="width: 64px; height: 36px" preview-teleported />
@@ -566,7 +537,6 @@ import {
   type FormRules,
 } from 'element-plus'
 import { Grid, Files, PictureFilled, Document, Upload, EditPen, MagicStick, Refresh, Plus, Link } from '@element-plus/icons-vue'
-import { LocalStorageKey } from '@/config'
 import * as adminApi from '@/api/admin'
 import * as tinixAi from '@/api/tinix-ai' // [TINIX]
 import * as materialApi from '@/api/material'
@@ -576,7 +546,7 @@ import AdminTopbar from './admin/comps/AdminTopbar.vue'
 import StatCard from './admin/comps/StatCard.vue'
 import QuickAction from './admin/comps/QuickAction.vue'
 import { PAGE_META, AI_SIZE_MODE_OPTIONS } from './admin/constants'
-import type { TOverviewStat, TCategoryTab, TAdminUser } from './admin/types'
+import type { TOverviewStat, TCategoryTab } from './admin/types'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -586,7 +556,6 @@ const loading = ref(false)
 const templates = ref<any[]>([])
 const templateType = ref('templates-list')
 const userImages = ref<any[]>([])
-const users = ref<adminApi.TAdminUserItem[]>([])
 const designs = ref<adminApi.TAdminDesignItem[]>([])
 const materialCates = ref<any[]>([])
 const photoCates = ref<any[]>([])
@@ -623,8 +592,6 @@ const aiTesting = ref(false)
 const adminPage = ref(1)
 const adminPageSize = ref(20)
 const adminTotal = ref(0)
-// 本地登录的管理员（侧边栏底部展示）
-const adminUser = reactive<TAdminUser>({ account: '', role: 0 })
 // 总览页统计：pageSize 上限 100（后端 pageResult 封顶），常规管理规模下可完整计数
 const overview = reactive({ templates: 0, components: 0, userImages: 0, fonts: 0 })
 const templateRows = computed(() => templates.value.filter((item) => item.type === 0))
@@ -788,54 +755,11 @@ function denyByReason(res: any) {
 /** 无权限 / 登录失效时清掉本地凭据并回首页 */
 function deny(msg: string) {
   ElMessage.warning(msg)
-  localStorage.removeItem(LocalStorageKey.tokenKey)
-  localStorage.removeItem('xp_user')
   setTimeout(() => (window.location.href = './'), 800)
 }
 
-/** 主动退出登录（与 Index.vue 的 logout 行为一致） */
-function onLogout() {
-  localStorage.removeItem('xp_user')
-  localStorage.removeItem(LocalStorageKey.tokenKey)
-  window.location.href = './'
-}
-
-/** 读取本地登录用户；同时刷新侧边栏展示的账号信息 */
-function readLocalUser(): TAdminUser | null {
-  try {
-    const user = JSON.parse(localStorage.getItem('xp_user') || 'null')
-    if (user && typeof user.account === 'string' && user.role === 1) return { account: user.account, role: user.role }
-  } catch (e) {}
-  return null
-}
-
-/** 前端仅做入口守卫（读本地用户信息），真正的权限由后端 requireAdmin 校验 */
-function checkLocalRole(): boolean {
-  const user = readLocalUser()
-  if (!user) return false
-  adminUser.account = user.account
-  adminUser.role = user.role
-  return true
-}
-
-// [TINIX] mật khẩu admin còn là mặc định?
-const defaultPassword = ref(false)
-async function checkDefaultPassword() {
-  try {
-    const res: any = await tinixAi.securityStatus()
-    defaultPassword.value = !!(res && res.default_password)
-  } catch (e) {
-    defaultPassword.value = false
-  }
-}
-
 onMounted(() => {
-  if (!checkLocalRole()) {
-    deny(t('admin.auth.adminRequired'))
-    return
-  }
   loadTab()
-  checkDefaultPassword()
 })
 
 /** 切换导航页：重置分页后拉取该页数据 */
@@ -877,7 +801,6 @@ async function loadOverview() {
 
 /** 拉取当前导航页数据；接口返回 401（HTTP 200 + code 401）时回首页 */
 async function loadTab() {
-  if (!checkLocalRole()) return
   if (activeTab.value === 'overview') return loadOverview()
   loading.value = true
   try {
@@ -889,9 +812,6 @@ async function loadTab() {
     } else if (activeTab.value === 'user-images') {
       res = await adminApi.getUserImages({ page: adminPage.value, pageSize: adminPageSize.value })
       userImages.value = res?.list || []
-    } else if (activeTab.value === 'users') {
-      res = await adminApi.getUsers({ page: adminPage.value, pageSize: adminPageSize.value })
-      users.value = res?.list || []
     } else if (activeTab.value === 'designs') {
       res = await adminApi.getDesigns({ page: adminPage.value, pageSize: adminPageSize.value })
       designs.value = res?.list || []
@@ -990,17 +910,6 @@ async function onDelUserImage(row: any) {
     loadTab()
   } else {
     ElMessage.error(res?.msg || t('admin.msg.opFailed'))
-  }
-}
-
-async function onDelUser(row: adminApi.TAdminUserItem) {
-  await ElMessageBox.confirm(t('admin.confirm.deleteUser', { name: row.account }), t('admin.msg.danger'), { type: 'warning' })
-  const res: any = await adminApi.deleteUser(row.id)
-  if (res?.code === 200) {
-    ElMessage.success(t('admin.msg.userDeleted'))
-    loadTab()
-  } else {
-    ElMessage.error(res?.msg || t('admin.msg.deleteFailed'))
   }
 }
 

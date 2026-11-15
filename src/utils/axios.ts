@@ -9,7 +9,7 @@
  */
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosStatic } from 'axios'
 import app_config, { LocalStorageKey } from '@/config'
-import { useBaseStore, useUserStore } from '@/store/index';
+import { useBaseStore } from '@/store/index';
 
 axios.defaults.timeout = 30000
 const baseUrl = app_config.API_URL
@@ -51,11 +51,6 @@ axios.interceptors.response.use((res: AxiosResponse<any>) => {
     if (!res.data) {
       return Promise.reject(res)
     }
-    if (res.data.code === 401) {
-      console.log('登录失效')
-      useUserStore().changeOnline(false)
-      // store.commit('changeOnline', false)
-    }
 
     if (res.data.result && res.data.code === 200) {
       return Promise.resolve(res.data.result)
@@ -94,10 +89,8 @@ const fetch = <T = any> (
     // store.commit('loading', '加载中..');
   }
 
-  // 仅使用本地登录 token，未登录则不携带 Authorization
-  const token = localStorage.getItem(LocalStorageKey.tokenKey)
+  // Local personal workspace: no Authorization header is needed.
   const headerObject: Record<string, any> = {}
-  token && (headerObject.Authorization = token)
   
   if (type === 'get') {
     return axios.get(url, {

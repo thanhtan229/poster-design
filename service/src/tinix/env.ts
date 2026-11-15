@@ -19,9 +19,5 @@ if (fs.existsSync(envFile)) {
   }
 }
 
-if (!process.env.AUTH_SECRET) {
-  console.warn('[tinix:env] Chưa đặt AUTH_SECRET trong service/.env — đang dùng khóa mặc định công khai. Xem service/.env.example.')
-}
-
 /** Address the API server binds to. Default: only this machine. */
-export const listenHost = process.env.HOST || '127.0.0.1'
+export const listenHost = '127.0.0.1'

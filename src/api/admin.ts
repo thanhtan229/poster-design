@@ -15,17 +15,12 @@ import fetch from '@/utils/axios'
 import _config from '@/config'
 const prefix = _config.API_URL + '/'
 const API = {
-  register: prefix + 'api/user/register',
-  login: prefix + 'api/user/login',
-  changePassword: prefix + 'api/user/changePassword',
   templates: prefix + 'api/admin/templates',
   deleteTemplate: prefix + 'api/admin/template/delete',
   removeTemplate: prefix + 'api/admin/template/remove',
   saveTemplate: prefix + 'api/admin/template/save',
   updateTemplateCategory: prefix + 'api/admin/template/category/update',
   userImages: prefix + 'api/admin/user/images',
-  users: prefix + 'api/admin/users',
-  deleteUser: prefix + 'api/admin/user/delete',
   deleteUserImage: prefix + 'api/admin/user/image/delete',
   designs: prefix + 'api/admin/designs',
   deleteDesign: prefix + 'api/admin/design/delete',
@@ -53,12 +48,8 @@ const API = {
   aiTest: prefix + 'api/admin/ai/test',
 }
 
-export const register = (data: { account: string; password: string }) => fetch<{ token: string }>(API.register, data, 'post')
 
-export const login = (data: { account: string; password: string }) => fetch<{ token: string }>(API.login, data, 'post')
 
-/** 修改密码：需登录，校验原密码后更新 */
-export const changePassword = (data: { oldPassword: string; newPassword: string }) => fetch(API.changePassword, data, 'post')
 
 export const getTemplates = (params: Type.Object = {}) => fetch<{ list: any[]; total: number }>(API.templates, params)
 
@@ -81,16 +72,8 @@ export const getUserImages = (params: Type.Object = {}) => fetch<{ list: any[]; 
 
 export const deleteUserImage = (id: number) => fetch(API.deleteUserImage, { id }, 'post')
 
-export type TAdminUserItem = {
-  id: number
-  account: string
-  role: number
-  created_at: string
-}
 
-export const getUsers = (params: Type.Object = {}) => fetch<{ list: TAdminUserItem[]; total: number }>(API.users, params)
 
-export const deleteUser = (id: number) => fetch(API.deleteUser, { id }, 'post')
 export type TAdminDesignItem = { id: number; user_id: number; account: string; title: string; cover: string; width: number; height: number; created_at: string; updated_at: string }
 export const getDesigns = (params: Type.Object = {}) => fetch<{ list: TAdminDesignItem[]; total: number }>(API.designs, params)
 export const deleteDesign = (id: number) => fetch(API.deleteDesign, { id }, 'post')

@@ -127,13 +127,7 @@ const pageOptions: TPageOptions = { page: 0, pageSize: 20, cate: '' }
 const { cate, edit } = route.query
 cate && (pageOptions.cate = (cate as LocationQueryValue) ?? 1)
 // 模板编辑为管理员能力，仅管理员角色可进入编辑态（数据侧由后端 requireAdmin 兜底）
-const isAdmin = (() => {
-  try {
-    return JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
-  } catch {
-    return false
-  }
-})()
+const isAdmin = true
 edit && isAdmin && userStore.managerEdit(true)
 
 // [TINIX] Sửa mẫu ngay từ thẻ Mẫu thiết kế: mở tab mới ở chế độ sửa (giống nút "Sửa" ở trang quản trị); không đụng thiết kế đang mở
