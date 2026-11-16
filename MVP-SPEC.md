@@ -40,13 +40,15 @@ Công cụ riêng giúp bạn tạo **ảnh truyền thông** và **trang album 
 |---|---|
 | Đơn giản hóa: tự đăng nhập 1 tài khoản, chỉ chạy localhost | Dịch giao diện sang tiếng Việt |
 | Bổ sung **AI nhìn ảnh (vision)** vào service AI | **Dựng theo mẫu** (mượn Magic Layers của Canvix) |
-| **Gợi ý chữ** từ ảnh | Xuất PSD |
-| **Sửa chữ** cho mẫu có sẵn | Nâng cấp Puppeteer / Vite |
+| **Gợi ý chữ** từ ảnh | Xuất PSD ✅ |
+| **Sửa chữ** cho mẫu có sẵn | Nâng cấp Puppeteer / Vite ✅ |
 | **Tìm font** từ ảnh có chữ | Đóng gói app desktop |
 | Nhật ký chi phí AI + giới hạn tháng | |
 | Kho font có tiếng Việt + mẫu cưới của bạn | |
 
 > **Cập nhật 2026-11-12:** các mục "Để sau" **Dịch giao diện sang tiếng Việt** và **Dựng theo mẫu** đã làm xong (xem §6.4 và §9). Còn lại để sau: Xuất PSD, nâng cấp Puppeteer/Vite, đóng gói desktop.
+
+> **Cập nhật 2026-11-16:** **Xuất PSD** (`src/utils/tinix/psd-export.ts`) và **nâng Puppeteer/Vite** đã xong (Puppeteer 25.17, Vite 8.x). Ngoài phạm vi MVP đã có thêm: quy trình **Cắt dán** (đơn khách, in/cắt, bản khách đã duyệt), không gian cá nhân và thư viện ảnh, chuẩn hóa và so khớp font, kích thước canvas px | cm — xem `TINIX.md`. Chỉ còn **đóng gói desktop (Tauri, tùy chọn)**.
 
 **Tiêu chí MVP thành công:** thả ảnh → bấm "Gợi ý chữ" → có thiết kế đẹp với font tiếng Việt hiển thị đúng → xuất JPG trong **dưới 3 phút**.
 
@@ -302,9 +304,9 @@ TinixPoster/                             ← D:\___TOOLS\__TINIX\TinixPoster (nh
 
 | Rủi ro | Cách xử lý |
 |---|---|
-| Repo không có test tự động | Sau mỗi bước, chạy thử tay theo danh sách kiểm tra (tạo, lưu, mở, thêm chữ, xuất); commit git nhỏ để dễ quay lại |
+| Repo gốc không có test tự động | Đã có bộ kiểm thử offline `npm run tinix:test` (22 nhóm), `npm run tinix:typecheck-service` và lint sạch; phần giao diện vẫn chạy thử tay (tạo, lưu, mở, thêm chữ, xuất); commit git nhỏ để dễ quay lại |
 | Ghi chú code tiếng Trung | Để Claude đọc & giải thích; ghi chú phần mới bằng tiếng Việt/Anh |
-| Puppeteer 10, Vite 5 đã cũ | Giữ nguyên cho MVP; chỉ nâng cấp khi gặp lỗi |
+| Puppeteer / Vite cũ | Đã nâng: Puppeteer 25.17, Vite 8.x (frontend). Service vẫn dùng TypeScript 3.9 có chủ ý (xem `CLAUDE.md`) |
 | Giấy phép AGPL | Dùng cá nhân không sao. Nếu sau này mở cho người khác dùng qua mạng → phải công khai mã nguồn bản sửa |
 | Font trong kho mẫu thiếu chữ Việt / bản quyền không rõ | Ẩn/xóa font không hỗ trợ tiếng Việt; ưu tiên Google Fonts/OFL; ghi `license` |
 | AI đặt chữ sai vùng / màu khó đọc | Kiểm tra tương phản; luôn chỉnh tay được |

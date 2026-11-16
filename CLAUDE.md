@@ -4,7 +4,7 @@ App thiết kế ảnh cưới / ảnh truyền thông có Trợ lý AI, **chỉ
 Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AGPL-3.0). Bản thiết kế đầy đủ: `MVP-SPEC.md`.
 
 ## Stack
-- Frontend (thư mục gốc): Vue 3 + Vite 5 + Pinia + Element Plus, TypeScript. Editor dùng DOM (widget `wText`, `wImage`, `wSvg`, `wGroup`, `wQrcode` trong `src/components/modules/widgets/`). Cổng 5173.
+- Frontend (thư mục gốc): Vue 3 + Vite 8 + Pinia + Element Plus, TypeScript. Editor dùng DOM (widget `wText`, `wImage`, `wSvg`, `wGroup`, `wQrcode` trong `src/components/modules/widgets/`). Cổng 5173.
 - Service (`service/`): Node.js + Express + better-sqlite3 (`service/data/poster.db`) + Puppeteer (xuất ảnh) + sharp. Cổng 7001. Route khai báo ở `service/src/control/api.ts` (tiền tố `/api`) và `router.ts`.
 - Nhập PSD: `ag-psd` trong web worker (`src/utils/tinix/psd-ag.ts`), `psd.js` dự phòng.
 - AI có sẵn: `service/src/service/ai.ts` (endpoint tương thích OpenAI, cấu hình ở bảng `ai_settings` qua trang admin).
@@ -13,6 +13,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Cài phụ thuộc: `npm run tinix:setup`
 - Font mới: `npm run tinix:fonts` rồi `npm run tinix:font-previews` (ảnh xem trước trong danh sách chọn font). Font từ `C:\Windows\Fonts`: `npm run tinix:winfonts` (manifest `scripts/tinix-winfonts.json`). Sao lưu DB + file tĩnh: `npm run tinix:backup`.
 - Shortcut ngoài Desktop: `npm run tinix:shortcut` (trỏ vào `Mo-TinixPoster.cmd`)
+- Sao lưu tự động hằng ngày: `npm run tinix:backup-schedule` (tạo tác vụ Task Scheduler "TinixPoster Backup", mặc định 02:30, giữ 10 bản; `-- -DryRun` xem trước, `-- -Remove` xóa, `-- -CopyTo <thư mục>` chép thêm sang ổ khác vì `backups/` nằm cùng ổ với dữ liệu). Script kiểm tra toàn vẹn DB và **không xóa bản cũ khi sao lưu lỗi**; log ở `backups/schedule.log`. Lệnh đăng ký tác vụ là thay đổi cấu hình máy: người dùng tự chạy, AI chỉ dùng `-DryRun`.
 - Dùng hằng ngày: nhấp đúp `Mo-TinixPoster.cmd` (hoặc `npm run tinix:prod`) → http://127.0.0.1:7001 (bản build, một cổng). Phát triển: `Mo-TinixPoster-Dev.cmd` hoặc `npm run tinix:dev` → http://127.0.0.1:5173 (Vite + service). Nếu service 7001 đang chạy sẵn (bản `tinix:prod` hằng ngày), `tinix:dev` sẽ tranh cổng rồi thoát; khi đó chỉ chạy editor: `npm run dev -- --host 127.0.0.1 --port 5173` (dùng chung service 7001, tức dữ liệu thật — tránh bấm lưu khi thử).
 - Cấu hình bí mật: `service/.env` (mẫu `service/.env.example`). Không bao giờ commit `.env`.
 
