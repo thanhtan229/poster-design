@@ -304,7 +304,7 @@ TinixPoster/                             ← D:\___TOOLS\__TINIX\TinixPoster (nh
 
 | Rủi ro | Cách xử lý |
 |---|---|
-| Repo gốc không có test tự động | Đã có bộ kiểm thử offline `npm run tinix:test` (22 nhóm), `npm run tinix:typecheck-service` và lint sạch; phần giao diện vẫn chạy thử tay (tạo, lưu, mở, thêm chữ, xuất); commit git nhỏ để dễ quay lại |
+| Repo gốc không có test tự động | Đã có bộ kiểm thử offline `npm run tinix:test` (23 nhóm), `npm run tinix:typecheck-service` và lint sạch; phần giao diện vẫn chạy thử tay (tạo, lưu, mở, thêm chữ, xuất); commit git nhỏ để dễ quay lại |
 | Ghi chú code tiếng Trung | Để Claude đọc & giải thích; ghi chú phần mới bằng tiếng Việt/Anh |
 | Puppeteer / Vite cũ | Đã nâng: Puppeteer 25.17, Vite 8.x (frontend). Service vẫn dùng TypeScript 3.9 có chủ ý (xem `CLAUDE.md`) |
 | Giấy phép AGPL | Dùng cá nhân không sao. Nếu sau này mở cho người khác dùng qua mạng → phải công khai mã nguồn bản sửa |

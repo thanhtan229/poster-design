@@ -26,6 +26,7 @@ import router from './control/router'
 import tinixAiRouter from './tinix/ai/routes' // [TINIX]
 import tinixPhotosRouter from './tinix/photos/routes' // [TINIX]
 import canvasSizesRouter from './tinix/canvasSizes'
+import { setUploadContentType } from './utils/content-type' // [TINIX] gồm cả font/webp (trước đây trả application/json)
 import cutoutRouter from './tinix/cutout'
 import collagePrintRouter from './tinix/collagePrint'
 import approvedPrintsRouter from './tinix/approvedPrints'
@@ -105,28 +106,3 @@ if (process.argv.includes('--serve-dist') || process.env.TINIX_SERVE_DIST === '1
 
 // [TINIX] bind to localhost only (override with HOST in service/.env)
 app.listen(Number(port), listenHost, () => console.log(`Screenshot Server start on http://${listenHost}:${port}`))
-
-const getContentType = function (path: any) {
-  const extension = path.split('.').pop().toLowerCase()
-  switch (extension) {
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg'
-    case 'png':
-      return 'image/png'
-    case 'gif':
-      return 'image/gif'
-    case 'svg':
-      return 'image/svg+xml'
-    default:
-      return null
-  }
-}
-
-function setUploadContentType(req: any, res: any, next: any) {
-  const contentType = getContentType(req.path)
-  if (contentType) {
-    res.setHeader('Content-Type', contentType)
-  }
-  next()
-}
