@@ -29,6 +29,15 @@ const { dZoom } = storeToRefs(canvasStore)
 // props: ['modelValue'],
 // emits: ['update:modelValue'],
 
+// 上传封面到自建后端，回调返回完整 url
+async function uploadCoverBlob(blobObj: Blob | null, cb: any) {
+  if (blobObj) {
+    const file = new File([blobObj], `cover_${Date.now()}.jpg`, { type: 'image/jpeg' })
+    const result = await api.material.upload({ file, folder: 'cover/user' }, () => {})
+    cb(result)
+  }
+}
+
 async function createCover(cb: any) {
   const nowZoom = dZoom.value
   // 取消选中元素
@@ -52,18 +61,7 @@ async function createCover(cb: any) {
     clonePage.setAttribute('id', 'clone-page')
     document.body.appendChild(clonePage)
     html2canvas(clonePage, opts).then((canvas) => {
-      canvas.toBlob(
-        async (blobObj) => {
-          if (blobObj) {
-            // 上传封面到自建后端，回调返回完整 url
-            const file = new File([blobObj], `cover_${Date.now()}.jpg`, { type: 'image/jpeg' })
-            const result = await api.material.upload({ file, folder: 'cover/user' }, () => {})
-            cb(result)
-          }
-        },
-        'image/jpeg',
-        0.15,
-      )
+      canvas.toBlob((blobObj) => uploadCoverBlob(blobObj, cb), 'image/jpeg', 0.15)
       canvasStore.updateZoom(nowZoom)
       // store.dispatch('updateZoom', nowZoom)
       clonePage.remove()

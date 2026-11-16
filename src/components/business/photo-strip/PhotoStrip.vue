@@ -190,9 +190,14 @@ const clearSelection = () => {
 }
 const changingPage = ref(false)
 const pageLayout = ref<{ page: number; id: number } | null>(null)
+// ảnh của lớp trùng với một ảnh trong dải (web hoặc bản HQ)
+function matchesStripItem(w: any) {
+  const target = staticPathOf(w.imgUrl || '')
+  return toStripItems().some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === target))
+}
 const selectedPagePhotos = computed(() => {
   const chosen = widgetStore.dSelectWidgets.length ? widgetStore.dSelectWidgets : [widgetStore.dActiveElement]
-  return chosen.filter((w: any) => w && w.type === 'w-image' && !w.linkedPhotoId && (w.slot || w.keepCover || toStripItems().some((it) => [it.web, it.hq].filter(Boolean).some((url) => staticPathOf(url) === staticPathOf(w.imgUrl || ''))))) as any[]
+  return chosen.filter((w: any) => w && w.type === 'w-image' && !w.linkedPhotoId && (w.slot || w.keepCover || matchesStripItem(w))) as any[]
 })
 async function changeCurrent(add: ReturnType<typeof placeValue>[], remove: string[], reroll = false) {
   changingPage.value = true
