@@ -13,7 +13,7 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Cài phụ thuộc: `npm run tinix:setup`
 - Font mới: `npm run tinix:fonts` rồi `npm run tinix:font-previews` (ảnh xem trước trong danh sách chọn font). Font từ `C:\Windows\Fonts`: `npm run tinix:winfonts` (manifest `scripts/tinix-winfonts.json`). Sao lưu DB + file tĩnh: `npm run tinix:backup`.
 - Shortcut ngoài Desktop: `npm run tinix:shortcut` (trỏ vào `Mo-TinixPoster.cmd`)
-- Dùng hằng ngày: nhấp đúp `Mo-TinixPoster.cmd` (hoặc `npm run tinix:prod`) → http://127.0.0.1:7001 (bản build, một cổng). Phát triển: `Mo-TinixPoster-Dev.cmd` hoặc `npm run tinix:dev` → http://127.0.0.1:5173 (Vite + service)
+- Dùng hằng ngày: nhấp đúp `Mo-TinixPoster.cmd` (hoặc `npm run tinix:prod`) → http://127.0.0.1:7001 (bản build, một cổng). Phát triển: `Mo-TinixPoster-Dev.cmd` hoặc `npm run tinix:dev` → http://127.0.0.1:5173 (Vite + service). Nếu service 7001 đang chạy sẵn (bản `tinix:prod` hằng ngày), `tinix:dev` sẽ tranh cổng rồi thoát; khi đó chỉ chạy editor: `npm run dev -- --host 127.0.0.1 --port 5173` (dùng chung service 7001, tức dữ liệu thật — tránh bấm lưu khi thử).
 - Cấu hình bí mật: `service/.env` (mẫu `service/.env.example`). Không bao giờ commit `.env`.
 
 ## Tính năng chính hiện có (cập nhật 2026-11-12)
@@ -26,7 +26,8 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Thư mục `.runtime/` (log chạy thử, công cụ tạm) và `psd-test/` (PSD mẫu) không đưa vào git.
 
 ## Quy ước bắt buộc
-- Làm trên nhánh git `tinix`. **Không push lên `origin`** (repo gốc của người khác).
+- Làm trên nhánh git `tinix`. **Không push lên `origin`** (repo gốc của người khác) — chỉ push lên remote `fork` (`thanhtan229/poster-design`).
+- Quy trình PR: nhánh việc → push `fork` → PR vào `main` của `fork` → merge bằng merge commit → về `main`/`tinix`, xóa nhánh đã merge (local + `fork`). `gh pr edit` và `gh pr view --json` có thể lỗi thiếu quyền `read:org`; khi đó dùng REST: `gh api -X PATCH repos/thanhtan229/poster-design/pulls/<n> -F body=@file` và `gh api -X PUT repos/thanhtan229/poster-design/pulls/<n>/merge -f merge_method=merge -f sha=<head>`.
 - Code mới đặt trong `service/src/tinix/` (backend) và `src/utils/tinix/`, `src/components/business/ai-assistant/` (frontend).
 - Hạn chế sửa file gốc. Mỗi chỗ sửa file gốc: thêm comment `[TINIX]` và ghi vào `TINIX.md`.
 - Mọi lời gọi AI đi qua `service/src/tinix/ai/vision.ts` (`callVisionJSON`); kiểm tra JSON bằng `service/src/tinix/ai/validate.ts` (KHÔNG dùng zod: service biên dịch bằng TypeScript 3.9); lịch sử/chi phí ghi vào `ai_jobs`.
@@ -35,5 +36,12 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - AI trả tọa độ tỉ lệ 0–1; widget dùng px → đổi bằng kích thước trang.
 - Chuỗi giao diện mới của TinixPoster: thêm khóa vào `src/languages/modules/vi/tinix-ui.ts` rồi dùng `$t('tinix.ui.<nhóm>.<khóa>')` / `i18t(...)`, không viết cứng tiếng Việt trong component.
 - Ghi chú code mới bằng tiếng Việt hoặc tiếng Anh (code gốc ghi chú tiếng Trung).
-- Repo không có test tự động: sau mỗi thay đổi, chạy app và kiểm tra tay (tạo, lưu, mở, thêm chữ, xuất ảnh) trước khi commit.
+- Frontend phải qua 3 cổng trước khi commit: `npm run lint` (hiện **0 lỗi**, giữ nguyên như vậy), `npx vue-tsc --noEmit` (0 lỗi) và `npx vite build`. Lưu ý: `vite build` KHÔNG kiểm tra kiểu, nên luôn chạy `vue-tsc`.
+- Lint — những điều đã gặp:
+  - Đừng dùng `eslint --fix` bừa với `vue/v-on-function-call`: nó đổi `@click="fn()"` thành `@click="fn"` và làm sự kiện bị truyền vào làm tham số. Với hàm có tham số, viết `@click="() => fn()"`.
+  - Đừng gỡ import trong `src/types/*.d.ts` (cần để file là module khi `declare module` mở rộng kiểu của `vue`); nếu import thừa thì thay bằng `export {}`.
+  - Biến/tham số cố ý không dùng thì đặt tên bắt đầu bằng `_`. Không đổi tên thuộc tính trong destructuring (`{ a }` thành `{ _a }` là đòi thuộc tính khác): bỏ hẳn tên đó khỏi mẫu.
+  - `max-params` và `complexity` đã tắt có chủ ý (code canvas/PSD).
+- Repo không có test giao diện tự động: ngoài các cổng trên và `npm run tinix:test`, chạy app và kiểm tra tay (tạo, lưu, mở, thêm chữ, xuất ảnh) trước khi commit.
+- Ảnh nhúng trong test phải là PNG/JPEG hợp lệ: `sharp` 0.35 (libvips 8.18) từ chối PNG hỏng CRC mà bản 0.33 từng bỏ qua (từng làm nhóm "AI (nhà cung cấp giả)" lỗi `libpng read error`).
 - Code chép từ Canvix (MIT) phải ghi vào `THIRD_PARTY.md` kèm thông báo bản quyền.
