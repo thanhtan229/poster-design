@@ -6,7 +6,7 @@
    <label>Cỡ cọ <input v-model.number="brush" type="range" min="2" max="150" /></label>
    <label>Phóng <input v-model.number="zoom" type="range" min="100" max="300" />{{ zoom }}%</label>
    <label>Viền trắng <input v-model.number="mm" type="number" min="0" max="5" step="0.1" /> mm</label>
-   <button @click="undo" :disabled="!history.length">Hoàn tác</button><button @click="reset">Đặt lại mặt nạ</button>
+   <button :disabled="!history.length" @click="undo">Hoàn tác</button><button @click="reset">Đặt lại mặt nạ</button>
   </div>
   <p>Rê cọ trên ảnh để sửa. Cọ Giữ lấy lại chi tiết từ ảnh gốc. Nền kiểm tra không được in. Viền tính theo khổ mẫu 30 × 20 cm.</p>
   <div class="review-stage" :style="{background:background==='checker'?'repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 0 / 24px 24px':background}">
@@ -14,16 +14,16 @@
   </div>
   <div v-if="rimPreview" :style="{background:background==='checker'?'#aaa':background}"><img :src="rimPreview" alt="Xem trước viền trắng theo mm" style="max-height:100px;max-width:100%" /> Xem trước viền trắng</div>
   <p role="status">{{ error }}</p>
-  <template #footer><el-button @click="open=false" :disabled="saving">Hủy</el-button><el-button type="primary" :loading="saving" @click="confirm">Dùng kết quả này</el-button></template>
+  <template #footer><el-button :disabled="saving" @click="open=false">Hủy</el-button><el-button type="primary" :loading="saving" @click="confirm">Dùng kết quả này</el-button></template>
  </el-dialog>
 </template>
 <script setup lang="ts">
 import { ref,nextTick,watch,onBeforeUnmount } from 'vue'
 import {applyMask,canvasBlob,canvasOf,renderSubject,subjectBounds,releaseCanvas} from '@/utils/tinix/cutout-edit'
 const emit=defineEmits<{(e:'confirm',value:{blob:Blob;mm:number}):void;(e:'closed'):void}>()
-const open=ref(false),preview=ref<HTMLCanvasElement>(),background=ref('#20242b'),mode=ref('erase'),brush=ref(30),zoom=ref(100),mm=ref(1.5),saving=ref(false),error=ref('')
-let documentScale:number|undefined,printDpi=300,subjectBox:{width:number;height:number}|undefined
-let source:ImageBitmap|null=null,mask:HTMLCanvasElement,initial:ImageData,last:{x:number;y:number}|null=null
+const open=ref(false); const preview=ref<HTMLCanvasElement>(); const background=ref('#20242b'); const mode=ref('erase'); const brush=ref(30); const zoom=ref(100); const mm=ref(0); const saving=ref(false); const error=ref('')
+let documentScale:number|undefined; let printDpi=300; let subjectBox:{width:number;height:number}|undefined
+let source:ImageBitmap|null=null; let mask:HTMLCanvasElement; let initial:ImageData; let last:{x:number;y:number}|null=null
 const history=ref<ImageData[]>([])
 const baseWidth=ref(320)
 const rimPreview=ref('');let timer:ReturnType<typeof setTimeout>|undefined
@@ -31,7 +31,7 @@ function updateRim(){
  if(!source||!mask||!open.value)return
  const ratio=Math.min(1,700/Math.max(mask.width,mask.height))
  const small=canvasOf(Math.max(1,Math.round(mask.width*ratio)),Math.max(1,Math.round(mask.height*ratio)))
- let combined:HTMLCanvasElement|undefined,r:ReturnType<typeof renderSubject>|undefined
+ let combined:HTMLCanvasElement|undefined; let r:ReturnType<typeof renderSubject>|undefined
  try{
   small.getContext('2d')!.drawImage(mask,0,0,small.width,small.height)
   combined=applyMask(source,small)
@@ -48,7 +48,7 @@ function snapshot(){
  history.value.push(mask.getContext('2d')!.getImageData(0,0,mask.width,mask.height))
 }
 watch(mm,scheduleRim)
-async function show(original:Blob,cutout:Blob,border=1.5,scale?:number,dpi=300,box?:{width:number;height:number}){
+async function show(original:Blob,cutout:Blob,border=0,scale?:number,dpi=300,box?:{width:number;height:number}){
  subjectBox=box
  printDpi=dpi
  documentScale=scale

@@ -251,3 +251,8 @@ Kiểm thử có nền gradient mô phỏng, hai cực sáng/tối, vùng trắn
 Lượt đo mới hoàn tất 22/22 ca, không lỗi; 13 vùng có chất lượng dưới 0.75. Không ca nào được tự áp dụng sau các kiểm tra bất đồng/chất lượng. Các ứng viên đầu vẫn có thể khác phong cách, nên chưa chứng minh tăng độ chính xác. Báo cáo đối chiếu `.runtime/font-extract-results/COMPARISON.md` ghi ứng viên trước/sau, chất lượng và trọng số hình dáng. Không có ground truth hoặc đánh giá người dùng thì Top 1/Top 3 vẫn null. Bộ đo không tự sinh nhãn duyệt con người.
 
 Kiểm thử tách nền, hai cực sáng/tối, vùng trắng và giảm trọng số đã đạt; 16/16 nhóm hồi quy, build frontend và TypeScript service đạt. Kiểm thử app dùng kết quả mới của THURSDAY đã xác nhận có preview xử lý, duyệt Montserrat 500/giãn 3%, lưu/mở lại và xuất PNG tại `.runtime/font-extract-app/export.png`. Bố cục một khối dùng fixture để kiểm tra riêng luồng font; dữ liệu so khớp là kết quả API thật đã lưu.
+
+[TINIX] Bé yêu v4: TemplateLibrary sinh cụm tên từng chữ qua shared/scrapbook-name.mjs khi tạo đơn; tự chia hai hàng, giữ trường tên nguồn, cập nhật liên kết khi đổi ID. CLI instantiate dùng cùng hàm. Kiểm thử: scripts/tinix-scrapbook-name-test.mjs; xuất thử đơn 209/210. Chưa kiểm thử toàn bộ thao tác tạo đơn qua giao diện với chủ thể mới.
+
+
+[TINIX] Bé yêu v4 phiên bản 2 giới hạn vùng tên cách sticker máy ảnh; mặc định viền chủ thể mới 0 mm. Kiểm thử giao diện và xuất đơn 215 qua scripts/tinix-baby-v4-ui-test.cjs và tinix-production-pilot.cjs.

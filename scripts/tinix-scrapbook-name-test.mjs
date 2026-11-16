@@ -1,0 +1,5 @@
+import assert from 'node:assert/strict'
+import {expandScrapbookNames} from '../shared/scrapbook-name.mjs'
+const seed={layers:[{type:'w-image',uuid:'image'},{type:'w-text',uuid:'name',scrapbookName:true,text:'LUNA',left:200,top:1800,width:1000,height:300,fontSize:160,printGroup:'name',printRole:'raised'}]}
+for(const text of ['LUNA','NGỌC BẢO AN NHIÊN','<AN & BÉ>']){const l=structuredClone(seed);l.layers[1].text=text;expandScrapbookNames(l);const count=l.layers.length;expandScrapbookNames(l);assert.equal(l.layers.length,count);assert.equal(l.layers.filter(x=>x.scrapbookNameSource&&x.type==='w-text').length,Array.from(text).filter(x=>! /\s/.test(x)).length);for(const w of l.layers.filter(x=>x.scrapbookNameSource)){assert(w.left>=200&&w.left+w.width<=1200.001);assert(w.top>=1800&&w.top+w.height<=2100.001)}assert.equal(seed.layers.length,2)}
+assert.throws(()=>expandScrapbookNames({layers:[{...seed.layers[1],text:' '}]}));console.log('PASS short, long, Vietnamese, escaping, repeated generation, bounds and independent source')

@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { validate } from './tinix-drafts.mjs'
 import { placeCutout } from './tinix-mask.mjs'
+import { expandScrapbookNames } from '../shared/scrapbook-name.mjs'
 const sharp = createRequire(import.meta.url)('../service/node_modules/sharp')
 
 export async function instantiate(template, bindings, directory) {
@@ -39,7 +40,9 @@ export async function instantiate(template, bindings, directory) {
       }
     }
   }
+  expandScrapbookNames(layout)
   const ids = new Map(layout.layers.map(layer => [String(layer.uuid), randomUUID()])), groups = new Map()
+  for (const layer of layout.layers) if (layer.scrapbookNameSource) layer.scrapbookNameSource = ids.get(String(layer.scrapbookNameSource))
   // Sync before remapping, so links retain their template relationship.
   for (const layer of layout.layers.filter(layer => layer.linkedPhotoId)) {
     const source = layout.layers.find(source => String(source.uuid) === String(layer.linkedPhotoId))
