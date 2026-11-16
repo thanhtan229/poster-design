@@ -140,18 +140,20 @@ export function measureInk(ref, rect, tone = 'dark') {
 export async function paperColorOf(ref, el) {
   const [cx, cy] = el.center, [w, h] = el.size
   const { data, info } = await (await uprightCrop(ref, cx, cy, w, h, el.rotate || 0, 1)).removeAlpha().raw().toBuffer({ resolveWithObject: true })
-  const c = [[], [], []]
+  // dải viền ngoài của khung: giấy trắng/nhạt → chỉ lấy điểm sáng, ít màu (loại bóng, nền); giấy màu hoặc kraft → lấy mọi điểm trong dải
+  const bright = [[], [], []], all = [[], [], []]
+  let n = 0
   for (let y = 0; y < info.height; y++) for (let x = 0; x < info.width; x++) {
     const edge = Math.min(x, y, info.width - 1 - x, info.height - 1 - y)
     if (edge < 2 || edge > 7) continue
     const i = (y * info.width + x) * 3, r = data[i], g = data[i + 1], b = data[i + 2]
-    if ((r + g + b) / 3 > 150 && Math.max(r, g, b) - Math.min(r, g, b) < 60) { c[0].push(r); c[1].push(g); c[2].push(b) }
+    n++; all[0].push(r); all[1].push(g); all[2].push(b)
+    if ((r + g + b) / 3 > 150 && Math.max(r, g, b) - Math.min(r, g, b) < 60) { bright[0].push(r); bright[1].push(g); bright[2].push(b) }
   }
+  const c = bright[0].length >= 0.6 * n ? bright : all
   if (c[0].length < 20) return null
   return toHex(c.map((a) => { a.sort((p, q) => p - q); return a[a.length >> 1] }))
 }
-
-/** Màu trung vị của các điểm ảnh trong vùng thỏa điều kiện. */
 function medianColor(ref, rect, accept = () => true) {
   const [x0, y0, x1, y1] = clampRect(ref, rect), c = [[], [], []]
   for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {

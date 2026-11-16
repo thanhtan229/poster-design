@@ -7,7 +7,7 @@ import { mkdtemp, rm, readFile, access } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { validate } from './tinix-drafts.mjs'
-import { validateSpec, loadReference, buildFromReference, fitText, compareToReference, drawGrid, drawSideBySide, elementRect, detectHearts, uprightCrop, inpaintPushPull } from './lib/reference-build.mjs'
+import { validateSpec, loadReference, buildFromReference, fitText, compareToReference, drawGrid, drawSideBySide, elementRect, detectHearts, uprightCrop, inpaintPushPull, paperColorOf } from './lib/reference-build.mjs'
 
 const sharp = createRequire(import.meta.url)('../service/node_modules/sharp')
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'tinix-refbuild-'))
@@ -154,6 +154,12 @@ try {
   assert.ok(hole[1] > hole[0] && hole[1] > 100, `vùng phần tử phải được vá bằng màu nền, không còn đỏ (đo được ${hole})`)
   assert.ok(Math.abs(inpaintPushPull(Buffer.alloc(8 * 8 * 3, 100), Uint8Array.from({ length: 64 }, (_, i) => (i % 8 > 2 && i % 8 < 6 && i > 20 && i < 44 ? 1 : 0)), 8, 8)[27 * 3] - 100) <= 1, 'vá lỗ nền đồng màu')
   assert.throws(() => validateSpec({ name: 'x', background: { pattern: 'khac' }, elements: [{ type: 'sticker', name: 'a', box: [0, 0, 5, 5] }] }), /pattern/)
+
+  // 8d) màu giấy khung: viền kraft (nâu, sẫm) phải ra màu kraft, không phải màu sáng của ảnh bên trong; viền trắng vẫn ra trắng
+  const kraftSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#333333"/><rect x="40" y="40" width="220" height="220" fill="#a8794d"/><rect x="58" y="58" width="184" height="184" fill="#e8dede"/></svg>'
+  const kraftFile = path.join(tmp, 'kraft.png'); await sharp(Buffer.from(kraftSvg)).png().toFile(kraftFile)
+  const kraft = await paperColorOf(await loadReference(kraftFile), { center: [150, 150], size: [220, 220], rotate: 0 })
+  assert.ok(kraft && Math.abs(parseInt(kraft.slice(1, 3), 16) - 0xa8) < 12 && Math.abs(parseInt(kraft.slice(3, 5), 16) - 0x79) < 12, `giấy kraft phải ra màu nâu (đo được ${kraft})`)
 
   // 9) tự khớp chữ nhiều dòng: lineHeight lấy từ chiều cao mực mẫu
   const fit = await fitText(fakeMeasure, { family: 'Fake', url: '/x', text: 'AB\nCDEFG', targetInkWidth: 300, targetInkHeight: 200, center: [500, 500] })

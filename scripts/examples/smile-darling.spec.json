@@ -35,6 +35,7 @@
 
     { "type": "label", "name": "Nhãn Smile", "center": [204, 1105], "size": [232, 74], "rotate": -1, "shape": "cutout",
       "text": "SMILE", "font": "Permanent Marker", "textInk": [176, 1076, 316, 1136] },
+    { "type": "sticker", "name": "Biểu tượng máy ảnh", "box": [105, 1086, 170, 1142], "keep": "box" },
     { "type": "sticker", "name": "Tim hồng", "box": [1010, 1000, 1160, 1165] }
   ]
 }
