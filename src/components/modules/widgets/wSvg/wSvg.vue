@@ -206,7 +206,7 @@ function loadSvg() {
     if (/^data:image\/svg\+xml/i.test(markup)) {
       try {
         markup = decodeURIComponent(markup.slice(markup.indexOf(',') + 1))
-      } catch (e) {
+      } catch {
         /* giữ nguyên */
       }
     }
@@ -253,7 +253,7 @@ function loadSvg() {
                 attrsColor[attr.name] = props.params.colors.findIndex((x) => x == attr.value)
               }
             })
-          } catch (e) {}
+          } catch {}
           if (JSON.stringify(attrsColor) !== '{}' && svgElements) {
             svgElements.push({
               item: element,

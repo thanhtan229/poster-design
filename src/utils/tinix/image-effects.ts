@@ -3,7 +3,7 @@ export type ImageEffects = { grayscale: boolean; blur: number; brightness: numbe
 export const defaultImageEffects: ImageEffects = { grayscale:false, blur:0, brightness:100, contrast:100, saturation:100, warmth:0, border:0, borderColor:'#ffffff', shadow:0, grain:0, paper:0 }
 export function imageEffects(w:any): ImageEffects { return {...defaultImageEffects,...w.effects} }
 export function imageFilterStyle(w:any) {
- const e=imageEffects(w), blur=Math.max(0,Number(e.blur)||0)
+ const e=imageEffects(w); const blur=Math.max(0,Number(e.blur)||0)
  return {filter:`grayscale(${e.grayscale?1:0}) brightness(${e.brightness}%) contrast(${e.contrast}%) saturate(${e.saturation}%) sepia(${e.warmth/100}) blur(${blur}px)`,scale:blur?String(1+6*blur/Math.max(1,Math.min(w.width,w.height))):undefined}
 }
 export function imageFrameStyle(w:any) { const e=imageEffects(w);return {boxShadow:e.shadow?`0 ${e.shadow/3}px ${e.shadow}px rgba(0,0,0,.3)`:undefined,borderRadius:(w.radius||0)+'px'} }

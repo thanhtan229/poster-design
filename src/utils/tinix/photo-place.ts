@@ -97,7 +97,7 @@ export function assignPhotosToSlots(slotAspects: number[], photoAspects: number[
   const sOrder = slotAspects.map((a, i) => i).sort((x, y) => slotAspects[x] - slotAspects[y])
   const pOrder = photoAspects.map((a, i) => i).sort((x, y) => photoAspects[x] - photoAspects[y])
   const out = new Array(n)
-  sOrder.forEach((si, k) => (out[si] = pOrder[k]))
+  sOrder.forEach((si, k) => { out[si] = pOrder[k] })
   return out
 }
 
@@ -123,7 +123,7 @@ function reuuid(widgets: any[]): any[] {
     if (c.text) {
       try {
         c.text = decodeURIComponent(c.text)
-      } catch (e) {
+      } catch {
         // chữ không mã hóa: giữ nguyên
       }
     }
@@ -216,7 +216,7 @@ async function applyTemplateToPage(pageIndex: number, tpl: { id: number; title: 
   let parsed: any
   try {
     parsed = JSON.parse(tpl.data)
-  } catch (e) {
+  } catch {
     return false
   }
   const rawPage = Array.isArray(parsed) ? parsed[0]?.global : parsed?.page
@@ -287,7 +287,7 @@ export async function changePagePhotos(add: PhotoValue[], removeIds: string[], a
   const originalId = currentId || Number((canvas.dPage as any).tinixAuto) || 0
   const original: any = originalId ? await api.home.getTempDetail({ id: originalId }) : null
   const groups: number[] = Array.isArray(original?.groups) ? original.groups : []
-  const pw = Number(canvas.dPage.width), ph = Number(canvas.dPage.height)
+  const pw = Number(canvas.dPage.width); const ph = Number(canvas.dPage.height)
   let slots: any[] | null = null
   let chosenId = 0
   let best = Infinity
@@ -351,7 +351,7 @@ export async function autoApplyTemplate(photos: PhotoValue[]): Promise<boolean> 
   let ok = false
   try {
     ok = await applyTemplateToPage(pageIndex, tpl, photos)
-  } catch (e) {
+  } catch {
     // Dữ liệu mẫu lỗi không được để lại trang trống khi chuyển sang xếp lưới.
   }
   if (!ok) {
@@ -389,7 +389,7 @@ export async function placePhotos(values: PhotoValue[], auto: boolean) {
   if (auto) {
     try {
       if (await autoApplyTemplate(values)) return
-    } catch (e) {
+    } catch {
       // lỗi tải mẫu: xuống nhánh xếp lưới bên dưới
     }
     ElMessage.warning(t('tinix.ui.photoAuto.khong_co_mau', { n: values.length }))

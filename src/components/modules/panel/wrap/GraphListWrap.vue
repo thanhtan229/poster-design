@@ -48,7 +48,7 @@
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, toRefs, onMounted } from 'vue'
+import { reactive, onMounted } from 'vue'
 import api from '@/api'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'

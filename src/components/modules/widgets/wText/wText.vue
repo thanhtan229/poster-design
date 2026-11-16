@@ -55,7 +55,7 @@ import { loadLibraryFont } from '@/utils/tinix/font-loader'
 // 文本组件
 // const NAME = 'w-text'
 
-import { reactive, toRefs, computed, onUpdated, watch, onMounted, ref } from 'vue'
+import { reactive, computed, onUpdated, watch, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fontMinWithDraw } from '@/utils/widgets/loadFontRule'
 import getGradientOrImg from './getGradientOrImg'
@@ -142,7 +142,7 @@ function updateRecord() {
 }
 
 function updateText(e?: Event) {
-  const value = e && e.target ? (e.target as HTMLElement).innerHTML : props.params.text //.replace(/\n/g, '<br/>')
+  const value = e && e.target ? (e.target as HTMLElement).innerHTML : props.params.text // .replace(/\n/g, '<br/>')
   if (value !== props.params.text) {
     widgetStore.updateWidgetData({
       uuid: String(props.params.uuid),

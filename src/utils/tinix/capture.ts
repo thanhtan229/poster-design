@@ -10,7 +10,7 @@ const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [T
 export async function capturePage(opts: { maxEdge?: number; hideText?: boolean } = {}): Promise<string> {
   const el = document.getElementById('page-design-canvas') as HTMLElement | null
   if (!el) throw new Error(i18t('tinix.ui.capture.khong_tim_thay_trang_thiet'))
-  const w = el.offsetWidth, h = el.offsetHeight
+  const w = el.offsetWidth; const h = el.offsetHeight
   const scale = Math.min(1, (opts.maxEdge || 1024) / Math.max(w, h))
   const canvas = await html2canvas(el, {
     scale,
@@ -24,8 +24,8 @@ export async function capturePage(opts: { maxEdge?: number; hideText?: boolean }
       if (!c) return
       c.style.transform = 'none'
       // selection/hover chrome must not end up in the picture
-      doc.querySelectorAll('.moveable-control-box, .shelter, .shelter-bg, .line-guides, .print-unit-overlays').forEach((n) => ((n as HTMLElement).style.display = 'none'))
-      if (opts.hideText) c.querySelectorAll('.w-text').forEach((n) => ((n as HTMLElement).style.visibility = 'hidden'))
+      doc.querySelectorAll('.moveable-control-box, .shelter, .shelter-bg, .line-guides, .print-unit-overlays').forEach((n) => { (n as HTMLElement).style.display = 'none' })
+      if (opts.hideText) c.querySelectorAll('.w-text').forEach((n) => { (n as HTMLElement).style.visibility = 'hidden' })
     },
   })
   return canvas.toDataURL('image/jpeg', 0.85)

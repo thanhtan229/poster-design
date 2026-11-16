@@ -28,7 +28,7 @@
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, toRefs, watch, nextTick, ref, onMounted } from 'vue'
+import { reactive, nextTick, ref, onMounted } from 'vue'
 import { ElTabPane, ElTabs, TabPaneName } from 'element-plus'
 import { useRouter } from 'vue-router'
 

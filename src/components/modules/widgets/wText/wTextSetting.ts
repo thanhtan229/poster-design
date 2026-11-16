@@ -1,5 +1,4 @@
 import i18n from '@/languages'
-import { StyleValue } from "vue"
 
 export type TwTextData = {
   name: string

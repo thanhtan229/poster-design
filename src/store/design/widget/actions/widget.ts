@@ -43,7 +43,7 @@ export function constrainToCanvas(setting: TdWidgetData, dPageWidth: number, dPa
 export function constrainGroupToCanvas(group: TdWidgetData[], dPageWidth: number, dPageHeight: number): void {
   if (!group || group.length === 0) return
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity
   for (const item of group) {
     const l = Number(item.left) || 0
     const t = Number(item.top) || 0

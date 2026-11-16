@@ -39,7 +39,7 @@
 </template>
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, toRefs, watch } from 'vue'
+import { reactive, watch } from 'vue'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
 import { useRoute } from 'vue-router'
 import api from '@/api'

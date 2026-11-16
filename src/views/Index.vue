@@ -27,7 +27,7 @@
           </div>
           <el-divider direction="vertical" />
           <!-- [TINIX] nhãn header Việt hóa qua $t('tinix.menu.*') — xem src/languages/modules/vi -->
-          <Folder @select="dealWith" ref="ref1"> <div class="operation-item"><i class="icon sd-wenjian" /> <span class="text" >{{ $t('tinix.menu.file') }}</span></div> </Folder>
+          <Folder ref="ref1" @select="dealWith"> <div class="operation-item"><i class="icon sd-wenjian" /> <span class="text" >{{ $t('tinix.menu.file') }}</span></div> </Folder>
           <Helper @select="dealWith"> <div class="operation-item"><i class="icon sd-bangzhu" /> <span class="text" >{{ $t('tinix.menu.help') }}</span></div> </Helper>
           <el-divider direction="vertical" />
           <div class="operation-item" @click="openAiAssistant"><i class="icon sd-AIkoutu" /> <span class="text">{{ $t('tinix.menu.ai') }}</span></div>
@@ -104,8 +104,7 @@ import ProgressLoading from '@/components/common/ProgressLoading/download.vue'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore } from '@/store'
-import type { ButtonInstance } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type ButtonInstance } from 'element-plus'
 import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import Tour from './components/Tour.vue'

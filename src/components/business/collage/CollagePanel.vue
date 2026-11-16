@@ -12,9 +12,9 @@
     <button v-if="hasEditableSubject" :disabled="busy" @click="editPageSubject">Sửa chủ thể trên trang</button>
     <div v-if="createdUrl" class="created-result" role="status">Đã lưu thiết kế riêng: <b>{{ createdName }}</b>. <a :href="createdUrl" target="_blank" rel="noopener">Mở thiết kế của khách</a></div>
     <el-dialog v-model="libraryOpen" title="Chọn ảnh từ thư viện" width="800px" append-to-body>
-      <input v-model="search" placeholder="Tìm tên ảnh" /><button @click="reloadPhotos()">Làm mới</button>
+      <input v-model="search" placeholder="Tìm tên ảnh" /><button @click="() => reloadPhotos()">Làm mới</button>
       <p v-if="photoState.loading">Đang tải thư viện…</p><p v-else-if="!library.length">Chưa có ảnh phù hợp. Bạn có thể tải ảnh từ dải ảnh hoặc chọn file trên máy.</p>
-      <div class="library-grid"><button v-for="photo in library" :key="photo.key" @click="selectLibrary(photo)" :title="photo.name"><img :src="photo.thumb" alt="" loading="lazy" /><span>{{ photo.name || ('Ảnh '+photo.id) }}</span></button></div>
+      <div class="library-grid"><button v-for="photo in library" :key="photo.key" :title="photo.name" @click="selectLibrary(photo)"><img :src="photo.thumb" alt="" loading="lazy" /><span>{{ photo.name || ('Ảnh '+photo.id) }}</span></button></div>
     </el-dialog>
     <fieldset :disabled="busy">
       <label>Tên khách / mã đơn <input v-model="customer" maxlength="100" placeholder="Ví dụ: Lan — tốt nghiệp" data-collage-customer /></label>
@@ -46,18 +46,18 @@ import TemplateLibrary from './TemplateLibrary.vue'
 import PrintGroups from './PrintGroups.vue'
 import { useWidgetStore, useCanvasStore } from '@/store'
 import { ElMessage } from 'element-plus'
-import { collageTemplates, getCollageTemplate, getSubjectBox, extractCollageSubject, prepareEditedSubject, uploadCollagePhoto, saveCustomerDesign } from '@/utils/tinix/collage'
-import { reloadPhotos, photoState, toStripItems } from '@/utils/tinix/photo-strip'
-import type { StripItem } from '@/utils/tinix/photo-strip'
-import type { CutoutEngine } from '@/utils/tinix/collage'
+import { collageTemplates, getCollageTemplate, getSubjectBox, extractCollageSubject, prepareEditedSubject, uploadCollagePhoto, saveCustomerDesign, type CutoutEngine } from '@/utils/tinix/collage'
+import { reloadPhotos, photoState, toStripItems, type StripItem } from '@/utils/tinix/photo-strip'
+
+
 const engine=ref<CutoutEngine>('birefnet')
-const main=ref<File|null>(null),extras=ref<File[]>([]),mainPreview=ref(''),transparent=ref(false),busy=ref(false),status=ref('')
-const templateId=ref(collageTemplates[0].id),template=computed(()=>getCollageTemplate(templateId.value))
-const customer=ref(''),createdUrl=ref(''),createdName=ref('')
-const title=ref(template.value.defaultTitle),body=ref(template.value.defaultBody)
+const main=ref<File|null>(null); const extras=ref<File[]>([]); const mainPreview=ref(''); const transparent=ref(false); const busy=ref(false); const status=ref('')
+const templateId=ref(collageTemplates[0].id); const template=computed(()=>getCollageTemplate(templateId.value))
+const customer=ref(''); const createdUrl=ref(''); const createdName=ref('')
+const title=ref(template.value.defaultTitle); const body=ref(template.value.defaultBody)
 watch(templateId,()=>{title.value=template.value.defaultTitle;body.value=template.value.defaultBody;createdUrl.value=''})
-const libraryOpen=ref(false),libraryRole=ref<'main'|'extra'|'replace'>('main'),search=ref('')
-const libraryMain=ref<StripItem|null>(null),libraryExtras=ref<StripItem[]>([])
+const libraryOpen=ref(false); const libraryRole=ref<'main'|'extra'|'replace'>('main'); const search=ref('')
+const libraryMain=ref<StripItem|null>(null); const libraryExtras=ref<StripItem[]>([])
 const library=computed(()=>toStripItems().filter(p=>(p.name||('Ảnh '+p.id)).toLowerCase().includes(search.value.toLowerCase())))
 let replacementId:string|null=null
 async function openLibrary(role:'main'|'extra'|'replace'){replacementId=role==='replace'?selectedImage.value?.uuid:null;libraryRole.value=role;libraryOpen.value=true;await reloadPhotos()}
@@ -67,7 +67,7 @@ async function selectLibrary(photo:StripItem){
   libraryOpen.value=false
   if(!w.cutoutEdit){w.imgUrl=photo.hq||photo.web;delete w.origin;store.updateDWidgets();return}
   busy.value=true
-  try{const file=await getLibraryFile(photo);original=file;editingId=w.uuid;replacing=true;const blob=await extractCollageSubject(file,s=>status.value=s,false,engine.value);await review.value?.show(file,blob,w.cutoutEdit.mm,undefined,useCanvasStore().dPage.dpi||300,{width:w.width,height:w.height})}catch(e:any){ElMessage.error(e.message)}finally{busy.value=false}
+  try{const file=await getLibraryFile(photo);original=file;editingId=w.uuid;replacing=true;const blob=await extractCollageSubject(file,s=>{status.value=s},false,engine.value);await review.value?.show(file,blob,w.cutoutEdit.mm,undefined,useCanvasStore().dPage.dpi||300,{width:w.width,height:w.height})}catch(e:any){ElMessage.error(e.message)}finally{busy.value=false}
   return
  }
 
@@ -82,7 +82,7 @@ const store=useWidgetStore()
 const pageSubject=computed(()=>store.dWidgets.find((w:any)=>w.cutoutEdit) as any)
 const selectedImage=computed(()=>{const w=store.dActiveElement as any;return w?.type==='w-image'&&!w.lock?w:null})
 const hasEditableSubject=computed(()=>!!pageSubject.value)
-let editingId:string|null=null,original:Blob|null=null,replacing=false
+let editingId:string|null=null; let original:Blob|null=null; let replacing=false
 async function editPageSubject(){
  if(!pageSubject.value)return
  busy.value=true
@@ -93,7 +93,7 @@ async function acceptReview(value:{blob:Blob;mm:number}){
  busy.value=true
  try{
   const subject=await prepareEditedSubject(original,value.blob,value.mm,editingId&&!replacing?pageSubject.value.width/pageSubject.value.cutoutEdit.frame.width:undefined,editingId?(useCanvasStore().dPage.dpi||300):template.value.dpi,replacing?{width:pageSubject.value.width,height:pageSubject.value.height}:getSubjectBox(templateId.value))
-  if(editingId){const w=store.dWidgets.find((w:any)=>w.uuid===editingId) as any;if(!w)throw new Error('Chủ thể đã bị xóa');const old=w.cutoutEdit.frame,next=subject.edit!.frame,sx=w.width/old.width,sy=w.height/old.height;if(replacing){const width=next.width*subject.documentScale!,height=next.height*subject.documentScale!;w.left+=(w.width-width)/2;w.top+=w.height-height;w.width=width;w.height=height}else{w.left+=(next.left-old.left)*sx;w.top+=(next.top-old.top)*sy;w.width=next.width*sx;w.height=next.height*sy}w.imgUrl=subject.url;w.cutoutBorderUrl=subject.borderUrl;w.cutoutEdit=subject.edit;delete w.origin;store.updateDWidgets();status.value='Đã cập nhật mặt nạ và viền, không chạy lại model.'}
+  if(editingId){const w=store.dWidgets.find((w:any)=>w.uuid===editingId) as any;if(!w)throw new Error('Chủ thể đã bị xóa');const old=w.cutoutEdit.frame; const next=subject.edit!.frame; const sx=w.width/old.width; const sy=w.height/old.height;if(replacing){const width=next.width*subject.documentScale!; const height=next.height*subject.documentScale!;w.left+=(w.width-width)/2;w.top+=w.height-height;w.width=width;w.height=height}else{w.left+=(next.left-old.left)*sx;w.top+=(next.top-old.top)*sy;w.width=next.width*sx;w.height=next.height*sy}w.imgUrl=subject.url;w.cutoutBorderUrl=subject.borderUrl;w.cutoutEdit=subject.edit;delete w.origin;store.updateDWidgets();status.value='Đã cập nhật mặt nạ và viền, không chạy lại model.'}
   else {const photos=[];for(const file of extras.value)photos.push(await uploadCollagePhoto(file,file.name));for(const photo of libraryExtras.value)photos.push({url:photo.hq||photo.web,width:photo.width,height:photo.height});const id=await saveCustomerDesign(subject,photos,title.value.trim(),body.value.trim(),customer.value,templateId.value);createdUrl.value='/home?id='+id;createdName.value=customer.value;status.value='Đã lưu thiết kế riêng. Bấm Mở thiết kế của khách.';ElMessage.success('Đã tạo thiết kế cho khách mới')}
  }catch(e:any){status.value=e.message;ElMessage.error(e.message)}finally{busy.value=false}
 }
@@ -105,7 +105,7 @@ async function create(){
   try{
     editingId=null;replacing=false;const file=main.value||await getLibraryFile(libraryMain.value!);original=file
     const cached=extracted.get(file)
-    const blob=cached?.mode===transparent.value&&cached.engine===engine.value?cached.blob:await extractCollageSubject(file,s=>status.value=s,transparent.value,engine.value)
+    const blob=cached?.mode===transparent.value&&cached.engine===engine.value?cached.blob:await extractCollageSubject(file,s=>{status.value=s},transparent.value,engine.value)
     extracted.set(file,{mode:transparent.value,engine:engine.value,blob})
     await review.value?.show(original,blob,1.5,undefined,template.value.dpi,getSubjectBox(templateId.value));status.value='Kiểm tra mép ảnh rồi bấm Dùng kết quả này.'
   }catch(e:any){status.value=e?.message||'Không tạo được thiết kế';ElMessage.error(status.value)}finally{busy.value=false}

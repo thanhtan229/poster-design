@@ -6,7 +6,7 @@
     <div class="list"><div v-for="s in filtered" :key="s.id" class="row">
       <button class="star" @click="state(s, s.favorite ? 'unfavorite' : 'favorite')">{{ s.favorite ? '★' : '☆' }}</button>
       <button class="select" :disabled="!!s.deleted || !!s.hidden" @click="$emit('choose', s)"><b>{{ s.name }}</b><small>{{ s.category }} · {{ s.width }} × {{ s.height }} {{ s.unit }}{{ s.unit === 'cm' ? ` · ${s.dpi} DPI` : '' }}{{ s.deleted ? ' · Đã xóa' : s.hidden ? ' · Đã ẩn' : '' }}</small></button>
-      <template><el-button size="small" @click="edit(s)" :disabled="!!s.deleted">Sửa</el-button><el-button size="small" @click="duplicate(s)">Nhân bản</el-button><el-button size="small" @click="state(s, s.hidden ? 'show' : 'hide')" :disabled="!!s.deleted">{{ s.hidden ? 'Hiện' : 'Ẩn' }}</el-button><el-button size="small" @click="state(s, s.deleted ? 'restore' : 'delete')">{{ s.deleted ? 'Khôi phục' : 'Xóa' }}</el-button></template>
+      <el-button size="small" :disabled="!!s.deleted" @click="edit(s)">Sửa</el-button><el-button size="small" @click="duplicate(s)">Nhân bản</el-button><el-button size="small" :disabled="!!s.deleted" @click="state(s, s.hidden ? 'show' : 'hide')">{{ s.hidden ? 'Hiện' : 'Ẩn' }}</el-button><el-button size="small" @click="state(s, s.deleted ? 'restore' : 'delete')">{{ s.deleted ? 'Khôi phục' : 'Xóa' }}</el-button>
     </div><p v-if="!filtered.length">Không có kích thước phù hợp.</p></div>
     <el-dialog v-model="editing" :title="form.id ? 'Sửa kích thước' : 'Thêm kích thước'" width="420" append-to-body>
       <el-form label-position="top"><el-form-item label="Tên"><el-input v-model="form.name" maxlength="100" /></el-form-item><el-form-item label="Nhóm"><el-select v-model="form.category" filterable allow-create default-first-option><el-option v-for="c in categories" :key="c" :label="c" :value="c" /></el-select></el-form-item><el-form-item label="Đơn vị"><el-radio-group v-model="form.unit"><el-radio-button label="px" /><el-radio-button label="cm" /></el-radio-group></el-form-item><el-form-item label="Rộng × cao"><el-input-number v-model="form.width" :min="0.01" :precision="form.unit === 'cm' ? 2 : 0" /><span> × </span><el-input-number v-model="form.height" :min="0.01" :precision="form.unit === 'cm' ? 2 : 0" /></el-form-item><el-form-item v-if="form.unit === 'cm'" label="DPI"><el-input-number v-model="form.dpi" :min="36" :max="1200" /></el-form-item></el-form>
@@ -21,7 +21,7 @@ import fetch from '@/utils/axios'
 import { pxToCm } from '@/utils/tinix/units'
 const props = defineProps<{ page: any; unit: string; manageInitial?: boolean }>()
 defineEmits(['choose'])
-const list = ref<any[]>([]), query = ref(''), category = ref(''), favorites = ref(false), editing = ref(false), error = ref('')
+const list = ref<any[]>([]); const query = ref(''); const category = ref(''); const favorites = ref(false); const editing = ref(false); const error = ref('')
 const form = ref<any>({})
 const hiddenCategories = new Set(['polaroid', 'photobooth', 'khác'])
 const displayCategory = (value: string) => value === 'Facebook Ads' ? 'Facebook' : value === 'Khổ giấy' ? 'In ảnh' : value

@@ -10,7 +10,7 @@ import {canvasOf,canvasBlob,renderSubject,releaseCanvas} from './cutout-edit'
 export type CutoutEngine = 'birefnet' | 'u2net'
 async function birefnetCutout(file: File): Promise<Blob> {
   const form = new FormData(); form.append('file', file)
-  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 200000)
+  const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), 200000)
   try {
     const response = await fetch(`${config.SCREEN_URL}/api/tinix/cutout/birefnet`, { method: 'POST', body: form, signal: controller.signal })
     if(!response.ok) { const error = await response.json(); throw new Error(error.message || 'BiRefNet chưa sẵn sàng') }
@@ -27,7 +27,7 @@ export function getSubjectBox(id=COLLAGE_ID){const t=getCollageTemplate(id);retu
 export type CollagePhoto = { url:string; width:number; height:number; borderUrl?:string; edit?:{sourceUrl:string;cutoutUrl:string;mm:number;frame:{left:number;top:number;width:number;height:number}};documentScale?:number }
 export async function uploadCollagePhoto(blob: Blob, name: string): Promise<CollagePhoto> {
   const bitmap = await createImageBitmap(blob)
-  const width=bitmap.width, height=bitmap.height; bitmap.close()
+  const width=bitmap.width; const height=bitmap.height; bitmap.close()
   const result:any = await api.material.upload({file:new File([blob],name,{type:blob.type})},()=>{})
   if (!result?.url) throw new Error(result?.msg || 'Không lưu được ảnh')
   return {url:result.url,width,height}
@@ -41,7 +41,7 @@ export async function extractCollageSubject(file:File,progress:(s:string)=>void,
 }
 export async function prepareEditedSubject(original:Blob,cutout:Blob,mm:number,documentScale?:number,dpi=300,box=getSubjectBox()):Promise<CollagePhoto> {
   const bitmap=await createImageBitmap(cutout)
-  let c:HTMLCanvasElement|undefined,rendered:ReturnType<typeof renderSubject>|undefined
+  let c:HTMLCanvasElement|undefined; let rendered:ReturnType<typeof renderSubject>|undefined
   try {
     c=canvasOf(bitmap.width,bitmap.height);c.getContext('2d')!.drawImage(bitmap,0,0)
     rendered=renderSubject(c,mm,documentScale,dpi,box)
@@ -78,14 +78,14 @@ export function buildMemoriesLayers(subject:CollagePhoto, photos:CollagePhoto[],
 }
 
 export function buildCustomerLayout(subject:CollagePhoto,photos:CollagePhoto[],title:string,body:string,customer:string,templateId=COLLAGE_ID){
- const template=getCollageTemplate(templateId),layers=buildMemoriesLayers(subject,photos,title,body,templateId)
- const sx=template.width/template.designWidth,sy=template.height/template.designHeight
+ const template=getCollageTemplate(templateId); const layers=buildMemoriesLayers(subject,photos,title,body,templateId)
+ const sx=template.width/template.designWidth; const sy=template.height/template.designHeight
  layers.forEach(w=>{w.left*=sx;w.top*=sy;w.width*=sx;w.height*=sy;if(w.fontSize)w.fontSize*=sy})
  return {global:{...JSON.parse(JSON.stringify(pageDefault)),width:template.width,height:template.height,dpi:template.dpi,backgroundColor:template.backgroundColor,backgroundImage:'',backgroundGradient:'',collage:{template:template.id,version:template.version,customer:customer.trim(),printWorkflow:'separate-sheets'}},layers}
 }
 export async function saveCustomerDesign(subject:CollagePhoto,photos:CollagePhoto[],title:string,body:string,customer:string,templateId=COLLAGE_ID){
  if(!customer.trim())throw new Error('Nhập tên khách hoặc mã đơn')
- const template=getCollageTemplate(templateId),layout=buildCustomerLayout(subject,photos,title,body,customer,templateId)
+ const template=getCollageTemplate(templateId); const layout=buildCustomerLayout(subject,photos,title,body,customer,templateId)
  // Deliberately omit id: never update the customer currently open in the editor.
  const result:any=await api.home.saveWorks({title:`${customer.trim()} — ${template.name}`,data:JSON.stringify([layout]),width:template.width,height:template.height})
  if(!result?.id)throw new Error(result?.msg||'Không lưu được thiết kế mới')

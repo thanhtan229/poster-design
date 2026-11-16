@@ -56,7 +56,7 @@ export type TStoreAction = {
   getDPage(): TPageState
   /** 设置dPage */
   setDPage(data: TPageState): void
-  /** 更新 Page（从layouts获取）*/
+  /** 更新 Page（从layouts获取） */
   updateDPage(): void
   /** 设置底部工具栏高度 */
   setBottomHeight(h: number): void

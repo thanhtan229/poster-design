@@ -13,12 +13,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCanvasStore,useWidgetStore,useHistoryStore } from '@/store'
-import { defaultImageEffects,imageEffects } from '@/utils/tinix/image-effects'
-import type { ImageEffects } from '@/utils/tinix/image-effects'
-const props=defineProps<{image:any}>();const ws=useWidgetStore(),cs=useCanvasStore()
+import { defaultImageEffects,imageEffects, type ImageEffects } from '@/utils/tinix/image-effects'
+
+const props=defineProps<{image:any}>();const ws=useWidgetStore(); const cs=useCanvasStore()
 const effects=computed(()=>imageEffects(props.image))
 const sliders:Array<{key:keyof Pick<ImageEffects,'blur'|'brightness'|'contrast'|'saturation'|'warmth'|'border'|'shadow'|'grain'|'paper'>;label:string;min:number;max:number}>=[{key:'blur',label:'Làm mờ',min:0,max:100},{key:'brightness',label:'Độ sáng',min:0,max:200},{key:'contrast',label:'Tương phản',min:0,max:200},{key:'saturation',label:'Bão hòa',min:0,max:200},{key:'warmth',label:'Tông ấm',min:0,max:100},{key:'border',label:'Độ dày viền',min:0,max:100},{key:'shadow',label:'Bóng',min:0,max:100},{key:'grain',label:'Hạt ảnh',min:0,max:100},{key:'paper',label:'Vân giấy',min:0,max:100}]
-let before='',page=-1
+let before=''; let page=-1
 function stopAdjustKey(e:KeyboardEvent){if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(e.key))e.stopPropagation()}
 function onKey(e:KeyboardEvent){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.stopPropagation();commit();useHistoryStore().handleHistory(e.shiftKey?'redo':'undo');return}stopAdjustKey(e)}
 function begin(){if(before)return;before=JSON.stringify(ws.dWidgets);page=cs.dCurrentPage}

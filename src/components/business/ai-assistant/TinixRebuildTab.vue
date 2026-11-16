@@ -23,7 +23,7 @@
     </div>
     <el-checkbox v-model="autoVisualFonts" size="small" :disabled="state.loading||matchingFonts">{{$t('tinix.ui.visualFont.auto')}}</el-checkbox>
     <p class="tx-hint">{{$t('tinix.ui.visualFont.cost')}}</p>
-    <div class="tx-row" v-if="state.reference">
+    <div v-if="state.reference" class="tx-row">
       <img :src="state.reference" style="max-height: 150px; max-width: 45%; border-radius: 6px" />
       <el-button type="primary" size="small" :loading="state.loading" @click="analyze">{{ state.loading ? $t('tinix.ui.rebuildTab.ai_dang_phan_tich_30') : $t('tinix.ui.rebuildTab.phan_tich_mau') }}</el-button>
     </div>
@@ -83,7 +83,7 @@ import { ensureFont } from '@/utils/tinix/psd-fit'
 import i18n from '@/languages'
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
-const autoVisualFonts=ref(true),matchingFonts=ref(false),fontProgress=ref(0),resultVersion=ref(0)
+const autoVisualFonts=ref(true); const matchingFonts=ref(false); const fontProgress=ref(0); const resultVersion=ref(0)
 const fontMatchers=ref<any[]>([])
 let fontRun=0
 async function matchAllFonts(){if(matchingFonts.value)return;const run=++fontRun;matchingFonts.value=true;try{await nextTick();const controls=[...fontMatchers.value];for(let i=0;i<controls.length;i++){if(run!==fontRun)break;fontProgress.value=i+1;await controls[i].match()}}finally{if(run===fontRun)matchingFonts.value=false}}

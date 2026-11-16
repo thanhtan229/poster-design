@@ -6,7 +6,7 @@
  * @LastEditTime: 2024-03-11 01:41:20
 -->
 <template>
-  <el-popover ref="popover" :placement="position" :title="title" :width="width" trigger="hover" :content="content">
+  <el-popover ref="popover" :placement="props.position" :title="props.title" :width="props.width" trigger="hover" :content="props.content">
     <template #reference>
       <slot />
     </template>
@@ -22,7 +22,7 @@ type TProps = {
   offset?: number
 }
 
-const { title, width, content, position } = withDefaults(defineProps<TProps>(), {
+const props = withDefaults(defineProps<TProps>(), {
   title: '',
   width: 0,
   content: '',

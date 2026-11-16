@@ -88,9 +88,9 @@
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { ElTabs, ElTabPane, ElSelect, ElOption } from 'element-plus'
+import { reactive } from 'vue'
+import { ElMessage, ElTabs, ElTabPane, ElSelect, ElOption } from 'element-plus'
+
 import api from '@/api'
 import { useWidgetStore, useCanvasStore, useControlStore } from '@/store'
 import { storeToRefs } from 'pinia'

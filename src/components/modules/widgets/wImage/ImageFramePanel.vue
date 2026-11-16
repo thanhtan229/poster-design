@@ -24,11 +24,11 @@ import {computed,ref} from 'vue'
 import {useCanvasStore,useWidgetStore,useHistoryStore,useUserStore} from '@/store'
 import {resolveLinkedImage} from '@/utils/tinix/image-effects'
 import {photoRole} from '@/utils/tinix/template-photo'
-const props=defineProps<{image:any}>(), ws=useWidgetStore(), cs=useCanvasStore()
+const props=defineProps<{image:any}>(); const ws=useWidgetStore(); const cs=useCanvasStore()
 const editing=computed(()=>useUserStore().tempEditing)
-const role=computed(()=>photoRole(props.image)),choosingLink=ref(false),message=ref('')
+const role=computed(()=>photoRole(props.image)); const choosingLink=ref(false); const message=ref('')
 const sources=computed(()=>ws.dWidgets.filter(w=>w.type==='w-image'&&w.slot&&!w.linkedPhotoId&&!w.hidden&&w.uuid!==props.image.uuid))
-let before='',page=-1
+let before=''; let page=-1
 function begin(){if(!before){before=JSON.stringify(ws.dWidgets);page=cs.dCurrentPage}}
 function commit(){if(!before)return;const old=before;before='';if(page!==cs.dCurrentPage)return;ws.updateDWidgets();const after=JSON.stringify(ws.dWidgets);if(old!==after)useHistoryStore().changeHistory({patches:[{op:'replace',path:[page,'layers'],value:JSON.parse(after)}],inversePatches:[{op:'replace',path:[page,'layers'],value:JSON.parse(old)}]})}
 function stopArrow(e:KeyboardEvent){if(e.key.startsWith('Arrow')||['Home','End','PageUp','PageDown'].includes(e.key))e.stopPropagation()}

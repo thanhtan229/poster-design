@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ElIcon, ElButton } from 'element-plus'
+import { ElIcon } from 'element-plus'
 import { Brush } from '@element-plus/icons-vue'
 import config from '@/config'
 import { NAV_GROUPS } from '../constants'

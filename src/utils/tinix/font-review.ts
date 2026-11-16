@@ -3,11 +3,11 @@ export type FontReviewRecord={version:1;key:string;confirmedAt:string;fontId:num
 const storageKey='tinix.fontReviews.v1'
 export async function fontReviewKey(reference:string,crop:any,sourceText:string,designText:string){
  const value=JSON.stringify([reference,crop,sourceText,designText]);
- const bytes=new TextEncoder().encode(value),hash=await crypto.subtle.digest('SHA-256',bytes)
+ const bytes=new TextEncoder().encode(value); const hash=await crypto.subtle.digest('SHA-256',bytes)
  return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')
 }
 export function reviewStyle(font:any,weight:number,italic:boolean,letterSpacing:number){
- const profile=readFontProfile(font.technical),style=actualFontStyle(profile,Number.isFinite(weight)?weight:400,italic)
+ const profile=readFontProfile(font.technical); const style=actualFontStyle(profile,Number.isFinite(weight)?weight:400,italic)
  return {...style,letterSpacing:Math.max(-10,Math.min(30,Number.isFinite(letterSpacing)?letterSpacing:0))}
 }
 export function readFontReviews():FontReviewRecord[]{
@@ -18,6 +18,6 @@ export function saveFontReview(record:FontReviewRecord){
  localStorage.setItem(storageKey,JSON.stringify([...readFontReviews().filter(r=>r.key!==record.key),record].slice(-100)))
 }
 export function downloadFontReviews(){
- const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,reviews:readFontReviews()},null,2)],{type:'application/json'})),link=document.createElement('a')
+ const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,reviews:readFontReviews()},null,2)],{type:'application/json'})); const link=document.createElement('a')
  link.href=url;link.download='tinix-font-reviews.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
 }

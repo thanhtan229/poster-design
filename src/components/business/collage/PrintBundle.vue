@@ -6,7 +6,7 @@
    <p><b>Tất cả JPG cùng khổ {{ (canvas.dPage.width*25.4/(canvas.dPage.dpi||300)).toFixed(1) }} × {{ (canvas.dPage.height*25.4/(canvas.dPage.dpi||300)).toFixed(1) }} mm</b> · {{ canvas.dPage.width }} × {{ canvas.dPage.height }} px. Tự thêm tờ cùng khổ khi thiếu chỗ.</p>
    <label>Lề <input v-model.number="margin" type="number" min="0" max="100" /> mm</label><label>Khoảng cách <input v-model.number="gap" type="number" min="0" max="100" /> mm</label>
    <p>Cụm nhiều lớp được xuất thành một mảnh. Đổi lựa chọn ở đây sẽ được lưu cùng thiết kế.</p>
-   <div class="unit" v-for="unit in units" :key="unit.id"><span>{{ unit.name }}</span><select :value="unit.raised?'raised':'base'" @change="setRole(unit,($event.target as HTMLSelectElement).value)"><option value="base">In trên nền</option><option value="raised">Cắt nổi</option></select></div>
+   <div v-for="unit in units" :key="unit.id" class="unit"><span>{{ unit.name }}</span><select :value="unit.raised?'raised':'base'" @change="setRole(unit,($event.target as HTMLSelectElement).value)"><option value="base">In trên nền</option><option value="raised">Cắt nổi</option></select></div>
   </fieldset>
   <p role="status">{{ summary }}</p><p class="error" role="alert">{{ error }}</p>
   <ul class="preflight-issues"><li v-for="(issue,i) in issues" :key="i" :class="issue.severity">{{ issue.message }}</li></ul>
@@ -28,23 +28,23 @@
 <script setup lang="ts">
 import {computed,ref,watch,onBeforeUnmount} from 'vue'
 import {useWidgetStore,useCanvasStore} from '@/store'
-import {printUnits,planCollagePrint} from '@/utils/tinix/collage-print'
-import type {PrintUnit} from '@/utils/tinix/collage-print'
+import {printUnits,planCollagePrint, type PrintUnit} from '@/utils/tinix/collage-print'
+
 import config from '@/config'
 import {zipImages} from '@/utils/tinix/zip'
 import downloadBlob from '@/common/methods/download/downloadBlob'
 const props=defineProps<{saveDesign:()=>Promise<any>;title:string;disabled?:boolean}>()
-const store=useWidgetStore(),canvas=useCanvasStore(),open=ref(false),running=ref(false),progress=ref(''),failure=ref('')
-const customerApproved=ref(false),approvalNote=ref(''),archivedId=ref(''),activeJob=ref('')
+const store=useWidgetStore(); const canvas=useCanvasStore(); const open=ref(false); const running=ref(false); const progress=ref(''); const failure=ref('')
+const customerApproved=ref(false); const approvalNote=ref(''); const archivedId=ref(''); const activeJob=ref('')
 function releaseJob(){if(activeJob.value){fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${activeJob.value}`,{method:'DELETE'}).catch(()=>{});activeJob.value=''}}
 async function archive(){
  if(!approved.value||!customerApproved.value||stale.value||running.value||!activeJob.value)return
  running.value=true;failure.value=''
  try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${activeJob.value}/approve`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operatorReviewed:true,customerApproved:true,note:approvalNote.value})});const data=await r.json();if(!r.ok)throw new Error(data.message);archivedId.value=data.id;window.dispatchEvent(new Event('tinix:approved-prints-changed'))}catch(e:any){failure.value=e.message}finally{running.value=false}
 }
-const margin=ref(10),gap=ref(5)
+const margin=ref(10); const gap=ref(5)
 const options=computed(()=>({marginMm:margin.value,gapMm:gap.value}))
-const files=ref<Array<{name:string;blob:Blob;url:string}>>([]),issues=ref<Array<{severity:string;message:string}>>([]),approved=ref(false),previewSignature=ref('')
+const files=ref<Array<{name:string;blob:Blob;url:string}>>([]); const issues=ref<Array<{severity:string;message:string}>>([]); const approved=ref(false); const previewSignature=ref('')
 const signature=computed(()=>JSON.stringify({page:canvas.dPage,layers:store.dWidgets,options:options.value}))
 const stale=computed(()=>signature.value!==previewSignature.value)
 watch(signature,()=>{approved.value=false;customerApproved.value=false})
@@ -60,7 +60,7 @@ const summary=computed(()=>running.value?progress.value:planning.value.plan?`${p
 async function exportBundle(){
  if(running.value)return;running.value=true;failure.value='';clearFiles();issues.value=[]
  try{
-  const captured=signature.value,pageIndex=canvas.dCurrentPage,id=await props.saveDesign();if(!id)throw new Error('Không lưu được thiết kế')
+  const captured=signature.value; const pageIndex=canvas.dCurrentPage; const id=await props.saveDesign();if(!id)throw new Error('Không lưu được thiết kế')
   const response=await fetch(`${config.SCREEN_URL}/api/tinix/collage-print`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({designId:id,pageIndex,options:options.value})})
   const job=await response.json();issues.value=job.issues||[];if(!response.ok)throw new Error(job.message||'Không chuẩn bị được bộ xuất')
   activeJob.value=job.id
@@ -68,7 +68,7 @@ async function exportBundle(){
    progress.value=`Đang xuất ${i+1}/${job.names.length}: ${job.names[i]}`
    const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${job.id}/image/${i}`,{signal:AbortSignal.timeout(200000)})
    if(!r.ok){const e=await r.json();throw new Error(e.message||'Lỗi xuất ảnh')}
-   const blob=await r.blob(),bytes=new Uint8Array(await blob.slice(0,3).arrayBuffer());if(bytes[0]!==255||bytes[1]!==216)throw new Error('Máy chủ chưa hỗ trợ bộ JPG. Hãy khởi động lại app.')
+   const blob=await r.blob(); const bytes=new Uint8Array(await blob.slice(0,3).arrayBuffer());if(bytes[0]!==255||bytes[1]!==216)throw new Error('Máy chủ chưa hỗ trợ bộ JPG. Hãy khởi động lại app.')
    const file={name:job.names[i],blob,url:URL.createObjectURL(blob)};files.value.push(file)
   }
   previewSignature.value=captured

@@ -27,7 +27,7 @@ async function reload() {
   try {
     const res: any = await api.home.getTemplatePhotoCounts(props.cate)
     Object.assign(counts, res && res.counts ? res.counts : {})
-  } catch (e) {
+  } catch {
     // không tải được: giữ số cũ
   }
 }

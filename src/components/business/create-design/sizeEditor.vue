@@ -25,7 +25,7 @@
     </div>
     <div class="position-size">
       <number-input v-if="unit === 'px'" v-model="params.width" :label="$t('editor.prop.width')" :maxValue="MAX_SIDE_PX" />
-      <number-input v-else v-model="wCm" :label="$t('editor.prop.width')" :maxValue="maxCm" :minValue="0" @update:modelValue="onCmInput('width', $event)" />
+      <number-input v-else v-model="wCm" :label="$t('editor.prop.width')" :maxValue="maxCm" :minValue="0" @update:model-value="onCmInput('width', $event)" />
       <div class="size-actions"><el-tooltip :show-after="300" :hide-after="0" effect="dark" :content="lockRatio ? $t('business.create.lockRatio') : $t('business.create.freeResize')" placement="top">
         <button type="button" class="ratio-lock" :aria-label="lockRatio ? $t('business.create.lockRatio') : $t('business.create.freeResize')" :aria-pressed="lockRatio" @click="changeRatio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7l-1.3 1.3M14 11a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 0 0 5.7 5.7l1.3-1.3"/><path v-if="!lockRatio" d="M4 4l16 16"/></svg></button>
       </el-tooltip>
@@ -33,7 +33,7 @@
         <button type="button" class="swap-size" aria-label="Đảo rộng / cao" @click="swapSize"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h15m0 0-4-4m4 4-4 4M20 16H5m0 0 4-4m-4 4 4 4"/></svg></button>
       </el-tooltip></div>
       <number-input v-if="unit === 'px'" v-model="params.height" :label="$t('editor.prop.height')" :maxValue="MAX_SIDE_PX" /><!-- [TINIX] 5000 → 10000: PSD imports are often bigger -->
-      <number-input v-else v-model="hCm" :label="$t('editor.prop.height')" :maxValue="maxCm" :minValue="0" @update:modelValue="onCmInput('height', $event)" />
+      <number-input v-else v-model="hCm" :label="$t('editor.prop.height')" :maxValue="maxCm" :minValue="0" @update:model-value="onCmInput('height', $event)" />
       <slot />
     </div>
     <!-- [TINIX] Dòng quy đổi + cảnh báo kích thước quá lớn -->
@@ -44,8 +44,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
-import { ElMessage } from 'element-plus'
-import { ElSelect, ElOption } from 'element-plus'
+import { ElMessage, ElSelect, ElOption } from 'element-plus'
+
 import numberInput from '@/components/modules/settings/numberInput.vue'
 import i18n from '@/languages'
 import { clampDpi, cmToPx, pxToCm, sizeWarning, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units'
@@ -67,15 +67,17 @@ const { unit, setUnit } = useSizeUnit()
 const t = (k: string, p?: any) => i18n.global.t(k, p) as string
 
 const lockRatio = ref(false) // 锁定比例缩放画布
-let scale = 0,
-  temp = { width: 0, height: 0 }
+let scale = 0;
+  let temp = { width: 0, height: 0 }
 
 const dpi = computed(() => clampDpi(props.params.dpi || DEFAULT_DPI))
 const maxCm = computed(() => pxToCm(MAX_SIDE_PX, dpi.value))
 
 // ── cm: giá trị đang nhập giữ riêng (tránh làm tròn ngược khi đang gõ); chỉ đồng bộ lại khi px đổi từ nơi khác ──
+/* eslint-disable vue/no-setup-props-destructure -- chỉ lấy giá trị khởi tạo; syncCm() + watch bên dưới đồng bộ lại khi props đổi */
 const wCm = ref<number>(pxToCm(props.params.width, dpi.value))
 const hCm = ref<number>(pxToCm(props.params.height, dpi.value))
+/* eslint-enable vue/no-setup-props-destructure */
 function syncCm() {
   if (cmToPx(wCm.value, dpi.value) !== Number(props.params.width)) wCm.value = pxToCm(props.params.width, dpi.value)
   if (cmToPx(hCm.value, dpi.value) !== Number(props.params.height)) hCm.value = pxToCm(props.params.height, dpi.value)
@@ -95,7 +97,7 @@ function onCmInput(key: 'width' | 'height', cm: number | string) {
 // Đổi DPI: giữ nguyên cm, tính lại px (physical size là ý định khi in)
 function onDpiChange(v: any) {
   const nd = clampDpi(v)
-  const w = wCm.value, h = hCm.value
+  const w = wCm.value; const h = hCm.value
   if (cmToPx(w, nd) > MAX_SIDE_PX || cmToPx(h, nd) > MAX_SIDE_PX || cmToPx(w, nd)*cmToPx(h, nd) > 80000000) { ElMessage.error('DPI này vượt giới hạn canvas. Hãy chọn DPI thấp hơn.'); return }
   props.params.dpi = nd
   if (w > 0) props.params.width = Math.min(cmToPx(w, nd), MAX_SIDE_PX)
@@ -103,7 +105,7 @@ function onDpiChange(v: any) {
 }
 
 const info = computed(() => {
-  const w = Number(props.params.width), h = Number(props.params.height)
+  const w = Number(props.params.width); const h = Number(props.params.height)
   if (unit.value === 'cm') return t('tinix.ui.sizeUnit.quy_doi', { w: Math.round(w), h: Math.round(h), mp: ((w * h) / 1e6).toFixed(1) })
   return t('tinix.ui.sizeUnit.quy_doi_cm', { w: pxToCm(w, dpi.value), h: pxToCm(h, dpi.value), dpi: dpi.value })
 })

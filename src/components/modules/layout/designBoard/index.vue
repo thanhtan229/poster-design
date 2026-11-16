@@ -88,7 +88,7 @@ import { placePhotos } from '@/utils/tinix/photo-place' // [TINIX]
 import PointImg from '@/utils/plugins/pointImg'
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
 import { debounce } from 'throttle-debounce'
-import { move, moveInit } from '@/mixins/move'
+import { moveInit } from '@/mixins/move'
 import { useCanvasStore, useControlStore, useWidgetStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { TPageState } from '@/store/design/canvas/d'

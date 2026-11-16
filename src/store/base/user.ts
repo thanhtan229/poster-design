@@ -15,7 +15,7 @@ type TUserStoreState = {
   user: {
     name: string | null
   }
-  /**是否为管理员模式 */
+  /** 是否为管理员模式 */
   manager: string
   /** 管理员是否正在编辑模板 */
   tempEditing: boolean

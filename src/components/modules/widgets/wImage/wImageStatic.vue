@@ -24,7 +24,7 @@
 
 <script lang="ts" setup>
 import ImageSurface from './ImageSurface.vue'
-import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
+import { imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
 
 import { CSSProperties, computed, reactive, ref } from 'vue'
 import { useWidgetStore } from '@/store'

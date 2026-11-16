@@ -123,7 +123,7 @@ const myWorker = new useWorker(psdWorker)
 
 onMounted(async () => {
   groupStore.initGroupJson(JSON.stringify(wGroupSetting))
-  adminApi.getTemplateCategories(0, { page: 1, pageSize: 100 }).then((r: any) => (batch.cates = Array.isArray(r?.list) ? r.list : [])).catch(() => {}) // [TINIX]
+  adminApi.getTemplateCategories(0, { page: 1, pageSize: 100 }).then((r: any) => { batch.cates = Array.isArray(r?.list) ? r.list : [] }).catch(() => {}) // [TINIX]
   await nextTick()
   if (zoomControlRef.value) {
     zoomControlRef.value.screenChange()
@@ -162,7 +162,7 @@ async function existingTemplateTitles(): Promise<Set<string>> {
       list.forEach((t) => titles.add(String(t.title)))
       if (list.length < 100) break
     }
-  } catch (e) {
+  } catch {
     // không lấy được danh sách: vẫn nhập, chỉ không bỏ qua được mẫu trùng
   }
   return titles

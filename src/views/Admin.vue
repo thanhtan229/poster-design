@@ -32,9 +32,9 @@
           <section class="pane">
             <h3 class="pane-title">{{ t('admin.quick.title') }}</h3>
             <div class="quick-actions">
-              <QuickAction :icon="Upload" :name="t('admin.quick.psdTemplate')" :desc="t('admin.quick.psdTemplateDesc')" @go="openPSDImport()" />
+              <QuickAction :icon="Upload" :name="t('admin.quick.psdTemplate')" :desc="t('admin.quick.psdTemplateDesc')" @go="() => openPSDImport()" />
               <QuickAction :icon="Upload" :name="t('admin.quick.psdComponent')" :desc="t('admin.quick.psdComponentDesc')" @go="openPSDImport(1)" />
-              <QuickAction :icon="EditPen" :name="t('admin.font.add')" :desc="t('admin.quick.fontDesc')" @go="openFontDialog()" />
+              <QuickAction :icon="EditPen" :name="t('admin.font.add')" :desc="t('admin.quick.fontDesc')" @go="() => openFontDialog()" />
               <QuickAction :icon="MagicStick" :name="t('admin.quick.ai')" :desc="t('admin.quick.aiDesc')" @go="onSelectTab('ai-settings')" />
             </div>
           </section>
@@ -86,7 +86,7 @@
               {{ t('admin.v.addUpload') }}
             </el-button>
           </div>
-          <el-table class="admin-table" :data="materialAssets" size="small" stripe v-loading="loading">
+          <el-table v-loading="loading" class="admin-table" :data="materialAssets" size="small" stripe>
             <el-table-column prop="category" :label="t('admin.v.group')" width="150" />
             <el-table-column prop="type" :label="t('admin.v.elementType')" width="120" />
             <el-table-column prop="title" :label="t('admin.v.name')" min-width="180" show-overflow-tooltip />
@@ -119,7 +119,7 @@
               {{ t('admin.v.addUpload') }}
             </el-button>
           </div>
-          <el-table class="admin-table" :data="photoAssets" size="small" stripe v-loading="loading">
+          <el-table v-loading="loading" class="admin-table" :data="photoAssets" size="small" stripe>
             <el-table-column prop="categoryName" :label="t('admin.v.category')" width="150" />
             <el-table-column prop="title" :label="t('admin.v.name')" min-width="180" show-overflow-tooltip />
             <el-table-column prop="url" :label="t('admin.v.url')" min-width="280" show-overflow-tooltip />
@@ -158,7 +158,7 @@
               />
               <el-button type="primary" size="small" @click="addTemplateCategory">{{ t('admin.v.addCategory') }}</el-button>
             </div>
-            <el-table class="admin-table" :data="templateCategories" size="small" stripe v-loading="loading">
+            <el-table v-loading="loading" class="admin-table" :data="templateCategories" size="small" stripe>
               <el-table-column prop="id" label="ID" width="80" />
               <el-table-column prop="name" :label="t('admin.v.categoryName')" min-width="220" show-overflow-tooltip />
               <el-table-column prop="sort" :label="t('admin.v.sort')" width="90" />
@@ -180,11 +180,11 @@
               </el-button>
             </div>
             <el-table
+              v-loading="loading"
               class="admin-table"
               :data="categoryTab === 'materials' ? materialCates : photoCates"
               size="small"
               stripe
-              v-loading="loading"
             >
               <el-table-column prop="id" label="ID" width="80" />
               <el-table-column v-if="categoryTab === 'photos'" prop="cate" :label="t('admin.v.categoryKey')" width="160" />
@@ -231,12 +231,12 @@
             <FontNormalization @done="reloadFromPage1" />
             <!-- [TINIX] tạo ảnh xem trước còn thiếu cho font (chạy scripts/tinix-font-previews.mjs trên service) -->
             <el-button size="small" :loading="previewRunning" @click="onFontPreviews">{{ previewRunning ? t('tinix.ui.adminExtra.dangTaoAnh') : t('tinix.ui.adminExtra.taoAnhXemTruoc') }}</el-button>
-            <el-button type="primary" size="small" @click="openFontDialog()">
+            <el-button type="primary" size="small" @click="() => openFontDialog()">
               <el-icon><Plus /></el-icon>
               {{ t('admin.font.add') }}
             </el-button>
           </div>
-          <el-table class="admin-table" :data="fonts" size="small" stripe v-loading="loading">
+          <el-table v-loading="loading" class="admin-table" :data="fonts" size="small" stripe>
             <el-table-column prop="id" label="ID" width="60" />
             <!-- [TINIX] xem trước: dòng chữ mẫu viết bằng chính font (ảnh do npm run tinix:font-previews tạo) -->
             <el-table-column :label="t('tinix.ui.adminExtra.xemTruoc')" width="220">
@@ -280,8 +280,8 @@
             </el-table-column>
             <el-table-column :label="t('admin.v.actions')" width="110" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" link @click="openFontDialog(row)">{{ t('admin.v.edit') }}</el-button>
-                <el-button type="danger" size="small" link @click="onDelFont(row)">{{ t('admin.v.delete') }}</el-button>
+                <el-button type="primary" size="small" link @click="openFontDialog(row as adminApi.TAdminFontItem)">{{ t('admin.v.edit') }}</el-button>
+                <el-button type="danger" size="small" link @click="onDelFont(row as adminApi.TAdminFontItem)">{{ t('admin.v.delete') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -301,7 +301,7 @@
 
         <!-- 用户图片 -->
         <section v-else-if="activeTab === 'user-images'" class="pane">
-          <el-table class="admin-table" :data="userImages" size="small" stripe v-loading="loading">
+          <el-table v-loading="loading" class="admin-table" :data="userImages" size="small" stripe>
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column :label="t('admin.v.preview')" width="100">
               <template #default="{ row }">
@@ -328,7 +328,7 @@
               {{ t('admin.v.refresh') }}
             </el-button>
           </div>
-          <el-table class="admin-table" :data="designs" size="small" stripe v-loading="loading">
+          <el-table v-loading="loading" class="admin-table" :data="designs" size="small" stripe>
             <el-table-column prop="id" label="ID" width="70" />
             <el-table-column :label="t('admin.v.cover')" width="100">
               <template #default="{ row }">
@@ -341,7 +341,7 @@
             <el-table-column prop="created_at" :label="t('admin.v.createdAt')" width="180" />
             <el-table-column :label="t('admin.v.actions')" width="100" fixed="right">
               <template #default="{ row }">
-                <el-button type="danger" size="small" link @click="onDelDesign(row)">{{ t('admin.v.delete') }}</el-button>
+                <el-button type="danger" size="small" link @click="onDelDesign(row as adminApi.TAdminDesignItem)">{{ t('admin.v.delete') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -441,58 +441,58 @@
     </el-dialog>
 
     <!-- 新增 / 编辑字体对话框 -->
-    <el-dialog v-model="fontDialog.visible" :title="fontDialog.title" width="560px" @closed="resetFontForm">
-      <el-form ref="fontFormRef" :model="fontDialog.form" :rules="fontRules" label-width="92px" size="small">
+    <el-dialog v-model="getFontDialog().visible" :title="getFontDialog().title" width="560px" @closed="resetFontForm">
+      <el-form ref="fontFormRef" :model="getFontDialog().form" :rules="fontRules" label-width="92px" size="small">
         <el-form-item :label="t('admin.font.aliasLabel')" prop="alias">
-          <el-input v-model="fontDialog.form.alias" :placeholder="t('admin.font.aliasPlaceholder')" maxlength="40" show-word-limit />
+          <el-input v-model="getFontDialog().form.alias" :placeholder="t('admin.font.aliasPlaceholder')" maxlength="40" show-word-limit />
         </el-form-item>
         <el-form-item label="value" prop="value">
-          <el-input v-model="fontDialog.form.value" :placeholder="t('admin.font.valuePlaceholder')" maxlength="60" />
+          <el-input v-model="getFontDialog().form.value" :placeholder="t('admin.font.valuePlaceholder')" maxlength="60" />
         </el-form-item>
         <el-form-item :label="t('admin.font.woffLabel')" prop="woff">
-          <el-input v-model="fontDialog.form.woff" placeholder="https://..." />
+          <el-input v-model="getFontDialog().form.woff" placeholder="https://..." />
           <input type="file" accept=".woff,.woff2" style="margin-top: 6px" @change="onFontFileChange" />
           <span class="muted-text">{{ t('admin.font.woffHint') }}</span>
         </el-form-item>
         <el-form-item :label="t('admin.font.ttfLabel')">
-          <el-input v-model="fontDialog.form.ttf" :placeholder="t('admin.font.optional')" />
+          <el-input v-model="getFontDialog().form.ttf" :placeholder="t('admin.font.optional')" />
         </el-form-item>
         <el-form-item :label="t('admin.font.previewLabel')">
-          <el-input v-model="fontDialog.form.preview" :placeholder="t('admin.font.previewPlaceholder')" />
+          <el-input v-model="getFontDialog().form.preview" :placeholder="t('admin.font.previewPlaceholder')" />
         </el-form-item>
         <el-form-item :label="t('admin.v.language')" prop="lang">
-          <el-radio-group v-model="fontDialog.form.lang">
+          <el-radio-group v-model="getFontDialog().form.lang">
             <el-radio value="zh">{{ t('admin.v.chinese') }}</el-radio>
             <el-radio value="en">{{ t('admin.v.english') }}</el-radio>
             <el-radio value="ko">{{ t('admin.v.korean') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="t('tinix.ui.adminExtra.tiengViet')">
-          <el-checkbox v-model="fontDialog.form.supports_vietnamese">{{ t('tinix.ui.adminExtra.hoTroDauTiengViet') }}</el-checkbox>
+          <el-checkbox v-model="getFontDialog().form.supports_vietnamese">{{ t('tinix.ui.adminExtra.hoTroDauTiengViet') }}</el-checkbox>
         </el-form-item>
         <!-- [TINIX] nhóm + tag: giúp AI chọn đúng font và giúp bạn lọc -->
         <el-form-item :label="t('tinix.ui.adminExtra.nhom')">
-          <el-select v-model="fontDialog.form.category" clearable style="width: 100%" :placeholder="t('tinix.ui.adminExtra.chuaPhanNhom')">
+          <el-select v-model="getFontDialog().form.category" clearable style="width: 100%" :placeholder="t('tinix.ui.adminExtra.chuaPhanNhom')">
             <el-option v-for="c in FONT_CATEGORIES" :key="c" :label="t('tinix.ui.adminExtra.cat_' + c)" :value="c" />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('tinix.ui.adminExtra.tag')">
           <!-- [TINIX] reserve-keyword=false: xóa chữ đang gõ sau khi nhấn Enter -->
-          <el-select v-model="fontDialog.form.tags" multiple filterable allow-create default-first-option :reserve-keyword="false" :multiple-limit="10" style="width: 100%" :placeholder="t('tinix.ui.adminExtra.tagGoiY')" />
+          <el-select v-model="getFontDialog().form.tags" multiple filterable allow-create default-first-option :reserve-keyword="false" :multiple-limit="10" style="width: 100%" :placeholder="t('tinix.ui.adminExtra.tagGoiY')" />
         </el-form-item>
         <el-form-item label="font-family">
-          <el-input v-model="fontDialog.form.font_family" :placeholder="t('admin.font.optional')" maxlength="80" />
+          <el-input v-model="getFontDialog().form.font_family" :placeholder="t('admin.font.optional')" maxlength="80" />
         </el-form-item>
-        <el-form-item v-if="!fontDialog.form.id" :label="t('admin.font.fileSize')">
-          <el-input-number v-model="fontDialog.form.size" :min="0" :step="1" :placeholder="t('admin.font.bytesOptional')" />
+        <el-form-item v-if="!getFontDialog().form.id" :label="t('admin.font.fileSize')">
+          <el-input-number v-model="getFontDialog().form.size" :min="0" :step="1" :placeholder="t('admin.font.bytesOptional')" />
         </el-form-item>
-        <el-form-item v-if="!fontDialog.form.id" :label="t('admin.font.woffSize')">
-          <el-input-number v-model="fontDialog.form.woff_size" :min="0" :step="1" :placeholder="t('admin.font.bytesOptional')" />
+        <el-form-item v-if="!getFontDialog().form.id" :label="t('admin.font.woffSize')">
+          <el-input-number v-model="getFontDialog().form.woff_size" :min="0" :step="1" :placeholder="t('admin.font.bytesOptional')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="fontDialog.visible = false">{{ t('admin.v.cancel') }}</el-button>
-        <el-button type="primary" :loading="fontDialog.submitting" @click="submitFont">{{ fontDialog.form.id ? t('admin.font.confirmEdit') : t('admin.font.confirmAdd') }}</el-button>
+        <el-button @click="getFontDialog().visible = false">{{ t('admin.v.cancel') }}</el-button>
+        <el-button type="primary" :loading="getFontDialog().submitting" @click="submitFont">{{ getFontDialog().form.id ? t('admin.font.confirmEdit') : t('admin.font.confirmAdd') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -518,7 +518,6 @@ import { useI18n } from 'vue-i18n'
 import {
   ElMessage,
   ElMessageBox,
-  ElAlert, // [TINIX]
   ElTable,
   ElTableColumn,
   ElTag,
@@ -577,7 +576,7 @@ function parseFontTags(raw: any): string[] {
   try {
     const v = JSON.parse(raw || '[]')
     return Array.isArray(v) ? v.map(String) : []
-  } catch (e) {
+  } catch {
     return []
   }
 }
@@ -653,6 +652,9 @@ const fontDialog = reactive({
     tags: [] as string[],
   },
 })
+// Keep the reactive dialog behind a function in template expressions: the
+// form itself has a field named `value`, which must not be treated as a ref.
+const getFontDialog = () => fontDialog
 const fontFormRef = ref<FormInstance | null>(null)
 const fontRules: FormRules = {
   alias: [{ required: true, message: t('admin.font.nameRequired'), trigger: 'blur' }],
@@ -727,7 +729,7 @@ async function onDeleteAsset(type: 'materials' | 'photos', row: any) {
     await ElMessageBox.confirm(t('admin.confirm.deleteItem', { name: row.title || row.url || t('admin.msg.thisAsset') }), t('admin.msg.notice'), { type: 'warning' })
     const res: any = await adminApi.deleteAsset(type, row.category, row.index)
     if (res?.code === 200) { ElMessage.success(t('admin.msg.deleted')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.deleteFailed'))
-  } catch (error) {
+  } catch {
     // 忽略取消操作。
   }
 }
@@ -760,7 +762,7 @@ function denyByReason(res: any) {
 /** 无权限 / 登录失效时清掉本地凭据并回首页 */
 function deny(msg: string) {
   ElMessage.warning(msg)
-  setTimeout(() => (window.location.href = './'), 800)
+  setTimeout(() => { window.location.href = './' }, 800)
 }
 
 onMounted(() => {
@@ -892,7 +894,7 @@ async function onDelTemplate(row: any) {
     await ElMessageBox.confirm(t('admin.confirm.unpublish', { name: row.title || row.id }), t('admin.msg.notice'), { type: 'warning' })
     const res: any = await adminApi.deleteTemplate(row.id)
     if (res?.code === 200) { ElMessage.success(t('admin.msg.unpublished')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.opFailed'))
-  } catch (error) {
+  } catch {
     // 忽略取消操作。
   }
 }
@@ -902,7 +904,7 @@ async function onRemoveTemplate(row: any) {
     await ElMessageBox.confirm(t('admin.confirm.deletePermanent', { name: row.title || row.id }), t('admin.msg.danger'), { type: 'warning' })
     const res: any = await adminApi.removeTemplate(row.id)
     if (res?.code === 200) { ElMessage.success(t('admin.msg.deleted')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.deleteFailed'))
-  } catch (error) {
+  } catch {
     // 忽略取消操作。
   }
 }
@@ -929,7 +931,7 @@ async function onDelCategory(type: 'materials' | 'photos', row: any) {
     await ElMessageBox.confirm(t('admin.confirm.deleteCategory', { name: row.name || row.cate }), t('admin.msg.notice'), { type: 'warning' })
     const res: any = await adminApi.deleteCategory(type, row.cate)
     if (res?.code === 200) { ElMessage.success(t('admin.msg.deleted')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.opFailed'))
-  } catch (error) {
+  } catch {
     // 用户取消确认时，Element Plus 会 reject Promise，这不是业务错误。
   }
 }
@@ -939,7 +941,7 @@ async function onAddCategory(type: 'materials' | 'photos') {
     const result = await ElMessageBox.prompt(t('admin.msg.enterCategoryName'), t('admin.v.addCategory'), { inputValidator: (value) => value.trim() ? true : t('admin.msg.categoryNameEmpty') })
     const res: any = await adminApi.addCategory(type, result.value.trim())
     if (res?.code === 200) { ElMessage.success(t('admin.msg.categoryCreated')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.categoryCreateFailed'))
-  } catch (error) {
+  } catch {
     // 忽略取消操作，避免触发 Vue 的 unhandled component event handler。
   }
 }
@@ -949,7 +951,7 @@ async function onRenameCategory(type: 'materials' | 'photos', row: any) {
     const result = await ElMessageBox.prompt(t('admin.msg.enterNewCategoryName'), t('admin.msg.renameCategory'), { inputValue: row.name || row.cate, inputValidator: (value) => value.trim() ? true : t('admin.msg.categoryNameEmpty') })
     const res: any = await adminApi.renameCategory(type, row.cate, result.value.trim())
     if (res?.code === 200) { ElMessage.success(t('admin.msg.categoryRenamed')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.categoryRenameFailed'))
-  } catch (error) {
+  } catch {
     // 忽略取消操作。
   }
 }
@@ -973,8 +975,9 @@ async function onDelTemplateCategory(row: any) {
       await ElMessageBox.confirm(res.msg, t('admin.msg.notice'), { type: 'warning' })
       res = await adminApi.deleteTemplateCategory(row.id, true)
     }
-    res?.code && res.code !== 200 ? ElMessage.error(res?.msg || t('admin.msg.deleteFailed')) : (ElMessage.success(t('admin.msg.categoryDeleted')), await loadTab())
-  } catch (error) {
+    if (res?.code && res.code !== 200) ElMessage.error(res?.msg || t('admin.msg.deleteFailed'))
+    else { ElMessage.success(t('admin.msg.categoryDeleted')); await loadTab() }
+  } catch {
     // 忽略取消操作。
   }
 }
@@ -984,7 +987,7 @@ async function onRenameTemplateCategory(row: any) {
     const result = await ElMessageBox.prompt(t('admin.msg.enterNewCategoryName'), t('admin.msg.renameCategory'), { inputValue: row.name, inputValidator: (value) => value.trim() ? true : t('admin.msg.categoryNameEmpty') })
     const res: any = await adminApi.renameTemplateCategory({ id: row.id, name: result.value.trim() })
     if (res?.code === 200) { ElMessage.success(t('admin.msg.categoryRenamed')); await loadTab() } else ElMessage.error(res?.msg || t('admin.msg.renameFailed'))
-  } catch (error) {
+  } catch {
     // 忽略取消操作。
   }
 }
@@ -994,7 +997,7 @@ async function submitFont() {
   if (!fontFormRef.value) return
   try {
     await fontFormRef.value.validate()
-  } catch (e) {
+  } catch {
     return
   }
   fontDialog.submitting = true

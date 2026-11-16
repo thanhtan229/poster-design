@@ -5,10 +5,9 @@
  * @LastEditors: ShawnPhang <https://m.palxp.cn>
  * @LastEditTime: 2024-08-12 05:30:15
  */
-// const prefix = import.meta.env
-const prefix = process.env
+const prefix = import.meta.env
 
-const isDev = prefix.NODE_ENV === 'development'
+const isDev = prefix.DEV
 import { version } from '../package.json'
 
 export default {

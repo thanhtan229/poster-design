@@ -50,7 +50,7 @@
 
 <script lang="ts" setup>
 import {loadLibraryFont} from '@/utils/tinix/font-loader'
-import { reactive, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import getGradientOrImg from './getGradientOrImg'
 import { wTextSetting } from './wTextSetting'
 

@@ -163,7 +163,7 @@ function changeValue() {
   if (dMoving.value) {
     return
   }
-  for (let key in state.innerElement) {
+  for (const key of Object.keys(state.innerElement)) {
     const itemKey = key as keyof TWQrcodeSetting
     if (state.ingoreKeys.indexOf(key) !== -1) {
       ;(dActiveElement.value as Record<string, any>)[itemKey] = state.innerElement[itemKey]

@@ -64,7 +64,7 @@
 import ImageFramePanel from './ImageFramePanel.vue'
 import ImageEffectsPanel from './ImageEffectsPanel.vue'
 import i18n from '@/languages'
-import { nextTick, reactive, ref, watch, onBeforeUnmount } from 'vue'
+import { nextTick, reactive, ref, watch, onBeforeUnmount, computed } from 'vue'
 
 import numberInput from '../../settings/numberInput.vue'
 import iconItemSelect, { TIconItemSelectData } from '../../settings/iconItemSelect.vue'
@@ -84,7 +84,7 @@ import wImageSetting, { TImageSetting } from './wImageSetting'
 import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useForceStore, useUserStore, useWidgetStore } from '@/store'
-import { computed } from 'vue' // [TINIX]
+ // [TINIX]
 import { ElCheckbox } from 'element-plus' // [TINIX] không đăng ký toàn cục
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
@@ -150,7 +150,7 @@ const looksLikeSlot = computed(() => {
   return area >= 0.08 && area <= 0.9 && ratio >= 0.4 && ratio <= 2.5
 })
 
-let lastUuid: string | undefined = undefined
+let lastUuid: string | undefined
 let tag: boolean
 let toolBarStyle: { left: string; top: string } | null = null
 

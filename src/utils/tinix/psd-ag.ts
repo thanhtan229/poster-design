@@ -6,8 +6,8 @@
  * Output has the same shape as utils/plugins/psd convertPSD2Page() so Psd.vue
  * keeps working: { width, height, background: { color, image }, clouds: [...] }.
  */
-import { readPsd, initializeCanvas } from 'ag-psd'
-import type { Layer, Psd } from 'ag-psd'
+import { readPsd, initializeCanvas, type Layer, type Psd } from 'ag-psd'
+
 
 // ag-psd creates ImageData through a canvas; a web worker has no `document`, so without this
 // every layer image is silently dropped. Worker globals: ImageData + OffscreenCanvas.
@@ -41,8 +41,8 @@ function justification(j?: string): string {
 
 function imageCloud(layer: Layer): Cloud | null {
   const img = layer.imageData
-  const left = layer.left ?? 0, top = layer.top ?? 0
-  const width = (layer.right ?? 0) - left, height = (layer.bottom ?? 0) - top
+  const left = layer.left ?? 0; const top = layer.top ?? 0
+  const width = (layer.right ?? 0) - left; const height = (layer.bottom ?? 0) - top
   if (!img || width <= 0 || height <= 0) return null
   return { type: 'image', src: img.data, width: img.width, height: img.height, top, left, opacity: layer.opacity ?? 1 }
 }
@@ -56,8 +56,8 @@ function textCloud(layer: Layer): Cloud | null {
   const isPoint = t.shapeType !== 'box'
   const geo = psdTextGeometry({ xx: tf[0], xy: tf[1], yx: tf[2], yy: tf[3], tx: tf[4], ty: tf[5] }, isPoint ? null : (t.boxBounds as number[] | undefined))
   const sheet = { FontSize: style.fontSize, Tracking: style.tracking, FontCaps: style.fontCaps, Leading: style.leading, AutoLeading: style.autoLeading }
-  const left = layer.left ?? 0, top = layer.top ?? 0
-  const bw = (layer.right ?? 0) - left, bh = (layer.bottom ?? 0) - top
+  const left = layer.left ?? 0; const top = layer.top ?? 0
+  const bw = (layer.right ?? 0) - left; const bh = (layer.bottom ?? 0) - top
   const fontSize = psdFontSize(style.fontSize, geo.scaleY, bh || 24)
   const fontName = String(style.font?.name || '')
 

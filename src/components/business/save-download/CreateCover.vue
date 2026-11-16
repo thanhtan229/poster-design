@@ -102,7 +102,7 @@ async function createPoster() {
       context.drawImage(canvas, 0, 0, width, height)
       canvas = exact
     }
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+    const blob = await new Promise<Blob | null>((resolve) => { canvas.toBlob(resolve, 'image/png') })
     if (!blob) throw new Error('PNG encoding failed')
     return { blob }
   } finally {

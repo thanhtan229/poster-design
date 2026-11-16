@@ -131,7 +131,7 @@ async function load() {
             }
           }
         }
-      } catch (e) {}
+      } catch {}
     })
     // 背景图无法检测是否加载完毕，所以单独做判断
     if (backgroundImage) {
@@ -161,7 +161,7 @@ async function load() {
     try {
       await Promise.all(fontLoaders)
       // console.log('4. font yes')
-    } catch (e) {
+    } catch {
       // console.log(e)
     }
     // [TINIX] 'load' chỉ báo ảnh đã tải, chưa chắc đã giải mã/vẽ: ảnh rất lớn (vd 8268×11220) giải mã mất vài giây nên ảnh chụp ra trong suốt
@@ -174,8 +174,8 @@ async function load() {
         decodes.push(bg.decode())
       }
       await Promise.all(decodes.map((p) => p.catch(() => undefined)))
-      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
-    } catch (e) {
+      await new Promise((r) => { requestAnimationFrame(() => requestAnimationFrame(r)) })
+    } catch {
       // không giải mã được: vẫn chụp như cũ
     }
     loadFlag = true
@@ -183,7 +183,7 @@ async function load() {
     setTimeout(() => {
       try {
         ;(window as any).loadFinishToInject('done')
-      } catch (err) {}
+      } catch {}
     }, 100)
   }
   // 超时

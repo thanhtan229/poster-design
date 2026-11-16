@@ -15,7 +15,7 @@ import {useRoute} from 'vue-router'
 import config from '@/config'
 import {zipImages} from '@/utils/tinix/zip'
 import downloadBlob from '@/common/methods/download/downloadBlob'
-const route=useRoute(),designId=computed(()=>route.query.id),open=ref(false),busy=ref(false),rows=ref<any[]>([]),status=ref(''),previews=ref<Array<{name:string;blob:Blob;url:string}>>([]),loadedId=ref('')
+const route=useRoute(); const designId=computed(()=>route.query.id); const open=ref(false); const busy=ref(false); const rows=ref<any[]>([]); const status=ref(''); const previews=ref<Array<{name:string;blob:Blob;url:string}>>([]); const loadedId=ref('')
 function clear(){for(const f of previews.value)URL.revokeObjectURL(f.url);previews.value=[];loadedId.value=''}
 watch(open,v=>{if(!v)clear()});onBeforeUnmount(clear)
 async function show(){open.value=true;status.value='Đang tải…';rows.value=[];clear();try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/approved-prints?designId=${encodeURIComponent(String(designId.value))}`);const data=await r.json();if(!r.ok)throw new Error(data.message);rows.value=data.list;status.value=''}catch(e:any){status.value=e.message}}

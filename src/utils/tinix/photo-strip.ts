@@ -65,7 +65,7 @@ export async function reloadPhotos() {
     photoState.photos = res.list || []
     photoState.favorites = res.favorites || []
     photoState.loaded = true
-  } catch (e) {
+  } catch {
     // mất kết nối: giữ danh sách cũ
   } finally {
     photoState.loading = false

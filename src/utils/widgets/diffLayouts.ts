@@ -15,8 +15,8 @@ const ops: any = {
 }
 export function historyPatches(before: any, after: any) {
   const changes = diff(before, after)
-  const ordered = changes.filter(item => item.type !== 'REMOVE')
-    .concat(changes.filter(item => item.type === 'REMOVE').reverse())
+  const ordered = [...changes.filter(item => item.type !== 'REMOVE'),
+    ...changes.filter(item => item.type === 'REMOVE').reverse()]
     .map(item => ({ ...item, op: ops[item.type] }))
   let result: { patches: any[]; inversePatches: any[] } = { patches: [], inversePatches: [] }
   produce(before, draft => { applyPatches(draft, ordered as any) }, (patches, inversePatches) => {
@@ -28,7 +28,6 @@ export function historyPatches(before: any, after: any) {
 export default class {
   private notifi: any
   private cloneData = ''
-  constructor() { }
   /**
    * onmessage
    */

@@ -19,15 +19,15 @@
                 <uploader style="width: 47%" @done="uploadImgDone">
                   <el-button style="width: 100%" plain>{{ $t('settings.pageStyle.uploadImage') }}</el-button>
                 </uploader>
-                <el-button style="width: 47%" @click="state.showBgLib = true" plain>{{ $t('settings.pageStyle.library') }}</el-button>
+                <el-button style="width: 47%" plain @click="state.showBgLib = true">{{ $t('settings.pageStyle.library') }}</el-button>
               </div>
             </div>
             <div class="bg-options">
               <el-tooltip :show-after="300" :hide-after="0" effect="dark" :content="$t('settings.pageStyle.downloadImage')" placement="top">
-                <div @click="downloadBG" class="btn-item"><icon-download width="16" /></div>
+                <div class="btn-item" @click="downloadBG"><icon-download width="16" /></div>
               </el-tooltip>
               <el-tooltip :show-after="300" :hide-after="0" effect="dark" :content="$t('common.delete')" placement="top">
-                <div @click="deleteBg" class="btn-item"><icon-delete width="16" /></div>
+                <div class="btn-item" @click="deleteBg"><icon-delete width="16" /></div>
               </el-tooltip>
             </div>
           </div>
@@ -47,7 +47,7 @@
 <script lang="ts" setup>
 // 画布组件样式
 // const NAME = 'page-style'
-import { nextTick, onMounted, reactive, watch, ref, Ref } from 'vue'
+import { nextTick, onMounted, reactive, watch } from 'vue'
 import colorSelect, { colorChangeData } from '@/components/modules/settings/colorSelect.vue'
 import uploader, { TUploadDoneData } from '@/components/common/Uploader/index.vue'
 import api from '@/api'

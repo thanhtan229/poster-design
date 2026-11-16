@@ -19,13 +19,13 @@ import {computed,ref,watch,onMounted,onActivated,onDeactivated,onBeforeUnmount} 
 import {nanoid} from 'nanoid'
 import {useRoute} from 'vue-router'
 import {useWidgetStore,useCanvasStore,useHistoryStore,useControlStore} from '@/store'
-import {printUnits} from '@/utils/tinix/collage-print'
-import type {PrintUnit} from '@/utils/tinix/collage-print'
+import {printUnits, type PrintUnit} from '@/utils/tinix/collage-print'
+
 import {printSelection,resetPrintSelection} from '@/utils/tinix/print-selection'
 import {flushHistory} from '@/common/hooks/history'
 import {historyPatches} from '@/utils/widgets/diffLayouts'
-const store=useWidgetStore(),canvas=useCanvasStore(),name=ref(''),message=ref('')
-const units=computed(()=>printUnits(store.dWidgets)),selected=computed(()=>units.value.filter(u=>printSelection.selected.includes(u.id)))
+const store=useWidgetStore(); const canvas=useCanvasStore(); const name=ref(''); const message=ref('')
+const units=computed(()=>printUnits(store.dWidgets)); const selected=computed(()=>units.value.filter(u=>printSelection.selected.includes(u.id)))
 const canSplit=computed(()=>{const unit=selected.value[0];if(!unit)return false;return (store.dWidgets as any[]).some(w=>unit.ids.includes(String(w.uuid))&&w.printGroup)})
 watch(()=>selected.value.map(u=>u.name).join('|'),()=>{name.value=selected.value.length===1?selected.value[0].name:''})
 watch(()=>canvas.dCurrentPage,()=>{printSelection.selected=[];printSelection.clean=false})
@@ -33,12 +33,12 @@ const route=useRoute()
 watch(()=>route.query.id,()=>{printSelection.selected=[];printSelection.clean=false})
 watch(()=>printSelection.clean,()=>{store.selectWidget({uuid:'-1'});useControlStore().setShowMoveable(false)})
 watch(units,list=>{printSelection.selected=printSelection.selected.filter(id=>list.some(u=>u.id===id))})
-onMounted(()=>printSelection.active=true);onActivated(()=>printSelection.active=true);onDeactivated(resetPrintSelection);onBeforeUnmount(resetPrintSelection)
+onMounted(()=>{printSelection.active=true});onActivated(()=>{printSelection.active=true});onDeactivated(resetPrintSelection);onBeforeUnmount(resetPrintSelection)
 function pick(id:string){printSelection.selected=[id];useControlStore().setShowMoveable(false)}
 function toggle(id:string){printSelection.selected=printSelection.selected.includes(id)?printSelection.selected.filter(x=>x!==id):[...printSelection.selected,id]}
-function change(action:()=>void){flushHistory();const before=JSON.parse(JSON.stringify(store.dLayouts));action();store.updateDWidgets();const after=JSON.parse(JSON.stringify(store.dLayouts)),patches=historyPatches(before,after);if(patches.patches.length)useHistoryStore().changeHistory(patches)}
+function change(action:()=>void){flushHistory();const before=JSON.parse(JSON.stringify(store.dLayouts));action();store.updateDWidgets();const after=JSON.parse(JSON.stringify(store.dLayouts)); const patches=historyPatches(before,after);if(patches.patches.length)useHistoryStore().changeHistory(patches)}
 function role(unit:PrintUnit,value:string){change(()=>{for(const w of store.dWidgets as any[])if(unit.ids.includes(String(w.uuid)))w.printRole=value})}
-function merge(){if(selected.value.length<2)return;const ids=new Set(selected.value.flatMap(u=>u.ids)),id=nanoid(),raised=selected.value.some(u=>u.raised);change(()=>{for(const w of store.dWidgets as any[])if(ids.has(String(w.uuid))){w.printGroup=id;w.printRole=raised?'raised':'base';w.printName='Cụm ghép'}});printSelection.selected=[id];message.value='Đã gộp. Nếu có cụm cắt nổi, cụm ghép được đặt Cắt nổi; bạn có thể đổi lại.'}
+function merge(){if(selected.value.length<2)return;const ids=new Set(selected.value.flatMap(u=>u.ids)); const id=nanoid(); const raised=selected.value.some(u=>u.raised);change(()=>{for(const w of store.dWidgets as any[])if(ids.has(String(w.uuid))){w.printGroup=id;w.printRole=raised?'raised':'base';w.printName='Cụm ghép'}});printSelection.selected=[id];message.value='Đã gộp. Nếu có cụm cắt nổi, cụm ghép được đặt Cắt nổi; bạn có thể đổi lại.'}
 function split(){const unit=selected.value[0];if(!unit||!canSplit.value)return;change(()=>{for(const w of store.dWidgets as any[])if(unit.ids.includes(String(w.uuid))){delete w.printGroup;delete w.printName}});printSelection.selected=[];message.value='Đã tách liên kết in/cắt. Nhóm thiết kế vẫn giữ nguyên; cần bỏ nhóm trong editor nếu muốn tách các lớp con.'}
 function rename(){if(selected.value.length!==1||!name.value.trim())return;const unit=selected.value[0];change(()=>{for(const w of store.dWidgets as any[])if(unit.ids.includes(String(w.uuid)))w.printName=name.value.trim()})}
 </script>

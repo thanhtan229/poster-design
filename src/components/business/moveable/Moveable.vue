@@ -545,7 +545,7 @@ onMounted(() => {
         const d = e.direction || e.lastEvent.direction
         String(d) === '1,1' && (dActiveElement.value.fontSize = Number(dActiveElement.value?.fontSize) * resetRatio)
       }
-    } catch (err) {}
+    } catch {}
     moveable.keepRatio = true
   })
   .on('scaleStart', (e) => {
@@ -577,7 +577,7 @@ onMounted(() => {
         const d = e.direction || e.lastEvent.direction
         String(d) === '1,1' && (dActiveElement.value.fontSize = Number(dActiveElement.value.fontSize) * resetRatio)
       }
-    } catch (err) {}
+    } catch {}
   })
   .on('dragGroupStart', (e) => {
     if (!moveable || !moveable.snappable) return

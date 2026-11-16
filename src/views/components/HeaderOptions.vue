@@ -149,7 +149,7 @@ async function convertBatchImage(blob: Blob, format: string, scale: number, dpi:
     if (!ctx) throw new Error('Canvas unavailable')
     if (format === 'jpg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height) }
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-    const result = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95))
+    const result = await new Promise<Blob | null>((resolve) => { canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95) })
     if (!result) throw new Error('Image encoding failed')
     return format === 'png' ? withPngDpi(result, dpi) : result
   } finally { image.close() }
@@ -178,7 +178,7 @@ async function runBatch(retry: boolean) {
         if (signature[0] !== 137 || signature[1] !== 80 || signature[2] !== 78 || signature[3] !== 71) throw new Error('Invalid PNG')
         if (batch.format === 'jpg' || batch.scale !== 1) blob = await convertBatchImage(blob, batch.format, batch.scale, clampDpi(page.dpi || DEFAULT_DPI))
         files.push({ name: `trang-${String(index + 1).padStart(3, '0')}.${batch.format}`, blob })
-      } catch (e) { batch.failed.push(index) }
+      } catch { batch.failed.push(index) }
       batch.done++
     }
     if (files.length) downloadBlob(await zipImages(files), `${state.title || 'TinixPoster'}-trang.zip`)
@@ -291,7 +291,8 @@ async function download() {
   const fileName = `${state.title || i18n.global.t('editor.header.untitledWork')}.png`
   if (!backEndCapture) {
     // 无特殊条件命中则直接从前端出图，无需登录保存
-    const { blob } = await canvasImage.value?.createPoster()
+    if (!canvasImage.value) throw new Error('Không tìm thấy vùng thiết kế để xuất ảnh')
+    const { blob } = await canvasImage.value.createPoster()
     downloadBlob(await withPngDpi(blob, clampDpi(dPage.value.dpi || DEFAULT_DPI)), fileName) // [TINIX] ghi DPI vào PNG để Photoshop/tiệm in mở đúng khổ
     return
   }

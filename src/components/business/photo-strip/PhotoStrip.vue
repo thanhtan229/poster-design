@@ -94,12 +94,12 @@
 <script lang="ts" setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
+import { ElButton, ElMessage, ElMessageBox, ElSwitch } from 'element-plus'
 import i18n from '@/languages'
 import DragHelper from '@/common/hooks/dragHelper'
 import setImageData from '@/common/methods/DesignFeatures/setImage'
 import { placePhotos, rerollAutoTemplate, changePagePhotos } from '@/utils/tinix/photo-place'
-import { ElSwitch } from 'element-plus'
+
 import eventBus from '@/utils/plugins/eventBus'
 import { collectUsedUrls, staticPathOf } from '@/utils/tinix/photo-source'
 import { usePanelResize } from '@/utils/tinix/panel-resize'
@@ -159,7 +159,7 @@ function countFor(it: StripItem): number {
     if (fav.hq) keys.add(staticPathOf(fav.hq))
   }
   let n = 0
-  keys.forEach((k) => (n += usedCounts.value.get(k) || 0))
+  keys.forEach((k) => { n += usedCounts.value.get(k) || 0 })
   return n
 }
 
@@ -277,7 +277,7 @@ async function loadTplGroups() {
   try {
     const res: any = await api.home.getTemplateCategories(0)
     tplGroups.value = Array.isArray(res?.list) ? res.list.map((g: any) => ({ id: g.id, name: g.name, count: g.count || 0 })) : []
-  } catch (e) {
+  } catch {
     tplGroups.value = []
   }
 }
@@ -301,7 +301,7 @@ async function onStar(e: MouseEvent | null, it: StripItem, at?: { x: number; y: 
     const x = Math.min(e ? e.clientX : at ? at.x : 200, window.innerWidth - 200)
     const y = Math.max(8, (e ? e.clientY : at ? at.y : 300) - 40 - cats.length * 32)
     catPick.value = { x, y, item: it, cats }
-  } catch (err) {
+  } catch {
     ElMessage.error(t('tinix.ui.photoDock.tai_nhom_loi'))
   }
 }
@@ -327,7 +327,7 @@ async function favNew(it: StripItem) {
       inputValidator: (v: string) => (v && v.trim() ? true : t('tinix.ui.photoDock.ten_trong')),
     })
     name = String(r.value || '').trim()
-  } catch (e) {
+  } catch {
     return
   }
   if (name) await favTo(it, { newName: name })
@@ -347,7 +347,7 @@ async function unfav(it: StripItem) {
 async function removePhoto(it: StripItem) {
   try {
     await ElMessageBox.confirm(t('tinix.ui.photoDock.xac_nhan_xoa_mot', { name: it.name || '' }), t('tinix.ui.photoDock.xoa_khoi_thu_vien'), { type: 'warning', confirmButtonText: t('tinix.ui.photoDock.xoa'), cancelButtonText: t('tinix.ui.photoDock.huy') })
-  } catch (e) {
+  } catch {
     return
   }
   const res: any = await photosApi.deletePhoto(it.id, usedUrls.value)
@@ -367,7 +367,7 @@ async function clearAllPhotos() {
       cancelButtonText: t('tinix.ui.photoDock.huy'),
       dangerouslyUseHTMLString: false,
     })
-  } catch (e) {
+  } catch {
     return
   }
   const res: any = await photosApi.clearAll(usedUrls.value)

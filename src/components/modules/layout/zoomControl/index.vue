@@ -209,7 +209,7 @@ function sub() {
     return
   }
   if (activezoomIndex.value === zoomList.value.length - 1) {
-    if (bestZoom) {
+    if (bestZoom.value) {
       nearZoom()
     } else {
       activezoomIndex.value = zoomList.value.length - 2

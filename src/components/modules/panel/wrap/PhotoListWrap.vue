@@ -35,7 +35,7 @@
 <script setup lang="ts">
 // 图片列表
 // const NAME = 'img-list-wrap'
-import { toRefs, reactive, computed, onMounted } from 'vue'
+import { reactive, onMounted } from 'vue'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'
 import api from '@/api'

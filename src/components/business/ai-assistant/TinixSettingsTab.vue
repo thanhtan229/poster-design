@@ -87,7 +87,7 @@ async function uploadLogo({ file }: any) {
     const url = res?.url || res?.result?.url
     if (!url) return ElMessage.error(i18t('tinix.ui.logo.tai_len_khong_duoc'))
     form.logo_url = url
-  } catch (e) {
+  } catch {
     ElMessage.error(i18t('tinix.ui.logo.tai_len_khong_duoc'))
   } finally {
     state.uploadingLogo = false

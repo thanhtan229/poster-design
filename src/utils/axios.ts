@@ -8,14 +8,17 @@
  * (at your option) any later version.
  */
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosStatic } from 'axios'
-import app_config, { LocalStorageKey } from '@/config'
+import app_config from '@/config'
 import { useBaseStore } from '@/store/index';
 
-axios.defaults.timeout = 30000
+// Keep interceptors private to this module instance. Vite hot reload can
+// evaluate the module again; registering on the global axios object stacks
+// response interceptors and makes later requests fail.
+const client = axios.create({ timeout: 30000 })
 const baseUrl = app_config.API_URL
 
 // 请求拦截器
-axios.interceptors.request.use(
+client.interceptors.request.use(
   (config) => {
     const url = config.url ?? ""
     const values = {}
@@ -27,12 +30,12 @@ axios.interceptors.request.use(
       //  config.params = utils.extend(config.params, values)
       // Axios allows params to be omitted. Always merge into a fresh object;
       // Object.assign(undefined, ...) throws before the request is sent.
-      config.params = Object.assign({}, config.params, values)
+      config.params = { ...config.params, ...values}
       // config.params = qs.stringify(config.params);
     } else {
       // 文件上传必须保留 FormData 实例，否则合并后会丢失 multipart 文件内容。
       if (!(typeof FormData !== 'undefined' && config.data instanceof FormData)) {
-        config.data = Object.assign({}, config.data, values)
+        config.data = { ...config.data, ...values}
       }
       //  config.data = utils.extend(config.data, values)
       // config.data = qs.stringify(config.data);
@@ -45,7 +48,7 @@ axios.interceptors.request.use(
 )
 
 // 响应拦截器
-axios.interceptors.response.use((res: AxiosResponse<any>) => {
+client.interceptors.response.use((res: AxiosResponse<any>) => {
     // store.dispatch('hideLoading');
     // 接口规则：只有正确code为200时返回result结果对象，错误返回整个结果对象
     if (!res.data) {
@@ -93,13 +96,13 @@ const fetch = <T = any> (
   const headerObject: Record<string, any> = {}
   
   if (type === 'get') {
-    return axios.get(url, {
+    return client.get(url, {
       headers: Object.assign(headerObject, exheaders),
       params,
       ...extra,
     }) as unknown as Promise<T>
   } else {
-    return axios[type](url, params, {
+    return client[type](url, params, {
       headers: Object.assign(headerObject, exheaders),
       ...extra,
     }) as Promise<T>

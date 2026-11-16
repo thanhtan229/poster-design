@@ -8,7 +8,7 @@
 
 <template>
   <div ref="pageDesignIndex">
-    <div class="page-design-index-wrap" id="page-draw-html-wrap">
+    <div id="page-draw-html-wrap" class="page-design-index-wrap">
       <template v-for="x in pageGroup" :key="x.pageData.uuid">
         <design-board 
           class="page-design-wrap fixed-canvas"
@@ -111,7 +111,7 @@ async function load() {
               }
             }
           }
-        } catch (e) {}
+        } catch {}
       })
       // 背景图无法检测是否加载完毕，所以单独做判断
       if (backgroundImage) {
@@ -133,7 +133,7 @@ async function load() {
       try {
         await Promise.all(fontLoaders)
         // console.log('4. font yes')
-      } catch (e) {
+      } catch {
         // console.log(e)
       }
       loadFlag = true
@@ -141,7 +141,7 @@ async function load() {
       setTimeout(() => {
         try {
           ;(window as any).loadFinishToInject('done')
-        } catch (err) {}
+        } catch {}
       }, 100)
     }
   }

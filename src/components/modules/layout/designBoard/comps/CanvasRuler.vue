@@ -14,7 +14,7 @@ import { useCanvasStore, useHistoryStore } from '@/store'
 import type { TPageState } from '@/store/design/canvas/d'
 const props=defineProps<{page:TPageState;zoom:number}>()
 const store=useCanvasStore()
-const unit=ref<'px'|'cm'>('px'), shown=ref(true), snap=ref(true), locked=ref(false)
+const unit=ref<'px'|'cm'>('px'); const shown=ref(true); const snap=ref(true); const locked=ref(false)
 const toolbarReady=ref(false)
 onMounted(()=>{toolbarReady.value=true})
 const toggleRuler=()=>{shown.value=!shown.value}
@@ -26,7 +26,7 @@ const horizontalStyle=computed(()=>({top:-24/scale.value+'px',width:props.page.w
 const verticalStyle=computed(()=>({left:-24/scale.value+'px',height:props.page.height*scale.value+'px',transform:`scale(${1/scale.value})`}))
 const guides=computed(()=>props.page.tinixGuides || {x:[],y:[]})
 function ticks(max:number) { const factor=unit.value==='cm'?(Number(props.page.dpi)||300)/2.54:1; const raw=70/(scale.value*factor); const power=Math.pow(10,Math.floor(Math.log10(raw))); const step=[1,2,5,10].map(n=>n*power).find(n=>n>=raw)||power*10; const result=[]; for(let n=0;n*factor<=max && result.length<300;n+=step) result.push({p:n*factor,label:Number(n.toPrecision(5))}); return result }
-const ticksX=computed(()=>ticks(props.page.width)), ticksY=computed(()=>ticks(props.page.height))
+const ticksX=computed(()=>ticks(props.page.width)); const ticksY=computed(()=>ticks(props.page.height))
 function update() { store.updateGuidelines({verticalGuidelines:snap.value?[0,props.page.width/2,props.page.width,...guides.value.x] as any:[],horizontalGuidelines:snap.value?[0,props.page.height/2,props.page.height,...guides.value.y] as any:[]}) }
 watch(()=>[props.page,props.zoom,snap.value,JSON.stringify(guides.value)],update,{immediate:true,deep:true})
 function set(axis:'x'|'y', arr:number[]) { store.updatePageData({key:'tinixGuides',value:{x:[...guides.value.x],y:[...guides.value.y],[axis]:arr}}); store.updateDPage() }

@@ -9,9 +9,9 @@
   <div :style="{ position, bottom: -1 * st + 'px', left: sl + 'px' }" :class="['artboards', isFold ? 'fold' : 'unfold']">
     <div ref="listRef" class="wrap">
       <div v-if="isFold" v-show="dLayouts.length > 0" class="btn" @click="isFold = !isFold">{{ $t('editor.panel.artboard') }} {{ index + 1 }}/{{ dLayouts.length }} <i class="icon sd-zhankai" /></div>
-      <div class="list" v-else>
-        <span @click="isFold = !isFold" class="icon-btn"><i class="icon sd-zhankai" /></span>
-        <div v-for="(l, li) in dLayouts" :key="'l' + li" :style="{ width: getPW(l.global) + 'px' }" @click="selectPoster(li)" :class="['item-box', index == li ? 'item-select' : 'item-default']">
+      <div v-else class="list">
+        <span class="icon-btn" @click="isFold = !isFold"><i class="icon sd-zhankai" /></span>
+        <div v-for="(l, li) in dLayouts" :key="'l' + li" :style="{ width: getPW(l.global) + 'px' }" :class="['item-box', index === li ? 'item-select' : 'item-default']" @click="selectPoster(li)">
           <div
             class="mini-poster"
             :style="{
@@ -32,9 +32,9 @@
             </component>
           </div>
           <div class="item-idx">{{ li + 1 }}</div>
-          <i @click.stop="removePoster(li)" class="icon sd-quxiao" />
+          <i class="icon sd-quxiao" @click.stop="removePoster(li)" />
         </div>
-        <div @click="addLayer" class="item-add"><i class="iconfont icon-add" /></div><!-- [TINIX] bỏ giới hạn 9 trang (album nhiều trang); thanh trang cuộn ngang -->
+        <div class="item-add" @click="addLayer"><i class="iconfont icon-add" /></div><!-- [TINIX] bỏ giới hạn 9 trang (album nhiều trang); thanh trang cuộn ngang -->
       </div>
     </div>
   </div>
@@ -82,7 +82,7 @@ let mainEl: any = null
 onMounted(async () => {
   await nextTick()
   mainEl = document.getElementById('main')
-  mainEl.addEventListener('scroll', function (e: any) {
+  mainEl.addEventListener('scroll', (e: any) => {
     st.value = mainEl.scrollTop
     sl.value = mainEl.scrollLeft
   })

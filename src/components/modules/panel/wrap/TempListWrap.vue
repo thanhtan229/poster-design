@@ -139,7 +139,7 @@ async function removeTemplate(item: IGetTempListData) {
       confirmButtonText: i18n.global.t('tinix.ui.templateCard.xoa_mau'),
       cancelButtonText: i18n.global.t('common.cancel'),
     })
-  } catch (e) {
+  } catch {
     return // bấm Hủy
   }
   try {

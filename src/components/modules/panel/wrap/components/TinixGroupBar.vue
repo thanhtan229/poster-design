@@ -67,7 +67,7 @@ async function reload() {
     total.value = Number(res?.total || 0)
     // nhóm đang chọn đã bị xóa ở nơi khác → về "Tất cả"
     if (typeof props.modelValue === 'number' && props.modelValue > 0 && !groups.value.some((g) => g.id === props.modelValue)) pick(0, '')
-  } catch (e) {
+  } catch {
     // không tải được: giữ danh sách cũ
   }
 }
@@ -120,7 +120,7 @@ async function rename(g: TTemplateGroup) {
       inputValidator: (v: string) => (v && v.trim() ? true : t('tinix.ui.templateGroups.ten_trong')),
     })
     value = String(r.value || '').trim()
-  } catch (e) {
+  } catch {
     return // bấm Hủy
   }
   if (!value || value === g.name) return
@@ -139,7 +139,7 @@ async function remove(g: TTemplateGroup) {
       confirmButtonText: t('tinix.ui.templateGroups.xoa_nhom'),
       cancelButtonText: t('tinix.ui.templateGroups.huy'),
     })
-  } catch (e) {
+  } catch {
     return
   }
   const res: any = await adminApi.deleteTemplateCategory(g.id, true)

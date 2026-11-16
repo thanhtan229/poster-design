@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, toRefs, nextTick, DefineComponent } from 'vue'
+import { reactive, nextTick } from 'vue'
 import matting, { MattingType } from '@palxp/image-extraction'
 import { ElRadioGroup, ElRadio } from 'element-plus'
 import numberSlider from '@/components/modules/settings/numberSlider.vue'

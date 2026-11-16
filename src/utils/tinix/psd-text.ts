@@ -63,15 +63,15 @@ export type PsdGeometry = {
  * back in place.
  */
 export function psdTextGeometry(tf: PsdTransform, boxBounds?: number[] | null): PsdGeometry {
-  const xx = Number(tf?.xx) || 1, xy = Number(tf?.xy) || 0, yx = Number(tf?.yx) || 0, yy = Number(tf?.yy) || 1
-  const tx = Number(tf?.tx) || 0, ty = Number(tf?.ty) || 0
+  const xx = Number(tf?.xx) || 1; const xy = Number(tf?.xy) || 0; const yx = Number(tf?.yx) || 0; const yy = Number(tf?.yy) || 1
+  const tx = Number(tf?.tx) || 0; const ty = Number(tf?.ty) || 0
   const scaleX = Math.hypot(xx, xy) || 1
   const scaleY = Math.hypot(yx, yy) || 1
   const angle = Math.round(((Math.atan2(xy, xx) * 180) / Math.PI) * 100) / 100
   let rect: PsdGeometry['rect'] = null
   if (Array.isArray(boxBounds) && boxBounds.length === 4 && boxBounds[2] > boxBounds[0] && boxBounds[3] > boxBounds[1]) {
     const [l, t, r, b] = boxBounds.map(Number)
-    const cxL = (l + r) / 2, cyL = (t + b) / 2
+    const cxL = (l + r) / 2; const cyL = (t + b) / 2
     const cx = xx * cxL + yx * cyL + tx
     const cy = xy * cxL + yy * cyL + ty
     const width = (r - l) * scaleX

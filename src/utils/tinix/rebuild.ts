@@ -15,14 +15,14 @@ const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt
 
 /** Grey dashed frame with a hint — the user swaps it with "Thay ảnh". */
 export function photoPlaceholder(w: number, h: number, dark = false): string {
-  const bg = dark ? '#7f8490' : '#e9e9ee', line = dark ? '#b9bcc7' : '#b4b4c2', label = dark ? '#e4e5ea' : '#8a8a99'
+  const bg = dark ? '#7f8490' : '#e9e9ee'; const line = dark ? '#b9bcc7' : '#b4b4c2'; const label = dark ? '#e4e5ea' : '#8a8a99'
   const fs = Math.max(14, Math.round(Math.min(w, h) / 14))
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}"><rect width="100%" height="100%" fill="${bg}"/><rect x="${fs / 2}" y="${fs / 2}" width="${Math.max(1, w - fs)}" height="${Math.max(1, h - fs)}" fill="none" stroke="${line}" stroke-width="${Math.max(2, fs / 6)}" stroke-dasharray="${fs} ${fs / 1.5}"/><text x="50%" y="50%" font-family="sans-serif" font-size="${fs}" fill="${label}" text-anchor="middle" dominant-baseline="middle">${esc(i18t('tinix.ui.rebuildUtil.yourPhoto'))}</text></svg>`
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 }
 
 function shapeSvg(shape: string, color: string, w: number, h: number): string {
-  const W = Math.max(1, Math.round(w)), H = Math.max(1, Math.round(h))
+  const W = Math.max(1, Math.round(w)); const H = Math.max(1, Math.round(h))
   const body =
     shape === 'ellipse'
       ? `<ellipse cx="${W / 2}" cy="${H / 2}" rx="${W / 2}" ry="${H / 2}" fill="${color}"/>`
@@ -33,7 +33,7 @@ function shapeSvg(shape: string, color: string, w: number, h: number): string {
 }
 
 export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { width: number; height: number }, opts: { photoUrl?: string } = {}) {
-  const W = page.width, H = page.height
+  const W = page.width; const H = page.height
   const out: any[] = []
   // [TINIX] mẫu có chữ sáng nằm đè ảnh: dùng khung ảnh tối hơn để chữ trắng vẫn nhìn thấy khi chưa thay ảnh
   const lum = (hex: string) => {
@@ -48,8 +48,8 @@ export async function buildRebuildWidgets(regions: TRebuildRegion[], page: { wid
   const texts = regions.filter((r) => r.type === 'text')
   const lightText = texts.length > 0 && texts.filter((r) => lum(r.color) > 0.75).length / texts.length >= 0.5
   for (const r of regions) {
-    const left = Math.round(r.bbox.x * W), top = Math.round(r.bbox.y * H)
-    const width = Math.max(10, Math.round(r.bbox.w * W)), height = Math.max(4, Math.round(r.bbox.h * H))
+    const left = Math.round(r.bbox.x * W); const top = Math.round(r.bbox.y * H)
+    const width = Math.max(10, Math.round(r.bbox.w * W)); const height = Math.max(4, Math.round(r.bbox.h * H))
 
     if (r.type === 'photo') {
       const w = JSON.parse(JSON.stringify(wImageSetting))

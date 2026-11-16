@@ -3,18 +3,18 @@ export type PrintUnit={id:string;name:string;raised:boolean;ids:string[];bounds:
 const clone=(v:any)=>JSON.parse(JSON.stringify(v))
 export function printUnits(layers:any[]):PrintUnit[]{
  const all=new Map(layers.map(w=>[String(w.uuid),w]))
- const visible=layers.filter(w=>{const seen=new Set();while(w&&!seen.has(w.uuid)){if(w.hidden)return false;seen.add(w.uuid);w=all.get(String(w.parent))}return true}),byId=new Map(visible.map(w=>[String(w.uuid),w]))
+ const visible=layers.filter(w=>{const seen=new Set();while(w&&!seen.has(w.uuid)){if(w.hidden)return false;seen.add(w.uuid);w=all.get(String(w.parent))}return true}); const byId=new Map(visible.map(w=>[String(w.uuid),w]))
  const rootOf=(w:any)=>{const seen=new Set();while(w.parent&&byId.has(String(w.parent))&&!seen.has(w.uuid)){seen.add(w.uuid);w=byId.get(String(w.parent))}return w}
  const groups=new Map<string,any[]>()
- for(const w of visible){const root=rootOf(w),key=String(root.printGroup||root.uuid);if(!groups.has(key))groups.set(key,[]);groups.get(key)!.push(w)}
+ for(const w of visible){const root=rootOf(w); const key=String(root.printGroup||root.uuid);if(!groups.has(key))groups.set(key,[]);groups.get(key)!.push(w)}
  const units:PrintUnit[]=[]
  groups.forEach((members,id)=>{
-  const roots=members.filter(w=>!byId.has(String(w.parent))),primary=roots.find(w=>w.printRole)||roots[0]||members[0]
-  let x=Infinity,y=Infinity,right=-Infinity,bottom=-Infinity
+  const roots=members.filter(w=>!byId.has(String(w.parent))); const primary=roots.find(w=>w.printRole)||roots[0]||members[0]
+  let x=Infinity; let y=Infinity; let right=-Infinity; let bottom=-Infinity
   for(const w of roots){
-   const width=Number(w.width)||0,height=Number(w.height)||0,angle=(parseFloat(String(w.rotate||w.degree||0))||0)*Math.PI/180
+   const width=Number(w.width)||0; const height=Number(w.height)||0; const angle=(parseFloat(String(w.rotate||w.degree||0))||0)*Math.PI/180
    // Groups render around top-left; individual images render around their centre.
-   const ox=w.isContainer?0:width/2,oy=w.isContainer?0:height/2,c=Math.cos(angle),s=Math.sin(angle)
+   const ox=w.isContainer?0:width/2; const oy=w.isContainer?0:height/2; const c=Math.cos(angle); const s=Math.sin(angle)
    const corners=[[0,0],[width,0],[0,height],[width,height]].map(([px,py])=>({x:Number(w.left)+ox+(px-ox)*c-(py-oy)*s,y:Number(w.top)+oy+(px-ox)*s+(py-oy)*c}))
    // Leave room for visible shadows as well as the cut contour.
    const padding=Math.max(0,...members.map(v=>Number(v.effects?.shadow)||0))*2
@@ -27,16 +27,16 @@ export function printUnits(layers:any[]):PrintUnit[]{
 }
 export type PrintOptions={paperWidthMm?:number;paperHeightMm?:number;marginMm:number;gapMm:number}
 export function planCollagePrint(layout:any,options:PrintOptions){
- const page=layout.global,layers=layout.layers
+ const page=layout.global; const layers=layout.layers
  if(!page||!Array.isArray(layers)||!Number.isFinite(Number(page.width))||!Number.isFinite(Number(page.height)))throw new Error('Thiết kế không hợp lệ')
  const dpi=Number(page.dpi)||300
  if(page.width<1||page.height<1||page.width>12000||page.height>12000||page.width*page.height>80000000)throw new Error('Kích thước thành phẩm vượt giới hạn xuất')
  if(dpi<36||dpi>1200)throw new Error('DPI không hợp lệ')
  const values=[options.marginMm,options.gapMm]
  if(values.some(v=>!Number.isFinite(v))||options.marginMm<0||options.gapMm<0)throw new Error('Khổ giấy, lề hoặc khoảng cách không hợp lệ')
- const px=(mm:number)=>mm*dpi/25.4,W=Math.round(Number(page.width)),H=Math.round(Number(page.height)),margin=Math.ceil(px(options.marginMm)),gap=Math.ceil(px(options.gapMm))
+ const px=(mm:number)=>mm*dpi/25.4; const W=Math.round(Number(page.width)); const H=Math.round(Number(page.height)); const margin=Math.ceil(px(options.marginMm)); const gap=Math.ceil(px(options.gapMm))
  if(W>12000||H>12000||W*H>80000000||W-2*margin<=0||H-2*margin<=0)throw new Error('Khổ giấy/lề vượt giới hạn xuất ảnh')
- const units=printUnits(layers),raisedIds=new Set(units.filter(u=>u.raised).flatMap(u=>u.ids))
+ const units=printUnits(layers); const raisedIds=new Set(units.filter(u=>u.raised).flatMap(u=>u.ids))
  // Cut sheets are production artwork: omit synthetic outlines and cast shadows.
  // Work on copies so saved designs and approved/final artwork stay intact.
  const cutLayers=clone(layers)
@@ -47,20 +47,20 @@ export function planCollagePrint(layout:any,options:PrintOptions){
  const raised=printUnits(cutLayers).filter(u=>u.raised)
  const base=clone(layout);base.layers=base.layers.filter((w:any)=>!raisedIds.has(String(w.uuid)))
  // Reserve gap to the right/bottom of each rectangle, including at free-space splits.
- const items=raised.map(unit=>{const width=Math.ceil(unit.bounds.width),height=Math.ceil(unit.bounds.height)
+ const items=raised.map(unit=>{const width=Math.ceil(unit.bounds.width); const height=Math.ceil(unit.bounds.height)
   if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)throw new Error('Cụm có kích thước không hợp lệ: '+unit.name)
   if(width>W-2*margin||height>H-2*margin)throw new Error(`“${unit.name}” không vừa khổ giấy. Hãy giảm lề hoặc điều chỉnh cụm trong thiết kế; tờ cắt luôn cùng khổ thành phẩm và không tự thu nhỏ.`)
   return {unit,width,height}
  })
  type Rect={x:number;y:number;w:number;h:number}
  function pack(sorted:typeof items,mode:number){
-  const free:Rect[][]=[],placed:any[]=[]
+  const free:Rect[][]=[]; const placed:any[]=[]
   for(const item of sorted){
-   const w=item.width+gap,h=item.height+gap
+   const w=item.width+gap; const h=item.height+gap
    let best:any=null
-    free.forEach((rects,sheet)=>rects.forEach(r=>{if(w<=r.w&&h<=r.h){const short=mode===0?Math.min(r.w-w,r.h-h):mode===1?r.w*r.h-w*h:r.y+h,long=mode===2?r.x:Math.max(r.w-w,r.h-h);if(!best||sheet<best.sheet||sheet===best.sheet&&(short<best.short||short===best.short&&long<best.long))best={sheet,x:r.x,y:r.y,short,long}}}))
+    free.forEach((rects,sheet)=>rects.forEach(r=>{if(w<=r.w&&h<=r.h){const short=mode===0?Math.min(r.w-w,r.h-h):mode===1?r.w*r.h-w*h:r.y+h; const long=mode===2?r.x:Math.max(r.w-w,r.h-h);if(!best||sheet<best.sheet||sheet===best.sheet&&(short<best.short||short===best.short&&long<best.long))best={sheet,x:r.x,y:r.y,short,long}}}))
    if(!best){best={sheet:free.length,x:margin,y:margin};free.push([{x:margin,y:margin,w:W-2*margin+gap,h:H-2*margin+gap}])}
-   const used={x:best.x,y:best.y,w,h},next:Rect[]=[]
+   const used={x:best.x,y:best.y,w,h}; const next:Rect[]=[]
    for(const r of free[best.sheet]){
     if(used.x>=r.x+r.w||used.x+w<=r.x||used.y>=r.y+r.h||used.y+h<=r.y){next.push(r);continue}
     if(used.x>r.x)next.push({...r,w:used.x-r.x})
@@ -80,9 +80,9 @@ export function planCollagePrint(layout:any,options:PrintOptions){
   return Math.max(0,...p.map(v=>v.x+v.width-margin))*Math.max(0,...p.map(v=>v.y+v.height-margin))
  }).reduce((sum,v)=>sum+v,0)
  const selected=candidates.reduce((best,c)=>c.count<best.count||c.count===best.count&&occupied(c)<occupied(best)?c:best)
- const sheets:any[]=Array.from({length:selected.count},()=>({global:{...clone(page),width:W,height:H,backgroundColor:'#ffffff',backgroundImage:'',backgroundGradient:'',collage:undefined},layers:[]})),placements:any[]=[]
+ const sheets:any[]=Array.from({length:selected.count},()=>({global:{...clone(page),width:W,height:H,backgroundColor:'#ffffff',backgroundImage:'',backgroundGradient:'',collage:undefined},layers:[]})); const placements:any[]=[]
  for(const {unit,width,height,x,y,sheet} of selected.placed){
-  const ids=new Set(unit.ids),copies=clone(cutLayers.filter((v:any)=>ids.has(String(v.uuid))))
+  const ids=new Set(unit.ids); const copies=clone(cutLayers.filter((v:any)=>ids.has(String(v.uuid))))
   for(const v of copies){v.left+=x-unit.bounds.x;v.top+=y-unit.bounds.y}
   sheets[sheet].layers.push(...copies);placements.push({unitId:unit.id,sheet,x,y,width,height})
  }

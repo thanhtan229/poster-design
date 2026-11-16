@@ -54,7 +54,7 @@ const unitRef = ref<SizeUnit>((typeof localStorage !== 'undefined' && localStora
 export function useSizeUnit() {
   const set = (u: SizeUnit) => {
     unitRef.value = u
-    try { localStorage.setItem(UNIT_KEY, u) } catch (e) { /* bỏ qua */ }
+    try { localStorage.setItem(UNIT_KEY, u) } catch { /* bỏ qua */ }
   }
   return { unit: unitRef, setUnit: set }
 }

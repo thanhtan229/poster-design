@@ -14,7 +14,7 @@
     <div class="widget-classify">
       <ul class="classify-wrap">
         <li v-for="(item, index) in state.widgetClassifyList" :key="index" :class="['classify-item', { 'active-classify-item': state.activeWidgetClassify === index && state.active }]" @click="clickClassify(index)">
-          <div class="icon-box"><i :class="['iconfont', 'icon', item.icon]" :style="item.style" /></div>
+          <div class="icon-box"><i :class="['iconfont', 'icon', item.icon]" :style="widgetClassifyListData[index].style" /></div>
           <p>{{ item.name }}</p>
         </li>
       </ul>

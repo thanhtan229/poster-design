@@ -52,7 +52,7 @@
 // 文本组件样式
 const NAME = 'w-text-style'
 import i18n from '@/languages'
-import { defineComponent, reactive, toRefs, computed, watch, nextTick, onMounted } from 'vue'
+import { reactive, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { styleIconList1, styleIconList2, alignIconList, TStyleIconData, TStyleIconData2 } from '@/assets/data/TextIconsData'
 import layerIconList from '@/assets/data/LayerIconList'
@@ -156,7 +156,7 @@ function changeValue() {
     return
   }
   // TODO 修改数值
-  for (let key in state.innerElement) {
+  for (const key of Object.keys(state.innerElement)) {
     const itemKey = key as keyof TwTextData
     if (state.ingoreKeys.indexOf(itemKey) !== -1) {
       ;(dActiveElement.value as Record<string, any>)[itemKey] = state.innerElement[itemKey]

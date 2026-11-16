@@ -11,7 +11,6 @@
   <div
     :id="params.uuid"
     ref="widgetRef"
-    @mousedown.capture="startFramePan"
     :class="['w-image', { 'layer-lock': params.lock }]"
     :style="{
       position: state.position,
@@ -22,6 +21,7 @@
       opacity: params.opacity,
       ...imageFrameStyle(params),
     }"
+    @mousedown.capture="startFramePan"
   >
     <div
       v-if="cropEdit"
@@ -48,7 +48,7 @@ import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/t
 
 // 图片组件
 // const NAME = 'w-image'
-import { CSSProperties, StyleValue, computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
+import { CSSProperties, computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
 
 // import { getMatrix } from '@/common/methods/handleTransform'
 import setting from "./wImageSetting"
@@ -228,7 +228,7 @@ function handlemousemove(e?: MouseEvent) {
   if (props.params.fit === 'cover') {
     if (!e || !coverDrag || !targetRef.value) return
     const img = targetRef.value
-    const w = Number(props.params.width), h = Number(props.params.height)
+    const w = Number(props.params.width); const h = Number(props.params.height)
     if (!img.naturalWidth || !img.naturalHeight || !w || !h || !dZoom.value) return
     const factor = Math.max(w / img.naturalWidth, h / img.naturalHeight)
     const zoom = Math.max(1, Number(props.params.zoom) || 1)

@@ -54,7 +54,7 @@ export async function withPngDpi(blob: Blob, dpi: number): Promise<Blob> {
     const bytes = new Uint8Array(await blob.arrayBuffer())
     const out = setPngDpi(bytes, dpi)
     return out === bytes ? blob : new Blob([out as BlobPart], { type: 'image/png' })
-  } catch (e) {
+  } catch {
     return blob // không ghi được DPI thì vẫn xuất ảnh bình thường
   }
 }

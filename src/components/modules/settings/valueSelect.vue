@@ -177,11 +177,11 @@ function opNumber(e: KeyboardEvent) {
 }
 
 function up() {
-  emit('update:modelValue', parseInt(`${props.modelValue}` ?? '0', 10) + props.step)
+  emit('update:modelValue', parseInt(`${props.modelValue ?? '0'}`, 10) + props.step)
 }
 
 function down() {
-  let value = parseInt(`${props.modelValue}` ?? '0', 10) - props.step
+  let value = parseInt(`${props.modelValue ?? '0'}`, 10) - props.step
   if (value < 0) {
     value = 0
   }

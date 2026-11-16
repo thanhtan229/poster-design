@@ -17,11 +17,11 @@ import {ref,onBeforeUnmount} from 'vue'
 import config from '@/config'
 import {zipImages} from '@/utils/tinix/zip'
 import downloadBlob from '@/common/methods/download/downloadBlob'
-const open=ref(false),loading=ref(false),busy=ref(false),query=ref(''),filter=ref(''),message=ref(''),rows=ref<any[]>([]),selected=ref<Record<number,string>>({})
+const open=ref(false); const loading=ref(false); const busy=ref(false); const query=ref(''); const filter=ref(''); const message=ref(''); const rows=ref<any[]>([]); const selected=ref<Record<number,string>>({})
 const statuses=[{value:'working',label:'Đang làm'},{value:'waiting',label:'Chờ khách duyệt'},{value:'approved',label:'Đã duyệt'},{value:'printed',label:'Đã in'},{value:'completed',label:'Hoàn thành'}]
 const events=ref<Record<number,any[]>>({})
 async function loadEvents(row:any,event:Event){if(!(event.target as HTMLDetailsElement).open)return;try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-orders/${row.id}/events`);if(!r.ok)throw new Error('Không tải được lịch sử');events.value[row.id]=(await r.json()).list}catch(e:any){message.value=e.message}}
-let timer:ReturnType<typeof setTimeout>,request=0
+let timer:ReturnType<typeof setTimeout>; let request=0
 function schedule(){clearTimeout(timer);timer=setTimeout(load,250)}
 onBeforeUnmount(()=>clearTimeout(timer))
 async function show(){open.value=true;await load()}

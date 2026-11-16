@@ -32,7 +32,7 @@ export function readableColor(color: string, tone: 'dark' | 'light'): string {
     const L = luminance(color)
     if (tone === 'dark' && L < 0.35) return '#ffffff'
     if (tone === 'light' && L > 0.6) return '#222222'
-  } catch (e) {
+  } catch {
     /* invalid colour */
   }
   return color
@@ -55,8 +55,8 @@ export async function buildTextWidgets(opts: {
     if (fc) await ensureFont(fc.value, fc.url)
   }
 
-  const rx = region.x * page.width, ry = region.y * page.height
-  const rw = Math.max(80, region.w * page.width), rh = Math.max(60, region.h * page.height)
+  const rx = region.x * page.width; const ry = region.y * page.height
+  const rw = Math.max(80, region.w * page.width); const rh = Math.max(60, region.h * page.height)
 
   const lines = (k: TPartKey) => textOf(option.parts[k]!).split(/\r\n|\r|\n/).length
   const blockHeight = (title: number) => keys.reduce((sum, k, i) => sum + title * SIZE_RATIO[k] * (LINE_HEIGHT[k] * lines(k) + (i < keys.length - 1 ? GAP : 0)), 0)

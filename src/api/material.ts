@@ -132,7 +132,7 @@ export const upload = ({ file, folder = 'user' }: any, cb: Function) => {
   formData.append('file', file)
   formData.append('folder', folder)
   const extra = {
-    responseType: 'application/json',
+      responseType: 'json',
     onUploadProgress: (progress: any) => {
       cb(Math.floor((progress.loaded / progress.total) * 100), 0)
     },

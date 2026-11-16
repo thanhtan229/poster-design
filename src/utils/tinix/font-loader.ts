@@ -13,7 +13,7 @@ export function fontRenderInfo(font:FontRef):{url:string;profile:FontProfile|nul
 export async function loadLibraryFont(font:FontRef):Promise<void> {
  if(!font.value)return
  await initCatalog();const {url,profile}=fontRenderInfo(font);if(!url)return
- const descriptors=fontDescriptors(profile),key=JSON.stringify([font.value,url,descriptors])
+ const descriptors=fontDescriptors(profile); const key=JSON.stringify([font.value,url,descriptors])
  if(loads.has(key))return loads.get(key)!
  const pending=(async()=>{for(const d of descriptors){const face=new FontFace(font.value,`url(${JSON.stringify(url)})`,d);await face.load();document.fonts.add(face)}})()
  loads.set(key,pending)

@@ -76,7 +76,7 @@ export function dResize(store: TWidgetStore, { x, y, dirs }: TdResizePayload) {
     const dir = dirs[i]
 
     switch (dir) {
-      case 'top':
+      case 'top': {
         const t = widgetXY.y + Math.floor((dy * 100) / canvasStore.dZoom)
         top = Math.max(t, 0)
         top = Math.min(widgetXY.y + resizeWH.height - target.record.minHeight, top)
@@ -84,13 +84,14 @@ export function dResize(store: TWidgetStore, { x, y, dirs }: TdResizePayload) {
         target.height = Math.max(target.height, target.record.minHeight)
         target.top = top
         break
+      }
       case 'bottom':
         top = Math.floor((dy * 100) / canvasStore.dZoom)
         target.height = resizeWH.height + top
         target.height = Math.max(target.height, target.record.minHeight)
         target.height = Math.min(target.height, page.height - target.top)
         break
-      case 'left':
+      case 'left': {
         const tLeft = widgetXY.x + Math.floor((dx * 100) / canvasStore.dZoom)
         left = Math.max(tLeft, 0)
         target.width += target.left - left
@@ -98,6 +99,7 @@ export function dResize(store: TWidgetStore, { x, y, dirs }: TdResizePayload) {
         left = Math.min(widgetXY.x + resizeWH.width - target.record.minWidth, left)
         target.left = left
         break
+      }
       case 'right':
         left = Math.floor((dx * 100) / canvasStore.dZoom)
         target.width = resizeWH.width + left

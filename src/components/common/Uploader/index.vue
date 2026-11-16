@@ -81,17 +81,23 @@ const uploadQueue = async () => {
     uploading = true
     const file = uploadList[0]
     if (file) {
-      if (file.size <= 1024 * 1024) {
-        tempSimpleRes = await qiNiuUpload(file) // 队列有文件，执行上传
-        const { width, height } = await getImage(file)
-        useNotification(i18n.global.t('business.uploader.success'), '', { position: 'bottom-left' })
-        emit('done', { width, height, url: tempSimpleRes?.url as string }) // 单个文件进行响应
-      } else useNotification(i18n.global.t('business.uploader.tooBigTitle'), i18n.global.t('business.uploader.tooBig'), { type: 'error', position: 'bottom-left' })
-      uploading = false
-      handleRemove() // 移除已上传文件
-      index++
-      updatePercent(null)
-      uploadQueue()
+      try {
+        if (file.size <= 1024 * 1024) {
+          tempSimpleRes = await qiNiuUpload(file) // 队列有文件，执行上传
+          if (!tempSimpleRes?.url) throw new Error('Không nhận được đường dẫn ảnh')
+          const { width, height } = await getImage(file)
+          useNotification(i18n.global.t('business.uploader.success'), '', { position: 'bottom-left' })
+          emit('done', { width, height, url: tempSimpleRes.url }) // 单个文件进行响应
+        } else useNotification(i18n.global.t('business.uploader.tooBigTitle'), i18n.global.t('business.uploader.tooBig'), { type: 'error', position: 'bottom-left' })
+      } catch (error) {
+        useNotification('Không tải được ảnh', error instanceof Error ? error.message : String(error), { type: 'error', position: 'bottom-left' })
+      } finally {
+        uploading = false
+        handleRemove() // 移除已上传文件
+        index++
+        updatePercent(null)
+        void uploadQueue()
+      }
     } else {
       uploading = false
       timer = setTimeout(() => {
@@ -104,16 +110,12 @@ const uploadQueue = async () => {
 
 const qiNiuUpload = async (file: File): Promise<null | TUploadResult> => {
   updatePercent(0)
-  return new Promise(async (resolve) => {
-    if (props.hold) {
-      emit('load', file)
-      resolve(null)
-    } else {
-      const result = await api.material.upload({ file }, (up: any, dp: any) => {
-        console.log(up, dp)
-      })
-      resolve(result)
-    }
+  if (props.hold) {
+    emit('load', file)
+    return null
+  }
+  return await api.material.upload({ file }, (up: any, dp: any) => {
+    console.log(up, dp)
   })
 }
 

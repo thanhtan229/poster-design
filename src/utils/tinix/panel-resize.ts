@@ -30,14 +30,14 @@ export function usePanelResize(opts: Options) {
     try {
       const v = Number(localStorage.getItem(STORAGE + opts.key))
       return v > 0 ? v : opts.def
-    } catch (e) {
+    } catch {
       return opts.def
     }
   }
   const save = () => {
     try {
       localStorage.setItem(STORAGE + opts.key, String(width.value))
-    } catch (e) {
+    } catch {
       // không lưu được thì thôi
     }
   }

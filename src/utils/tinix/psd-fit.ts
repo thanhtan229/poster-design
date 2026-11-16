@@ -31,7 +31,7 @@ export async function fitPointText(x: TextCloud, fontClass: { value: string; url
   const font = `${style} ${weight} ${x.fontSize}px "${family}"`
   try {
     await document.fonts.load(font, x.text.slice(0, 50))
-  } catch (e) {
+  } catch {
     /* measure with fallback font */
   }
   ctx = ctx || document.createElement('canvas').getContext('2d')

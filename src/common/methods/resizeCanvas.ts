@@ -9,7 +9,7 @@ export function resizeCanvas(size: { width: number; height: number; dpi?: number
   if (![width, height].every(n => Number.isFinite(n) && n > 0) || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > 80000000) {
     throw new Error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 80 triệu pixel).')
   }
-  const canvas = useCanvasStore(), widgets = useWidgetStore()
+  const canvas = useCanvasStore(); const widgets = useWidgetStore()
   flushHistory()
   const before = JSON.parse(JSON.stringify(widgets.dLayouts))
   const previous = { ...canvas.dPage }

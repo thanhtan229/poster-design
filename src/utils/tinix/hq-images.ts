@@ -22,7 +22,7 @@ export async function useOriginalImages(root: HTMLElement, widgets: any[]): Prom
     img.src = url
     try {
       await img.decode()
-    } catch (e) {
+    } catch {
       // không giải mã được bản gốc: giữ nguyên ảnh nhẹ đã có để vẫn xuất được
       img.src = w.imgUrl
       continue

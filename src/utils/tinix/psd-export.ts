@@ -8,8 +8,8 @@ import {fontFaceCss} from './font-loader'
  * - Lớp đang ẩn xuất thành layer ẩn (Photoshop hiện được), lớp đổi tên giữ tên.
  * - Trang rất lớn (> 60 triệu điểm ảnh) bỏ ảnh tổng hợp để không tràn bộ nhớ; các layer vẫn đủ.
  */
-import { writePsd } from 'ag-psd'
-import type { Psd, Layer } from 'ag-psd'
+import { writePsd, type Psd, type Layer } from 'ag-psd'
+
 import html2canvas from 'html2canvas'
 import { useOriginalImages } from './hq-images' // [TINIX]
 
@@ -24,7 +24,7 @@ function parseColor(c: string): { r: number; g: number; b: number; a: number } {
   m = s.match(/^#([0-9a-f]{3})$/i)
   if (m) return { r: parseInt(m[1][0] + m[1][0], 16), g: parseInt(m[1][1] + m[1][1], 16), b: parseInt(m[1][2] + m[1][2], 16), a: 1 }
   m = s.match(/rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)(?:[ ,/]+([\d.]+))?/i)
-  if (m) return { r: +m[1], g: +m[2], b: +m[3], a: m[4] !== undefined ? +m[4] : 1 }
+  if (m) return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]), a: m[4] !== undefined ? Number(m[4]) : 1 }
   return { r: 255, g: 255, b: 255, a: 0 }
 }
 
@@ -37,7 +37,10 @@ function newCanvas(w: number, h: number): HTMLCanvasElement {
 
 function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
-    if (!url) return resolve(null)
+    if (!url) {
+      resolve(null)
+      return
+    }
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
@@ -56,7 +59,7 @@ async function backgroundLayer(page: W): Promise<Layer> {
   const img = await loadImage(page.backgroundImage)
   if (img) {
     const k = Math.max(c.width / img.naturalWidth, c.height / img.naturalHeight)
-    const w = img.naturalWidth * k, h = img.naturalHeight * k
+    const w = img.naturalWidth * k; const h = img.naturalHeight * k
     g.drawImage(img, (c.width - w) / 2, (c.height - h) / 2, w, h)
   }
   return { name: 'Background', left: 0, top: 0, canvas: c }
@@ -116,12 +119,12 @@ async function rasterizeWidget(root: HTMLElement, w: W, fonts: Array<{ value: st
         try {
           await Promise.all(fonts.map((f) => doc.fonts.load(`40px "${f.value}"`, 'Aa')))
           await doc.fonts.ready
-        } catch (e) {
+        } catch {
           // không nạp được: vẫn chụp với font dự phòng
         }
       },
     })
-  } catch (e) {
+  } catch {
     return null
   }
 }
@@ -129,7 +132,7 @@ async function rasterizeWidget(root: HTMLElement, w: W, fonts: Array<{ value: st
 /** Xoay canvas quanh tâm; trả về canvas mới và độ lệch (dx, dy) của góc trên trái so với layer gốc. */
 function rotateCanvas(src: HTMLCanvasElement, deg: number): { canvas: HTMLCanvasElement; dx: number; dy: number } {
   const rad = (deg * Math.PI) / 180
-  const sin = Math.abs(Math.sin(rad)), cos = Math.abs(Math.cos(rad))
+  const sin = Math.abs(Math.sin(rad)); const cos = Math.abs(Math.cos(rad))
   const nw = Math.ceil(src.width * cos + src.height * sin)
   const nh = Math.ceil(src.width * sin + src.height * cos)
   const c = newCanvas(nw, nh)

@@ -20,7 +20,7 @@
 
 <script lang="ts" setup>
 // const NAME = 'number-slider'
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref } from 'vue';
 
 type TProps = {
   label?: string
@@ -48,8 +48,10 @@ const props = withDefaults(defineProps<TProps>(), {
 })
 const emit = defineEmits<TEmits>()
 
+/* eslint-disable vue/no-setup-props-destructure -- chỉ lấy giá trị khởi tạo; watch(props.modelValue) bên dưới đồng bộ lại */
 const innerValue = ref<number>(props.minValue)
 innerValue.value = props.modelValue
+/* eslint-enable vue/no-setup-props-destructure */
 
 watch(
   () => innerValue.value,

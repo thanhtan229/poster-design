@@ -17,8 +17,8 @@ import {computed,ref} from 'vue'
 import {clampTextCrop,cropFromPoints,TextCrop} from '@/utils/tinix/font-crop'
 const props=defineProps<{reference:string;crop:TextCrop;text:string;disabled?:boolean}>()
 const emit=defineEmits<{'update:crop':[value:TextCrop];'update:text':[value:string];reset:[]}>()
-const surface=ref<HTMLElement|null>(null),box=computed(()=>clampTextCrop(props.crop)),keys:Array<keyof TextCrop>=['x','y','w','h']
-let anchor:{x:number;y:number}|null=null,original:TextCrop|null=null,dragId:number|null=null
+const surface=ref<HTMLElement|null>(null); const box=computed(()=>clampTextCrop(props.crop)); const keys:Array<keyof TextCrop>=['x','y','w','h']
+let anchor:{x:number;y:number}|null=null; let original:TextCrop|null=null; let dragId:number|null=null
 function point(e:PointerEvent){const r=surface.value!.getBoundingClientRect();return{x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
 function start(e:PointerEvent){if(props.disabled||e.button!==0)return;e.preventDefault();anchor=point(e);original={...box.value};dragId=e.pointerId;surface.value!.setPointerCapture(e.pointerId)}
 function move(e:PointerEvent){if(!anchor||e.pointerId!==dragId)return;emit('update:crop',cropFromPoints(anchor,point(e)))}

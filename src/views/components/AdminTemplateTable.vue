@@ -8,7 +8,7 @@
  * (at your option) any later version.
 -->
 <template>
-  <el-table class="admin-table" :data="rows" size="small" stripe v-loading="loading">
+  <el-table v-loading="loading" class="admin-table" :data="rows" size="small" stripe>
     <el-table-column prop="id" label="ID" width="70" />
     <el-table-column :label="$t('admin.templateTable.cover')" width="90">
       <template #default="{ row }">

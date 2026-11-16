@@ -53,9 +53,6 @@ export default defineConfig({
       },
     },
   },
-  define: {
-    'process.env': process.env,
-  },
   server: {
     // [TINIX] không theo dõi thư mục PSD thử nghiệm: file bị khóa khi chép làm Vite watcher dừng server (EBUSY)
     watch: { ignored: ['**/psd-test/**', '**/service/**', '**/backups/**'] },

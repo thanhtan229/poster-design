@@ -12,7 +12,7 @@
     </span>
     <template #dropdown>
       <div v-show="type === 'shortkey'" class="help-list">
-        <div @click="type = 'menu'" class="back">
+        <div class="back" @click="type = 'menu'">
           <span class="icon-box"><i class="iconfont icon-right"></i></span> <b>{{ $t('tinix.helper.shortcuts') }}</b><!-- [TINIX] -->
         </div>
         <el-divider />

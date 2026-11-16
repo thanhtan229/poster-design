@@ -12,7 +12,7 @@
       <el-checkbox v-if="params" v-model="isAdaptive" :label="$t('business.create.adaptive')" size="large" />
       <p v-if="params" class="resize-hint">{{ $t('business.create.adaptiveHint') }}</p>
       <sizeEditor :params="page" show-swap :class="params ? 'editor-mode' : 'add-mode'">
-        <el-button data-photo-history @click="finish" plain size="large" type="primary">{{ params ? $t('business.create.apply') : $t('business.create.create') }}</el-button>
+        <el-button data-photo-history plain size="large" type="primary" @click="finish">{{ params ? $t('business.create.apply') : $t('business.create.create') }}</el-button>
       </sizeEditor>
       <canvas-sizes ref="sizesRef" :page="page" :unit="unit" :manage-initial="libraryMode" @choose="chooseSize" />
     </el-dialog>
@@ -21,11 +21,11 @@
 
 <script lang="ts" setup>
 import { ref, Ref } from 'vue'
-import { ElCheckbox } from 'element-plus'
+import { ElCheckbox, ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import sizeEditor from './sizeEditor.vue'
 import CanvasSizes from './CanvasSizes.vue'
-import { ElMessage } from 'element-plus'
+
 import { useWidgetStore, useControlStore } from '@/store';
 import { resizeCanvas } from '@/common/methods/resizeCanvas'
 import { cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units' // [TINIX]
