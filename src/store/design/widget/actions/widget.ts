@@ -140,6 +140,26 @@ export type TUpdateWidgetMultiplePayload = {
   }[]
 }
 
+/** 容器的 left/top 变化时，同步移动其子组件 */
+function moveContainerChildren(store: TWidgetStore, widget: TWidgetStore['dWidgets'][number], key: string, value: any) {
+  let dLeft = widget.left - value
+  let dTop = widget.top - value
+  if (key === 'left') {
+    dTop = 0
+  }
+  if (key === 'top') {
+    dLeft = 0
+  }
+  const len = store.dWidgets.length
+  for (let i = 0; i < len; ++i) {
+    const child = store.dWidgets[i]
+    if (child.parent === widget.uuid) {
+      child.left -= dLeft
+      child.top -= dTop
+    }
+  }
+}
+
 /** 一次更新多个widget */
 export function updateWidgetMultiple(store: TWidgetStore, { uuid, data }: TUpdateWidgetMultiplePayload) {
   for (const item of data) {
@@ -150,22 +170,7 @@ export function updateWidgetMultiple(store: TWidgetStore, { uuid, data }: TUpdat
         case 'left':
         case 'top':
           if (widget.isContainer) {
-            let dLeft = widget.left - value
-            let dTop = widget.top - value
-            if (key === 'left') {
-              dTop = 0
-            }
-            if (key === 'top') {
-              dLeft = 0
-            }
-            const len = store.dWidgets.length
-            for (let i = 0; i < len; ++i) {
-              const child = store.dWidgets[i]
-              if (child.parent === widget.uuid) {
-                child.left -= dLeft
-                child.top -= dTop
-              }
-            }
+            moveContainerChildren(store, widget, key, value)
           }
           break
       }

@@ -1,4 +1,4 @@
-import { AxiosInstance } from 'axios'
+export {}
 
 interface myAxios {
   [propName: string]: any

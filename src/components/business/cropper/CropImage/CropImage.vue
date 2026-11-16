@@ -68,9 +68,10 @@ export default defineComponent({
         //   console.log(event);
         // },
       })
-      imgBox.value.addEventListener('ready', function(this: any) {
+      const imgEl: any = imgBox.value
+      imgEl.addEventListener('ready', () => {
         state.loading = false
-        if (this.cropper === cropper) {
+        if (imgEl.cropper === cropper) {
           cropData && cropper.setData(cropData)
         }
       })

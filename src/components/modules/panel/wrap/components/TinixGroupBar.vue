@@ -29,7 +29,7 @@
       <el-button size="small" type="primary" @click="submitAdd">{{ $t('tinix.ui.templateGroups.them_nhom') }}</el-button>
     </div>
     <div v-if="isAdmin" class="tools">
-      <el-button size="small" link :type="selectMode ? 'primary' : 'default'" @click="emit('toggle-select')">{{ selectMode ? $t('tinix.ui.templateGroups.xong_chon') : $t('tinix.ui.templateGroups.chon_nhieu') }}</el-button>
+      <el-button size="small" link :type="selectMode ? 'primary' : 'default'" @click="emit('toggleSelect')">{{ selectMode ? $t('tinix.ui.templateGroups.xong_chon') : $t('tinix.ui.templateGroups.chon_nhieu') }}</el-button>
     </div>
   </div>
 </template>
@@ -48,7 +48,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: number | 'none'): void
   (e: 'change', v: { id: number | 'none'; name: string }): void
   (e: 'changed'): void // đã thêm/đổi tên/xóa/sắp xếp nhóm → danh sách mẫu cần làm mới
-  (e: 'toggle-select'): void
+  (e: 'toggleSelect'): void
 }>()
 
 const t = (k: string, p?: any) => i18n.global.t(k, p) as string

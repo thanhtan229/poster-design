@@ -49,7 +49,7 @@
             <CanvasRuler v-if="needTools" :page="dPage" :zoom="dZoom" />
             <div class="canvas-content-clip">
             <!-- <grid-size /> -->
-            <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools }, { 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(layer.uuid))) ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
+            <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools, 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(layer.uuid))) ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
               <template v-if="layer.isContainer">
                 <!-- :class="{
                   layer: true,
@@ -57,7 +57,7 @@
                   'layer-no-hover': dActiveElement.uuid !== widget.parent && dActiveElement.parent !== widget.parent,
                   'layer-hover': widget.uuid === dHoverUuid,
                 }" -->
-                <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools }, { 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" :style="widget.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(widget.uuid))) ? { display: 'none' } : undefined" />
+                <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools, 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" :style="widget.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(widget.uuid))) ? { display: 'none' } : undefined" />
               </template>
             </component>
             </div>
