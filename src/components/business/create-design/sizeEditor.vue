@@ -48,7 +48,7 @@ import { ElMessage, ElSelect, ElOption } from 'element-plus'
 
 import numberInput from '@/components/modules/settings/numberInput.vue'
 import i18n from '@/languages'
-import { clampDpi, cmToPx, pxToCm, sizeWarning, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units'
+import { clampDpi, cmToPx, pxToCm, sizeWarning, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX, MAX_PIXELS } from '@/utils/tinix/units'
 
 type TProps = {
   params: any
@@ -98,7 +98,7 @@ function onCmInput(key: 'width' | 'height', cm: number | string) {
 function onDpiChange(v: any) {
   const nd = clampDpi(v)
   const w = wCm.value; const h = hCm.value
-  if (cmToPx(w, nd) > MAX_SIDE_PX || cmToPx(h, nd) > MAX_SIDE_PX || cmToPx(w, nd)*cmToPx(h, nd) > 80000000) { ElMessage.error('DPI này vượt giới hạn canvas. Hãy chọn DPI thấp hơn.'); return }
+  if (cmToPx(w, nd) > MAX_SIDE_PX || cmToPx(h, nd) > MAX_SIDE_PX || cmToPx(w, nd)*cmToPx(h, nd) > MAX_PIXELS) { ElMessage.error('DPI này vượt giới hạn canvas. Hãy chọn DPI thấp hơn.'); return }
   props.params.dpi = nd
   if (w > 0) props.params.width = Math.min(cmToPx(w, nd), MAX_SIDE_PX)
   if (h > 0) props.params.height = Math.min(cmToPx(h, nd), MAX_SIDE_PX)

@@ -3,6 +3,7 @@ import { getDB } from '../db'
 import { getRequestUser } from '../utils/auth'
 import { findUserById } from '../db/users'
 import { send } from '../utils/tools'
+import { MAX_EXPORT_SIDE, MAX_EXPORT_PIXELS } from '../utils/export-limits'
 
 const presets: Array<[string, string, number, number, string]> = [
   ['Facebook bài vuông','Facebook',1080,1080,'px'], ['Facebook bài dọc','Facebook',1080,1350,'px'], ['Facebook chia sẻ liên kết','Facebook',1200,630,'px'],
@@ -25,7 +26,7 @@ router.post('/api/tinix/canvas-sizes/save', (req: any,res: any) => {
   try { const b = req.body || {}, db = getDB(), name = String(b.name || '').trim(), category = String(b.category || '').trim(), width = Number(b.width), height = Number(b.height), dpi = Number(b.dpi), unit = b.unit
     if (!name || name.length > 100 || !category || category.length > 60 || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0 || !['cm','px'].includes(unit) || !Number.isInteger(dpi) || dpi < 36 || dpi > 1200 || (unit === 'px' && (!Number.isInteger(width) || !Number.isInteger(height))) || width > 12000 || height > 12000) throw new Error('Thông số kích thước không hợp lệ')
     const wpx = unit === 'cm' ? Math.round(width * dpi / 2.54) : width, hpx = unit === 'cm' ? Math.round(height * dpi / 2.54) : height
-    if (wpx < 1 || hpx < 1 || wpx > 12000 || hpx > 12000 || wpx*hpx > 80000000) throw new Error('Vượt giới hạn 12000 px mỗi cạnh hoặc 80 triệu pixel. Hãy giảm DPI hoặc kích thước.')
+    if (wpx < 1 || hpx < 1 || wpx > MAX_EXPORT_SIDE || hpx > MAX_EXPORT_SIDE || wpx*hpx > MAX_EXPORT_PIXELS) throw new Error('Vượt giới hạn 12000 px mỗi cạnh hoặc 100 triệu pixel. Hãy giảm DPI hoặc kích thước.')
     if (b.id) { const result = db.prepare('UPDATE canvas_sizes SET name=?,category=?,width=?,height=?,unit=?,dpi=?,updated_by=?,updated_at=CURRENT_TIMESTAMP,version=version+1 WHERE id=? AND version=? AND deleted=0').run(name,category,width,height,unit,dpi,req.canvasUser.account,b.id,b.version); if (!result.changes) throw new Error('Kích thước đã thay đổi hoặc bị xóa. Vui lòng tải lại.') }
     else db.prepare('INSERT INTO canvas_sizes (name,category,width,height,unit,dpi,created_by,updated_by) VALUES (?,?,?,?,?,?,?,?)').run(name,category,width,height,unit,dpi,req.canvasUser.account,req.canvasUser.account)
     send.success(res,{ok:true})

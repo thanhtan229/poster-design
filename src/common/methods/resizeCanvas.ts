@@ -1,13 +1,13 @@
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore } from '@/store'
 import { flushHistory } from '@/common/hooks/history'
 import { historyPatches } from '@/utils/widgets/diffLayouts'
-import { clampDpi, MAX_SIDE_PX } from '@/utils/tinix/units'
+import { clampDpi, MAX_SIDE_PX, MAX_PIXELS } from '@/utils/tinix/units'
 
 /** Commit page and composition together so either entry point has one undo step. */
 export function resizeCanvas(size: { width: number; height: number; dpi?: number }, adaptive = true) {
   const { width, height } = size
-  if (![width, height].every(n => Number.isFinite(n) && n > 0) || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > 80000000) {
-    throw new Error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 80 triệu pixel).')
+  if (![width, height].every(n => Number.isFinite(n) && n > 0) || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > MAX_PIXELS) {
+    throw new Error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 100 triệu pixel).')
   }
   const canvas = useCanvasStore(); const widgets = useWidgetStore()
   flushHistory()

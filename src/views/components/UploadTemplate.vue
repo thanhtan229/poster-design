@@ -23,7 +23,7 @@
 import i18n from '@/languages'
 import api from '@/api'
 import * as adminApi from '@/api/admin'
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useNotification from '@/common/methods/notification'
 import SaveImage from '@/components/business/save-download/CreateCover.vue'
@@ -50,12 +50,6 @@ type TEmits = {
   (event: 'update:modelValue', data: string): void
 }
 
-type TState = {
-  stateBollean: false
-  title: ''
-  loading: false
-}
-
 // const { dWidgets } = useSetupMapGetters(['dWidgets'])
 const { dPage } = storeToRefs(useCanvasStore())
 
@@ -70,11 +64,6 @@ const controlStore = useControlStore()
 const { dWidgets } = storeToRefs(widgetStore)
 
 const canvasImage = ref<typeof SaveImage | null>(null)
-const _state = reactive<TState>({
-  stateBollean: false,
-  title: '',
-  loading: false,
-})
 
 useFontStore.init() // 初始化加载字体
 
