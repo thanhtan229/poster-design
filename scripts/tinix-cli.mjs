@@ -6,6 +6,10 @@ import { validate, apply, readJson, createJson } from './tinix-drafts.mjs'
 import { historySave, historyList, historyRead } from './tinix-draft-history.mjs'
 import { editMask, borderMask, placeCutout } from './tinix-mask.mjs'
 import { instantiate } from './tinix-instantiate.mjs'
+import { fileURLToPath } from 'node:url'
+import { validateSpec, loadReference, buildFromReference, compareToReference, drawGrid, drawSideBySide } from './lib/reference-build.mjs'
+import { createChromiumMeasurer } from './lib/text-measure.mjs'
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const help = `Tinix CLI (local templates, drafts and cutouts)
 Usage: node scripts/tinix-cli.mjs <command> [options]
@@ -28,6 +32,9 @@ Usage: node scripts/tinix-cli.mjs <command> [options]
   drafts checkout --store FILE --version N --output FILE
   drafts restore --store FILE --version N --expected-version N
   drafts from-template --id N --output FILE [--kind standard|collage]
+  drafts from-reference --reference FILE --spec FILE --output FILE [--photos placeholder|reference]
+  reference grid --input FILE --output FILE [--step N]
+  reference compare --reference FILE --render FILE --spec FILE [--output FILE]
   drafts apply --input FILE --operations FILE --output FILE
   designs create --input FILE --title TITLE
   designs render --id N --width PX --height PX --output FILE
@@ -82,6 +89,13 @@ async function saveResponse(response, file) {
   const type = response.headers.get('content-type') || ''
   if (!type.startsWith('image/')) throw new Error(`Expected image, got ${type}: ${(await response.text()).slice(0, 500)}`)
   await writeFile(file, Buffer.from(await response.arrayBuffer()), { flag: 'wx' })
+}
+async function cutoutPng(base, data) {
+  const body = new FormData()
+  body.append('file', new Blob([data]), 'reference-crop.png')
+  const response = await request(base, '/api/tinix/cutout/birefnet', { method: 'POST', body, timeout: 200000 })
+  if (!response.headers.get('content-type')?.startsWith('image/png')) throw new Error('BiRefNet did not return a PNG')
+  return Buffer.from(await response.arrayBuffer())
 }
 async function main() {
   if (!process.argv[2] || process.argv[2] === '--help') { console.log(help); return }
@@ -324,6 +338,41 @@ async function main() {
         result = data.list.find(item => Number(item.id) === id)
         if (!result) throw new Error('Collage template not found')
       } else throw new Error('kind must be standard or collage')
+      break
+    }
+    case 'reference grid': {
+      check(options, ['input', 'output', 'step'])
+      if (!options.input || !options.output) throw new Error('--input and --output are required')
+      const step = options.step === undefined ? 100 : positive(options.step, 'step')
+      const ref = await loadReference(options.input)
+      await writeFile(options.output, await drawGrid(ref, step), { flag: 'wx' })
+      result = { output: path.resolve(options.output), width: ref.width, height: ref.height, step }
+      break
+    }
+    case 'reference compare': {
+      check(options, ['reference', 'render', 'spec', 'output'])
+      if (!options.reference || !options.render || !options.spec) throw new Error('--reference, --render and --spec are required')
+      const ref = await loadReference(options.reference), spec = validateSpec(await readJson(options.spec))
+      const { render, ...stats } = await compareToReference(ref, options.render, spec)
+      if (options.output) { await writeFile(options.output, await drawSideBySide(ref, render), { flag: 'wx' }); stats.output = path.resolve(options.output) }
+      result = stats
+      break
+    }
+    case 'drafts from-reference': {
+      check(options, ['reference', 'spec', 'output', 'photos'])
+      if (!options.reference || !options.spec || !options.output) throw new Error('--reference, --spec and --output are required')
+      const photos = options.photos || 'placeholder'
+      if (!['placeholder', 'reference'].includes(photos)) throw new Error('--photos must be placeholder or reference')
+      const spec = validateSpec(await readJson(options.spec)), ref = await loadReference(options.reference)
+      const fonts = await json(base, '/design/fonts'), measurer = createChromiumMeasurer(base)
+      const assetsDir = path.join(root, 'service', 'static', 'collage', spec.name)
+      try {
+        const built = await buildFromReference({ ref, spec, assetsDir, assetsUrl: `/static/collage/${spec.name}`, fonts: Array.isArray(fonts) ? fonts : (fonts.list || []), photos, measure: measurer.measure, cutout: data => cutoutPng(base, data) })
+        const issues = validate(built.draft)
+        if (issues.some(i => i.severity === 'error')) throw new Error(JSON.stringify(issues))
+        await createJson(options.output, built.draft)
+        result = { output: path.resolve(options.output), assetsDir, layers: built.draft.layers.length, photos, ...built.report }
+      } finally { await measurer.close() }
       break
     }
     case 'fonts list': check(options, []); result = await json(base, '/design/fonts'); break

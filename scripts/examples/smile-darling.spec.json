@@ -1,0 +1,40 @@
+{
+  "name": "smile-darling-ref",
+  "title": "Smile, Darling · dựng từ ảnh tham chiếu",
+  "canvas": { "width": 2400, "dpi": 300 },
+  "background": { "color": "auto", "hearts": true },
+  "elements": [
+    { "type": "frame", "name": "Ảnh dải ba", "center": [293, 851], "size": [387, 522], "rotate": 0,
+      "photos": [
+        { "name": "Ảnh dải 1", "offset": [0, -111], "size": [358, 123] },
+        { "name": "Ảnh dải 2", "offset": [0, -2], "size": [358, 155] },
+        { "name": "Ảnh dải 3", "offset": [0, 157], "size": [358, 157] }
+      ] },
+    { "type": "frame", "name": "Ảnh dọc phải", "center": [912, 862], "size": [420, 585], "rotate": 3,
+      "photos": [{ "name": "Ảnh dọc phải", "offset": [0, 0], "size": [398, 563] }] },
+    { "type": "frame", "name": "Ảnh lớn trái", "center": [315, 262], "size": [545, 388], "rotate": -3,
+      "photos": [{ "name": "Ảnh lớn trái", "offset": [0, 0], "size": [523, 366] }] },
+    { "type": "frame", "name": "Ảnh lớn phải", "center": [873, 319], "size": [533, 362], "rotate": 0.5,
+      "photos": [{ "name": "Ảnh lớn phải", "offset": [0, 0], "size": [511, 340] }] },
+
+    { "type": "label", "name": "Lời yêu thương", "center": [873, 100], "size": [497, 57], "rotate": 1, "shape": "rect",
+      "text": "how sweet it is to be loved by you", "font": "Satisfy", "textInk": [672, 72, 1120, 130] },
+    { "type": "label", "name": "Smile darling", "center": [292, 400], "size": [373, 88], "rotate": -2, "shape": "ribbon", "notch": 24,
+      "text": "SMILE, DARLING", "font": "Amatic SC", "textInk": [140, 366, 445, 432], "letterSpacing": 1 },
+
+    { "type": "photo", "name": "Ảnh đám mây", "center": [590, 553], "size": [390, 385], "mask": "cloud" },
+
+    { "type": "label", "name": "Say cheese", "center": [222, 530], "size": [355, 104], "rotate": -1, "shape": "cutout",
+      "text": "SAY CHEESE", "font": "Permanent Marker", "textInk": [112, 498, 392, 568] },
+    { "type": "label", "name": "Lời nhắn", "center": [946, 610], "size": [328, 110], "rotate": 3, "shape": "ribbon", "notch": 26,
+      "text": "We all just kids\nwhen we fell in love ♥", "font": "Patrick Hand", "textInk": [792, 562, 1100, 658] },
+
+    { "type": "sticker", "name": "Mũi tên trái tim", "box": [770, 445, 1140, 570] },
+    { "type": "sticker", "name": "Máy chữ", "box": [460, 730, 695, 1000] },
+    { "type": "sticker", "name": "Máy bay", "box": [535, 955, 730, 1120] },
+
+    { "type": "label", "name": "Nhãn Smile", "center": [204, 1105], "size": [232, 74], "rotate": -1, "shape": "cutout",
+      "text": "SMILE", "font": "Permanent Marker", "textInk": [176, 1076, 316, 1136] },
+    { "type": "sticker", "name": "Tim hồng", "box": [1010, 1000, 1160, 1165] }
+  ]
+}

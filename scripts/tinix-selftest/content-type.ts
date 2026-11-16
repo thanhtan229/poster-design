@@ -46,9 +46,12 @@ async function main() {
     const txt = await type('notes.txt'); check('đuôi lạ (.txt) giữ hành vi cũ application/json', txt.status === 200 && txt.type.startsWith('application/json'), txt)
     const missing = await type('fonts/none.ttf'); check('tệp không tồn tại → 404', missing.status === 404, missing)
   } finally {
-    server.close()
+    // đóng hết kết nối keep-alive của fetch rồi mới đóng máy chủ, và chờ đóng xong
+    await new Promise<void>((resolve) => { server.close(() => resolve()); if (typeof server.closeAllConnections === 'function') server.closeAllConnections() })
   }
   console.log(failed ? `\n✗ ${failed} kiểm tra lỗi` : '\n✓ tất cả kiểm tra Content-Type đạt')
-  process.exit(failed ? 1 : 0)
+  // KHÔNG gọi process.exit(): trên Windows nó có thể sập libuv ("Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)", mã 3221226505)
+  // khi còn handle đang đóng; đặt exitCode để tiến trình tự thoát khi mọi handle đã đóng.
+  process.exitCode = failed ? 1 : 0
 }
-main().catch((e) => { console.error(e); process.exit(1) })
+main().catch((e) => { console.error(e); process.exitCode = 1 })
