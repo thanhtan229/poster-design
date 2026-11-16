@@ -41,7 +41,7 @@ module.exports = {
       // TypeScript resolves identifiers and understands type-only bindings.
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       'no-use-before-define': 'off',
       // Vue setup frequently captures later declarations in deferred callbacks;
       // typecheck catches immediate use before initialization.

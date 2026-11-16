@@ -60,7 +60,7 @@ import { useRoute } from 'vue-router'
 import { fontMinWithDraw } from '@/utils/widgets/loadFontRule'
 import getGradientOrImg from './getGradientOrImg'
 import { wTextSetting } from './wTextSetting'
-import { useForceStore, useHistoryStore, useWidgetStore } from '@/store'
+import { useForceStore, useWidgetStore } from '@/store'
 
 export type TwTextParams = {
   rotate?: number
@@ -80,7 +80,6 @@ type TProps = {
 const props = defineProps<TProps>()
 const widgetStore = useWidgetStore()
 const forceStore = useForceStore()
-const historyStore = useHistoryStore()
 const route = useRoute()
 const state = reactive({
   loading: false,
@@ -152,7 +151,7 @@ function updateText(e?: Event) {
   }
 }
 
-function writingText(e?: Event) {
+function writingText(_e?: Event) {
   // updateText(e)
   // TODO: 修正文字选框高度
   const el = editWrap.value || widget.value

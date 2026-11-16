@@ -8,14 +8,13 @@
 
 import { customAlphabet } from 'nanoid/non-secure'
 import { TGroupStore } from '..'
-import { useHistoryStore, useCanvasStore, useWidgetStore } from '@/store'
+import { useCanvasStore, useWidgetStore } from '@/store'
 import { TdWidgetData } from '../../widget'
 const nanoid = customAlphabet('1234567890abcdef', 12)
 
 export function realCombined(store: TGroupStore) {
   const widgetStore = useWidgetStore()
   const pageStore = useCanvasStore()
-  const historyStore = useHistoryStore()
 
   const selectWidgets = widgetStore.dSelectWidgets
   if (selectWidgets.length > 1) {

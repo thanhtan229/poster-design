@@ -223,7 +223,7 @@ const addLayer = () => {
   rawData = JSON.parse(JSON.stringify(state.layers))
 }
 
-const finish = (type?: string, value?: string) => {}
+const finish = (_type?: string, _value?: string) => {}
 
 const colorChange = (e: Record<string, any>, item: Record<string, any>) => {
   const modeStr: Record<string, number> = {

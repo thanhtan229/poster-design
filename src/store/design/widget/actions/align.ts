@@ -6,7 +6,7 @@
  * @LastEditTime: 2024-08-12 09:29:27
  */
 
-import { useCanvasStore, useHistoryStore } from "@/store"
+import { useCanvasStore } from "@/store"
 import { TWidgetStore, TdWidgetData } from ".."
 
 export type TDistributeAxis = 'horizontal' | 'vertical'
@@ -55,7 +55,6 @@ export type TUpdateAlignData = {
 
 export function updateAlign(store: TWidgetStore, { align, uuid, group }: TUpdateAlignData) {
   const pageStore = useCanvasStore()
-  const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
 
   const widgets = store.dWidgets

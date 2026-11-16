@@ -70,7 +70,6 @@ const state = reactive<TState>({
 })
 
 const widgetRef = ref<HTMLElement | null>(null)
-const targetRef = ref<HTMLImageElement | null>(null)
 
 </script>
 

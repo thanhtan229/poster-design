@@ -7,7 +7,7 @@ import { syncLinkedImages } from '@/utils/tinix/image-effects'
  * @LastEditTime: 2024-08-12 09:30:53
  */
 
-import { useCanvasStore, useHistoryStore } from '@/store'
+import { useCanvasStore } from '@/store'
 import { TWidgetStore, TdWidgetData } from '..'
 import { customAlphabet } from 'nanoid/non-secure'
 const nanoid = customAlphabet('1234567890abcdef', 12)
@@ -176,7 +176,6 @@ export function updateWidgetMultiple(store: TWidgetStore, { uuid, data }: TUpdat
 
 /** 添加 Widget */
 export function addWidget(store: TWidgetStore, setting: TdWidgetData) {
-  const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
   setting.uuid = nanoid()
 
@@ -195,7 +194,6 @@ export function addWidget(store: TWidgetStore, setting: TdWidgetData) {
 
 /** 删除组件 */
 export function deleteWidget(store: TWidgetStore) {
-  const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
   const widgets = store.dWidgets
   const selectWidgets = store.dSelectWidgets

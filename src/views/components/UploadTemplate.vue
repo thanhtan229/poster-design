@@ -59,7 +59,7 @@ type TState = {
 // const { dWidgets } = useSetupMapGetters(['dWidgets'])
 const { dPage } = storeToRefs(useCanvasStore())
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 const emit = defineEmits<TEmits>()
 
 const route = useRoute()

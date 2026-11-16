@@ -10,11 +10,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useBaseStore } from '@/store'
 
 const baseStore = useBaseStore()
-const wmBollean = ref(true)
 
 function wmChange(isRemove: string | number | boolean) {
   baseStore.changeWatermark(isRemove ? '' : ['TinixPoster', 'poster-design'])

@@ -17,12 +17,11 @@ import MoveableHelper from 'moveable-helper'
 import useSelecto from './Selecto'
 import useCtrlMarquee from './CtrlMarquee'
 import { storeToRefs } from 'pinia'
-import { useCanvasStore, useControlStore, useWidgetStore, useForceStore, useHistoryStore } from '@/store'
+import { useCanvasStore, useControlStore, useWidgetStore, useForceStore } from '@/store'
 
 const widgetStore = useWidgetStore()
 const controlStore = useControlStore()
 const forceStore = useForceStore()
-const historyStore = useHistoryStore()
 const { guidelines } = storeToRefs(useCanvasStore())
 const { showMoveable, showRotatable, dAltDown } = storeToRefs(controlStore)
 const { dSelectWidgets, dActiveElement, activeMouseEvent, dWidgets } = storeToRefs(widgetStore)
@@ -315,7 +314,7 @@ onMounted(() => {
   let resizeStartWidth = 0
 
   moveable
-  .on('dragStart', ({ inputEvent, target, stop }) => {
+  .on('dragStart', ({ inputEvent, stop }) => {
     if (!dActiveElement.value) return
     const image = dActiveElement.value as any
     if (image.type === 'w-image' && image.fit === 'cover' && image.frameDragMode !== 'frame' && !inputEvent.shiftKey) { stop(); return }
@@ -330,7 +329,7 @@ onMounted(() => {
     }
     dActiveElement.value.lock && stop()
   })
-  .on('drag', ({ target, transform, left, top, inputEvent }) => {
+  .on('drag', ({ target, left, top }) => {
     // [TINIX] ảnh phủ kín trang (mẫu 1 ảnh mặc định): kéo di chuyển nhưng tới mép thì dừng, không để lộ khoảng trống
     const cover = dActiveElement.value as any
     if (cover && cover.keepCover) {
@@ -345,7 +344,7 @@ onMounted(() => {
     target!.style.top = `${top}px`
     holdPosition = { left, top }
   })
-  .on('dragEnd', ({ target, isDrag, inputEvent }) => {
+  .on('dragEnd', ({ inputEvent }) => {
     // console.log('onDragEnd', inputEvent)
     // TODO 清理mouseevent
     widgetStore.setMouseEvent(null)
@@ -383,7 +382,7 @@ onMounted(() => {
   // .on('keyUp', (e) => {
   //   moveable.updateRect()
   // })
-  .on('rotate', ({ target, beforeDist, dist, transform }: any) => {
+  .on('rotate', ({ target, transform }: any) => {
     // console.log('onRotate', Number(this.dActiveElement.rotate) + Number(beforeDist + dist))
     target.style.transform = transform
     target.style.height = dActiveElement.value?.height + 'px' // 修正文字高度变化
@@ -433,7 +432,7 @@ onMounted(() => {
     }
   })
   .on('resize', (args: any) => {
-    const { target, width, height, dist, delta, clientX, clientY, direction } = args
+    const { target, width, height, direction } = args
     if (dActiveElement.value?.type === 'w-text') {
       if (String(direction) === '1,1') {
         resetRatio = width / resizeStartWidth
@@ -607,7 +606,7 @@ onMounted(() => {
       holdGroupPosition[`${ev.target.getAttribute('data-uuid')}`] = { left, top }
     }
   })
-  .on('dragGroupEnd', (e) => {
+  .on('dragGroupEnd', (_e) => {
     for (const key in holdGroupPosition) {
       if (Object.prototype.hasOwnProperty.call(holdGroupPosition, key)) {
         const item = holdGroupPosition[key]
@@ -649,7 +648,7 @@ onMounted(() => {
     //     ev.dragStart && ev.dragStart.set(frame.translate);
     // });
   })
-  .on('resizeGroup', (e: any) => {
+  .on('resizeGroup', (_e: any) => {
     // events.forEach(({ target, width, height, drag }, i) => {
     //     const frame = this.frames[i];
     //     target.style.width = `${width}px`;

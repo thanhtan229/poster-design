@@ -26,13 +26,12 @@ import { useRouter } from 'vue-router'
 import sizeEditor from './sizeEditor.vue'
 import CanvasSizes from './CanvasSizes.vue'
 
-import { useWidgetStore, useControlStore } from '@/store';
+import { useControlStore } from '@/store';
 import { resizeCanvas } from '@/common/methods/resizeCanvas'
 import { cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units' // [TINIX]
 
 const router = useRouter()
 const controlStore = useControlStore()
-const widgetStore = useWidgetStore()
 const props = withDefaults(
   defineProps<{
     params?: any

@@ -20,7 +20,6 @@
 </template>
 
 <script setup lang="ts">
-import api from '@/api'
 import { ElDialog } from 'element-plus'
 import { ref, reactive, nextTick } from 'vue'
 import 'cropperjs/dist/cropper.css'
@@ -50,7 +49,7 @@ const imgBox = ref<HTMLImageElement>()
 let cropData: Cropper.Data | null
 let cropper: Cropper
 
-const emit = defineEmits<TDoneFunc>()
+defineEmits<TDoneFunc>()
 
 const handleClose = (done: () => void) => {
   done()

@@ -131,7 +131,7 @@ onMounted(async () => {
     mousewheelZoom(isDown)
   })
   // 添加窗口大小监听
-  window.addEventListener('resize', (event) => {
+  window.addEventListener('resize', (_event) => {
     changeScreen()
   })
 })

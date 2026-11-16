@@ -58,7 +58,7 @@ export default class DragHelper {
       } else this.finish()
     })
     // 鼠标离开了视窗
-    document.addEventListener('mouseleave', (e) => {
+    document.addEventListener('mouseleave', (_e) => {
       this.finish()
     })
     // 用户可能离开了浏览器

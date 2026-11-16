@@ -39,7 +39,6 @@ import { reactive, watch, onMounted, nextTick } from 'vue'
 import { ElRadioGroup, ElRadioButton } from 'element-plus'
 // import wSvg from '@/components/modules/widgets/wSvg/wSvg.vue'
 import {wSvgSetting} from '@/components/modules/widgets/wSvg/wSvgSetting'
-import { TGetListResult } from '@/api/material';
 
 type TProps = {
   modelValue?: string
@@ -94,7 +93,7 @@ async function getList() {
 
 watch(
   () => state.type,
-  (value) => {
+  (_value) => {
     getList()
   },
 )

@@ -82,7 +82,7 @@ export type TTempDetail = {
 
 export const getTempDetail = (params: TGetTempDetail) => fetch<TTempDetail>('design/temp', params, 'get')
 
-type TGetCategoriesParams = {
+type _TGetCategoriesParams = {
   type?: number
 }
 

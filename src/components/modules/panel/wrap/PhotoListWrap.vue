@@ -66,7 +66,7 @@ type TCurrentCategory = {
   cate?: string
 }
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 
 const controlStore = useControlStore()
 const widgetStore = useWidgetStore()

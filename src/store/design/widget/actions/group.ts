@@ -6,7 +6,7 @@
  * @LastEditTime: 2024-08-12 09:29:31
  */
 
-import { useCanvasStore, useHistoryStore } from "@/store"
+import { useCanvasStore } from "@/store"
 import { TWidgetStore, TdWidgetData } from ".."
 import { constrainGroupToCanvas } from './widget'
 import { customAlphabet } from 'nanoid/non-secure'
@@ -14,7 +14,6 @@ const nanoid = customAlphabet('1234567890abcdef', 12)
 
 
 export function addGroup(store: TWidgetStore, group: TdWidgetData[]) {
-  const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
   const { width: dPageWidth, height: dPageHeight } = canvasStore.dPage
 

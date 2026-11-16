@@ -57,11 +57,11 @@ const sl = ref(0)
 const listRef: Ref<HTMLElement | null> = ref(null)
 const index = computed(() => canvasStore.dCurrentPage)
 const { dZoom, dPage } = storeToRefs(canvasStore)
-const { dWidgets, dLayouts } = storeToRefs(widgetStore)
+const { dLayouts } = storeToRefs(widgetStore)
 
 watch(
   () => dZoom.value,
-  (val) => {
+  (_val) => {
     // 在画布缩放时bottom复位
     mainEl.scrollTop = 0
   },
@@ -82,7 +82,7 @@ let mainEl: any = null
 onMounted(async () => {
   await nextTick()
   mainEl = document.getElementById('main')
-  mainEl.addEventListener('scroll', (e: any) => {
+  mainEl.addEventListener('scroll', (_e: any) => {
     st.value = mainEl.scrollTop
     sl.value = mainEl.scrollLeft
   })

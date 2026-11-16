@@ -26,7 +26,7 @@ import iconItemSelect, { TIconItemSelectData } from '../settings/iconItemSelect.
 import { ref, watch } from 'vue';
 import { usePanelResize } from '@/utils/tinix/panel-resize' // [TINIX]
 // import { useSetupMapGetters } from '@/common/hooks/mapGetters';
-import { useControlStore, useGroupStore, useHistoryStore, useWidgetStore } from '@/store';
+import { useControlStore, useGroupStore, useWidgetStore } from '@/store';
 import { storeToRefs } from 'pinia';
 import { TdWidgetData } from '@/store/design/widget';
 import type { TUpdateAlignData } from '@/store/design/widget/actions/align'
@@ -35,7 +35,6 @@ const widgetStore = useWidgetStore()
 const { width: panelWidth, dragging: panelDragging, onDown: onPanelDown, reset: resetPanel } = usePanelResize({ key: 'right', def: 280, min: 240, max: 520, side: 'right' }) // [TINIX]
 const controlStore = useControlStore()
 const groupStore = useGroupStore()
-const historyStore = useHistoryStore()
 
 const activeTab = ref(0)
 const iconList = ref<AlignListData[]>(alignIconList)

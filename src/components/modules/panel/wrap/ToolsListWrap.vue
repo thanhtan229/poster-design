@@ -40,7 +40,6 @@ const controlStore = useControlStore()
 
 const route = useRoute()
 
-const loadDone = ref(false)
 const imageCutoutRef = ref<typeof imageCutout | null>(null)
 const widgetStore = useWidgetStore()
 const { dPage } = storeToRefs(useCanvasStore())

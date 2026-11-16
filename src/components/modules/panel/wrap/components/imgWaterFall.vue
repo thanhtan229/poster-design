@@ -130,7 +130,7 @@ onBeforeUnmount(() => observer && observer.disconnect())
 const load = () => {
   emit('load')
 }
-const selectItem = (value: IGetTempListData, index: number) => {
+const selectItem = (value: IGetTempListData, _index: number) => {
   if (props.selectMode) return emit('toggle', value) // [TINIX]
   emit('select', value)
 }

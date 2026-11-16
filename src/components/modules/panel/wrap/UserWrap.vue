@@ -32,16 +32,13 @@ import { reactive, nextTick, ref, onMounted } from 'vue'
 import { ElTabPane, ElTabs, TabPaneName } from 'element-plus'
 import { useRouter } from 'vue-router'
 
-import uploader from '@/components/common/Uploader'
 import api from '@/api'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'
 import setImageData, { TItem2DataParam } from '@/common/methods/DesignFeatures/setImage'
 import useConfirm from '@/common/methods/confirm'
-import { TGetImageListResult, TMyPhotoResult } from '@/api/material'
 import photoList from './components/photoList.vue'
 import imgWaterFall from './components/imgWaterFall.vue'
-import { TUploadDoneData } from '@/components/common/Uploader/index.vue'
 import { IGetTempListData } from '@/api/home'
 import eventBus from '@/utils/plugins/eventBus'
 import { storeToRefs } from 'pinia'
@@ -61,7 +58,7 @@ type TState = {
   tabActiveName: string
 }
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 
 const router = useRouter()
 
@@ -190,7 +187,7 @@ const deleteImg = async ({ i, item }: controlImgParam) => {
   if (!imgListRef.value) return
   imgListRef.value.delItem(i) // 通知标记
 }
-const deleteWorks = async ({ i, item }: controlImgParam) => {
+const deleteWorks = async ({ item }: controlImgParam) => {
   const isPass = await useConfirm(i18n.global.t('common.warning'), i18n.global.t('editor.panel.confirmDelete'), 'warning')
   if (isPass) {
     await api.material.deleteMyWorks({ id: item.id })

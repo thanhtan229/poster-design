@@ -74,7 +74,6 @@ import numberSlider from '../../settings/numberSlider.vue'
 import ContainerWrap from '../../settings/EffectSelect/ContainerWrap.vue'
 // import uploader from '@/components/common/Uploader/index.vue'
 import { getImage } from '@/common/methods/getImgDetail'
-import api from '@/api'
 import layerIconList from '@/assets/data/LayerIconList'
 import alignIconList from '@/assets/data/AlignListData'
 import picBox from '@/components/business/picture-selector'
@@ -85,7 +84,6 @@ import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useForceStore, useUserStore, useWidgetStore } from '@/store'
  // [TINIX]
-import { ElCheckbox } from 'element-plus' // [TINIX] không đăng ký toàn cục
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
 import { TUpdateAlignData } from '@/store/design/widget/actions/align'
@@ -138,7 +136,7 @@ const canvasStore = useCanvasStore()
 // } = useSetupMapGetters(['dActiveElement', 'dWidgets'])
 const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
-const { dActiveElement, dWidgets } = storeToRefs(widgetStore)
+const { dActiveElement } = storeToRefs(widgetStore)
 // [TINIX] đang sửa mẫu → hiện ô "Khung ảnh"; gợi ý lớp có vẻ là chỗ đặt ảnh (đủ lớn, không phủ kín trang, tỉ lệ vừa phải)
 const { tempEditing } = storeToRefs(useUserStore())
 const looksLikeSlot = computed(() => {
@@ -161,7 +159,7 @@ onBeforeUnmount(() => {
 
 watch(
   () => dActiveElement.value,
-  (newValue, oldValue) => {
+  (newValue, _oldValue) => {
     change()
     if (!newValue) return
     // 失焦取消编辑模式
@@ -175,7 +173,7 @@ watch(
 
 watch(
   () => state.innerElement,
-  (newValue, oldValue) => {
+  (_newValue, _oldValue) => {
     changeValue()
     cropHandle()
   },

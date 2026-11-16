@@ -137,7 +137,7 @@ export default defineComponent({
       widgetStore.selectWidget({ uuid: widget.uuid })
       // store.dispatch('selectWidget', { uuid: widget.uuid })
     }
-    const hoverLayer = ({ uuid, parent }: any) => {
+    const hoverLayer = ({ uuid }: any) => {
       widgetStore.updateHoverUuid(uuid)
       // store.dispatch('updateHoverUuid', uuid)
     }
@@ -194,7 +194,7 @@ export default defineComponent({
   },
   watch: {
     data: {
-      async handler(nval) {
+      async handler(_nval) {
         this.widgets = this.getWidgets()
       },
       immediate: true,

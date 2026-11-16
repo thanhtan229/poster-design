@@ -89,7 +89,7 @@ let isDrag = false
 let startPoint = { x: 99999, y: 99999 }
 const dragHelper = new DragHelper()
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 
 const colors = ['#f8704b', '#5b89ff', '#2cc4cc', '#a8ba73', '#f8704b']
 

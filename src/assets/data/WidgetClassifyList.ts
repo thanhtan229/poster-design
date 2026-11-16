@@ -6,7 +6,6 @@
  * @LastEditTime: 2024-03-01 20:55:51
  */
 
-import i18n from '@/languages'
 import { StyleValue } from "vue"
 
 export type TWidgetClassifyData = {

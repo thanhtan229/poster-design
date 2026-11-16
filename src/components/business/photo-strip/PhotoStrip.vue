@@ -104,7 +104,7 @@ import eventBus from '@/utils/plugins/eventBus'
 import { collectUsedUrls, staticPathOf } from '@/utils/tinix/photo-source'
 import { usePanelResize } from '@/utils/tinix/panel-resize'
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result'
-import { useCanvasStore, useControlStore, useWidgetStore, useHistoryStore } from '@/store'
+import { useCanvasStore, useWidgetStore, useHistoryStore } from '@/store'
 import * as photosApi from '@/api/tinix-photos'
 import { photoState, reloadPhotos, placeValue, setAutoApply, setAutoCate, sortItems, toStripItems, uploadFiles, type StripItem } from '@/utils/tinix/photo-strip'
 import api from '@/api'
@@ -114,7 +114,6 @@ const TOOL_H = 30 // hàng công cụ (chọn nhiều + tự áp dụng mẫu)
 const t = (k: string, p?: any) => i18n.global.t(k, p) as string
 
 const canvasStore = useCanvasStore()
-const controlStore = useControlStore()
 const widgetStore = useWidgetStore()
 const { dLayouts, dWidgets } = storeToRefs(widgetStore)
 

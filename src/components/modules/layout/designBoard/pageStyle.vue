@@ -50,7 +50,6 @@
 import { nextTick, onMounted, reactive, watch } from 'vue'
 import colorSelect, { colorChangeData } from '@/components/modules/settings/colorSelect.vue'
 import uploader, { TUploadDoneData } from '@/components/common/Uploader/index.vue'
-import api from '@/api'
 import _dl from '@/common/methods/download'
 import Tabs from '@palxp/color-picker/comps/Tabs.vue'
 import TabPanel from '@palxp/color-picker/comps/TabPanel.vue'

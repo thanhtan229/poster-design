@@ -50,10 +50,8 @@
 
 <script lang="ts" setup>
 // 文本组件样式
-const NAME = 'w-text-style'
 import i18n from '@/languages'
 import { reactive, computed, watch, nextTick, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { styleIconList1, styleIconList2, alignIconList, TStyleIconData, TStyleIconData2 } from '@/assets/data/TextIconsData'
 import layerIconList from '@/assets/data/LayerIconList'
 import numberInput from '../../settings/numberInput.vue'
@@ -88,7 +86,6 @@ type TState = {
 
 const widgetStore = useWidgetStore()
 const forceStore = useForceStore()
-const route = useRoute()
 const state = reactive<TState>({
   activeNames: [],
   innerElement: JSON.parse(JSON.stringify(wTextSetting)),

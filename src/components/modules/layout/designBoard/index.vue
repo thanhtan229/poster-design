@@ -87,7 +87,6 @@ import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
 import { placePhotos } from '@/utils/tinix/photo-place' // [TINIX]
 import PointImg from '@/utils/plugins/pointImg'
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
-import { debounce } from 'throttle-debounce'
 import { moveInit } from '@/mixins/move'
 import { useCanvasStore, useControlStore, useWidgetStore } from '@/store'
 import { storeToRefs } from 'pinia'
@@ -125,9 +124,9 @@ const props = defineProps<TProps>()
 
 const needTools = computed(() => route.name !== 'Draw' && route.name !== 'Html')
 const { dPage: curDPage } = storeToRefs(useCanvasStore())
-const { dZoom: curZoom, dPresetPadding, dPaddingTop, dScreen } = storeToRefs(canvasStore)
+const { dZoom: curZoom, dPresetPadding, dPaddingTop } = storeToRefs(canvasStore)
 const { dDraging, showRotatable, dAltDown, dSpaceDown } = storeToRefs(controlStore)
-const { dWidgets: curWidgets, dActiveElement, dSelectWidgets, dHoverUuid } = storeToRefs(widgetStore)
+const { dWidgets: curWidgets, dActiveElement, dHoverUuid } = storeToRefs(widgetStore)
 
 const dPage = computed(() => props.renderDPage ?? curDPage.value)
 const dWidgets = computed(() => props.renderDWdigets ?? curWidgets.value)
@@ -167,7 +166,7 @@ onMounted(() => {
       scrollContainer.scrollLeft = mouseDownScrollPosition.scrollLeft + dragMoveDiff.x
       scrollContainer.scrollTop = mouseDownScrollPosition.scrollTop + dragMoveDiff.y
     }
-    document.onmouseup = (e) => {
+    document.onmouseup = (_e) => {
       dragContainer.onmousemove = null
       document.onmouseup = null
     }

@@ -542,7 +542,6 @@ import {
 } from 'element-plus'
 import { Grid, Files, PictureFilled, Document, Upload, EditPen, MagicStick, Refresh, Plus, Link } from '@element-plus/icons-vue'
 import * as adminApi from '@/api/admin'
-import * as tinixAi from '@/api/tinix-ai' // [TINIX]
 import * as materialApi from '@/api/material'
 import AdminTemplateTable from '@/views/components/AdminTemplateTable.vue'
 import AdminSidebar from './admin/comps/AdminSidebar.vue'
@@ -799,7 +798,7 @@ async function loadOverview() {
     overview.userImages = Number(imgRes?.total) || 0
     overview.fonts = Number(fontRes?.total) || 0
     if (tplRes?.code === 401) denyByReason(tplRes)
-  } catch (e: any) {
+  } catch (_e: any) {
     ElMessage.error(t('admin.msg.loadFailed'))
   } finally {
     loading.value = false
@@ -842,7 +841,7 @@ async function loadTab() {
     }
     if (activeTab.value !== 'fonts') adminTotal.value = Number(res?.total) || 0
     if (res?.code === 401) denyByReason(res)
-  } catch (e: any) {
+  } catch (_e: any) {
     ElMessage.error(t('admin.msg.loadFailed'))
   } finally {
     loading.value = false

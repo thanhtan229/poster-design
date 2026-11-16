@@ -144,7 +144,7 @@ onBeforeMount(() => {
 
 // ...mapActions(['updateWidgetData'])
 
-function touchstart(e: MouseEvent) {
+function touchstart(_e: MouseEvent) {
   // TODO move start
   // const imgKey = e.target.getAttribute('img-key')
   // this.editingKey = imgKey

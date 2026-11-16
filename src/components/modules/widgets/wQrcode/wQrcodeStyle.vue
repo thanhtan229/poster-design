@@ -66,7 +66,6 @@ import numberSlider from '../../settings/numberSlider.vue'
 import textInputArea from '../../settings/textInputArea.vue'
 import colorSelect from '../../settings/colorSelect.vue'
 // import { getImage } from '@/common/methods/getImgDetail'
-import api from '@/api'
 import localization, { QrCodeLocalizationData } from '@/assets/data/QrCodeLocalization'
 import uploader, { TUploadDoneData } from '@/components/common/Uploader/index.vue'
 import layerIconList from '@/assets/data/LayerIconList'
@@ -106,13 +105,13 @@ const forceStore = useForceStore()
 //   dActiveElement, dWidgets
 // } = useSetupMapGetters(['dActiveElement', 'dWidgets'])
 const { dMoving } = storeToRefs(useControlStore())
-const { dActiveElement, dWidgets } = storeToRefs(widgetStore)
+const { dActiveElement } = storeToRefs(widgetStore)
 
 let lastUuid: string | null = null
 
 watch(
   () => dActiveElement.value,
-  (newValue, oldValue) => {
+  (newValue, _oldValue) => {
     change()
     if (!newValue) return
     // 失焦取消编辑模式
@@ -137,7 +136,7 @@ watch(
 
 watch(
   () => state.innerElement,
-  (newValue, oldValue) => {
+  (_newValue, _oldValue) => {
     changeValue()
   },
   { deep: true },

@@ -66,7 +66,6 @@
 
 <script lang="ts" setup>
 // 下拉选择框
-const NAME = 'value-input'
 import i18n from '@/languages'
 import { ElTabPane, ElTabs } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue';
