@@ -293,7 +293,7 @@ Tài nguyên ghi vào `service/static/collage/<name>/`. Mặc định `--photos 
 | `frame` | `center [x,y]`, `size [w,h]`, `rotate` (độ, dương = thuận chiều kim đồng hồ), `photos [{name, offset, size}]`, `paper` (`auto` hoặc `#rrggbb`) |
 | `photo` | `center`, `size`, `rotate`, `mask` (`cloud`, `circle`, `ellipse`, `rounded`) |
 | `label` | `center`, `size`, `rotate`, `shape` (`rect`, `ribbon` + `notch`, `cutout`), `color`, `text`, `font` (tên trong kho font), `textInk [x0,y0,x1,y1]` (vùng chứa chữ để đo mực), `textColor`, `fontSize` (bỏ trống để tự khớp), `letterSpacing`, `lineHeight` |
-| `sticker` | `box [x0,y0,x1,y1]` |
+| `sticker` | `box [x0,y0,x1,y1]`; `keep` (`cutout` = tách nền BiRefNet, mặc định; `box` = giữ nguyên vùng chữ nhật, dùng khi tách nền cắt hụt); `mask` (với `keep: box`) |
 
 Toạ độ trong spec là **pixel của ảnh tham chiếu**. Spec sai hoặc font không có trong kho báo lỗi rõ (kèm gợi ý tên font gần giống) và không ghi tệp đầu ra.
 
@@ -308,6 +308,7 @@ So với bản dựng thủ công bằng script, trên cùng ảnh mẫu (`--pho
 - Biểu tượng nhỏ trong nhãn (máy ảnh trên nhãn hồng) không được giữ: nhãn `cutout` chỉ lấy hình dạng và màu.
 - Bóng đổ `effects.shadow` của ứng dụng vẽ theo **hình chữ nhật** của lớp, nên chỉ đặt cho lớp chữ nhật thật (giấy khung, nhãn `rect`); ruy băng đuôi én, nhãn `cutout` và ảnh có mặt nạ không có bóng, nếu không sẽ lộ khối vuông.
 - **`textInk` phải sát chữ**: nếu vùng này bao cả viền giấy hoặc nền tối, chiều cao mực bị thổi phồng và chữ nhiều dòng bị giãn dòng quá thưa (nhãn "Lời nhắn": 1,67 → 1,14 sau khi thu hẹp). Công cụ cảnh báo khi `lineHeight` đo được > 1,5.
+- **Ảnh mẫu thứ hai ("Luna", khung ảnh bé, `scripts/examples/luna-frame.spec.json`)**: MAE toàn trang 57,2 → 45,7 sau các sửa dưới đây (ảnh giữ chỗ nên MAE cao là bình thường). Phát hiện: (1) nền là giấy hoa văn (dứa trên nền xanh ngọc) nên "auto" từng ra nâu đen vì chỉ lấy điểm tối → nay lấy trung vị khi điểm tối chỉ là viền/bóng (ra xanh xám, gần màu thật); **hoa văn nền vẫn chưa được tái tạo**; (2) BiRefNet cắt hụt sticker mềm/nhiều lớp (số "110", mây chữ bút lông) → thêm `keep: "box"` (+ `mask`); (3) khung viền kraft (nâu) bị lấy màu giấy ra hồng vì dải viền ăn vào ảnh bên trong; (4) chữ trắng trên nhãn màu hoạt động khi đặt `textColor`. Thứ tự lớp trong spec quyết định sticker nào đè nhãn nào.
 - Đo chữ bằng Chromium cần trang cùng nguồn gốc với máy chủ Tinix (trang `about:blank` bị chặn tải font: `NetworkError`).
 
 Kiểm thử offline `scripts/tinix-reference-build-test.mjs` (trong `npm run tinix:test`) dùng ảnh tổng hợp có đáp án biết trước, bộ tách nền và bộ đo chữ giả: duỗi thẳng khung xoay 10° (đo hướng gradient chủ đạo, có phép đối chứng không duỗi), đếm trái tim, màu giấy/nền/mực, vị trí sticker, cỡ chữ tự khớp và khung chữ không tràn, ảnh giữ chỗ, so sánh, kiểm tra spec. Phần Chromium, BiRefNet và font thật không chạy trong CI.

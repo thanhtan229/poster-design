@@ -1,0 +1,332 @@
+{
+ "name": "luna-frame-ref",
+ "title": "Luna · khung ảnh scrapbook (dựng từ ảnh tham chiếu)",
+ "canvas": {
+  "width": 2400,
+  "dpi": 300
+ },
+ "background": {
+  "color": "auto",
+  "hearts": false
+ },
+ "elements": [
+  {
+   "type": "frame",
+   "name": "Ảnh polaroid",
+   "center": [
+    212,
+    295
+   ],
+   "size": [
+    160,
+    156
+   ],
+   "rotate": 0,
+   "photos": [
+    {
+     "name": "Ảnh polaroid",
+     "offset": [
+      0,
+      -2
+     ],
+     "size": [
+      135,
+      125
+     ]
+    }
+   ]
+  },
+  {
+   "type": "frame",
+   "name": "Ảnh bé trên",
+   "center": [
+    441,
+    165
+   ],
+   "size": [
+    278,
+    260
+   ],
+   "rotate": 0,
+   "photos": [
+    {
+     "name": "Ảnh bé trên",
+     "offset": [
+      0,
+      0
+     ],
+     "size": [
+      262,
+      244
+     ]
+    }
+   ]
+  },
+  {
+   "type": "frame",
+   "name": "Ảnh báo",
+   "center": [
+    715,
+    237
+   ],
+   "size": [
+    260,
+    345
+   ],
+   "rotate": 0.5,
+   "photos": [
+    {
+     "name": "Ảnh báo",
+     "offset": [
+      -2,
+      -37
+     ],
+     "size": [
+      203,
+      210
+     ]
+    }
+   ]
+  },
+  {
+   "type": "frame",
+   "name": "Ảnh trái dưới",
+   "center": [
+    185,
+    627
+   ],
+   "size": [
+    285,
+    367
+   ],
+   "rotate": -4,
+   "photos": [
+    {
+     "name": "Ảnh trái dưới",
+     "offset": [
+      0,
+      -5
+     ],
+     "size": [
+      262,
+      345
+     ]
+    }
+   ]
+  },
+  {
+   "type": "frame",
+   "name": "Ảnh bé giữa",
+   "center": [
+    461,
+    465
+   ],
+   "size": [
+    277,
+    356
+   ],
+   "rotate": 0,
+   "photos": [
+    {
+     "name": "Ảnh bé giữa",
+     "offset": [
+      0,
+      0
+     ],
+     "size": [
+      260,
+      338
+     ]
+    }
+   ]
+  },
+  {
+   "type": "frame",
+   "name": "Ảnh sơ sinh",
+   "center": [
+    735,
+    551
+   ],
+   "size": [
+    230,
+    248
+   ],
+   "rotate": -3,
+   "photos": [
+    {
+     "name": "Ảnh sơ sinh",
+     "offset": [
+      -5,
+      -2
+     ],
+     "size": [
+      195,
+      228
+     ]
+    }
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Số 110",
+   "box": [
+    8,
+    57,
+    315,
+    165
+   ],
+   "keep": "box"
+  },
+  {
+   "type": "label",
+   "name": "Life is full",
+   "center": [
+    176,
+    207
+   ],
+   "size": [
+    330,
+    52
+   ],
+   "rotate": -10,
+   "shape": "rect",
+   "text": "LIFE IS FULL OF HAPPINESS",
+   "font": "Montserrat",
+   "textInk": [
+    25,
+    170,
+    330,
+    257
+   ],
+   "textColor": "#fbe9ea"
+  },
+  {
+   "type": "label",
+   "name": "Just smile",
+   "center": [
+    522,
+    636
+   ],
+   "size": [
+    138,
+    53
+   ],
+   "rotate": 0,
+   "shape": "rect",
+   "text": "JUST SMILE",
+   "font": "Amatic SC",
+   "textInk": [
+    458,
+    615,
+    586,
+    657
+   ]
+  },
+  {
+   "type": "label",
+   "name": "Happy days",
+   "center": [
+    158,
+    831
+   ],
+   "size": [
+    255,
+    50
+   ],
+   "rotate": 0,
+   "shape": "ribbon",
+   "notch": 18,
+   "text": "HAPPY DAYS",
+   "font": "Montserrat",
+   "textInk": [
+    72,
+    817,
+    248,
+    847
+   ],
+   "textColor": "#f0c060"
+  },
+  {
+   "type": "sticker",
+   "name": "Banner BEST",
+   "box": [
+    22,
+    313,
+    105,
+    450
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Thẻ BESTIE",
+   "box": [
+    542,
+    27,
+    608,
+    215
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Hoa hồng",
+   "box": [
+    775,
+    55,
+    845,
+    130
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Bong bóng &",
+   "box": [
+    735,
+    330,
+    862,
+    450
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Mây I think",
+   "box": [
+    262,
+    298,
+    430,
+    510
+   ],
+   "keep": "box",
+   "mask": "cloud"
+  },
+  {
+   "type": "sticker",
+   "name": "Tim đá",
+   "box": [
+    190,
+    650,
+    342,
+    805
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Chữ LUNA",
+   "box": [
+    335,
+    655,
+    680,
+    795
+   ]
+  },
+  {
+   "type": "sticker",
+   "name": "Máy ảnh",
+   "box": [
+    680,
+    650,
+    892,
+    807
+   ]
+  }
+ ]
+}
