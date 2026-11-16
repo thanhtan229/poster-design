@@ -138,6 +138,7 @@ export default {
     lineHeight: 'Giãn dòng',
     groupCurrent: 'Trang hiện tại',
     groupZh: 'Tiếng Trung',
+    groupKo: 'Tiếng Hàn',
     groupLatin: 'Latin',
   },
   qrcode: {
@@ -229,6 +230,9 @@ export default {
     move: 'Di chuyển phần tử',
     fastMove: 'Di chuyển nhanh',
     multi: 'Chọn nhiều',
+    marquee: 'Chọn vùng',
+    marqueeAdd: 'Chọn thêm vùng',
+    mouseDrag: 'kéo chuột',
     click: 'nhấp chọn',
     group: 'Nhóm',
     deselect: 'Bỏ chọn',

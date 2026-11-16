@@ -25,6 +25,7 @@ export default {
   USER_IMAGE_DELETE: '/design/user/image/del',
   GET_TEMPLATE_LIST: '/design/list',
   GET_TEMPLATE_CATEGORIES: '/design/template/categories',
+  GET_TEMPLATE_PHOTO_COUNTS: '/design/template/photo-counts', // [TINIX] số mẫu theo số ảnh
   GET_TEMPLATE: '/design/temp',
   GET_MATERIAL: '/design/material',
   GET_PHOTOS: '/design/imgs',
@@ -43,9 +44,6 @@ export default {
   ADMIN_AI_SETTINGS: path + '/admin/ai/settings',
   ADMIN_AI_TEST: path + '/admin/ai/test',
   // 用户系统
-  REGISTER: path + '/user/register',
-  LOGIN: path + '/user/login',
-  CHANGE_PASSWORD: path + '/user/changePassword',
   // 后台管理
   ADMIN_TEMPLATES: path + '/admin/templates',
   ADMIN_TEMPLATE_DELETE: path + '/admin/template/delete',
@@ -53,8 +51,6 @@ export default {
   ADMIN_TEMPLATE_SAVE: path + '/admin/template/save',
   ADMIN_TEMPLATE_CATEGORY_UPDATE: path + '/admin/template/category/update',
   ADMIN_USER_IMAGES: path + '/admin/user/images',
-  ADMIN_USERS: path + '/admin/users',
-  ADMIN_USER_DELETE: path + '/admin/user/delete',
   ADMIN_DESIGNS: path + '/admin/designs',
   ADMIN_DESIGN_DELETE: path + '/admin/design/delete',
   ADMIN_USER_IMAGE_DELETE: path + '/admin/user/image/delete',
@@ -67,6 +63,9 @@ export default {
   ADMIN_TEMPLATE_CATEGORY_ADD: path + '/admin/template/category/add',
   ADMIN_TEMPLATE_CATEGORY_DELETE: path + '/admin/template/category/delete',
   ADMIN_TEMPLATE_CATEGORY_RENAME: path + '/admin/template/category/rename',
+  ADMIN_TEMPLATE_CATEGORY_REORDER: path + '/admin/template/category/reorder', // [TINIX] nhóm mẫu
+  ADMIN_TEMPLATE_GROUPS_SET: path + '/admin/template/groups/set',
+  ADMIN_TEMPLATE_GROUPS_BULK: path + '/admin/template/groups/bulk',
   ADMIN_CATEGORY_DELETE: path + '/admin/category/delete',
   ADMIN_CATEGORY_ADD: path + '/admin/category/add',
   ADMIN_CATEGORY_RENAME: path + '/admin/category/rename',
@@ -74,4 +73,5 @@ export default {
   ADMIN_FONT_ADD: path + '/admin/font/add',
   ADMIN_FONT_UPDATE: path + '/admin/font/update',
   ADMIN_FONT_DELETE: path + '/admin/font/delete',
+  ADMIN_FONT_PREVIEWS: path + '/admin/fonts/previews', // [TINIX] tạo ảnh xem trước còn thiếu
 }

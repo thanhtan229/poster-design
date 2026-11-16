@@ -10,10 +10,15 @@
  * @Description: AI 助手面板：文案生成 / 文生图 / 智能配色
 -->
 <template>
-  <el-dialog v-model="state.show" :title="$t('business.ai.title')" align-center width="680" :append-to-body="true" destroy-on-close @close="handleClose">
+  <el-dialog v-model="state.show" :title="$t('tinix.menu.ai')" align-center width="780" :append-to-body="true" destroy-on-close @close="handleClose">
     <el-tabs v-model="state.activeTab" class="ai-tabs">
+      <!-- [TINIX] TinixPoster AI tabs -->
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.goi_y_chu')" name="suggest" lazy><TinixSuggestTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.sua_chu')" name="rewrite" lazy><TinixRewriteTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.tim_font')" name="font" lazy><TinixFontTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.dung_theo_mau')" name="rebuild" lazy><TinixRebuildTab /></el-tab-pane>
       <!-- 文案生成 -->
-      <el-tab-pane :label="$t('business.ai.tabText')" name="text">
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.viet_chu')" name="text">
         <div class="ai-row">
           <el-input v-model="state.textPrompt" type="textarea" :rows="3" :placeholder="$t('business.ai.textPlaceholder')" />
         </div>
@@ -33,7 +38,7 @@
       </el-tab-pane>
 
       <!-- 文生图 -->
-      <el-tab-pane :label="$t('business.ai.tabImage')" name="image">
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.tao_anh')" name="image">
         <div class="ai-row">
           <el-input v-model="state.imagePrompt" type="textarea" :rows="3" :placeholder="$t('business.ai.imagePlaceholder')" />
         </div>
@@ -51,7 +56,7 @@
       </el-tab-pane>
 
       <!-- 智能配色 -->
-      <el-tab-pane :label="$t('business.ai.tabColor')" name="color">
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.goi_y_mau')" name="color">
         <div class="ai-row">
           <el-input v-model="state.colorPrompt" type="textarea" :rows="2" :placeholder="$t('business.ai.colorPlaceholder')" />
         </div>
@@ -74,28 +79,38 @@
           </div>
         </div>
       </el-tab-pane>
+      <!-- [TINIX] -->
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.lich_su')" name="history" lazy><TinixHistoryTab /></el-tab-pane>
+      <el-tab-pane :label="$t('tinix.ui.aiAssistant.cai_dat_ai')" name="settings" lazy><TinixSettingsTab /></el-tab-pane>
     </el-tabs>
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { ElTabs, ElTabPane, ElSelect, ElOption } from 'element-plus'
+import { reactive } from 'vue'
+import { ElMessage, ElTabs, ElTabPane, ElSelect, ElOption } from 'element-plus'
+
 import api from '@/api'
-import { useWidgetStore, useCanvasStore, useUserStore, useControlStore } from '@/store'
+import { useWidgetStore, useCanvasStore, useControlStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
 import { TAiColorItem } from '@/api/ai'
+// [TINIX] TinixPoster AI tabs
+import TinixSuggestTab from './TinixSuggestTab.vue'
+import TinixRewriteTab from './TinixRewriteTab.vue'
+import TinixFontTab from './TinixFontTab.vue'
+import TinixRebuildTab from './TinixRebuildTab.vue'
+import TinixHistoryTab from './TinixHistoryTab.vue'
+import TinixSettingsTab from './TinixSettingsTab.vue'
 
 const styleList = [i18n.global.t('business.ai.styleMarketing'), i18n.global.t('business.ai.styleMinimal'), i18n.global.t('business.ai.styleArtistic'), i18n.global.t('business.ai.styleTech'), i18n.global.t('business.ai.styleEastern')]
 const ratioList = ['1:1', '3:4', '4:3', '9:16', '16:9']
 
 const state = reactive({
   show: false,
-  activeTab: 'text',
+  activeTab: 'suggest', // [TINIX]
   // 文案
   textPrompt: '',
   textStyle: i18n.global.t('business.ai.styleMarketing'),
@@ -115,14 +130,9 @@ const state = reactive({
 
 const widgetStore = useWidgetStore()
 const canvasStore = useCanvasStore()
-const userStore = useUserStore()
 const { dPage } = storeToRefs(canvasStore)
 
-function checkLogin(): boolean {
-  if (userStore.online) return true
-  ElMessage.warning(i18n.global.t('business.ai.needLogin'))
-  return false
-}
+
 
 function open() {
   // 清理选中框，避免 moveable 操作框遮挡弹窗（与其他弹窗行为一致）
@@ -131,14 +141,13 @@ function open() {
 }
 
 function handleClose() {
-  state.activeTab = 'text'
+  state.activeTab = 'suggest' // [TINIX]
   // 关闭后恢复选中框显示
   useControlStore().setShowMoveable(true)
 }
 
 // ---------- 文案生成 ----------
 async function generateText() {
-  if (!checkLogin()) return
   const prompt = state.textPrompt.trim()
   if (!prompt) return ElMessage.warning(i18n.global.t('business.ai.needTopic'))
   state.textLoading = true
@@ -169,7 +178,6 @@ function insertText(text: string) {
 
 // ---------- 文生图 ----------
 async function generateImage() {
-  if (!checkLogin()) return
   const prompt = state.imagePrompt.trim()
   if (!prompt) return ElMessage.warning(i18n.global.t('business.ai.needImagePrompt'))
   state.imageLoading = true
@@ -205,7 +213,6 @@ async function insertImage() {
 
 // ---------- 智能配色 ----------
 async function generateColor() {
-  if (!checkLogin()) return
   const prompt = state.colorPrompt.trim()
   if (!prompt) return ElMessage.warning(i18n.global.t('business.ai.needColorTheme'))
   state.colorLoading = true

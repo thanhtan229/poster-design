@@ -6,7 +6,7 @@
     <div class="content">
       <el-popover placement="left-end" trigger="click" width="auto" @after-enter="enter" @before-leave="hide">
         <!-- eslint-disable-next-line vue/no-v-model-argument -->
-        <color-picker v-model:value="state.innerColor" :modes="modes" :labels="pickerLabels" @change="colorChange" @nativePick="dropColor" />
+        <color-picker v-model:value="state.innerColor" :modes="modes" :labels="pickerLabels" @change="colorChange" @native-pick="dropColor" />
         <template #reference>
           <div class="color__bar" :style="{ background: state.innerColor }"></div>
         </template>

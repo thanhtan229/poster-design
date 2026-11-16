@@ -47,13 +47,14 @@ export type TGetFontParam = {
 
 /** 字体 item 数据（公开接口返回：不含 created_at 等管理字段） */
 export type TGetFontItemData = {
+  technical?: string
   id: number
   alias: string
   value: string
   preview: string
   woff: string
   ttf?: string
-  lang: 'zh' | 'en'
+  lang: 'zh' | 'en' | 'ko' // [TINIX] thêm ko (tiếng Hàn)
   font_family?: string
   size?: number
   woff_size?: number
@@ -131,7 +132,7 @@ export const upload = ({ file, folder = 'user' }: any, cb: Function) => {
   formData.append('file', file)
   formData.append('folder', folder)
   const extra = {
-    responseType: 'application/json',
+      responseType: 'json',
     onUploadProgress: (progress: any) => {
       cb(Math.floor((progress.loaded / progress.total) * 100), 0)
     },

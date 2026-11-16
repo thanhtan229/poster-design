@@ -53,10 +53,10 @@ export type TStoreAction = {
     value: TPageState[T]
     // pushHistory?: boolean
   }): void
-  getDPage(data: TPageState): TPageState
+  getDPage(): TPageState
   /** 设置dPage */
   setDPage(data: TPageState): void
-  /** 更新 Page（从layouts获取）*/
+  /** 更新 Page（从layouts获取） */
   updateDPage(): void
   /** 设置底部工具栏高度 */
   setBottomHeight(h: number): void
@@ -88,5 +88,10 @@ export type TPageState = {
   opacity: number
   /** 强制刷新用 */
   tag: number
+  /** [TINIX] Độ phân giải in (px/inch) dùng để quy đổi cm ↔ px và ghi vào file xuất. Thiết kế cũ không có → 300 */
+  dpi?: number
+  tinixGuides?: { x: number[]; y: number[] }
+  /** [TINIX] id mẫu đã tự áp dụng vào trang này (để "Đổi mẫu khác") */
+  tinixAuto?: number
 }
 

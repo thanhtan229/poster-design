@@ -8,7 +8,7 @@
 export default class WebWorker {
   private worker: Worker | undefined
 
-  constructor(useWorker: any) {
+  constructor(WorkerCtor: any) {
     if (typeof Worker === 'undefined') {
       console.error('Web Worker is not supported in this browser.')
     } else {
@@ -18,7 +18,7 @@ export default class WebWorker {
       //   (this.worker = new Worker(new URL(file, import.meta.url), {
       //     type: 'module',
       //   }))
-      this.worker = new useWorker()
+      this.worker = new WorkerCtor()
     }
   }
   public start(data?: any, cb?: Function) {

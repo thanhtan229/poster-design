@@ -6,11 +6,10 @@
  * @LastEditTime: 2024-08-12 09:29:10
  */
 
-import { useCanvasStore, useWidgetStore } from "@/store"
 import { THistoryStore } from ".."
 
 /** push操作历史记录（历史记录功能已重构，该方法不再使用） */
-export function pushHistory(store: THistoryStore, msg: string = "") {
+export function pushHistory(store: THistoryStore, _msg: string = "") {
   // const pageStore = useCanvasStore()
   // const widgetStore = useWidgetStore()
   // console.log('history压栈', '来源: ' + msg)

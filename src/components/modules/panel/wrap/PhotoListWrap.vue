@@ -35,12 +35,14 @@
 <script setup lang="ts">
 // 图片列表
 // const NAME = 'img-list-wrap'
-import { toRefs, reactive, computed, onMounted } from 'vue'
+import { reactive, onMounted } from 'vue'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'
 import api from '@/api'
 
 import setImageData from '@/common/methods/DesignFeatures/setImage'
+import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
+import eventBus from '@/utils/plugins/eventBus' // [TINIX]
 import { storeToRefs } from 'pinia'
 import { useControlStore, useCanvasStore, useWidgetStore } from '@/store'
 import { TGetImageListResult } from '@/api/material'
@@ -64,7 +66,7 @@ type TCurrentCategory = {
   cate?: string
 }
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 
 const controlStore = useControlStore()
 const widgetStore = useWidgetStore()
@@ -80,7 +82,7 @@ const state = reactive<TState>({
 })
 let loading = false
 
-onMounted(async () => {
+async function loadTypes() {
   if (state.types.length <= 0) {
     const categoryRes: any = await api.material.getAssetCategories('photos')
     state.types = Array.isArray(categoryRes?.list) ? categoryRes.list : []
@@ -89,6 +91,13 @@ onMounted(async () => {
       state.showList.push(list)
     }
   }
+}
+onMounted(loadTypes)
+// [TINIX] dải ảnh phía dưới vừa ★ / gỡ ảnh khỏi thư viện: tải lại nhóm + ảnh để thấy ngay
+eventBus.on('tinix:photos-library-changed', () => {
+  Object.assign(state, { types: [], showList: [], recommendImgList: [], page: 0, loadDone: false, currentCategory: null })
+  loading = false
+  loadTypes()
 })
 
 const selectImg = async (index: number, list: TGetImageListResult[]) => {
@@ -101,7 +110,7 @@ const selectImg = async (index: number, list: TGetImageListResult[]) => {
   const img = await setImageData(item) // await getImage(item.url)
   setting.width = img.width
   setting.height = img.height // parseInt(100 / item.value.ratio, 10)
-  setting.imgUrl = item.url
+  applyImageSource(setting, { url: item.url, hq: (item as any).hq }) // [TINIX] mục "Yêu thích": url = ảnh nhẹ, hq = ảnh gốc
   const { width: pW, height: pH } = dPage.value
   setting.left = pW / 2 - img.width / 2
   setting.top = pH / 2 - img.height / 2

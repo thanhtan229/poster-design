@@ -24,7 +24,7 @@ type TProps = {
   steps: any,
 }
 
-const props = withDefaults(defineProps<TProps>(), {
+withDefaults(defineProps<TProps>(), {
   steps: [],
 })
 

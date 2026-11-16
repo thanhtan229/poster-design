@@ -50,10 +50,8 @@
 
 <script lang="ts" setup>
 // 文本组件样式
-const NAME = 'w-text-style'
 import i18n from '@/languages'
-import { defineComponent, reactive, toRefs, computed, watch, nextTick, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { reactive, computed, watch, nextTick, onMounted } from 'vue'
 import { styleIconList1, styleIconList2, alignIconList, TStyleIconData, TStyleIconData2 } from '@/assets/data/TextIconsData'
 import layerIconList from '@/assets/data/LayerIconList'
 import numberInput from '../../settings/numberInput.vue'
@@ -88,7 +86,6 @@ type TState = {
 
 const widgetStore = useWidgetStore()
 const forceStore = useForceStore()
-const route = useRoute()
 const state = reactive<TState>({
   activeNames: [],
   innerElement: JSON.parse(JSON.stringify(wTextSetting)),
@@ -156,7 +153,7 @@ function changeValue() {
     return
   }
   // TODO 修改数值
-  for (let key in state.innerElement) {
+  for (const key of Object.keys(state.innerElement)) {
     const itemKey = key as keyof TwTextData
     if (state.ingoreKeys.indexOf(itemKey) !== -1) {
       ;(dActiveElement.value as Record<string, any>)[itemKey] = state.innerElement[itemKey]
@@ -181,11 +178,12 @@ function selectTextEffect({ key, value, style }: any) {
 
 function loadFonts() {
   const localFonts = useFontStore.list
-  const fontLists: Record<string, any> = { [i18n.global.t('editor.text.groupCurrent')]: [], [i18n.global.t('editor.text.groupZh')]: [], [i18n.global.t('editor.text.groupLatin')]: [] }
+  const fontLists: Record<string, any> = { [i18n.global.t('editor.text.groupCurrent')]: [], [i18n.global.t('editor.text.groupZh')]: [], [i18n.global.t('editor.text.groupKo')]: [], [i18n.global.t('editor.text.groupLatin')]: [] } // [TINIX] thêm thẻ Tiếng Hàn
   for (const font of localFonts) {
     const { id, oid, value, url, alias, preview, lang } = font
     const item = { id, oid, value, url, alias, preview }
-    lang === 'zh' ? fontLists[i18n.global.t('editor.text.groupZh')].unshift(item) : fontLists[i18n.global.t('editor.text.groupLatin')].unshift(item)
+    const group = lang === 'zh' ? 'groupZh' : lang === 'ko' ? 'groupKo' : 'groupLatin' // [TINIX]
+    fontLists[i18n.global.t('editor.text.' + group)].unshift(item)
   }
   fontLists[i18n.global.t('editor.text.groupCurrent')] = usePageFontsFilter()
   state.fontClassList = fontLists
@@ -263,7 +261,7 @@ function changeStyleIconList() {
   for (let i = 0; i < state.styleIconList2.length; i++) {
     let key = state.styleIconList2[i].key
     state.styleIconList2[i].select = false
-    if (['textAlign', 'textAlignLast'].includes(key || '') && state.innerElement[key] === state.styleIconList2[i].value) {
+    if (['textAlign', 'textAlignLast'].includes(key || '') && (state.innerElement as any)[key] === state.styleIconList2[i].value) {
       state.styleIconList2[i].select = true
       continue
     }

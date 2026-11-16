@@ -9,11 +9,9 @@ import i18n from '@/languages'
 import { ElMessageBox, messageType } from 'element-plus'
 export default (title: string = i18n.global.t('common.notice'), message: string = '', type: messageType = 'success', extra?: any) => {
   return new Promise((resolve: Function) => {
-    ElMessageBox.confirm(message, title, Object.assign({
-      confirmButtonText: i18n.global.t('common.ok'),
+    ElMessageBox.confirm(message, title, {confirmButtonText: i18n.global.t('common.ok'),
       cancelButtonText: i18n.global.t('common.cancel'),
-      type,
-    }, extra))
+      type, ...extra})
       .then(() => {
         resolve(true)
       })

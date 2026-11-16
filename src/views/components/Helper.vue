@@ -12,8 +12,8 @@
     </span>
     <template #dropdown>
       <div v-show="type === 'shortkey'" class="help-list">
-        <div @click="type = 'menu'" class="back">
-          <span class="icon-box"><i class="iconfont icon-right"></i></span> <b>{{ $t('editor.menu.shortcuts') }}</b>
+        <div class="back" @click="type = 'menu'">
+          <span class="icon-box"><i class="iconfont icon-right"></i></span> <b>{{ $t('tinix.helper.shortcuts') }}</b><!-- [TINIX] -->
         </div>
         <el-divider />
         <div v-for="(sc, si) in scKeyCodes" :key="'sc' + si" class="item">
@@ -22,9 +22,9 @@
         </div>
       </div>
       <el-dropdown-menu v-show="type === 'menu'">
-        <el-dropdown-item @click="type = 'shortkey'">{{ $t('editor.menu.shortcuts') }}</el-dropdown-item>
-        <el-dropdown-item @click="openTour">{{ $t('editor.menu.tour') }}</el-dropdown-item>
-        <el-dropdown-item @click="openIssues"><div class="menu-item">{{ $t('editor.menu.feedback') }}</div></el-dropdown-item>
+        <el-dropdown-item @click="type = 'shortkey'">{{ $t('tinix.helper.shortcuts') }}</el-dropdown-item>
+        <el-dropdown-item @click="openTour">{{ $t('tinix.helper.tour') }}</el-dropdown-item>
+        <el-dropdown-item @click="openIssues"><div class="menu-item">{{ $t('tinix.helper.feedback') }}</div></el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>

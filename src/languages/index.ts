@@ -12,6 +12,7 @@ import zh from './modules/zh'
 const i18n = createI18n({
   allowComposition: true,
   legacy: false,
+  warnHtmlMessage: false, // [TINIX] một số chuỗi tĩnh dùng v-html (có <b>, <a>)
   locale: 'vi',
   fallbackLocale: 'en',
   messages: {
@@ -20,5 +21,10 @@ const i18n = createI18n({
     zh,
   },
 })
+
+/** Luôn trả `vi` (App.vue của nhánh tinix còn gọi hàm này) */
+export function getBrowserLang() {
+  return 'vi'
+}
 
 export default i18n

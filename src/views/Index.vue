@@ -20,15 +20,17 @@
       <div class="top-nav-wrap">
         <div class="top-left">
           <div class="name" @click="jump2home">{{ state.APP_NAME }}</div>
+          <CanvasSizeToolbar />
           <div class="operation">
             <div :class="['operation-item', { disable: !undoable }]" @click="undoable ? handleHistory('undo') : ''"><i class="iconfont icon-undo" /></div>
             <div :class="['operation-item', { disable: !redoable }]" @click="redoable ? handleHistory('redo') : ''"><i class="iconfont icon-redo" /></div>
           </div>
           <el-divider direction="vertical" />
-          <Folder @select="dealWith" ref="ref1"> <div class="operation-item"><i class="icon sd-wenjian" /> <span class="text" >{{ $t('editor.top.file') }}</span></div> </Folder>
-          <Helper @select="dealWith"> <div class="operation-item"><i class="icon sd-bangzhu" /> <span class="text" >{{ $t('editor.top.help') }}</span></div> </Helper>
+          <!-- [TINIX] nhãn header Việt hóa qua $t('tinix.menu.*') — xem src/languages/modules/vi -->
+          <Folder ref="ref1" @select="dealWith"> <div class="operation-item"><i class="icon sd-wenjian" /> <span class="text" >{{ $t('tinix.menu.file') }}</span></div> </Folder>
+          <Helper @select="dealWith"> <div class="operation-item"><i class="icon sd-bangzhu" /> <span class="text" >{{ $t('tinix.menu.help') }}</span></div> </Helper>
           <el-divider direction="vertical" />
-          <div class="operation-item" @click="openAiAssistant"><i class="icon sd-AIkoutu" /> <span class="text">{{ $t('editor.top.aiAssistant') }}</span></div>
+          <div class="operation-item" @click="openAiAssistant"><i class="icon sd-AIkoutu" /> <span class="text">{{ $t('tinix.menu.ai') }}</span></div>
           <!-- <el-tooltip effect="dark" :show-after="300" :offset="0" content="标尺" placement="bottom">
             <i style="font-size: 20px" class="icon sd-biaochi operation-item" @click="changeLineGuides" />
           </el-tooltip> -->
@@ -37,16 +39,9 @@
         <HeaderOptions ref="optionsRef" v-model="state.isContinue" @change="optionsChange">
           <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('header.save') }}</el-button>
           <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('download')">{{ $t('header.download') }}</el-button>
-          <template v-if="loginUser">
-            <span class="user-name">{{ loginUser.account }}</span>
-            <el-divider direction="vertical" />
-            <div class="operation-item" @click="openChangePassword"><span class="text">{{ $t('editor.top.changePassword') }}</span></div>
-            <el-divider direction="vertical" />
-            <div v-if="loginUser.role === 1" class="operation-item" @click="jump2admin"><span class="text">{{ $t('editor.top.admin') }}</span></div>
-            <el-divider v-if="loginUser.role === 1" direction="vertical" />
-            <div class="operation-item" @click="logout"><span class="text">{{ $t('editor.top.logout') }}</span></div>
-          </template>
-          <el-button v-else size="large" type="primary" plain @click="openLogin">{{ $t('editor.top.signIn') }}</el-button>
+          <!-- [TINIX] xuất PSD (mỗi lớp một layer) -->
+          <el-button size="large" class="primary-btn" plain :loading="psdState.loading" @click="exportPsd">{{ psdState.loading ? $t('tinix.ui.psdExport.dang_xuat', { n: psdState.done, total: psdState.total }) : $t('tinix.ui.psdExport.xuat_psd') }}</el-button>
+          <div class="operation-item" @click="jump2admin"><span class="text">{{ $t('tinix.menu.admin') }}</span></div>
         </HeaderOptions>
       </div>
     </div>
@@ -62,8 +57,9 @@
       </design-board>
       <style-panel ref="ref3"></style-panel>
     </div>
+    <!-- [TINIX] dải ảnh ngang phía dưới: ảnh đã tải, đánh dấu đã dùng, yêu thích -->
+    <photo-strip />
     <!-- 标尺 -->
-    <line-guides :show="state.showLineGuides" />
     <!-- 缩放控制 -->
     <zoom-control ref="zoomControlRef" />
     <!-- 右键菜单 -->
@@ -75,7 +71,7 @@
       :percent="state.downloadPercent"
       :text="state.downloadText"
       :msg="state.downloadMsg"
-      :cancelText="$t('common.cancel')"
+      :cancelText="$t('tinix.menu.cancel')"
       @cancel="downloadCancel"
       @done="state.downloadPercent = 0"
     />
@@ -83,10 +79,6 @@
     <Tour ref="tourRef" :steps="[ref1, ref2, ref3, ref4]" />
     <!-- 创建设计 -->
     <createDesign ref="createDesignRef" />
-    <!-- 登录 / 注册弹窗 -->
-    <login-dialog ref="loginDialogRef" />
-    <!-- 修改密码弹窗 -->
-    <ChangePassword ref="changePasswordRef" />
     <!-- AI 助手 -->
     <AiAssistant ref="aiAssistantRef" />
   </div>
@@ -103,7 +95,7 @@ import RightClickMenu from '@/components/business/right-click-menu/RcMenu.vue'
 import Moveable from '@/components/business/moveable/Moveable.vue'
 import designBoard from '@/components/modules/layout/designBoard/index.vue'
 import zoomControl from '@/components/modules/layout/zoomControl/index.vue'
-import lineGuides from '@/components/modules/layout/lineGuides.vue'
+
 import shortcuts from '@/mixins/shortcuts'
 import HeaderOptions from './components/HeaderOptions.vue'
 import Folder from './components/Folder.vue'
@@ -112,42 +104,17 @@ import ProgressLoading from '@/components/common/ProgressLoading/download.vue'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore } from '@/store'
-import type { ButtonInstance } from 'element-plus'
+import { ElMessage, type ButtonInstance } from 'element-plus'
+import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
+import downloadBlob from '@/common/methods/download/downloadBlob'
 import Tour from './components/Tour.vue'
 import createDesign from '@/components/business/create-design'
-import loginDialog from '@/components/business/login-dialog/index.vue'
-import ChangePassword from '@/components/business/login-dialog/ChangePassword.vue'
+import CanvasSizeToolbar from '@/components/business/create-design/CanvasSizeToolbar.vue'
 import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
+import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
 import useHistory from '@/common/hooks/history'
 useHistory()
-
-type TLoginUser = { account: string; role: number }
-const loginDialogRef = ref<InstanceType<typeof loginDialog>>()
-const changePasswordRef = ref<InstanceType<typeof ChangePassword>>()
-const loginUser = ref<TLoginUser | null>(JSON.parse(localStorage.getItem('xp_user') || 'null'))
-
-function openLogin() {
-  loginDialogRef.value?.open('login').then((result) => {
-    if (result) loginUser.value = { account: result.account, role: result.role }
-  })
-}
-
-/** 修改密码：成功后清除本地登录态，强制重新登录 */
-function openChangePassword() {
-  changePasswordRef.value?.open().then((result) => {
-    if (result === true) {
-      localStorage.removeItem('xp_user')
-      loginUser.value = null
-    }
-  })
-}
-
-function logout() {
-  localStorage.removeItem('xp_user')
-  localStorage.removeItem('xp_token')
-  loginUser.value = null
-}
 
 function jump2admin() {
   window.location.href = './admin'
@@ -270,7 +237,7 @@ function handleHistory(data: "undo" | "redo") {
 }
 
 function changeLineGuides() {
-  state.showLineGuides = !state.showLineGuides
+  window.dispatchEvent(new Event('tinix-toggle-ruler'))
 }
 
 function downloadCancel() {
@@ -312,11 +279,36 @@ const fns: any = {
   download: () => {
     optionsRef.value?.download()
   },
+  // [TINIX] Lưu thiết kế thành mẫu công khai (admin)
+  saveAsTemplate: () => {
+    optionsRef.value?.saveAsTemplate()
+  },
   changeLineGuides,
   newDesign: () => {
     createDesignRef.value?.open()
   }
 }
+// [TINIX] Xuất PSD: dựng layer từ các widget đang hiển thị trên canvas
+const psdState = reactive({ loading: false, done: 0, total: 0 })
+async function exportPsd() {
+  if (psdState.loading) return
+  psdState.loading = true
+  psdState.done = 0
+  psdState.total = 0
+  try {
+    widgetStore.selectWidget({ uuid: '-1' }) // bỏ khung chọn để không lọt vào ảnh
+    await nextTick()
+    const blob = await exportPsdBlob(JSON.parse(JSON.stringify(dPage.value)), widgetStore.dWidgets as any, (d, t) => { psdState.done = d; psdState.total = t })
+    const title = (optionsRef.value as any)?.getTitle?.() || ''
+    downloadBlob(blob, `${String(title).trim() || i18n.global.t('editor.header.untitledWork')}.psd`)
+    ElMessage.success(i18n.global.t('tinix.ui.psdExport.xuat_xong'))
+  } catch (e: any) {
+    ElMessage.error(i18n.global.t('tinix.ui.psdExport.xuat_loi', { msg: String((e && e.message) || e).slice(0, 120) }))
+  } finally {
+    psdState.loading = false
+  }
+}
+
 const dealWith = (fnName: string, params?: any) => {
   fns[fnName](params)
 }
@@ -328,6 +320,48 @@ defineExpose({
 
 <style lang="less" scoped>
 @import url('@/assets/styles/design.less');
+#page-design-index {
+  min-width: 0;
+  .top-nav {
+    height: auto;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+}
+#page-design-index .top-nav .top-nav-wrap {
+  position: relative;
+  height: auto;
+  min-height: 54px;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 8px;
+  .top-left { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; gap: 4px 0; }
+  .top-left .operation-item { padding: 8px; white-space: nowrap; }
+  .top-left .name { margin: 0 8px; }
+  .canvas-library-button { flex-shrink: 0; margin-left: 8px; }
+  :deep(.top-title) { flex: 1 1 140px; min-width: 0; padding-left: 0; }
+  :deep(.top-title .input-wrap) { width: 100%; }
+  :deep(.top-icon-wrap) {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-right: 0;
+  }
+  :deep(.top-icon-wrap .el-button) { margin-left: 0; flex-shrink: 0; transform: none; }
+  :deep(.top-icon-wrap .operation-item) { white-space: nowrap; }
+  :deep(.el-divider--vertical) { margin: 0 6px; }
+}
+@media (max-width: 1100px) {
+  #page-design-index .top-nav .top-nav-wrap {
+    :deep(.top-icon-wrap) { flex-basis: 100%; }
+    .canvas-library-button { margin-left: 4px; }
+  }
+}
 .user-name {
   display: flex;
   align-items: center;

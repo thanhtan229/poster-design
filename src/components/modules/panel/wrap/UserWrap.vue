@@ -11,13 +11,10 @@
       <el-tab-pane :label="$t('editor.panel.resources')" name="pics"> </el-tab-pane>
       <el-tab-pane :label="$t('editor.panel.myDesigns')" name="design"> </el-tab-pane>
     </el-tabs>
-    <div v-show="state.tabActiveName === 'pics'">
-      <uploader v-model="state.percent" class="upload" @done="uploadDone">
-        <el-button class="upload-btn" plain><i class="iconfont icon-upload" /> {{ $t('editor.panel.uploadImage') }}</el-button>
-      </uploader>
-      <div style="margin: 1rem; height: 100vh">
-        <photo-list ref="imgListRef" :edit="state.editOptions.photo" :isDone="state.isDone" :listData="state.imgList" @load="load" @drag="dragStart" @select="selectImg" />
-      </div>
+    <!-- [TINIX] ảnh tải lên chuyển sang dải ảnh phía dưới editor -->
+    <div v-show="state.tabActiveName === 'pics'" class="tinix-pics-note">
+      <p>{{ $t('tinix.ui.photoDock.nhac_o_duoi') }}</p>
+      <el-button type="primary" plain @click="eventBus.emit('tinix:open-photo-dock')">{{ $t('tinix.ui.photoDock.mo_dai_anh') }}</el-button>
     </div>
     <div v-show="state.tabActiveName === 'design'" class="wrap">
       <ul ref="listRef" v-infinite-scroll="loadDesign" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
@@ -31,20 +28,17 @@
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, toRefs, watch, nextTick, ref, onMounted } from 'vue'
+import { reactive, nextTick, ref, onMounted } from 'vue'
 import { ElTabPane, ElTabs, TabPaneName } from 'element-plus'
 import { useRouter } from 'vue-router'
 
-import uploader from '@/components/common/Uploader'
 import api from '@/api'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'
 import setImageData, { TItem2DataParam } from '@/common/methods/DesignFeatures/setImage'
 import useConfirm from '@/common/methods/confirm'
-import { TGetImageListResult, TMyPhotoResult } from '@/api/material'
 import photoList from './components/photoList.vue'
 import imgWaterFall from './components/imgWaterFall.vue'
-import { TUploadDoneData } from '@/components/common/Uploader/index.vue'
 import { IGetTempListData } from '@/api/home'
 import eventBus from '@/utils/plugins/eventBus'
 import { storeToRefs } from 'pinia'
@@ -64,7 +58,7 @@ type TState = {
   tabActiveName: string
 }
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 
 const router = useRouter()
 
@@ -151,7 +145,7 @@ function checkHeight(el: HTMLElement, loadFn: Function) {
 }
 
 onMounted(() => {
-  load(true)
+  // [TINIX] không còn tải danh sách ảnh ở đây (dải ảnh phía dưới đảm nhiệm)
   nextTick(() => {
     state.tabActiveName = 'pics'
   })
@@ -193,7 +187,7 @@ const deleteImg = async ({ i, item }: controlImgParam) => {
   if (!imgListRef.value) return
   imgListRef.value.delItem(i) // 通知标记
 }
-const deleteWorks = async ({ i, item }: controlImgParam) => {
+const deleteWorks = async ({ item }: controlImgParam) => {
   const isPass = await useConfirm(i18n.global.t('common.warning'), i18n.global.t('editor.panel.confirmDelete'), 'warning')
   if (isPass) {
     await api.material.deleteMyWorks({ id: item.id })
@@ -278,6 +272,15 @@ defineExpose({
 
 .tabs {
   padding: 0.2rem 0;
+}
+.tinix-pics-note {
+  margin: 1.2rem;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #666;
+  p {
+    margin-bottom: 12px;
+  }
 }
 .upload {
   width: auto;

@@ -50,7 +50,7 @@ function fetchImageDataFromUrl(url: string, cb: TCallBack) {
       if (xhr.status < 400) resolve(this.response)
       else resolve(null)
     }
-    xhr.onerror = function (e) {
+    xhr.onerror = function (_e) {
       resolve(null)
     }
     xhr.send()

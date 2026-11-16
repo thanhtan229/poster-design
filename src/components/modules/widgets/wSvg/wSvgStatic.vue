@@ -17,7 +17,7 @@
 
 <script lang="ts" setup>
 import { TWSvgSetting } from './wSvgSetting'
-import { CSSProperties, computed, nextTick, onBeforeMount, onMounted, onUpdated, reactive, ref, watch } from 'vue';
+import { CSSProperties, nextTick, onMounted, reactive, ref } from 'vue';
 
 type TProps = {
   params: TWSvgSetting
@@ -50,7 +50,7 @@ function loadSvg() {
   return new Promise<void>((resolve) => {
     Snap.load(
       props.params.svgUrl,
-      function (svg: Record<string, any>) {
+      (svg: Record<string, any>) => {
         let svg2 = Snap(svg.node)
         // let item = svg2.select('circle')
         // item.attr({
@@ -94,7 +94,7 @@ function loadSvg() {
                 attrsColor[attr.name] = props.params.colors.findIndex((x) => x == attr.value)
               }
             })
-          } catch (e) {}
+          } catch {}
           if (JSON.stringify(attrsColor) !== '{}' && svgElements) {
             svgElements.push({
               item: element,

@@ -15,6 +15,40 @@ export type TupdateLayerIndexData = {
   isGroup?: boolean
 }
 
+export type TMoveLayersToEdgeData = {
+  uuids: string[]
+  value: 1 | -1
+}
+
+/** Move selected siblings to an edge, preserving their order and group children. */
+export function moveLayersToEdge(store: TWidgetStore, { uuids, value }: TMoveLayersToEdgeData) {
+  const selected = new Set(uuids)
+  if (!selected.size) return
+  const siblings = new Map<string, TdWidgetData[]>()
+  for (const widget of store.dWidgets) {
+    const parent = widget.parent || '-1'
+    if (!siblings.has(parent)) siblings.set(parent, [])
+    siblings.get(parent)!.push(widget)
+  }
+  for (const [parent, items] of siblings) {
+    const moving = items.filter(item => selected.has(item.uuid))
+    const remaining = items.filter(item => !selected.has(item.uuid))
+    siblings.set(parent, value === 1 ? [...remaining, ...moving] : [...moving, ...remaining])
+  }
+  const ordered: TdWidgetData[] = []
+  const visited = new Set<string>()
+  const append = (widget: TdWidgetData) => {
+    if (visited.has(widget.uuid)) return
+    visited.add(widget.uuid)
+    ordered.push(widget)
+    siblings.get(widget.uuid)?.forEach(append)
+  }
+  siblings.get('-1')?.forEach(append)
+  // Keep any legacy orphan layers rather than dropping their data.
+  store.dWidgets.forEach(append)
+  store.dWidgets.splice(0, store.dWidgets.length, ...ordered)
+}
+
 export function updateLayerIndex(store: TWidgetStore, { uuid, value, isGroup }: TupdateLayerIndexData) {
   const widgets = store.dWidgets
   const widget = widgets.find((item) => item.uuid === uuid)

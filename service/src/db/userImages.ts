@@ -19,12 +19,11 @@ export function addUserImage(userId: number, url: string, width: number, height:
 }
 
 export function listUserImages(userId?: number): UserImageRow[] {
-  if (typeof userId === 'number') return getDB().prepare('SELECT id, url, width, height, created_at FROM user_images WHERE user_id = ? ORDER BY id DESC').all(userId)
   return getDB().prepare('SELECT id, url, width, height, created_at FROM user_images ORDER BY id DESC').all()
 }
 
 /** 删除当前用户自己的上传记录，返回是否删除成功 */
 export function deleteUserImage(id: number, userId: number): boolean {
   if (!(id > 0) || !(userId > 0)) return false
-  return getDB().prepare('DELETE FROM user_images WHERE id = ? AND user_id = ?').run(id, userId).changes > 0
+  return getDB().prepare('DELETE FROM user_images WHERE id = ?').run(id).changes > 0
 }

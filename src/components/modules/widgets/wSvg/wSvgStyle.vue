@@ -115,7 +115,7 @@ function changeValue() {
   if (dMoving.value) {
     return
   }
-  for (let key in state.innerElement) {
+  for (const key of Object.keys(state.innerElement)) {
     const itemKey = key as keyof TWSvgSetting
     if (state.ingoreKeys.indexOf(itemKey) !== -1) {
       ;(dActiveElement.value as Record<string, any>)[key] = state.innerElement[itemKey]

@@ -7,7 +7,6 @@
  * @LastEditTime: 2024-08-12 09:27:45
  */
 
-import { useHistoryStore } from "@/store";
 import { Store, defineStore } from "pinia";
 
 type TControlState = {

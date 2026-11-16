@@ -138,6 +138,7 @@ export default {
     lineHeight: 'Leading',
     groupCurrent: 'On this page',
     groupZh: 'Chinese',
+    groupKo: 'Korean',
     groupLatin: 'Latin',
   },
   qrcode: {
@@ -229,6 +230,9 @@ export default {
     move: 'Move element',
     fastMove: 'Move faster',
     multi: 'Multi-select',
+    marquee: 'Select region',
+    marqueeAdd: 'Add region to selection',
+    mouseDrag: 'drag',
     click: 'click',
     group: 'Group',
     deselect: 'Deselect',

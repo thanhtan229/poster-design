@@ -33,7 +33,7 @@
       </div>
     </div>
     <div v-if="!props.isDone" v-show="state.loading" class="loading"><i class="el-icon-loading" /> {{ $t('common.loadingMore') }}</div>
-    <div v-else class="loading">{{ $t('common.allLoaded') }}</div>
+    <div v-else class="loading">Đã tải hết</div>
   </ul>
 </template>
 
@@ -95,8 +95,8 @@ const mousemove = (e: MouseEvent) => {
 
 watch(
   () => props.listData,
-  async (newList: IGetTempListData[], oldList: IGetTempListData[]) => {
-    !oldList && (oldList = [])
+  async (newList: IGetTempListData[], prevList: IGetTempListData[]) => {
+    const oldList = prevList || []
     if (newList.length <= 0) {
       state.list.length = 0
       return

@@ -20,7 +20,7 @@ export type TQrcodeProps = {
   height?: number
   image?: string
   value?: string
-  dotsOptions: Options['dotsOptions']
+  dotsOptions?: Options['dotsOptions']
 }
 
 const props = withDefaults(defineProps<TQrcodeProps>(), {

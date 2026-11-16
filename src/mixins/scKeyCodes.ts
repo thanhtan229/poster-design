@@ -61,11 +61,23 @@ export default [
     info: `${ctrlKey} / Shift + ${i18n.global.t('editor.shortcut.click')}`,
   },
   {
+    feat: i18n.global.t('editor.shortcut.marquee'),
+    info: `Ctrl + ${i18n.global.t('editor.shortcut.mouseDrag')}`,
+  },
+  {
+    feat: i18n.global.t('editor.shortcut.marqueeAdd'),
+    info: `Ctrl + Shift + ${i18n.global.t('editor.shortcut.mouseDrag')}`,
+  },
+  {
     feat: i18n.global.t('editor.shortcut.group'),
     info: `${ctrlKey} + G`,
   },
   {
+    feat: i18n.global.t('business.menu.selectAll'),
+    info: `${ctrlKey} + A`,
+  },
+  {
     feat: i18n.global.t('editor.shortcut.deselect'),
-    info: `ESC`,
+    info: `Esc`,
   },
 ]

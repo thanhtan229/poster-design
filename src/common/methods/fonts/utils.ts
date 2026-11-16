@@ -1,29 +1,4 @@
-interface TextItem {
-  text: string
-  [porpname: string]: any
-}
-interface CloudText {
-  fontFamily: string
-  fontSize: number
-  textAlign: string
-  color: string
-  textDecoration: string
-  writingMode: string
-  fontWeight: string | number
-  fontStyle: string
-  lineHeight: number
-  shadows: Record<string, unknown>[]
-  strokes: Record<string, unknown>[]
-  text: string
-  texts: TextItem[]
-  type: string
-  letterSpacing: number
-  [propsName: string]: unknown
-}
-const CLOUD_TYPE = {
-  text: 'text',
-  image: 'image',
-}
+import {fontFaceCss} from '@/utils/tinix/font-loader'
 
 // https://www.zhangxinxu.com/wordpress/2018/02/js-detect-suppot-font-family/
 export const isSupportFontFamily = (f: string) => {
@@ -65,7 +40,7 @@ export function generateFontStyle(name: string, url: string): HTMLStyleElement {
   const el = document.createElement('style')
   el.id = name
   // el.classList.add('font-face');
-  el.innerHTML = `@font-face { font-family: "${name}"; src: local("${name}"), url("${url}"); }`
+  el.textContent = fontFaceCss({value:name,url})
   return el
 }
 

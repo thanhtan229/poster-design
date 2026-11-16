@@ -1,3 +1,4 @@
+import { syncLinkedImages } from '@/utils/tinix/image-effects'
 /*
  * @Author: Jeremy Yu
  * @Date: 2024-03-28 21:00:00
@@ -6,7 +7,7 @@
  * @LastEditTime: 2024-08-12 09:30:53
  */
 
-import { useCanvasStore, useHistoryStore } from '@/store'
+import { useCanvasStore } from '@/store'
 import { TWidgetStore, TdWidgetData } from '..'
 import { customAlphabet } from 'nanoid/non-secure'
 const nanoid = customAlphabet('1234567890abcdef', 12)
@@ -42,7 +43,7 @@ export function constrainToCanvas(setting: TdWidgetData, dPageWidth: number, dPa
 export function constrainGroupToCanvas(group: TdWidgetData[], dPageWidth: number, dPageHeight: number): void {
   if (!group || group.length === 0) return
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity
   for (const item of group) {
     const l = Number(item.left) || 0
     const t = Number(item.top) || 0
@@ -127,6 +128,7 @@ export function updateWidgetData(store: TWidgetStore, { uuid, key, value }: TUpd
         break
     }
     ;(widget[key] as TUpdateWidgetPayload['value']) = value
+    if (key === 'imgUrl' || key === 'origin') syncLinkedImages(store.dWidgets)
   }
 }
 
@@ -136,6 +138,26 @@ export type TUpdateWidgetMultiplePayload = {
     key: TUpdateWidgetKey
     value: number
   }[]
+}
+
+/** 容器的 left/top 变化时，同步移动其子组件 */
+function moveContainerChildren(store: TWidgetStore, widget: TWidgetStore['dWidgets'][number], key: string, value: any) {
+  let dLeft = widget.left - value
+  let dTop = widget.top - value
+  if (key === 'left') {
+    dTop = 0
+  }
+  if (key === 'top') {
+    dLeft = 0
+  }
+  const len = store.dWidgets.length
+  for (let i = 0; i < len; ++i) {
+    const child = store.dWidgets[i]
+    if (child.parent === widget.uuid) {
+      child.left -= dLeft
+      child.top -= dTop
+    }
+  }
 }
 
 /** 一次更新多个widget */
@@ -148,22 +170,7 @@ export function updateWidgetMultiple(store: TWidgetStore, { uuid, data }: TUpdat
         case 'left':
         case 'top':
           if (widget.isContainer) {
-            let dLeft = widget.left - value
-            let dTop = widget.top - value
-            if (key === 'left') {
-              dTop = 0
-            }
-            if (key === 'top') {
-              dLeft = 0
-            }
-            const len = store.dWidgets.length
-            for (let i = 0; i < len; ++i) {
-              const child = store.dWidgets[i]
-              if (child.parent === widget.uuid) {
-                child.left -= dLeft
-                child.top -= dTop
-              }
-            }
+            moveContainerChildren(store, widget, key, value)
           }
           break
       }
@@ -174,7 +181,6 @@ export function updateWidgetMultiple(store: TWidgetStore, { uuid, data }: TUpdat
 
 /** 添加 Widget */
 export function addWidget(store: TWidgetStore, setting: TdWidgetData) {
-  const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
   setting.uuid = nanoid()
 
@@ -193,7 +199,6 @@ export function addWidget(store: TWidgetStore, setting: TdWidgetData) {
 
 /** 删除组件 */
 export function deleteWidget(store: TWidgetStore) {
-  const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
   const widgets = store.dWidgets
   const selectWidgets = store.dSelectWidgets
@@ -202,14 +207,15 @@ export function deleteWidget(store: TWidgetStore) {
 
   let count = 0 // 记录容器里的组件数量
   if (selectWidgets.length !== 0) {
-    for (let i = 0; i < selectWidgets.length; ++i) {
-      const uuid = selectWidgets[i].uuid
-      const index = widgets.findIndex((item) => item.uuid === uuid)
-      widgets.splice(index, 1)
-      // try {
-      //   // 清除掉可能存在的中框
-      //   document.getElementById(uuid)?.classList.remove('widget-selected')
-      // } catch (e) {}
+    const ids = new Set(selectWidgets.map(item => item.uuid))
+    // Include children of selected groups without leaving orphan layers behind.
+    let previousSize = -1
+    while (previousSize !== ids.size) {
+      previousSize = ids.size
+      widgets.forEach(item => { if (item.parent && ids.has(item.parent)) ids.add(item.uuid) })
+    }
+    for (let i = widgets.length - 1; i >= 0; --i) {
+      if (ids.has(widgets[i].uuid)) widgets.splice(i, 1)
     }
     store.dSelectWidgets = []
     store.selectWidget({
@@ -252,6 +258,11 @@ export function deleteWidget(store: TWidgetStore) {
         count = 0
       }
     }
+  }
+
+  // A linked backdrop belongs to its photo; deleting that photo removes the backdrop too.
+  for (let i = widgets.length - 1; i >= 0; i--) {
+    if (widgets[i].linkedPhotoId && !widgets.some(w => w.uuid === widgets[i].linkedPhotoId)) widgets.splice(i, 1)
   }
 
   if (count === 0) {
@@ -298,6 +309,7 @@ export function setDLayouts(state: TWidgetStore, data: any[]) {
 }
 
 export function updateDWidgets(state: TWidgetStore) {
+  syncLinkedImages(state.dWidgets)
   const pageStore = useCanvasStore()
   const { dCurrentPage } = pageStore
   state.dLayouts[dCurrentPage].layers = state.dWidgets

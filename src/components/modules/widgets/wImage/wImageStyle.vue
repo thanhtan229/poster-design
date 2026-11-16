@@ -18,7 +18,8 @@
       </el-collapse-item>
       <el-collapse-item :title="$t('editor.prop.settings')" name="2">
         <!-- <el-button size="mini" style="width: 100%; margin-top: 0.5rem" plain @click="openCropper">替换图片</el-button> -->
-        <el-button style="width: 100%; margin-bottom: 12px" plain @click="openPicBox">{{ $t('editor.image.replace') }}</el-button>
+        <el-button style="width: 100%; margin-bottom: 12px" plain :disabled="!!state.innerElement.linkedPhotoId" @click="openPicBox">{{ $t('editor.image.replace') }}</el-button>
+        <p v-if="state.innerElement.linkedPhotoId" style="font-size:12px;color:#64748b">Thay ảnh ở khung chính, hoặc tách liên kết để dùng ảnh riêng.</p>
         <div class="options">
           <el-button v-if="state.innerElement.cropEdit" plain type="primary" @click="imgCrop(false)">{{ $t('editor.image.done') }}</el-button>
           <el-button v-else plain type="primary" @click="imgCrop(true)"><i class="icon sd-caijian" /> {{ $t('editor.image.crop') }}</el-button>
@@ -28,6 +29,8 @@
           </uploader> -->
           <el-button size="small" disabled plain @click="openCropper">{{ $t('editor.image.beautify') }}</el-button>
         </div>
+        <ImageFramePanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
+        <ImageEffectsPanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
         <container-wrap @change="changeContainer" />
         <div class="slide-wrap">
           <number-slider v-model="state.innerElement.opacity" style="font-size: 14px" :label="$t('editor.prop.opacity')" :step="0.05" :maxValue="1" @finish="(value) => finish('opacity', value)" />
@@ -58,8 +61,10 @@
 <script lang="ts" setup>
 // 图片组件样式
 // const NAME = 'w-image-style'
+import ImageFramePanel from './ImageFramePanel.vue'
+import ImageEffectsPanel from './ImageEffectsPanel.vue'
 import i18n from '@/languages'
-import { nextTick, reactive, ref, watch, onBeforeUnmount } from 'vue'
+import { nextTick, reactive, ref, watch, onBeforeUnmount, computed } from 'vue'
 
 import numberInput from '../../settings/numberInput.vue'
 import iconItemSelect, { TIconItemSelectData } from '../../settings/iconItemSelect.vue'
@@ -69,7 +74,6 @@ import numberSlider from '../../settings/numberSlider.vue'
 import ContainerWrap from '../../settings/EffectSelect/ContainerWrap.vue'
 // import uploader from '@/components/common/Uploader/index.vue'
 import { getImage } from '@/common/methods/getImgDetail'
-import api from '@/api'
 import layerIconList from '@/assets/data/LayerIconList'
 import alignIconList from '@/assets/data/AlignListData'
 import picBox from '@/components/business/picture-selector'
@@ -78,7 +82,8 @@ import imageCutout from '@/components/business/image-cutout'
 import wImageSetting, { TImageSetting } from './wImageSetting'
 import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
-import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
+import { useCanvasStore, useControlStore, useForceStore, useUserStore, useWidgetStore } from '@/store'
+ // [TINIX]
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
 import { TUpdateAlignData } from '@/store/design/widget/actions/align'
@@ -131,9 +136,19 @@ const canvasStore = useCanvasStore()
 // } = useSetupMapGetters(['dActiveElement', 'dWidgets'])
 const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
-const { dActiveElement, dWidgets } = storeToRefs(widgetStore)
+const { dActiveElement } = storeToRefs(widgetStore)
+// [TINIX] đang sửa mẫu → hiện ô "Khung ảnh"; gợi ý lớp có vẻ là chỗ đặt ảnh (đủ lớn, không phủ kín trang, tỉ lệ vừa phải)
+const { tempEditing: _tempEditing } = storeToRefs(useUserStore())
+const _looksLikeSlot = computed(() => {
+  const a = dActiveElement.value as any
+  if (!a || a.slot) return false
+  const { width: pw, height: ph } = canvasStore.dPage
+  const area = (Number(a.width) * Number(a.height)) / (pw * ph)
+  const ratio = Number(a.width) / (Number(a.height) || 1)
+  return area >= 0.08 && area <= 0.9 && ratio >= 0.4 && ratio <= 2.5
+})
 
-let lastUuid: string | undefined = undefined
+let lastUuid: string | undefined
 let tag: boolean
 let toolBarStyle: { left: string; top: string } | null = null
 
@@ -144,7 +159,7 @@ onBeforeUnmount(() => {
 
 watch(
   () => dActiveElement.value,
-  (newValue, oldValue) => {
+  (newValue, _oldValue) => {
     change()
     if (!newValue) return
     // 失焦取消编辑模式
@@ -158,7 +173,7 @@ watch(
 
 watch(
   () => state.innerElement,
-  (newValue, oldValue) => {
+  (_newValue, _oldValue) => {
     changeValue()
     cropHandle()
   },
@@ -289,6 +304,8 @@ async function changeContainer(setting: any) {
 
 async function selectDone(img: TGetImageListResult) {
   state.innerElement.imgUrl = img.url
+  // [TINIX] khung ảnh (fit=cover): giữ kích thước khung, không đổi theo kích thước gốc của ảnh mới
+  if (state.innerElement.fit === 'cover') return
   const loadImg = await getImage(img.url)
   state.innerElement.width = (loadImg.width * canvasStore.dZoom) / 100
   state.innerElement.height = (loadImg.height * canvasStore.dZoom) / 100
@@ -344,6 +361,21 @@ async function cutImageDone(url: string) {
 #w-image-style {
   height: 100%;
   width: 100%;
+}
+.tinix-slot-box {
+  margin: 4px 0 12px;
+  padding: 8px 10px;
+  background: #f6f8ff;
+  border-radius: 6px;
+  .tinix-slot-hint {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #999;
+    &.suggest {
+      color: #e6a23c;
+    }
+  }
 }
 .line-layout {
   display: flex;

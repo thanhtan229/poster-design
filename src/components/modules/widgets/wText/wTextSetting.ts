@@ -1,5 +1,4 @@
 import i18n from '@/languages'
-import { StyleValue } from "vue"
 
 export type TwTextData = {
   name: string
@@ -26,7 +25,7 @@ export type TwTextData = {
   textDecoration: string
   color: string
   textAlign: StyleProperty.TextAlign
-  textAlignLast: StyleProperty.TextAlign
+  textAlignLast?: StyleProperty.TextAlign
   text: string
   opacity: number
   backgroundColor: string

@@ -33,32 +33,20 @@
       </div>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="user-avatar">{{ avatarChar }}</div>
-      <div class="user-meta">
-        <div class="user-name">{{ user.account }}</div>
-        <div class="user-role">{{ $t('admin.v.admin') }}</div>
-      </div>
-      <el-button class="logout-btn" type="primary" link @click="$emit('logout')">
-        <el-icon><SwitchButton /></el-icon>
-      </el-button>
-    </div>
+
   </aside>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { ElIcon, ElButton } from 'element-plus'
-import { Brush, SwitchButton } from '@element-plus/icons-vue'
+import { ElIcon } from 'element-plus'
+import { Brush } from '@element-plus/icons-vue'
 import config from '@/config'
 import { NAV_GROUPS } from '../constants'
-import type { TAdminUser } from '../types'
 
-const props = defineProps<{ active: string; user: TAdminUser }>()
-defineEmits<{ select: [key: string]; logout: [] }>()
+defineProps<{ active: string }>()
+defineEmits<{ select: [key: string] }>()
 
 const APP_NAME = config.APP_NAME
-const avatarChar = computed(() => (props.user.account || 'A').slice(0, 1).toUpperCase())
 </script>
 
 <style lang="less" scoped>

@@ -59,7 +59,7 @@ type TState = {
 // const { dWidgets } = useSetupMapGetters(['dWidgets'])
 const { dPage } = storeToRefs(useCanvasStore())
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 const emit = defineEmits<TEmits>()
 
 const route = useRoute()
@@ -70,7 +70,7 @@ const controlStore = useControlStore()
 const { dWidgets } = storeToRefs(widgetStore)
 
 const canvasImage = ref<typeof SaveImage | null>(null)
-const state = reactive<TState>({
+const _state = reactive<TState>({
   stateBollean: false,
   title: '',
   loading: false,
@@ -160,7 +160,7 @@ const uploadTemplate = async () => {
   // const cover = await draw()
   const data = Number(type) == 1 ? JSON.stringify(widgets) : JSON.stringify({ page, widgets })
   try {
-    const { id } = await adminApi.saveTemplate({ title: i18n.global.t('editor.upload.ownTemplate'), type, data, width: page.width, height: page.height })
+    const { id } = await adminApi.saveTemplate({ title: i18n.global.t('editor.upload.ownTemplate'), type: type as string, data, width: page.width, height: page.height })
     useNotification(i18n.global.t('editor.header.saveSuccess'), '')
     router.push({ path: '/psd', query: { id }, replace: true })
   } catch (err: any) {
@@ -169,8 +169,21 @@ const uploadTemplate = async () => {
   emit('change', { downloadPercent: 99.99, downloadText: i18n.global.t('editor.upload.uploadDone'), cancelText: '' }) // 关闭弹窗
 }
 
+// [TINIX] Lưu trang hiện tại thành mẫu (loại 0) mà không điều hướng/hiện thông báo: dùng cho nhập nhiều PSD cùng lúc (Psd.vue).
+// Tải ảnh nền + ảnh trong các lớp lên server rồi gọi saveTemplate; trả về id mẫu. Không sửa dữ liệu trong store.
+async function saveAsTemplate(title: string, cate = ''): Promise<number> {
+  controlStore.setShowMoveable(false)
+  const pg: Record<string, any> = JSON.parse(JSON.stringify(dPage.value))
+  const ws: any[] = JSON.parse(JSON.stringify(dWidgets.value))
+  if (pg.backgroundImage) pg.backgroundImage = await uploadTemplateImage(pg.backgroundImage)
+  for (const w of ws) if (w.type === 'w-image' && w.imgUrl) w.imgUrl = await uploadTemplateImage(w.imgUrl)
+  const { id } = await adminApi.saveTemplate({ title, type: 0, data: JSON.stringify({ page: pg, widgets: ws }), width: pg.width, height: pg.height, cate })
+  return id
+}
+
 defineExpose({
   prepare,
+  saveAsTemplate,
 })
 </script>
 

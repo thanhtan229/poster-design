@@ -29,8 +29,8 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
       browser = await puppeteer.launch({
         headless: !isDev,
         executablePath: isDev ? null : executablePath,
-        ignoreHTTPSErrors: true, // 忽略https安全提示
-        args: ['–no-first-run', '–single-process', '–disable-gpu', '–no-zygote', '–disable-dev-shm-usage', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}`], // 优化配置
+        acceptInsecureCerts: true, // [TINIX] Puppeteer mới: thay cho ignoreHTTPSErrors; tham số dùng '--' chuẩn (trước là dấu gạch ngang dài)
+        args: ['--no-first-run', '--disable-gpu', '--disable-dev-shm-usage', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}`], // 优化配置
         defaultViewport: null,
       })
     }

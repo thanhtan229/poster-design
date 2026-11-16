@@ -14,11 +14,11 @@ import { TInitResize, TSize, TdResizePayload, dResize, initDResize, resize, auto
 import { TUpdateWidgetMultiplePayload, TUpdateWidgetPayload, TsetWidgetStyleData, addWidget, deleteWidget, setDWidgets, updateDWidgets, setWidgetStyle, updateWidgetData, updateWidgetMultiple, lockWidgets, setDLayouts } from "./actions/widget";
 import { addGroup } from "./actions/group";
 import { setTemplate } from "./actions/template";
-import { copyWidget, pasteWidget } from "./actions/clone";
+import { copyWidget, pasteWidget, duplicateWidget } from "./actions/clone";
 import { TSelectWidgetData, TselectItem, selectItem, selectWidget, selectWidgetsInOut } from "./actions/select";
-import { TUpdateAlignData, updateAlign } from "./actions/align";
+import { TUpdateAlignData, TDistributeAxis, updateAlign, alignSelection, distributeSelection } from "./actions/align";
 // import { TWidgetJsonData, widgetJsonData } from "./getter";
-import { TupdateLayerIndexData, ungroup, updateLayerIndex } from "./actions/layer";
+import { TupdateLayerIndexData, TMoveLayersToEdgeData, moveLayersToEdge, ungroup, updateLayerIndex } from "./actions/layer";
 import pageDefault from "../canvas/page-default";
 import { TCanvasStore } from "../canvas";
 
@@ -28,12 +28,24 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   text?: string
   editable?: boolean
   lock?: boolean
+  record?: any // [TINIX] { width, height, minWidth, minHeight, dir }: mọi widget đều có; khai báo ở đây (any để không buộc kiểm tra undefined ở ~25 chỗ dùng) — trước đây thiếu → ~28 lỗi vue-tsc
+  hidden?: boolean // [TINIX] lớp bị ẩn: không hiện trên canvas và không xuất ảnh
+  origin?: { proxy: string; original: string } // [TINIX] lớp ảnh dùng ảnh nhẹ (imgUrl = proxy) trên canvas; xuất thì đổi sang original (ảnh gốc)
+  slot?: boolean // [TINIX] (chỉ trong mẫu) lớp ảnh là KHUNG ẢNH: chỗ đặt ảnh khi "Tự áp dụng mẫu"
+  frameDragMode?: 'pan' | 'frame'
+  effects?: import('@/utils/tinix/image-effects').ImageEffects
+  linkedPhotoId?: string
+  cropX?: number
+  cropY?: number
+  keepCover?: boolean // [TINIX] lớp ảnh phủ kín trang: kéo di chuyển nhưng luôn phủ kín trang (mẫu 1 ảnh mặc định)
+  layerName?: string // [TINIX] tên lớp do người dùng đặt (ưu tiên hơn chữ/tên mặc định)
   imgUrl?: string
   rotate?: string
   transform?: string
   sliceData?: Record<string, any>
   flip?: boolean
   cropEdit?: boolean
+  fontStyle?: string
   fontClass?: Record<string, any>
   writingMode?: string
 }
@@ -109,6 +121,7 @@ type TAction = {
   deleteWidget: () => void
   /** 拷贝组件 */
   copyWidget: () => void
+  duplicateWidget: () => void
   /** 粘贴组件 */
   pasteWidget: () => void
   selectWidget: (data: TSelectWidgetData) => void
@@ -116,8 +129,11 @@ type TAction = {
   selectWidgetsInOut: (data: TSelectWidgetData) => void
   /** updateAlign */
   updateAlign: (data: TUpdateAlignData) => void
+  alignSelection: (align: TUpdateAlignData['align']) => void
+  distributeSelection: (axis: TDistributeAxis) => void
   /** updateLayerIndex */
   updateLayerIndex: (data: TupdateLayerIndexData) => void
+  moveLayersToEdge: (data: TMoveLayersToEdgeData) => void
   /** ungroup */
   ungroup: (uuid: string) => void
   /** 设置拖拽时在哪个图层 */
@@ -184,11 +200,15 @@ const WidgetStore = defineStore<"widgetStore", TWidgetState, TGetter, TAction>("
     setTemplate(template) { setTemplate(this, template) },
     deleteWidget() { deleteWidget(this) },
     copyWidget() { copyWidget(this) },
+    duplicateWidget() { duplicateWidget(this) },
     pasteWidget() { pasteWidget(this) },
     selectWidget(data) { selectWidget(this, data) },
     selectWidgetsInOut(data) { selectWidgetsInOut(this, data) },
     updateAlign(data) { updateAlign(this, data) },
+    alignSelection(align) { alignSelection(this, align) },
+    distributeSelection(axis) { distributeSelection(this, axis) },
     updateLayerIndex(data) { updateLayerIndex(this, data) },
+    moveLayersToEdge(data) { moveLayersToEdge(this, data) },
     ungroup(uuid) { ungroup(this, uuid) },
     setDropOver(uuid) { setDropOver(this, uuid) },
     setSelectItem(data: TselectItem) { selectItem(this, data) },

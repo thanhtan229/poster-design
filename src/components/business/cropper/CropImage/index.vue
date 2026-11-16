@@ -20,9 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import api from '@/api'
 import { ElDialog } from 'element-plus'
-import { ref, reactive, nextTick, toRefs } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import 'cropperjs/dist/cropper.css'
 import Cropper from 'cropperjs'
 import { useControlStore } from '@/store'
@@ -50,13 +49,13 @@ const imgBox = ref<HTMLImageElement>()
 let cropData: Cropper.Data | null
 let cropper: Cropper
 
-const emit = defineEmits<TDoneFunc>()
+defineEmits<TDoneFunc>()
 
 const handleClose = (done: () => void) => {
   done()
 }
 
-const open = async (item: TOpenItem, data: Cropper.Data) => {
+const _open = async (item: TOpenItem, data: Cropper.Data) => {
   state.loading = true
   item.rawImg = item.rawImg ? item.rawImg : item.imgUrl
   cropData = data
@@ -69,7 +68,7 @@ const open = async (item: TOpenItem, data: Cropper.Data) => {
 }
 
 const setEdit = () => {
-  if (!imgBox || !imgBox.value) return
+  if (!imgBox.value) return
   cropper = new Cropper(imgBox.value, {
     // aspectRatio: imgBox.value.width / imgBox.value.height,
     dragMode: 'move',
@@ -82,7 +81,7 @@ const setEdit = () => {
     //   console.log(event);
     // },
   })
-  imgBox.value.addEventListener('ready', function() {
+  imgBox.value.addEventListener('ready', () => {
     state.loading = false
     // if (this.cropper === cropper) {
     cropData && cropper.setData(cropData)
@@ -110,7 +109,5 @@ const cancel = () => {
   state.loading = false
   cropper.destroy()
 }
-
-toRefs(state),
 
 </script>

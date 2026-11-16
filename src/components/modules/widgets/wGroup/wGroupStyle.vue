@@ -83,7 +83,7 @@ let dMoving = false
 
 watch(
   () => dActiveElement.value,
-  (newValue, oldValue) => {
+  (_newValue, _oldValue) => {
     change()
   },
   { deep: true }
@@ -91,7 +91,7 @@ watch(
 
 watch(
   () => state.innerElement,
-  (newValue, oldValue) => {
+  (_newValue, _oldValue) => {
     changeValue()
   },
   { deep: true }
@@ -118,7 +118,7 @@ function changeValue() {
   if (dMoving) {
     return
   }
-  for (let key in state.innerElement) {
+  for (const key of Object.keys(state.innerElement)) {
     const itemKey = key as keyof typeof wGroupSetting
     if (state.ingoreKeys.indexOf(itemKey) !== -1) {
       (dActiveElement.value as Record<string, any>)[itemKey] = state.innerElement[itemKey]

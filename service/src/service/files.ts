@@ -12,9 +12,10 @@
  * 文件上传接口实现：文件落盘 static 目录，记录写入 SQLite
  */
 import { Request, Response } from 'express'
-import imageSize from 'image-size'
+import { imageSizeFile } from '../utils/image-size-file'
 import multiparty from 'multiparty'
 import { filePath, staticLink } from '../configs'
+import fs from 'fs' // [TINIX]
 import { checkCreateFolder, randomCode, copyFile, send } from '../utils/tools'
 import { addUserImage } from '../db/userImages'
 import { getRequestUser } from '../utils/auth'
@@ -49,6 +50,8 @@ export async function upload(req: Request, res: Response) {
     const folder = fields && fields.folder ? String(fields.folder[0]).replace(/\.\./g, '') : ''
     const folderPath = `${filePath}${folder ? `${folder}/` : ''}`
     checkCreateFolder(folderPath)
+    // [TINIX] checkCreateFolder không tạo được đường dẫn Windows (ghép "/D:/..." và nuốt lỗi) → tạo đệ quy trực tiếp
+    try { fs.mkdirSync(folderPath, { recursive: true }) } catch (e) {}
     const targetPath = `${folderPath}${name}`
     try {
       await copyFile(file.path, targetPath)
@@ -60,10 +63,11 @@ export async function upload(req: Request, res: Response) {
     const url = `${staticLink}${folder ? folder + '/' : ''}${name}`
     // 记录入库；非图片文件读取不到尺寸，则不入用户图片列表
     try {
-      const size = imageSize(targetPath)
+      const size = imageSizeFile(targetPath)
       const width = Number(size.width)
       const height = Number(size.height)
-      if (width > 0 && height > 0) {
+      // [TINIX] chỉ ảnh người dùng (thư mục gốc/'user') mới vào danh sách ảnh; ảnh lớp PSD (template), logo, bìa… thì không
+      if (width > 0 && height > 0 && (!folder || folder === 'user')) {
         addUserImage(getRequestUser(req)?.id || 0, url, width, height)
       }
     } catch (e) {}

@@ -55,7 +55,7 @@ export default (pasteImageFile?: any) => {
           } else resolve()
         }
       })
-      .catch((error) => {
+      .catch((_error) => {
         // 剪贴板内容为空, 直接返回
         resolve()
       })

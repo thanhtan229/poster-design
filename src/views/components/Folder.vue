@@ -20,13 +20,14 @@
     </span>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item><div @click="$emit('select', 'newDesign')" class="item">{{ $t('editor.menu.newDesign') }}</div></el-dropdown-item>
+        <el-dropdown-item><div class="item" @click="$emit('select', 'newDesign')">{{ $t('tinix.folder.newDesign') }}</div></el-dropdown-item>
         <!-- <el-dropdown-item @click="openPSD">导入文件</el-dropdown-item> -->
-        <el-dropdown-item @click="$emit('select', 'save')" divided>{{ $t('editor.menu.save') }}</el-dropdown-item>
-        <el-dropdown-item @click="$emit('select', 'download')">{{ $t('editor.menu.download') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.folder.save') }}<!-- [TINIX] --></el-dropdown-item>
+        <el-dropdown-item v-if="isAdmin()" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.folder.saveAsTemplate') }}<!-- [TINIX] --></el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'download')">{{ $t('tinix.folder.download') }}</el-dropdown-item>
         <!-- <el-dropdown-item disabled>版本记录</el-dropdown-item> -->
         <!-- <el-dropdown-item disabled>批量套模板</el-dropdown-item> -->
-        <el-dropdown-item @click="$emit('select', 'changeLineGuides')" divided>{{ $t('editor.menu.guides') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'changeLineGuides')">{{ $t('tinix.folder.guides') }}</el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -37,9 +38,14 @@
 import { useRouter } from 'vue-router'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
 
+defineEmits<{ select: [action: string] }>()
+
 const router = useRouter()
 
-const openPSD = () => {
+// [TINIX] chỉ admin thấy mục "Lưu thành mẫu"
+const isAdmin = () => true
+
+const _openPSD = () => {
   window.open(router.resolve('/psd').href, '_blank')
 }
 </script>

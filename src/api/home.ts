@@ -20,6 +20,7 @@ type IGetTempListParam = {
   page: number
   pageSize: number
   cate: number | string
+  photos?: string // [TINIX] lọc theo số khung ảnh: '1'..'9' (đúng N; 1 gồm mẫu chưa đánh dấu) | '5+'
 }
 export type IGetTempListData = {
   cover: string
@@ -33,6 +34,8 @@ export type IGetTempListData = {
   top: number
   left: number
   data?: string
+  groups?: number[] // [TINIX] id các nhóm của mẫu
+  photo_slots?: number // [TINIX] số khung ảnh đã đánh dấu (0 = chưa đánh dấu → mẫu 1 ảnh)
   listWidth?: number
   gap?: number
   thumb?: string
@@ -44,7 +47,11 @@ type IGetTempListResult = TPageRequestResult<IGetTempListData[]>
 
 // 获取模板列表
 export const getTempList = (params: IGetTempListParam) => fetch<IGetTempListResult>('design/list', params, 'get')
-export const getTemplateCategories = (type: 0 | 1 = 0) => fetch<{ list: { id: number; name: string }[] }>('design/template/categories', { type }, 'get')
+// [TINIX] số mẫu theo số ảnh (1, 2, 3, 4, 5+) trong nhóm đang chọn
+export const getTemplatePhotoCounts = (cate: number | string = '') => fetch<{ counts: Record<string, number> }>('design/template/photo-counts', { cate }, 'get')
+export type TTemplateGroup = { id: number; name: string; sort?: number; count?: number }
+// [TINIX] kèm count (số mẫu mỗi nhóm), uncategorized (chưa phân nhóm), total
+export const getTemplateCategories = (type: 0 | 1 = 0) => fetch<{ list: TTemplateGroup[]; uncategorized?: number; total?: number }>('design/template/categories', { type }, 'get')
 
 export type TGetTempDetail = {
   id: number
@@ -75,7 +82,7 @@ export type TTempDetail = {
 
 export const getTempDetail = (params: TGetTempDetail) => fetch<TTempDetail>('design/temp', params, 'get')
 
-type TGetCategoriesParams = {
+type _TGetCategoriesParams = {
   type?: number
 }
 

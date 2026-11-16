@@ -82,7 +82,7 @@ const CanvasStore = defineStore<"canvasStore", TCanvasState, {}, TStoreAction>("
       //   cur[val] = data[val]
       // })
     },
-    /** 更新 Page（layouts）*/
+    /** 更新 Page（layouts） */
     updateDPage() {
       const widgetStore = useWidgetStore()
       widgetStore.dLayouts[this.dCurrentPage].global = this.dPage

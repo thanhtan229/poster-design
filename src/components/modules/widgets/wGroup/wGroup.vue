@@ -24,7 +24,6 @@
 
 <script lang="ts" setup>
 // 组合组件
-const NAME = 'w-group'
 import { nextTick, onBeforeUnmount, onMounted, onUpdated, ref } from 'vue'
 
 import { setTransformAttribute } from '@/common/methods/handleTransform'
@@ -60,7 +59,6 @@ const ratio = ref(0)
 const temp = ref<Record<string, any>>({})
 const compWidgetsRecord = ref<Record<string, any>>({})
 
-const timer = ref<number | null>(null)
 // const { dActiveElement, dWidgets } = useSetupMapGetters(['dActiveElement', 'dWidgets'])
 const { dActiveElement, dWidgets } = storeToRefs(widgetStore)
 
@@ -134,10 +132,6 @@ function updateRecord(tempScale ?: number) {
 function touchstart() {
   if (dActiveElement.value?.uuid !== props.params.uuid) {
     return
-  }
-  const tempRecord = {
-    width: props.params.width,
-    height: props.params.height,
   }
   for (let i = dWidgets.value.length - 1; i >= 0; --i) {
     if (dWidgets.value[i].parent === props.params.uuid) {

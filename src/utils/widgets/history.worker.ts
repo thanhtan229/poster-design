@@ -31,7 +31,7 @@ onmessage = async (e) => {
         for (const d of diffData) {
           d.op = ops[d.type]
         }
-        draft = applyPatches(draft, diffData)
+        applyPatches(draft, diffData)
       },
       (patches, inversePatches) => {
         self.postMessage({ patches, inversePatches })

@@ -40,9 +40,3 @@ export interface TOverviewStat {
 
 /** 分类管理页内的子分类切换 */
 export type TCategoryTab = 'template-categories' | 'materials' | 'photos'
-
-/** 本地登录用户信息（来自 localStorage 的 xp_user） */
-export interface TAdminUser {
-  account: string
-  role: number
-}

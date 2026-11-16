@@ -1,3 +1,4 @@
+import type { ImageEffects } from '@/utils/tinix/image-effects'
 import i18n from '@/languages'
 /*
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -40,7 +41,18 @@ export type TImageSetting = {
     ratio: number
     left: number
   }
+  frameDragMode?: 'pan' | 'frame'
+  effects?: Partial<ImageEffects>
+  linkedPhotoId?: string
   cropEdit?: boolean
+  origin?: { proxy: string; original: string } // [TINIX] ảnh gốc dùng khi xuất (imgUrl đang là bản nhẹ)
+  slot?: boolean // [TINIX] khung ảnh của mẫu
+  keepCover?: boolean // [TINIX] giữ ảnh phủ kín trang khi kéo
+  fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
+  cropX?: number
+  cropY?: number
+  cutoutBorderUrl?: string
+  cutoutEdit?: { sourceUrl:string; cutoutUrl:string; mm:number;frame:{left:number;top:number;width:number;height:number} }
 }
 
 const setting: TImageSetting = {

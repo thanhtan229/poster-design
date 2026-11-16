@@ -72,10 +72,11 @@ function ensureVietnameseFonts(db: any): void {
     { id: 100, alias: 'Be Vietnam Pro', value: 'be-vietnam-pro', woff: '/static/fonts/be-vietnam-pro-400.woff2', size: 27648 },
     { id: 101, alias: 'Be Vietnam Pro Bold', value: 'be-vietnam-pro-bold', woff: '/static/fonts/be-vietnam-pro-700.woff2', size: 29340 },
   ]
-  const exists = db.prepare('SELECT 1 FROM fonts WHERE value = ?')
+  // Nhánh tinix có kho font riêng (scripts/tinix-import-fonts.mjs) đã gồm Be Vietnam Pro: không thêm bản trùng tên
+  const exists = db.prepare('SELECT 1 FROM fonts WHERE value = ? OR lower(alias) = lower(?)')
   const insert = db.prepare("INSERT INTO fonts (id, alias, value, woff, lang, woff_size) VALUES (@id, @alias, @value, @woff, 'en', @size)")
   fonts.forEach((font) => {
-    if (!exists.get(font.value)) insert.run(font)
+    if (!exists.get(font.value, font.alias)) insert.run(font)
   })
 }
 
@@ -98,14 +99,8 @@ export default function bootstrapDatabase(db: any): void {
   const userCount = Number(db.prepare('SELECT COUNT(*) AS n FROM users').get()?.n || 0)
   if (userCount > 0) return
 
-  const account = String(process.env.DEFAULT_ADMIN_ACCOUNT || 'admin').trim()
-  const password = String(process.env.DEFAULT_ADMIN_PASSWORD || '123456')
-  if (!account || password.length < 6) {
-    console.warn('[db:bootstrap] 默认管理员配置无效，请设置 DEFAULT_ADMIN_ACCOUNT / DEFAULT_ADMIN_PASSWORD')
-    return
-  }
+  // Internal identity only, required by legacy owner columns. No login credentials are exposed.
   const salt = createSalt()
   db.prepare('INSERT INTO users (account, password, salt, role) VALUES (?, ?, ?, 1)')
-    .run(account, hashPassword(password, salt), salt)
-  console.log(`[db:bootstrap] 默认管理员已创建：${account}`)
+    .run('local-owner', hashPassword(crypto.randomBytes(32).toString('hex'), salt), salt)
 }

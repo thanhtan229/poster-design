@@ -6,7 +6,6 @@
  * @LastEditTime: 2024-03-01 20:55:51
  */
 
-import i18n from '@/languages'
 import { StyleValue } from "vue"
 
 export type TWidgetClassifyData = {
@@ -19,26 +18,26 @@ export type TWidgetClassifyData = {
 
 export default [
   {
-    get name() { return i18n.global.t('editor.sidebar.templates') },
+    name: 'Mẫu', // [TINIX] 模板
     icon: 'icon-moban',
     show: false,
     component: 'temp-list-wrap',
   },
   {
-    get name() { return i18n.global.t('editor.sidebar.materials') },
+    name: 'Chất liệu', // [TINIX] 素材
     icon: 'icon-sucai',
     show: false,
     component: 'graph-list-wrap',
   },
   {
-    get name() { return i18n.global.t('editor.sidebar.text') },
+    name: 'Chữ', // [TINIX] 文字
     icon: 'icon-wenzi',
     show: false,
     style: { fontWeight: 600 },
     component: 'text-list-wrap',
   },
   {
-    get name() { return i18n.global.t('editor.sidebar.photos') },
+    name: 'Ảnh', // [TINIX] 照片
     icon: 'icon-gallery',
     show: false,
     component: 'photo-list-wrap',
@@ -50,15 +49,16 @@ export default [
   //   component: 'bg-img-list-wrap',
   // },
   {
-    get name() { return i18n.global.t('editor.sidebar.tools') },
+    name: 'Công cụ', // [TINIX] 工具箱
     icon: 'icon-zujian01',
     show: false,
     component: 'tools-list-wrap',
   },
   {
-    get name() { return i18n.global.t('editor.sidebar.mine') },
+    name: 'Của tôi', // [TINIX] 我的
     icon: 'icon-shangchuan',
     show: false,
     component: 'user-wrap',
   },
+  { name: 'Cắt dán', icon: 'icon-moban', show: false, component: 'collage-panel' },
 ] as TWidgetClassifyData[]

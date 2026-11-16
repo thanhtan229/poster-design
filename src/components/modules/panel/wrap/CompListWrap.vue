@@ -43,7 +43,7 @@
         </div>
       </el-space>
       <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
-      <div v-show="state.loadDone" class="loading">{{ $t('common.allLoaded') }}</div>
+      <div v-show="state.loadDone" class="loading">Đã tải hết</div>
     </ul>
   </div>
 </template>

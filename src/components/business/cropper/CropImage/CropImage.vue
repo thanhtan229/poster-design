@@ -68,9 +68,10 @@ export default defineComponent({
         //   console.log(event);
         // },
       })
-      imgBox.value.addEventListener('ready', function() {
+      const imgEl: any = imgBox.value
+      imgEl.addEventListener('ready', () => {
         state.loading = false
-        if (this.cropper === cropper) {
+        if (imgEl.cropper === cropper) {
           cropData && cropper.setData(cropData)
         }
       })
@@ -80,7 +81,7 @@ export default defineComponent({
       setTimeout(async () => {
         const newImg = cropper.getCroppedCanvas({ maxWidth: 4096, minWidth: 4096 }).toDataURL('image/jpeg', 0.8)
         const { width, height } = cropper.getCropBoxData()
-        const { preview_url } = await api.material.uploadBase64({ file: newImg })
+        const { preview_url } = await (api.material as any).uploadBase64({ file: newImg })
         context.emit('done', { newImg: preview_url, data: cropper.getData(), width, height })
         cancel()
       }, 100)

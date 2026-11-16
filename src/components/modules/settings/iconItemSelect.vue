@@ -40,7 +40,7 @@ type TEmits = {
   (event: 'finish', data: TIconItemSelectData): void
 }
 
-const props = withDefaults(defineProps<TProps>(), {
+withDefaults(defineProps<TProps>(), {
   label: ''
 })
 

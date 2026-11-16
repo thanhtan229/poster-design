@@ -17,7 +17,6 @@ import {
   CollectionTag,
   Document,
   PictureFilled,
-  User,
   Star,
   Setting,
 } from '@element-plus/icons-vue'
@@ -37,13 +36,7 @@ export const NAV_GROUPS: TNavGroup[] = [
       { key: 'photos', label: i18n.global.t('admin.nav.photos'), icon: Camera },
       { key: 'categories', label: i18n.global.t('admin.nav.categories'), icon: CollectionTag },
       { key: 'fonts', label: i18n.global.t('admin.nav.fonts'), icon: Document },
-    ],
-  },
-  {
-    title: i18n.global.t('admin.v.userLabel'),
-    items: [
       { key: 'user-images', label: i18n.global.t('admin.stat.userImages'), icon: PictureFilled },
-      { key: 'users', label: i18n.global.t('admin.nav.users'), icon: User },
       { key: 'designs', label: i18n.global.t('admin.nav.designs'), icon: Star },
     ],
   },
@@ -62,7 +55,6 @@ export const PAGE_META: Record<string, { title: string; description: string }> =
   categories: { title: i18n.global.t('admin.nav.categories'), description: i18n.global.t('admin.desc.categories') },
   fonts: { title: i18n.global.t('admin.nav.fonts'), description: i18n.global.t('admin.desc.fonts') },
   'user-images': { title: i18n.global.t('admin.stat.userImages'), description: i18n.global.t('admin.desc.userImages') },
-  users: { title: i18n.global.t('admin.nav.users'), description: i18n.global.t('admin.desc.users') },
   designs: { title: i18n.global.t('admin.nav.designs'), description: i18n.global.t('admin.desc.designs') },
   'ai-settings': { title: i18n.global.t('admin.nav.ai'), description: i18n.global.t('admin.desc.ai') },
 }

@@ -1,0 +1,72 @@
+// Headless browser smoke test with a temporary database and a fresh browser profile.
+const path = require('path'), fs = require('fs'), assert = require('assert')
+const root = path.resolve(__dirname, '../..')
+const scratch = fs.mkdtempSync(path.join(root, '.runtime/personal-ui-'))
+process.chdir(scratch)
+process.env.NODE_ENV = 'development'
+require(path.join(root, 'service/node_modules/ts-node')).register({ transpileOnly: true, compilerOptions: { module: 'commonjs', esModuleInterop: true } })
+const express = require(path.join(root, 'service/node_modules/express'))
+const puppeteer = require(path.join(root, 'service/node_modules/puppeteer'))
+const { initDB, getDB } = require(path.join(root, 'service/src/db'))
+initDB()
+const app = express(); app.use(express.json({ limit: '10mb' }))
+// Cover generation is tested separately; avoid launching a second browser for this smoke test.
+app.get('/api/screenshots', (_req, res) => res.status(503).end())
+app.use(require(path.join(root, 'service/src/control/router')).default)
+app.use(require(path.join(root, 'service/src/tinix/canvasSizes')).default)
+app.use(require(path.join(root, 'service/src/tinix/photos/routes')).default)
+app.use(require(path.join(root, 'service/src/tinix/ai/routes')).default)
+app.use(express.static(path.join(root, 'dist')))
+app.get('*', (_req, res) => res.sendFile(path.join(root, 'dist/index.html')))
+;(async () => {
+  const server = app.listen(0, '127.0.0.1')
+  await new Promise(resolve => server.once('listening', resolve))
+  const base = `http://127.0.0.1:${server.address().port}`
+  process.env.PORT = String(server.address().port)
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] })
+  const errors = []
+  try {
+    const page = await browser.newPage()
+    await page.setViewport({ width: 1800, height: 1100 })
+    page.on('pageerror', e => errors.push(e.message))
+    await page.goto(base + '/home', { waitUntil: 'networkidle2' })
+    await page.waitForSelector('.canvas-library-button')
+    const text = await page.$eval('.top-nav', e => e.innerText)
+    assert(!/Đăng nhập|Đăng xuất|Đổi mật khẩu/.test(text), text)
+    assert.equal(await page.evaluate(() => localStorage.getItem('xp_token')), null)
+    await page.click('.canvas-library-button')
+    await page.waitForSelector('.sizes .row')
+    await page.click('.el-dialog__headerbtn')
+    // Save a realistic existing document: no cover refresh or account association rewrite.
+    const layouts = await page.evaluate(() => {
+      const p = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia
+      const data = JSON.parse(JSON.stringify(p._s.get('widgetStore').dLayouts))
+      const image = (uuid, extra = {}) => ({name:'Test',type:'w-image',uuid,left:100,top:100,width:100,height:100,zoom:1,transform:'',radius:0,opacity:1,parent:'-1',imgUrl:'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22/%3E',mask:'',isContainer:false,setting:[],rotate:0,record:{width:100,height:100,minWidth:10,minHeight:10,dir:'all'},lock:false,isNinePatch:false,flip:'',sliceData:{ratio:0,left:0}, ...extra})
+      data[0].layers = [image('rotate',{rotate: '35deg',left:30}),image('hidden',{hidden:true,left:180}),image('locked',{lock:true,left:330}),image('group',{type:'w-group',isContainer:true,left:480}),image('child',{parent:'group',left:480})]
+      return data
+    })
+    const owner = getDB().prepare('SELECT id FROM users LIMIT 1').get().id
+    const id = Number(getDB().prepare("INSERT INTO designs (user_id,title,data,cover,width,height) VALUES (?, 'UI saved poster', ?, '/existing-cover.jpg',1920,1080)").run(owner, JSON.stringify(layouts)).lastInsertRowid)
+    await page.goto(base + '/home?id=' + id, { waitUntil: 'networkidle2' })
+    const saving = page.waitForResponse(r => r.url().endsWith('/design/save') && r.request().method() === 'POST')
+    await page.evaluate(() => [...document.querySelectorAll('.top-nav button')].find(b => b.textContent.trim() === 'Lưu').click())
+    assert.equal((await (await saving).json()).code, 200)
+    assert.equal(getDB().prepare('SELECT user_id FROM designs WHERE id=?').get(id).user_id, owner)
+    await page.reload({waitUntil:'networkidle2'})
+    await page.waitForFunction(() => document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('widgetStore').dWidgets.length === 5)
+    const actual = await page.evaluate(() => JSON.parse(JSON.stringify(document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('widgetStore').dWidgets)))
+    assert.deepEqual(actual.map(w => [w.uuid,w.parent,!!w.hidden,!!w.lock,w.rotate]), layouts[0].layers.map(w => [w.uuid,w.parent,!!w.hidden,!!w.lock,w.rotate]))
+    console.log('PASS save/reopen: rotated image, hidden and locked layers, group and child')
+    await page.goto(base + '/admin', { waitUntil: 'networkidle2' })
+    await page.waitForSelector('.admin-sidebar')
+    const nav = await page.$eval('.admin-sidebar', e => e.innerText)
+    assert(!/Tài khoản|Người dùng|Đăng xuất/.test(nav), nav)
+    assert.equal(await page.$('.sidebar-footer'), null)
+    assert(!errors.length, errors.join('\n'))
+    await page.screenshot({ path: path.join(root, '.runtime/personal-ui.png') })
+    console.log('PASS UI: fresh browser, no account controls, canvas library, save existing poster, direct admin access, no browser errors')
+  } finally {
+    await browser.close()
+    server.close()
+  }
+})().catch(e => { console.error(e); process.exit(1) })

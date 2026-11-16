@@ -51,15 +51,16 @@
 </template>
 
 <script lang="ts" setup>
+import { loadLibraryFont } from '@/utils/tinix/font-loader'
 // 文本组件
 // const NAME = 'w-text'
 
-import { reactive, toRefs, computed, onUpdated, watch, onMounted, ref } from 'vue'
+import { reactive, computed, onUpdated, watch, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { fontMinWithDraw } from '@/utils/widgets/loadFontRule'
 import getGradientOrImg from './getGradientOrImg'
 import { wTextSetting } from './wTextSetting'
-import { useForceStore, useHistoryStore, useWidgetStore } from '@/store'
+import { useForceStore, useWidgetStore } from '@/store'
 
 export type TwTextParams = {
   rotate?: number
@@ -79,7 +80,6 @@ type TProps = {
 const props = defineProps<TProps>()
 const widgetStore = useWidgetStore()
 const forceStore = useForceStore()
-const historyStore = useHistoryStore()
 const route = useRoute()
 const state = reactive({
   loading: false,
@@ -105,35 +105,17 @@ onMounted(() => {
   // store.commit('updateRect')
 })
 
-watch(
-  () => props.params,
-  async (nval) => {
-    updateText()
-    if (state.loading) {
-      return
-    }
-    let font = nval.fontClass
-    const isDone = font.value === state.loadFontDone
-
-    if (font.url && !isDone) {
-      if (font.id && isDraw.value) {
-        state.loading = false
-      }
-      if (fontMinWithDraw) {
-        return
-      }
-      state.loading = !isDraw.value
-      const loadFont = new window.FontFace(font.value, `url(${font.url})`)
-      await loadFont.load()
-      document.fonts.add(loadFont)
-      state.loadFontDone = font.value
-      state.loading = false
-    } else {
-      state.loading = false
-    }
-  },
-  { immediate: true, deep: true },
-)
+watch(() => props.params, () => updateText(), {immediate:true,deep:true})
+let fontLoadRequest=0
+watch(() => props.params.fontClass, async font => {
+ const request=++fontLoadRequest
+ const key=JSON.stringify([font.value,font.url,(font as any).technical])
+ if(!font.url||key===state.loadFontDone||fontMinWithDraw){state.loading=false;return}
+ state.loading=!isDraw.value
+ try {await loadLibraryFont(font);if(request===fontLoadRequest)state.loadFontDone=key}
+ catch(error){console.warn('[tinix:font] Cannot load requested font',font.value,error)}
+ finally{if(request===fontLoadRequest)state.loading=false}
+},{immediate:true,deep:true})
 
 watch(
   () => state.editable,
@@ -159,7 +141,7 @@ function updateRecord() {
 }
 
 function updateText(e?: Event) {
-  const value = e && e.target ? (e.target as HTMLElement).innerHTML : props.params.text //.replace(/\n/g, '<br/>')
+  const value = e && e.target ? (e.target as HTMLElement).innerHTML : props.params.text // .replace(/\n/g, '<br/>')
   if (value !== props.params.text) {
     widgetStore.updateWidgetData({
       uuid: String(props.params.uuid),
@@ -169,7 +151,7 @@ function updateText(e?: Event) {
   }
 }
 
-function writingText(e?: Event) {
+function writingText(_e?: Event) {
   // updateText(e)
   // TODO: 修正文字选框高度
   const el = editWrap.value || widget.value

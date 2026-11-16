@@ -21,6 +21,8 @@ import { send, checkCreateFolder, randomCode } from '../utils/tools'
 import { getRequestUser } from '../utils/auth'
 import { getAiSettings, saveAiSettingsInput, AiSettings, AiImageSizeMode } from '../db/settings'
 import { addUserImage } from '../db/userImages'
+import { postWithRetry, modelErrorHint } from '../tinix/ai/vision' // [TINIX] tự thử lại khi quá tải + gợi ý khi model bị ngừng
+import { logJob, assertWithinMonthlyLimit } from '../tinix/ai/cost-log' // [TINIX] lịch sử + giới hạn chi phí cho cả lần tạo ảnh
 
 /**
  * 各尺寸模式下「宽高比 → 供应商 size 参数」的映射。
@@ -48,7 +50,31 @@ function requireAiEnabled(): AiSettings {
 function resolveImageSize(ratio: string, mode: AiImageSizeMode): string {
   const map = IMAGE_SIZE_MAPS[mode]
   if (!map) return '1024x1024'
-  return map[ratio] || map['1:1'] || '1024x1024'
+  if (map[ratio]) return map[ratio]
+  // [TINIX] tỉ lệ tùy ý "W:H" (vd "1280:1920" của Dựng theo mẫu) → kích thước hợp lệ cho từng chế độ
+  const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(ratio || ''))
+  if (m && Number(m[1]) > 0 && Number(m[2]) > 0) {
+    const r = Math.min(3, Math.max(1 / 3, Number(m[1]) / Number(m[2])))
+    if (mode === 'openai') {
+      // GPT Image nhận cạnh bội số của 16, tỉ lệ 1:3..3:1: cạnh dài 1536px
+      if (r > 0.97 && r < 1.03) return '1024x1024'
+      const snap = (v: number) => Math.max(16, Math.round(v / 16) * 16)
+      return r >= 1 ? `1536x${snap(1536 / r)}` : `${snap(1536 * r)}x1536`
+    }
+    // chế độ khác: chọn tỉ lệ có sẵn gần nhất
+    let best = '1:1'
+    let diff = Infinity
+    for (const key of Object.keys(map)) {
+      const [a, b] = key.split(':').map(Number)
+      const d = Math.abs(Math.log(a / b / r))
+      if (d < diff) {
+        diff = d
+        best = key
+      }
+    }
+    return map[best]
+  }
+  return map['1:1'] || '1024x1024'
 }
 
 /** 密钥脱敏：短密钥只保留前 2 位，长密钥保留前 6 位与后 4 位 */
@@ -165,7 +191,8 @@ async function resolveImageBuffer(body: any): Promise<Buffer> {
 function saveGeneratedImage(buffer: Buffer): { url: string; width: number; height: number } | null {
   const folder = 'ai'
   const folderPath = `${filePath}${folder}/`
-  checkCreateFolder(folderPath)
+  // [TINIX] checkCreateFolder không tạo được đường dẫn Windows (ghép "/D:/..." và nuốt lỗi) → tạo đệ quy trực tiếp
+  fs.mkdirSync(folderPath, { recursive: true })
   const name = `${Date.now()}-${randomCode(8)}.png`
   const targetPath = `${folderPath}${name}`
   fs.writeFileSync(targetPath, buffer)
@@ -173,7 +200,7 @@ function saveGeneratedImage(buffer: Buffer): { url: string; width: number; heigh
   let width = 0
   let height = 0
   try {
-    const sizeInfo = imageSize(targetPath)
+    const sizeInfo = imageSize(buffer)
     width = Number(sizeInfo.width)
     height = Number(sizeInfo.height)
   } catch (err) {
@@ -228,22 +255,46 @@ export default {
     const ratio = typeof req.body?.ratio === 'string' ? req.body.ratio.trim() : '1:1'
     if (!prompt) return send.error(res, 'Vui lòng nhập mô tả ảnh')
     const size = resolveImageSize(ratio, config.image_size_mode)
+    // [TINIX] chạm giới hạn chi phí tháng thì không tạo ảnh nữa
+    try {
+      assertWithinMonthlyLimit()
+    } catch (e) {
+      return send.error(res, e?.message || 'Đã chạm giới hạn chi phí AI tháng này')
+    }
+    const jobInput = { prompt: prompt.slice(0, 300), ratio, size }
     try {
       // 注意：utils/http 的 axios 拦截器已将响应解包为 body，类型断言绕开 AxiosResponse 类型
-      const body: any = await axios.post(
-        `${config.base_url}/images/generations`,
-        { model: config.image_model, prompt, size },
-        { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 60000 }
+      const body: any = await postWithRetry(() =>
+        axios.post(
+          `${config.base_url}/images/generations`,
+          { model: config.image_model, prompt, size },
+          { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 120000 } // [TINIX] ảnh lớn có thể >60s
+        )
       )
       const buffer = await resolveImageBuffer(body)
-      if (!buffer || !buffer.length) return send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      // [TINIX] token dùng (nếu nhà cung cấp trả về `usage`) để ghi lịch sử/chi phí
+      const usage = body && body.usage ? body.usage : {}
+      const tokensIn = Number(usage.input_tokens ?? usage.prompt_tokens) || 0
+      const tokensOut = Number(usage.output_tokens ?? usage.completion_tokens) || 0
+      if (!buffer || !buffer.length) {
+        logJob({ kind: 'image', input: jobInput, model: config.image_model, tokensIn, tokensOut, status: 'error', error: 'Nhà cung cấp không trả về ảnh' })
+        return send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      }
       const saved = saveGeneratedImage(buffer)
-      if (!saved) return send.error(res, 'Ảnh do AI tạo không hợp lệ, vui lòng thử lại')
+      if (!saved) {
+        logJob({ kind: 'image', input: jobInput, model: config.image_model, tokensIn, tokensOut, status: 'error', error: 'Ảnh không hợp lệ' })
+        return send.error(res, 'Ảnh do AI tạo không hợp lệ, vui lòng thử lại')
+      }
       addUserImage(user.id, saved.url, saved.width, saved.height)
+      logJob({ kind: 'image', input: jobInput, output: saved, model: config.image_model, tokensIn, tokensOut, status: 'ok' })
       send.success(res, saved)
     } catch (e) {
       console.error('[ai] 文生图失败:', e?.message)
-      send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      const retried = e && e.__retries ? ` (đã tự thử lại ${e.__retries} lần)` : ''
+      const detail = extractApiErrorMessage(e).slice(0, 300) + retried + modelErrorHint(extractApiErrorMessage(e), config.image_model, 'Model tạo ảnh (Quản trị → Thiết lập AI)')
+      logJob({ kind: 'image', input: jobInput, model: config.image_model, status: 'error', error: detail })
+      // [TINIX] trả lỗi thật của nhà cung cấp (key đã được che) để biết vì sao thất bại
+      send.error(res, `Tạo ảnh bằng AI thất bại: ${detail}`)
     }
   },
 

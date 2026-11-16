@@ -5,11 +5,6 @@
       <bg-img-list-wrap style="padding-top: 2rem" model="stylePanel" />
     </div>
     <el-collapse v-else v-model="state.activeNames">
-      <el-collapse-item :title="$t('settings.pageStyle.canvasSize')" name="1">
-        <sizeEditor :params="state.innerElement">
-          <i @click="openSizeEdit" class="icon sd-edit"></i>
-        </sizeEditor>
-      </el-collapse-item>
       <el-collapse-item :title="$t('settings.pageStyle.background')" name="2">
         <el-button style="width: 100%; margin: 0 0 1rem 0" type="primary" link @click="state.showBgLib = true">{{ $t('settings.pageStyle.pickFromLibrary') }}</el-button>
         <Tabs :value="state.mode" @update:value="onChangeMode">
@@ -24,15 +19,15 @@
                 <uploader style="width: 47%" @done="uploadImgDone">
                   <el-button style="width: 100%" plain>{{ $t('settings.pageStyle.uploadImage') }}</el-button>
                 </uploader>
-                <el-button style="width: 47%" @click="state.showBgLib = true" plain>{{ $t('settings.pageStyle.library') }}</el-button>
+                <el-button style="width: 47%" plain @click="state.showBgLib = true">{{ $t('settings.pageStyle.library') }}</el-button>
               </div>
             </div>
             <div class="bg-options">
               <el-tooltip :show-after="300" :hide-after="0" effect="dark" :content="$t('settings.pageStyle.downloadImage')" placement="top">
-                <div @click="downloadBG" class="btn-item"><icon-download width="16" /></div>
+                <div class="btn-item" @click="downloadBG"><icon-download width="16" /></div>
               </el-tooltip>
               <el-tooltip :show-after="300" :hide-after="0" effect="dark" :content="$t('common.delete')" placement="top">
-                <div @click="deleteBg" class="btn-item"><icon-delete width="16" /></div>
+                <div class="btn-item" @click="deleteBg"><icon-delete width="16" /></div>
               </el-tooltip>
             </div>
           </div>
@@ -46,17 +41,15 @@
         <el-button v-show="state.mode === 'image' && state.innerElement.backgroundImage" class="btn-wrap" @click="shiftOut">{{ $t('settings.pageStyle.detachToLayer') }}</el-button>
       </el-collapse-item>
     </el-collapse>
-    <createDesign ref="sizeEditRef" :params="state.innerElement" />
   </div>
 </template>
 
 <script lang="ts" setup>
 // 画布组件样式
 // const NAME = 'page-style'
-import { nextTick, onMounted, reactive, watch, ref, Ref } from 'vue'
+import { nextTick, onMounted, reactive, watch } from 'vue'
 import colorSelect, { colorChangeData } from '@/components/modules/settings/colorSelect.vue'
 import uploader, { TUploadDoneData } from '@/components/common/Uploader/index.vue'
-import api from '@/api'
 import _dl from '@/common/methods/download'
 import Tabs from '@palxp/color-picker/comps/Tabs.vue'
 import TabPanel from '@palxp/color-picker/comps/TabPanel.vue'
@@ -65,8 +58,6 @@ import { TPageState } from '@/store/design/canvas/d'
 import { storeToRefs } from 'pinia'
 import { Delete as iconDelete, Download as iconDownload } from '@element-plus/icons-vue'
 import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
-import sizeEditor from '@/components/business/create-design/sizeEditor.vue'
-import createDesign from '@/components/business/create-design'
 
 type TBgMode = 'color' | 'image'
 
@@ -93,7 +84,6 @@ const state = reactive<TState>({
   modes: ['color', 'image'],
   showBgLib: false,
 })
-const sizeEditRef: Ref<typeof createDesign | null> = ref(null)
 // const { dActiveElement } = useSetupMapGetters(['dActiveElement'])
 const { dActiveElement } = storeToRefs(widgetStore)
 let _localTempBG: string | null = null
@@ -200,9 +190,6 @@ async function shiftOut() {
 }
 
 // 打开
-function openSizeEdit() {
-  sizeEditRef.value?.open()
-}
 </script>
 
 <style lang="less" scoped>

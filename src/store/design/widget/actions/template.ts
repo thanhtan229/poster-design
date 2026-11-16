@@ -18,9 +18,13 @@ export function setTemplate(store: TWidgetStore, allWidgets: TdWidgetData[]) {
   // const historyStore = useHistoryStore()
   const canvasStore = useCanvasStore()
   const widgetStore = useWidgetStore()
-  const { width: dPageWidth, height: dPageHeight } = canvasStore.dPage
-
-  constrainGroupToCanvas(allWidgets, dPageWidth, dPageHeight)
+  // [TINIX] No constrainGroupToCanvas here: setTemplate loads a WHOLE-PAGE template whose
+  // layers are already in that page's coordinates. Shrinking the whole template whenever one
+  // layer bleeds off the page (common for PSD imports) — and against the *previous* page size,
+  // since callers set dPage afterwards — scaled every layer down (e.g. 937px text → 204px).
+  // Inserting a component group still goes through addGroup(), which keeps the constraint.
+  void constrainGroupToCanvas
+  void canvasStore.dPage
 
   allWidgets.forEach((item) => {
     Number(item.uuid) < 0 && (item.uuid = nanoid()) // 重设id
