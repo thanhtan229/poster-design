@@ -8,6 +8,7 @@
  <button type="button" data-open-font-review :disabled="loading||disabled" @click="reviewDialog?.open()">{{$t('tinix.ui.visualFont.reviewTitle')}}</button>
  <p v-if="region.fontReview" data-font-reviewed role="status">{{$t('tinix.ui.visualFont.reviewSaved')}} · {{region.fontReview.family}}</p>
  <FontReviewDialog ref="reviewDialog" :reference="reference" :region="region" :disabled="loading||disabled||region.fontLocked" @confirmed="confirmReview" @feedback="recordFeedback"/>
+ <details v-if="region.visualFontMatch.processedPreview"><summary>Xem chữ sau xử lý tương phản</summary><p>Kiểm tra dấu và nét mảnh; ảnh này chỉ để tham khảo.</p><img class="reference-crop" :src="region.visualFontMatch.processedPreview" alt="Chữ sau xử lý tương phản"></details>
  <img class="reference-crop" :src="region.visualFontMatch.referenceCrop" :alt="$t('tinix.ui.visualFont.crop')">
  <p class="tx-hint">{{$t('tinix.ui.visualFont.confidence')}}: {{Math.round(region.visualFontMatch.confidence*100)}}% · {{region.visualFontMatch.reason}}</p>
  <p v-if="region.visualFontMatch.needsReview" class="tx-hint" role="status">{{$t('tinix.ui.visualFont.review')}}</p>

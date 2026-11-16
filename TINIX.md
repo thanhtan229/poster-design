@@ -168,3 +168,16 @@ Kiểm tra bổ sung đã đạt: điều hướng bằng bàn phím, xuất JSO
 Xác minh cuối: build frontend đạt; TypeScript service đạt; **16/16 nhóm kiểm thử offline đạt**. Kiểm thử màn hình duyệt trên app chính đạt (hủy/xác nhận, tải font lỗi, bàn phím, lịch sử JSON, lỗi dung lượng lưu trữ, cửa sổ hẹp, vùng cắt, khóa và giữ font khi lỗi). Trang báo cáo offline cũng chọn/xuất được đánh giá JSON. Kiểm thử thực tế trên cổng 7001 dùng lại kết quả AI của mẫu THURSDAY, chọn Montserrat 500 với giãn chữ 3%, lưu/mở lại thiết kế QA **53**, giữ đúng thông số và xuất PNG thành công; artifact ở `.runtime/font-review-app/review.png`, `reopened.png`, `export.png`. Nhãn đánh giá do automation QA tạo không nhập vào bộ duyệt con người.
 
 Server chính đã khởi động lại và xác minh `/` cùng `/design/list` trả HTTP 200. Cổng QA 7003 đã tắt.
+
+## Tách chữ phục vụ đo font (2026-11-16)
+
+`font-extract.ts` trừ nền sáng/tối cục bộ bằng trung bình vùng lân cận, tạo mặt nạ chữ đen trên trắng. Không xóa thành phần nhỏ để giữ dấu và nét rời. Mặt nạ này được đưa trực tiếp vào `fontShape` thay cho ảnh crop gốc; toàn bộ lượt scan và tinh chỉnh ứng viên dùng cùng mô tả tham chiếu đã tách. Ảnh gốc vẫn dùng cho AI đối chiếu; không thay đổi ảnh người dùng.
+
+API trả `processedPreview`, `shapeQuality` và thông tin `extraction` (phương pháp, tỷ lệ mực, biến thiên viền, vùng sử dụng được). Mở phần xem chữ sau xử lý tương phản để kiểm tra mất nét/dấu. Biến thiên nền mạnh, dưới bốn ký tự hoặc mặt nạ gần rỗng làm giảm trọng số hình dáng; khi chất lượng dưới 0.75 luôn yêu cầu duyệt, dù AI tin cậy cao. Đây là heuristic, không xác minh font gốc; nền ảnh có chi tiết vẫn có thể tạo mặt nạ sai.
+
+Kiểm thử có nền gradient mô phỏng, hai cực sáng/tối, vùng trắng, hạ trọng số chất lượng thấp và chặn tự áp dụng. Kết quả bộ 22 ảnh thực tế mới được lưu riêng tại `.runtime/font-extract-results/`, giữ nguyên mốc `.runtime/font-real-results/`. Không có nhãn font gốc hoặc duyệt con người thì không tính độ chính xác Top 1/Top 3.
+
+
+Lượt đo mới hoàn tất 22/22 ca, không lỗi; 13 vùng có chất lượng dưới 0.75. Không ca nào được tự áp dụng sau các kiểm tra bất đồng/chất lượng. Các ứng viên đầu vẫn có thể khác phong cách, nên chưa chứng minh tăng độ chính xác. Báo cáo đối chiếu `.runtime/font-extract-results/COMPARISON.md` ghi ứng viên trước/sau, chất lượng và trọng số hình dáng. Không có ground truth hoặc đánh giá người dùng thì Top 1/Top 3 vẫn null. Bộ đo không tự sinh nhãn duyệt con người.
+
+Kiểm thử tách nền, hai cực sáng/tối, vùng trắng và giảm trọng số đã đạt; 16/16 nhóm hồi quy, build frontend và TypeScript service đạt. Kiểm thử app dùng kết quả mới của THURSDAY đã xác nhận có preview xử lý, duyệt Montserrat 500/giãn 3%, lưu/mở lại và xuất PNG tại `.runtime/font-extract-app/export.png`. Bố cục một khối dùng fixture để kiểm tra riêng luồng font; dữ liệu so khớp là kết quả API thật đã lưu.

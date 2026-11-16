@@ -1,3 +1,4 @@
+import {extractText} from '../../service/src/tinix/ai/font-extract';
 import assert from 'node:assert/strict';
 import { cropBox, shortlistFonts, validateVisualRanking } from '../../service/src/tinix/ai/font-match';
 import { fontShape, shapeDistance } from '../../service/src/tinix/ai/font-shape';
@@ -7,6 +8,8 @@ const conflicting=fuseFontRanks(rankPool,['C2','C3','C1'],['C2','C1','C3'],.99);
 assert.equal(conflicting.ranked[0].key,'C1','Strong shape evidence survives AI ranking');
 assert.equal(conflicting.canAutoApply,false,'AI confidence cannot override conflicting evidence');
 assert.equal(conflicting.needsReview,true);
+assert.equal(fuseFontRanks(rankPool,['C1'],['C1'],.9,.3).canAutoApply,false);
+assert.equal(fuseFontRanks(rankPool,['C1'],['C1'],.9,.3).geometryWeight,.15);
 assert.equal(fuseFontRanks(rankPool,['C1','C2'],['C1','C2'],.9).canAutoApply,true);
 assert.equal(fuseFontRanks(rankPool,['C1','C2'],['C1','C2'],.3).canAutoApply,false);
 assert.equal(fuseFontRanks([{key:'C1',score:.6},{key:'C2',score:.61}],['C1','C2'],['C1','C2'],.99).canAutoApply,false,'Poor crop requires review even on agreement');
@@ -98,3 +101,8 @@ assert.deepEqual(cropFromPoints({x:.8,y:.7},{x:.2,y:.1}),{x:.2,y:.1,w:.600000000
 assert.deepEqual(clampTextCrop({x:-1,y:.9,w:3,h:4}),{x:0,y:.9,w:1,h:.09999999999999998})
 assert.throws(()=>validateVisualRanking({ranking:['C999']},['C1']))
 console.log('PASS reversed crop selection and boundary clamping')
+
+const pixels=new Uint8Array(120*40*4);for(let y=0;y<40;y++)for(let x=0;x<120;x++){const i=(y*120+x)*4,v=(x>20&&x<25&&y>5&&y<30)?20:180+x/3;pixels[i]=pixels[i+1]=pixels[i+2]=v;pixels[i+3]=255}
+const extracted=extractText(pixels,120,40);assert(extracted.usable);assert.equal(extracted.rgba[(15*120+22)*4],0);assert.equal(extracted.rgba[(15*120+100)*4],255);
+const inverse=new Uint8Array(pixels);for(let i=0;i<inverse.length;i+=4)for(let c=0;c<3;c++)inverse[i+c]=255-pixels[i+c];assert.equal(extractText(inverse,120,40).rgba[(15*120+22)*4],0);
+assert.equal(extractText(new Uint8Array(100*4).fill(255),10,10).usable,false);console.log('PASS local-background subtraction, both polarities, blank rejection');
