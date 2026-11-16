@@ -75,7 +75,7 @@ import designBoard from '@/components/modules/layout/designBoard/index.vue'
 import zoomControl from '@/components/modules/layout/zoomControl/index.vue'
 import HeaderOptions, { TEmitChangeData } from './components/UploadTemplate.vue'
 import ProgressLoading from '@/components/common/ProgressLoading/index.vue'
-import useWorker from '@/utils/plugins/webWorker'
+import WebWorker from '@/utils/plugins/webWorker'
 import psdWorker from '../utils/plugins/worker/loadPSD.worker.ts?worker'
 // import { processPSD2Page } from '@/utils/plugins/psd'
 import { createBase64 } from '@/utils/plugins/psd'
@@ -119,7 +119,7 @@ const zoomControlRef = ref<typeof zoomControl | null>()
 // 管理员守卫：导入 PSD 功能已移至管理后台，仅管理员可访问
 
 let loading: ReturnType<typeof useLoading> | null = null
-const myWorker = new useWorker(psdWorker)
+const myWorker = new WebWorker(psdWorker)
 
 onMounted(async () => {
   groupStore.initGroupJson(JSON.stringify(wGroupSetting))

@@ -10,14 +10,14 @@
  */
 import { onMounted } from 'vue'
 // import WebWorker from '@/utils/plugins/webWorker'
-import historyFactory from '@/utils/widgets/diffLayouts'
+import HistoryFactory from '@/utils/widgets/diffLayouts'
 import { useHistoryStore, useWidgetStore } from '@/store'
 
 const blackClass: string[] = ['operation-item', 'icon-undo', 'icon-redo']
 const whiteKey: string[] = ['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', 'Backspace', 'Delete', 'v']
 
 // const historyWorker = new WebWorker('history')
-const diffLayouts = new historyFactory()
+const diffLayouts = new HistoryFactory()
 
 let processing = false
 let historyTimer: any = null

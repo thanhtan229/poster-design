@@ -15,7 +15,7 @@
       <ul v-if="data && Array.isArray(data)" class="list-ul">
         <li
           v-for="listItem in data" :key="typeof listItem === 'object' ? listItem.alias : listItem"
-          :class="{ active: listItem == state.innerValue, 'has-preview': listItem.preview }"
+          :class="{ active: String(listItem) === String(state.innerValue), 'has-preview': listItem.preview }"
           @click="selectItem(listItem)"
         >
           <!-- [TINIX] có ảnh xem trước: hiện tên font (nhỏ) + dòng chữ mẫu viết bằng chính font đó -->
@@ -31,7 +31,7 @@
         <el-tabs v-model="state.activeTab">
           <el-tab-pane v-for="(val, key, i) in data" :key="'tab' + i" :label="key" :name="key">
             <ul class="list-ul">
-              <li v-for="listItem in data[key]" :key="typeof listItem === 'object' ? listItem.alias : listItem" :class="{ active: listItem == state.innerValue, 'has-preview': listItem.preview }" @click="selectItem(listItem)">
+              <li v-for="listItem in data[key]" :key="typeof listItem === 'object' ? listItem.alias : listItem" :class="{ active: String(listItem) === String(state.innerValue), 'has-preview': listItem.preview }" @click="selectItem(listItem)">
                 <template v-if="listItem.preview">
                   <span class="font-name">{{ typeof listItem === 'object' ? listItem.alias : listItem }}</span>
                   <img class="preview" :src="listItem.preview" alt="preview" loading="lazy" />
