@@ -86,10 +86,10 @@ export async function matchFontFromReference(input: MatchInput) {
         for(let offset=0;offset<fonts.length;offset+=12){
           const payload=fonts.slice(offset,offset+12).map(payloadOf);
           const batch:any[]=await page.evaluate(async(data:any)=>{const out:any[]=[];
-            for(const font of data.fonts){const registered:FontFace[]=[];
+            for(const font of data.fonts){const registered:any[]=[];
               try{
                 const family='scan-'+font.index;
-                for(const d of font.descriptors){const face=new FontFace(family,`url(${JSON.stringify(font.source)})`,d);await face.load();document.fonts.add(face);registered.push(face)}
+                for(const d of font.descriptors){const face=new (window as any).FontFace(family,`url(${JSON.stringify(font.source)})`,d);await face.load();(document as any).fonts.add(face);registered.push(face)}
                 const variable=font.minWeight!==undefined;
                 const weights=variable?[font.weight,...[100,200,300,400,500,600,700,800,900].filter(v=>v>=font.minWeight&&v<=font.maxWeight)]:[font.weight];
                 for(const weight of Array.from(new Set(weights))){
@@ -101,7 +101,7 @@ export async function matchFontFromReference(input: MatchInput) {
                   const shape=(window as any).fontShape(ctx.getImageData(0,0,canvas.width,canvas.height).data,canvas.width,canvas.height);
                   out.push({index:font.index,id:font.id,weight,italic:font.italic,shape});
                 }
-              }catch{}finally{for(const face of registered)document.fonts.delete(face)}
+              }catch{}finally{for(const face of registered)(document as any).fonts.delete(face)}
             }return out
           },{fonts:payload,text:observed});
           for(const item of batch){item.score=shapeDistance(referenceShape,item.shape);delete item.shape;measured.push(item)}
@@ -112,10 +112,10 @@ export async function matchFontFromReference(input: MatchInput) {
         const chosen:any[]=options.slice(0,10).map(c=>({...c}));
         for(const font of fonts.slice(0,8)){if(chosen.length>=14)break;if(chosen.some(c=>c.id===font.id))continue;const best=bestByFamily.get(font.id);if(best)chosen.push({...best})}
         chosen.forEach((c,i)=>c.key='C'+(i+1));
-        for(const c of chosen){const f=fonts.find(f=>f.id===c.id)!;await page.evaluate(async(font:any)=>{for(const d of font.descriptors){const face=new FontFace('candidate-'+font.index,`url(${JSON.stringify(font.source)})`,d);await face.load();document.fonts.add(face)}},payloadOf(f))}
+        for(const c of chosen){const f=fonts.find(f=>f.id===c.id)!;await page.evaluate(async(font:any)=>{for(const d of font.descriptors){const face=new (window as any).FontFace('candidate-'+font.index,`url(${JSON.stringify(font.source)})`,d);await face.load();(document as any).fonts.add(face)}},payloadOf(f))}
         if (!chosen.length)
             throw Error('Không render được các font ứng viên.');
-        await page.evaluate((data: any) => { document.body.replaceChildren(); document.body.style.cssText = 'margin:0;background:white;color:#111;font:16px Arial'; for (const c of data.options) {
+        await page.evaluate((data: any) => { (document.body as any).replaceChildren(); document.body.style.cssText = 'margin:0;background:white;color:#111;font:16px Arial'; for (const c of data.options) {
             const row = document.createElement('div');
             row.id = c.key;
             row.style.cssText = 'height:100px;display:flex;align-items:center;gap:15px;padding:8px 18px;box-sizing:border-box;border-bottom:1px solid #ddd';
@@ -151,9 +151,9 @@ export async function matchFontFromReference(input: MatchInput) {
                 for(const weight of data.weights)for(const italic of data.styles)for(const spacing of [-2,-1,0,1,2,3,4]){
                     const lines=data.text.split('\n'),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d')!;
                     const css=`${italic?'italic':'normal'} ${weight} 72px "candidate-${data.index}"`;
-                    ctx.font=css;ctx.letterSpacing=spacing+'px';
+                    ctx.font=css;(ctx as any).letterSpacing=spacing+'px';
                     canvas.width=Math.min(7000,Math.ceil(Math.max(...lines.map((line:string)=>ctx.measureText(line).width)))+120);canvas.height=Math.min(1600,lines.length*110+80);
-                    ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#111';ctx.font=css;ctx.letterSpacing=spacing+'px';ctx.textBaseline='top';lines.forEach((line:string,i:number)=>ctx.fillText(line,45,20+i*110));
+                    ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#111';ctx.font=css;(ctx as any).letterSpacing=spacing+'px';ctx.textBaseline='top';lines.forEach((line:string,i:number)=>ctx.fillText(line,45,20+i*110));
                     out.push({weight,italic,letterSpacing:spacing/72*100,shape:(window as any).fontShape(ctx.getImageData(0,0,canvas.width,canvas.height).data,canvas.width,canvas.height)});
                 }return out;
             },{index:c.index,text:observed,weights,styles:fontDescriptors(f.profile||null).map(d=>d.style==='italic')});
@@ -164,7 +164,7 @@ export async function matchFontFromReference(input: MatchInput) {
         let detailed:any=null,detailPreview='';
         if(finalists.length>1){
             const glyphs=Array.from(new Set(Array.from(observed).filter(c=>! /\s/.test(c)))).slice(0,16).join(' ');
-            await page.evaluate((data:any)=>{document.body.replaceChildren();document.body.style.cssText='margin:0;background:white;color:#111;font:16px Arial';
+            await page.evaluate((data:any)=>{(document.body as any).replaceChildren();document.body.style.cssText='margin:0;background:white;color:#111;font:16px Arial';
                 for(const c of data.options){const row=document.createElement('div');row.id='detail-'+c.key;row.style.cssText='height:240px;padding:10px 20px;box-sizing:border-box;border-bottom:1px solid #ddd;overflow:hidden';
                     const label=document.createElement('div');label.textContent=c.key;row.append(label);
                     for(const [text,size,height] of [[data.text,64,110],[data.glyphs,82,92]]){
@@ -181,7 +181,7 @@ export async function matchFontFromReference(input: MatchInput) {
         const confidence=Math.min(compared.data.confidence,detailed?.data.confidence??1);
         const fusion=fuseFontRanks(chosen,compared.data.ranking,detailed?.data.ranking||[],confidence,quality);
         // Re-render final previews after refinement, so the UI and exported style agree.
-        await page.evaluate((data:any)=>{document.body.replaceChildren();for(const c of data.options){const row=document.createElement('div');row.id=c.key;row.style.cssText='height:120px;width:1200px;padding:12px;box-sizing:border-box;display:flex;align-items:center;background:white;color:#111';
+        await page.evaluate((data:any)=>{(document.body as any).replaceChildren();for(const c of data.options){const row=document.createElement('div');row.id=c.key;row.style.cssText='height:120px;width:1200px;padding:12px;box-sizing:border-box;display:flex;align-items:center;background:white;color:#111';
             const span=document.createElement('span');span.textContent=data.text;span.style.cssText=`white-space:pre;flex:none;font-family:"candidate-${c.index}";font-size:64px;font-weight:${c.weight};font-style:${c.italic?'italic':'normal'};letter-spacing:${(c.letterSpacing||0)/100*64}px;line-height:1.1;transform-origin:left center`;row.append(span);document.body.append(row);const r=span.getBoundingClientRect();span.style.transform=`scale(${Math.min(1,1170/Math.max(1,r.width),96/Math.max(1,r.height))})`;
         }},{options:chosen,text:observed});
         const candidates=[];

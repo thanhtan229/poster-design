@@ -1,0 +1,62 @@
+# [TINIX] BẢN CI CHƯA BẬT — token đẩy mã (PAT chỉ có quyền `repo`) không được phép tạo file trong .github/workflows/.
+# Để bật CI: chuyển file này thành .github/workflows/ci.yml bằng một trong hai cách:
+#   1) Giao diện GitHub: Add file > Create new file > .github/workflows/ci.yml, dán nội dung bên dưới; hoặc
+#   2) Cấp scope `workflow` cho token rồi: git mv .github/ci.yml.example .github/workflows/ci.yml && git push
+# Các bước đã mô phỏng thành công trên bản clone sạch (npm ci, lint, vue-tsc, typecheck service, vite build, tinix:test 21/21),
+# nhưng CHƯA chạy trên runner GitHub thật.
+
+# [TINIX] Kiểm tra tự động cho mỗi PR vào main và mỗi lần push lên main/tinix.
+# Chạy trên Windows vì app này phát triển/dùng trên Windows (font, đường dẫn, better-sqlite3/sharp).
+# Các bước khớp CLAUDE.md ("ba cổng trước khi commit") cộng kiểm tra kiểu service và bộ kiểm thử offline.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, tinix]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      # Không tải Chromium (~170 MB): các bước dưới đây không cần trình duyệt.
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            service/package-lock.json
+
+      - name: Cài phụ thuộc (frontend + service)
+        run: |
+          npm ci
+          npm --prefix service ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Kiểm tra kiểu frontend (vue-tsc)
+        run: npx vue-tsc --noEmit
+
+      - name: Kiểm tra kiểu service
+        run: npm run tinix:typecheck-service
+
+      - name: Build frontend
+        run: npx vite build
+
+      - name: Kiểm thử offline
+        run: npm run tinix:test
