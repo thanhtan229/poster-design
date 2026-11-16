@@ -295,6 +295,8 @@ Tài nguyên ghi vào `service/static/collage/<name>/`. Mặc định `--photos 
 | `label` | `center`, `size`, `rotate`, `shape` (`rect`, `ribbon` + `notch`, `cutout`), `color`, `text`, `font` (tên trong kho font), `textInk [x0,y0,x1,y1]` (vùng chứa chữ để đo mực), `textColor`, `fontSize` (bỏ trống để tự khớp), `letterSpacing`, `lineHeight` |
 | `sticker` | `box [x0,y0,x1,y1]`; `keep` (`cutout` = tách nền BiRefNet, mặc định; `box` = giữ nguyên vùng chữ nhật, dùng khi tách nền cắt hụt); `mask` (với `keep: box`) |
 
+`background.pattern: "reference"` lấy hoa văn nền (giấy hoa văn, họa tiết) từ chính ảnh mẫu: xóa vùng các phần tử (nới 10 px) rồi vá lỗ bằng đẩy-kéo (mịn, không tái tạo họa tiết trong lỗ vì chỗ đó bị phần tử che); bỏ qua dò trái tim. Đo trên mẫu Luna (ảnh giữ chỗ): MAE 45,7 → 38,8, SSIM 0,517 → 0,572; mẫu Smile: MAE 58,1 → 54,4, SSIM 0,519 → 0,553. Nền nhúng thành tệp `background.jpg` — chỉ vùng không có phần tử mới giữ nội dung ảnh mẫu; khung xoay có hộp bao rộng hơn khung nên vùng thừa bị vá mịn. Viền ngoài của ảnh mẫu (khung hộp, tường) cũng bị chép vào nền nếu nằm trong ảnh.
+
 Toạ độ trong spec là **pixel của ảnh tham chiếu**. Spec sai hoặc font không có trong kho báo lỗi rõ (kèm gợi ý tên font gần giống) và không ghi tệp đầu ra.
 
 ### Kết quả trên trang "Smile, Darling" và các điều đã học
