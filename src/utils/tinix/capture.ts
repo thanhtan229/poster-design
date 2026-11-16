@@ -24,7 +24,7 @@ export async function capturePage(opts: { maxEdge?: number; hideText?: boolean }
       if (!c) return
       c.style.transform = 'none'
       // selection/hover chrome must not end up in the picture
-      doc.querySelectorAll('.moveable-control-box, .shelter, .shelter-bg, .line-guides').forEach((n) => ((n as HTMLElement).style.display = 'none'))
+      doc.querySelectorAll('.moveable-control-box, .shelter, .shelter-bg, .line-guides, .print-unit-overlays').forEach((n) => ((n as HTMLElement).style.display = 'none'))
       if (opts.hideText) c.querySelectorAll('.w-text').forEach((n) => ((n as HTMLElement).style.visibility = 'hidden'))
     },
   })

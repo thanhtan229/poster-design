@@ -1,5 +1,73 @@
 # TinixPoster — hiệu ứng ảnh và nền liên kết
 
+## Cắt dán ảnh thật · bản đầu
+
+### Quản lý đơn khách
+
+Bấm **Đơn cắt dán** trên thanh trên để tìm tên khách, tiêu đề hoặc mã #ID; lọc trạng thái, xem ảnh đại diện/khổ in, mở thiết kế ở tab riêng và tải lại JPG trong danh sách bản khách đã duyệt. Trạng thái mặc định của đơn cũ là Đang làm. Chuyển **Đã duyệt** yêu cầu có bản khách đã duyệt; chuyển **Đã in** phải chọn cụ thể bản duyệt thuộc đơn; **Hoàn thành** yêu cầu đã ghi nhận bản in. Trạng thái được người làm cập nhật thủ công, không tự gửi duyệt hoặc tự in. Mở **Lịch sử trạng thái** để xem các lần chuyển và mã bản in; khi trở về trạng thái làm việc, lịch sử in trước vẫn còn.
+
+Thông tin trạng thái lưu trong `collage_orders`, lịch sử bất biến theo thao tác trong `collage_order_events`, cùng SQLite nên nằm trong backup DB. Không di chuyển/xóa thiết kế hay bản duyệt cũ. Kiểm tra `node scripts/tinix-orders-test.cjs` trên server thử cổng 7009.
+
+### Quản lý cụm trực quan
+
+Trong mục Cắt dán, phần **Cụm in và cắt nổi trên trang** nằm ngay đầu panel. Bấm tên để đánh dấu khung bao trên canvas; chọn ảnh trực tiếp trên canvas cũng chọn cụm tương ứng. Tick nhiều cụm rồi **Gộp cụm đã chọn** để xuất chung một mảnh, không thay đổi tọa độ hoặc nhóm thiết kế. Cụm ghép mặc định Cắt nổi nếu ít nhất một cụm nguồn là Cắt nổi; có thể đổi lại. Đổi tên cụm dùng `printName`, không đổi tên từng lớp. Chọn một cụm ghép rồi **Tách cụm in/cắt** để bỏ liên kết `printGroup`; nhóm thiết kế và lớp con vẫn giữ nguyên. Cách in, gộp/tách và đổi tên có hoàn tác và được lưu trong thiết kế, dùng chung với bộ xuất JPG.
+
+**Xem nền sạch trên canvas** chỉ tạm ẩn các cụm cắt nổi, không sửa `hidden`, không thay đổi thiết kế đã lưu hay bản khách đã duyệt. Có banner báo chế độ và nút Xem thành phẩm. Chuyển panel/trang hoặc mở lại thiết kế sẽ thoát chế độ này. Khung đánh dấu không tham gia xuất JPG; server dựng lại từ dữ liệu gốc theo `printRole`/`printGroup`, không chụp giao diện mô phỏng. `node scripts/tinix-print-groups-ui-test.cjs` kiểm tra chọn/đánh dấu, view không lưu, gộp/tách/đổi tên, vị trí không đổi, hoàn tác và mở lại.
+
+### Bản khách đã duyệt và in lại
+
+Trong hộp xuất: **Người làm đã xem file** chỉ cho phép tải bộ làm việc, không tự gắn trạng thái khách duyệt. Sau khi khách xác nhận đúng bộ JPG, tick riêng **Khách đã duyệt đúng bộ ảnh đang xem**, nhập ghi chú nếu cần rồi bấm **Lưu cố định bản khách đã duyệt**. Việc này ghi nhận xác nhận do người vận hành nhập; app không tự gửi ảnh hoặc thu thập phê duyệt từ khách.
+
+Mỗi lần duyệt tạo bản lưu riêng theo ID thiết kế, không ghi đè bản duyệt trước. Snapshot đầy đủ của nền/tờ cắt/thành phẩm, cấu hình dàn tờ, tên đơn, thời điểm UTC và hai xác nhận được lưu trong bảng `approved_prints`. JPG được sao chép từ chính cache ảnh đã xem, không render lại. Bản lưu không phụ thuộc file ảnh nguồn còn tồn tại để in lại; snapshot JSON vẫn giữ dữ liệu thiết kế/tài nguyên tham chiếu, không phải bản sao nhúng toàn bộ ảnh nguồn để chỉnh sửa offline.
+
+Nút **Bản khách đã duyệt** trên thanh trên tải danh sách cho thiết kế hiện tại, kèm thời điểm theo giờ máy và ghi chú; bấm xem hoặc tải lại bộ JPG. Mỗi file được kiểm tra SHA-256 trước khi trả về; thiếu/hỏng sẽ báo lỗi, tuyệt đối không âm thầm render thiết kế hiện tại. API không có thao tác sửa/xóa bản duyệt. Sửa thiết kế làm việc hoặc khởi động lại app không đổi JPG đã duyệt.
+
+Lưu trữ lâu dài: `service/data/approved-prints/<id>/` (JPG + snapshot.json) và `service/data/poster.db`. Không nằm trong cache dọn ảnh của thư viện. `npm run tinix:backup` đã bao gồm thư mục `approved-prints`; khi khôi phục cần đưa cả DB và thư mục này về `service/data/`. Sao lưu đầy đủ thư mục dữ liệu vẫn cần thiết để phòng hỏng ổ đĩa.
+
+Kiểm thử `node scripts/tinix-approved-print-test.cjs`: duyệt riêng, chặn bộ chưa đầy đủ, retry không nhân đôi, thay thiết kế/xóa job tạm không đổi bytes và phát hiện file hỏng. UI test kiểm tra duyệt, xem lịch sử và byte JPG trong lịch sử khớp bộ đã xem.
+
+### Xuất bộ JPG cho cắt thủ công
+
+**Cập nhật khổ in và duyệt trước khi tải:** mọi JPG (nền, tất cả tờ chi tiết cắt, thành phẩm) dùng chính chiều rộng/cao pixel và DPI của trang thành phẩm; không còn lựa chọn A4/A3/khổ riêng. Chỉ chỉnh lề và khoảng cách; nếu thiếu chỗ tự thêm tờ cùng khổ. Mảnh không vừa sẽ yêu cầu giảm lề hoặc sửa cụm, không tự thu nhỏ.
+
+Nút **Kiểm tra và tạo ảnh xem trước** lưu thiết kế, kiểm tra nguồn ảnh/font, cảnh báo độ phân giải hiệu dụng dưới 150 DPI, chữ dưới 8 pt, mảnh nhỏ hơn 5 mm và nội dung vượt trang. Lỗi tài nguyên hoặc chữ tràn khung khi render sẽ chặn xuất. Khi thành công, hộp xuất hiển thị JPG thật của từng file, bấm ảnh để xem lớn. Đánh dấu đã xem rồi **Tải bộ JPG (ZIP)**; ZIP chứa đúng blob JPG đã duyệt, không render lại. Thay đổi thiết kế hoặc thiết lập sau khi tạo preview sẽ vô hiệu xác nhận; cần tạo lại preview cho thiết lập mới. Đóng hộp giải phóng URL xem trước. Không thay thế việc kiểm tra bản in vật lý hoặc kiểm định màu máy in.
+
+Kiểm tra bổ sung: `node scripts/tinix-print-preflight-test.cjs`, planner test, API test và UI test kiểm chứng mọi ảnh cùng khổ, duyệt trước khi tải và byte JPG trong ZIP giống ảnh xem trước.
+
+Luồng hiện tại thay cho in hai bản giống nhau: **Xuất bộ JPG cắt dán** trên thanh trên → xác nhận khổ thành phẩm, chỉnh lề và khoảng cách → chọn từng cụm **In trên nền** hoặc **Cắt nổi** → **Kiểm tra và tạo ảnh xem trước** → duyệt từng JPG → **Tải bộ JPG (ZIP)**.
+
+ZIP gồm `01_nen.jpg` (nền sạch chỉ giữ cụm in nền), `02_chi_tiet_cat_01.jpg`… (các mảnh đầy đủ trên giấy trắng), `03_thanh_pham.jpg` (ảnh hoàn thiện để duyệt/lắp). App không tự thu nhỏ hoặc xoay mảnh; dàn theo khung bao có tính góc xoay, chừa lề/khoảng cách và thêm tờ khi thiếu chỗ. Mảnh quá lớn sẽ yêu cầu giảm lề hoặc điều chỉnh cụm trong thiết kế. Mọi file ghi cùng DPI nguồn, kích thước mảnh giữ nguyên pixel theo trang nguồn. In đúng kích thước / 100%, không Fit to Page.
+
+`printRole` lưu trên lớp; `printGroup` ghép khung và ảnh thành một mảnh trong mẫu mới. Nhóm thông thường và các lớp con cũng là một cụm. Mẫu cũ mặc định chủ thể có `cutoutEdit` và lớp tên chứa “cắt nổi” là mảnh nổi, còn lại in nền; có thể đổi trong hộp xuất. Với mẫu cũ chưa liên kết khung/ảnh, nhóm các lớp cần cắt chung bằng công cụ nhóm của editor trước khi xuất. Ảnh nền phải là tài nguyên đầy đủ sẵn có, không suy diễn hay sinh bù phần nền bị che.
+
+Xuất sẽ lưu thiết kế một lần rồi tạo snapshot độc lập trên server; nền, tờ cắt và ảnh hoàn thiện đều dựng từ snapshot này, kể cả khi thiết kế được sửa sau đó. Snapshot giải phóng sau xuất hoặc hết hạn 30 phút. Xuất tuần tự, đóng gói khi toàn bộ JPG thành công; không tải bộ thiếu file.
+
+Kiểm thử: `node scripts/tinix-collage-print-test.cjs` (39 tình huống dàn tờ và các bất biến), `node scripts/tinix-collage-print-api-test.cjs` (tạo thiết kế QA từ mẫu 39, xuất nhiều tờ và kiểm tra snapshot), `node scripts/tinix-collage-print-ui-test.cjs` (thiết kế QA 41, chọn cụm/giấy và tải ZIP qua UI). Bản in vật lý cần được kiểm tra trên máy in của người dùng.
+
+### Duyệt và sửa tách nền
+
+Ổn định WebView2: xem thử viền dùng ảnh tạm cạnh dài tối đa 700 px, thumbnail cao 100 px; ảnh in giữ nguyên độ phân giải nguồn. Canvas sửa dùng CPU backing và được tái sử dụng khi rê cọ. Hoàn tác giới hạn ngân sách khoảng 64 MB (tối thiểu một nét), canvas/bitmap được giải phóng khi đóng hoặc hoàn tất xử lý. Giới hạn canvas sửa 32 triệu pixel, 12000 px/cạnh; vượt giới hạn báo lỗi để chọn ảnh nhỏ hơn. Đây là giảm tải phía app, không phải kết luận nguyên nhân mọi lỗi WebView2 `0x80000003`.
+
+Sau khi bấm tạo trang, cửa sổ duyệt mở trước khi dựng: chọn nền sáng/tối/ô caro, phóng 100–300%, cọ Xóa hoặc Giữ (khôi phục từ ảnh nguồn), hoàn tác tối đa 8 nét và đặt lại mặt nạ lúc mở. Viền trắng chỉnh 0–5 mm; hình nhỏ bên dưới cho xem riêng kết quả có viền. Nền kiểm tra không xuất ra JPG.
+
+Ảnh nguồn, alpha đã sửa, ảnh chủ thể và ảnh viền lưu thành tài nguyên độc lập. `cutoutEdit` giữ URL nguồn/alpha, thông số mm và khung nguồn; `cutoutBorderUrl` hiển thị bên dưới ảnh cùng một widget để kéo/đổi kích thước cùng nhau. Chọn **Sửa chủ thể trên trang** trong mục Cắt dán để sửa tiếp sau khi lưu/mở lại. Thay viền hoặc sửa mặt nạ không gọi lại BiRefNet. Viền tính theo khổ mẫu 30 × 20 cm / 300 DPI, với chỗ trống cố định cho tối đa 5 mm; khi sửa trên trang dùng tỷ lệ hiện tại để tính viền. Nếu đổi khổ hoặc kéo giãn ảnh, mở sửa và áp dụng lại viền để xác lập độ dày vật lý mới. Ảnh từ phiên bản cũ đã gộp viền không có dữ liệu nguồn này; tạo lại trang để dùng tính năng sửa riêng.
+
+Mở mục **Cắt dán** ở thanh trái. Chọn mẫu, nhập **Tên khách / mã đơn**, chọn ảnh chính và 0–2 ảnh phụ từ thư viện hoặc file trên máy. Bấm **Tạo thiết kế cho khách mới**, duyệt mặt nạ/viền, bấm **Dùng kết quả này**. App luôn tạo bản ghi thiết kế mới (không gửi id cũ), lưu tên khách và phiên bản mẫu vào dữ liệu trang. Bấm **Mở thiết kế của khách** để mở tab riêng, chỉnh ảnh/chữ, Lưu và Xuất JPG. Thiết kế đang mở, kể cả phần chưa lưu, không bị thay đổi bởi thao tác tạo khách mới.
+
+Tài nguyên, khổ in, giới hạn ảnh, vị trí khung/chủ thể, sticker, vùng chữ và font của mẫu nằm trong `src/assets/data/collage-templates.json`. Bộ dựng dùng cấu hình này và tạo UUID/lớp mới cho mỗi khách; không sinh ảnh lại và không sửa cấu hình mẫu. Để thay riêng một ảnh đã đặt: chọn ảnh trên canvas, vào Cắt dán → **Thay ảnh đang chọn từ thư viện**. Ảnh phụ giữ nguyên khung; chủ thể mới đi qua bước tách nền/duyệt và căn lại trong vùng hiện có, các lớp khác giữ nguyên.
+
+Kiểm tra tách biệt khách, chọn thư viện, dùng lại tài nguyên, thay ảnh và JPG: `node scripts/tinix-collage-customer-test.cjs` trên app cổng 7001. Test dùng ảnh local có sẵn, giữ nguyên thiết kế mẫu 28 và tạo hai thiết kế QA khách A/B để kiểm chứng.
+
+Mặc định **Chất lượng cao · BiRefNet / RTX 3090**: Python worker chạy CUDA FP16, model nạp một lần và tự nhả sau hai phút không xử lý. Chế độ **Nhanh · U²-Net** tiếp tục chạy ONNX trong trình duyệt. Không gọi dịch vụ sinh ảnh hoặc tải model trong lúc xử lý khách. PNG đã tách nền có tùy chọn bỏ qua suy luận; cả hai cách đều thêm viền trắng. Trong cùng phiên, dựng lại từ cùng ảnh chính và chế độ sẽ dùng kết quả đã xử lý. Nên chọn ảnh một người rõ ràng; ảnh nhiều người hiện chưa có bước chọn riêng một người.
+
+Cài lần đầu: `powershell -ExecutionPolicy Bypass -File scripts/setup-birefnet.ps1`. Môi trường Python riêng ở `.runtime/birefnet-venv`; trọng số/code chính thức tại `.runtime/birefnet-model`, revision `e2bf8e4460fc8fa32bba5ea4d94b3233d367b0e4` của `ZhengPeng7/BiRefNet` (MIT). PyTorch 2.6.0 + CUDA 12.4 / torchvision 0.21.0, transformers 4.48.3. Có thể đặt `TINIX_BIREFNET_PYTHON` trỏ tới Python khác tương thích. GPU không khả dụng sẽ báo lỗi, không âm thầm chuyển CPU hoặc U²-Net.
+
+API `POST /api/tinix/cutout/birefnet` nhận một multipart `file` tối đa 40 MB, trả PNG có alpha ở kích thước nguồn sau xoay EXIF. Giữ RGB nguồn, chỉ dự đoán alpha ở 1024 px rồi nội suy lên kích thước gốc. Cache tại `service/static/cutouts` theo SHA-256 ảnh + revision + thông số; một GPU job tại một thời điểm, tác vụ khác nhận 409 để thử lại. Worker đọc trọng số hoàn toàn offline. Ảnh cache/thiết kế đã lưu vẫn dùng được sau restart. Kiểm tra API/cache/lỗi và phục hồi: `node scripts/tinix-birefnet-test.cjs` trên app đang chạy (mặc định cổng 7009, đổi bằng `TINIX_APP_URL`).
+
+Nút **Xuất JPG để in** lưu thiết kế rồi xuất trang hiện tại với ảnh đầy đủ, JPEG chất lượng 100/4:4:4, nền được ghép kín và mật độ DPI của trang. Mẫu mặc định 3543 × 2362 px / 300 DPI, tương ứng khoảng 30 × 20 cm. Nút này xuất ảnh hoàn thiện đơn lẻ; để sản xuất cắt dán hãy dùng Xuất bộ JPG theo hướng dẫn ở trên. Không xuất PDF, SVG đường cắt hoặc file hướng dẫn riêng trong luồng này. Những định dạng của editor thông thường vẫn được giữ.
+
+Kiểm tra: `npm run v-build-hard`, `npm run tinix:test`. Kiểm tra trọn luồng với ba ảnh local có sẵn: `$env:TINIX_APP_URL='http://127.0.0.1:7009'; node scripts/tinix-collage-smoke.cjs` (cần app chạy, tạo một thiết kế mẫu để duyệt và lưu JPG vào `.runtime/collage-print.jpg`). Chưa xác minh trên máy in/cắt giấy vật lý.
+
 ## Sử dụng
 
 Chọn một ảnh trên canvas, mở panel bên phải, mục **Hiệu ứng ảnh**.
@@ -135,6 +203,7 @@ Báo cáo so sánh 12 ca mới: `.runtime/font-quality-v3/REPORT.md`; dữ liệ
 
 Ảnh xuất: `.runtime/font-v3-main-export.png` và `.runtime/font-v3-tracking-export.png`. Server chính phục vụ tại `http://127.0.0.1:7001`; server QA cổng 7002 được tắt sau khi hoàn tất đo.
 
+
 ## Duyệt font trên ảnh mẫu thực tế (2026-11-16)
 
 Trong **Trợ lý AI → Dựng theo mẫu**, sau khi tìm font cho một khối, bấm **Duyệt và chỉnh font**. Màn hình mới đặt ảnh vùng chữ cạnh chữ render cùng nội dung mẫu; chuyển ứng viên bằng nút Trước/Sau hoặc phím ←/→ khi không nhập liệu. Có phóng xem 100/150/200%, độ đậm, kiểu nghiêng và giãn chữ (%). Font tĩnh chỉ dùng độ đậm/kiểu có thật; font biến thiên được chỉnh trong giới hạn hồ sơ. Preview tải tệp font thật; nếu tải lỗi, không cho xác nhận bằng font dự phòng.
@@ -167,7 +236,8 @@ Kiểm tra bổ sung đã đạt: điều hướng bằng bàn phím, xuất JSO
 
 Xác minh cuối: build frontend đạt; TypeScript service đạt; **16/16 nhóm kiểm thử offline đạt**. Kiểm thử màn hình duyệt trên app chính đạt (hủy/xác nhận, tải font lỗi, bàn phím, lịch sử JSON, lỗi dung lượng lưu trữ, cửa sổ hẹp, vùng cắt, khóa và giữ font khi lỗi). Trang báo cáo offline cũng chọn/xuất được đánh giá JSON. Kiểm thử thực tế trên cổng 7001 dùng lại kết quả AI của mẫu THURSDAY, chọn Montserrat 500 với giãn chữ 3%, lưu/mở lại thiết kế QA **53**, giữ đúng thông số và xuất PNG thành công; artifact ở `.runtime/font-review-app/review.png`, `reopened.png`, `export.png`. Nhãn đánh giá do automation QA tạo không nhập vào bộ duyệt con người.
 
-Server chính đã khởi động lại và xác minh `/` cùng `/design/list` trả HTTP 200. Cổng QA 7003 đã tắt.
+Server chính đã khởi động lại và xác minh `/` cùng `/design/list` trả HTTP 200. Cổng QA 7003 đã tắt. Kiểm tra toàn service cũng phát hiện tùy chọn `maxFiles` không được multiparty hỗ trợ trong phần tách nền đang phát triển song song; bỏ tùy chọn đó, giữ kiểm tra đúng một tệp và giới hạn dung lượng vốn có.
+
 
 ## Tách chữ phục vụ đo font (2026-11-16)
 

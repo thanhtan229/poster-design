@@ -16,7 +16,7 @@ const baseUrl = app_config.API_URL
 
 // 请求拦截器
 axios.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config) => {
     const url = config.url ?? ""
     const values = {}
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -97,7 +97,7 @@ const fetch = <T = any> (
       headers: Object.assign(headerObject, exheaders),
       params,
       ...extra,
-    })
+    }) as unknown as Promise<T>
   } else {
     return axios[type](url, params, {
       headers: Object.assign(headerObject, exheaders),

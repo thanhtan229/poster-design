@@ -8,6 +8,7 @@
 <template>
   <div class="board-shell">
     <TemplatePhotoStatus v-if="needTools" />
+    <div v-if="needTools && printSelection.active && printSelection.clean" class="print-preview-banner">Xem nền sạch · các cụm cắt nổi tạm ẩn <button @click="printSelection.clean=false">Xem thành phẩm</button></div>
     <div v-if="needTools" id="tinix-ruler-toolbar" />
     <div id="main">
     <div id="page-design" ref="page_design" :style="{ paddingTop: dPaddingTop + 'px', minWidth:  (dPage.width * dZoom) / 100 + (padding ?? dPresetPadding) * 2 + 'px' }">
@@ -48,7 +49,7 @@
             <CanvasRuler v-if="needTools" :page="dPage" :zoom="dZoom" />
             <div class="canvas-content-clip">
             <!-- <grid-size /> -->
-            <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools }, { 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
+            <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools }, { 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(layer.uuid))) ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
               <template v-if="layer.isContainer">
                 <!-- :class="{
                   layer: true,
@@ -56,9 +57,12 @@
                   'layer-no-hover': dActiveElement.uuid !== widget.parent && dActiveElement.parent !== widget.parent,
                   'layer-hover': widget.uuid === dHoverUuid,
                 }" -->
-                <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools }, { 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" :style="widget.hidden ? { display: 'none' } : undefined" />
+                <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools }, { 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" :style="widget.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(widget.uuid))) ? { display: 'none' } : undefined" />
               </template>
             </component>
+            </div>
+            <div v-if="needTools && printSelection.active" class="print-unit-overlays" aria-hidden="true">
+              <div v-for="unit in highlightedPrintUnits" :key="unit.id" class="print-unit-highlight" :style="{left:unit.bounds.x+'px',top:unit.bounds.y+'px',width:unit.bounds.width+'px',height:unit.bounds.height+'px',borderWidth:Math.max(2,200/dZoom)+'px'}"><span :style="{fontSize:Math.max(12,1300/dZoom)+'px'}">{{ unit.name }} · {{ unit.raised?'Cắt nổi':'In nền' }}</span></div>
             </div>
 
             <!-- <ref-line v-if="dSelectWidgets.length === 0" /> -->
@@ -73,8 +77,10 @@
 </template>
 
 <script lang="ts" setup>
+import {printSelection} from '@/utils/tinix/print-selection'
+import {printUnits} from '@/utils/tinix/collage-print'
 import TemplatePhotoStatus from './comps/TemplatePhotoStatus.vue'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
 import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
@@ -127,6 +133,10 @@ const dPage = computed(() => props.renderDPage ?? curDPage.value)
 const dWidgets = computed(() => props.renderDWdigets ?? curWidgets.value)
 const dZoom = computed(() => props.zoom ?? curZoom.value)
 
+const printUnitList=computed(()=>printUnits(dWidgets.value))
+const raisedPrintIds=computed(()=>new Set(printUnitList.value.filter(u=>u.raised).flatMap(u=>u.ids)))
+const highlightedPrintUnits=computed(()=>printUnitList.value.filter(u=>printSelection.selected.includes(u.id)))
+watch(()=>dActiveElement.value?.uuid,id=>{if(!printSelection.active||!id||id==='-1')return;const unit=printUnitList.value.find(u=>u.ids.includes(String(id)));if(unit)printSelection.selected=[unit.id]})
 let _dropIn: string | null = ''
 let _srcCache: string | null = ''
 
@@ -434,6 +444,8 @@ function getChilds(uuid: string) {
 </script>
 
 <style lang="less" scoped>
+.print-preview-banner{padding:8px;background:#fff1c7;color:#654500;font-size:13px}.print-unit-overlays{position:absolute;inset:0;pointer-events:none;z-index:10000}.print-unit-highlight{position:absolute;border:3px dashed #0879f5;box-sizing:border-box;background:rgba(20,120,255,.05)}.print-unit-highlight span{position:absolute;bottom:100%;left:0;color:white;background:#086dcc;padding:3px 8px;white-space:nowrap}
+
 .board-shell { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 #tinix-ruler-toolbar { flex: none; min-height: 42px; background: #fff; border-bottom: 1px solid #ddd; }
 #main {

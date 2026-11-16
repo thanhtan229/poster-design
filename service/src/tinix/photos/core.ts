@@ -173,6 +173,7 @@ export function referencedPaths(extra: string[] = []): Set<string> {
   }
   for (const r of db.prepare('SELECT data FROM designs').all()) scan(r.data)
   for (const r of db.prepare('SELECT data FROM templates').all()) scan(r.data)
+  if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='collage_template_versions'").get()) for (const r of db.prepare('SELECT data FROM collage_template_versions').all()) scan(r.data)
   for (const u of extra) if (u) set.add(staticPath(u))
   return set
 }

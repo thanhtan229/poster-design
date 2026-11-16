@@ -32,11 +32,10 @@
     >
       <img class="edit__model" :src="source.imgUrl" />
     </div>
-    <div :style="{ transform: params.flip ? `rotate${params.flip}(180deg)` : undefined, borderRadius: params.radius + 'px', '-webkit-mask-image': `${params.mask ? `url('${params.mask}')` : 'initial'}` }" :class="['img__box', { mask: params.mask }]">
+    <ImageSurface :image="params" :src="source.imgUrl">
       <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${source.imgUrl}') ${params.sliceData.left} round` }"></div>
       <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
-    </div>
-    <ImageAppearance :image="params" />
+    </ImageSurface>
     <div v-if="isMask" class="drop__mask">
       <div putIn="true" :style="{ fontSize: params.width / 12 + 'px' }" class="drop__btn">{{ $t('editor.image.dropHere') }}</div>
     </div>
@@ -44,7 +43,7 @@
 </template>
 
 <script lang="ts" setup>
-import ImageAppearance from './ImageAppearance.vue'
+import ImageSurface from './ImageSurface.vue'
 import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
 
 // 图片组件

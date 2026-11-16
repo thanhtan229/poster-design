@@ -26,6 +26,11 @@ import router from './control/router'
 import tinixAiRouter from './tinix/ai/routes' // [TINIX]
 import tinixPhotosRouter from './tinix/photos/routes' // [TINIX]
 import canvasSizesRouter from './tinix/canvasSizes'
+import cutoutRouter from './tinix/cutout'
+import collagePrintRouter from './tinix/collagePrint'
+import approvedPrintsRouter from './tinix/approvedPrints'
+import collageOrdersRouter from './tinix/collageOrders'
+import collageTemplatesRouter from './tinix/collageTemplates'
 import { filePath, servicePort } from './configs'
 import handleTimeout from './utils/timeout'
 import { initDB } from './db'
@@ -71,6 +76,11 @@ app.use(router)
 app.use(tinixAiRouter) // [TINIX] /api/tinix/ai/*
 app.use(tinixPhotosRouter) // [TINIX] /api/tinix/photos/*
 app.use(canvasSizesRouter)
+app.use(cutoutRouter)
+app.use(collagePrintRouter)
+app.use(approvedPrintsRouter)
+app.use(collageOrdersRouter)
+app.use(collageTemplatesRouter)
 
 // [TINIX] Chế độ production một cổng (npm run tinix:prod): service tự phục vụ bản build của frontend (../dist) + SPA fallback.
 // Đặt SAU các router nên mọi route API vẫn được ưu tiên.

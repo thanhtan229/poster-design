@@ -29,6 +29,8 @@ const d = new Date()
 const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 const dest = path.join(backupRoot, stamp)
 fs.mkdirSync(dest, { recursive: true })
+// Approved print JPGs are permanent production records outside disposable static assets.
+const approvedDir = path.join(serviceDir, 'data', 'approved-prints')
 
 const db = new Database(dbPath, { readonly: true })
 try {
@@ -36,6 +38,7 @@ try {
 } finally {
   db.close()
 }
+if (fs.existsSync(approvedDir)) fs.cpSync(approvedDir, path.join(dest, 'approved-prints'), { recursive: true })
 // bỏ danh sách ảnh tải lên khỏi BẢN SAO (không đụng DB đang chạy)
 const copy = new Database(path.join(dest, 'poster.db'))
 try {

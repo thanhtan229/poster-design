@@ -1,7 +1,7 @@
 <template>
   <div class="canvas-size-toolbar">
-    <el-button plain type="primary" @click="library?.open()">Canvas size</el-button>
-    <el-select class="favorite-sizes" :model-value="null" placeholder="★ Yêu thích" aria-label="Kích thước yêu thích" @visible-change="onFavoritesOpen" @change="chooseFavorite">
+    <el-button class="canvas-library-button" plain type="primary" @click="library?.open()">Canvas size</el-button>
+    <el-select class="favorite-sizes" :model-value="undefined" placeholder="★ Yêu thích" aria-label="Kích thước yêu thích" @visible-change="onFavoritesOpen" @change="chooseFavorite">
       <el-option v-for="item in favorites" :key="item.id" :value="item.id" :label="`${item.name} · ${item.width} × ${item.height} ${item.unit}`" />
       <template #empty><div class="favorite-empty">{{ favoriteError || 'Chưa có kích thước yêu thích. Bấm ★ trong Canvas size để thêm.' }}</div></template>
     </el-select>

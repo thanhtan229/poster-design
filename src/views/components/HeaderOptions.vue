@@ -22,6 +22,10 @@
       <div class="divide__line">|</div>
     </template>
     <watermark-option style="margin-right: 0.5rem" />
+    <PrintBundle v-if="(dPage as any).collage" :save-design="()=>save(true)" :title="state.title" :disabled="tempEditing" />
+    <ApprovedPrints />
+    <CustomerOrders />
+    <el-button type="primary" :loading="jpgRunning" :disabled="tempEditing" @click="exportPrintJpg">Xuất JPG để in</el-button>
     <el-button plain @click="openBatch">{{ i18t('tinix.ui.batch.title') }}</el-button>
     <slot />
   </div>
@@ -54,6 +58,9 @@ import { useRoute, useRouter } from 'vue-router'
 import _dl from '@/common/methods/download'
 import useNotification from '@/common/methods/notification'
 import SaveImage from '@/components/business/save-download/CreateCover.vue'
+import PrintBundle from '@/components/business/collage/PrintBundle.vue'
+import ApprovedPrints from '@/components/business/collage/ApprovedPrints.vue'
+import CustomerOrders from '@/components/business/collage/CustomerOrders.vue'
 import { useFontStore } from '@/common/methods/fonts'
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import { useControlStore, useCanvasStore, useUserStore, useWidgetStore } from '@/store/index'
@@ -88,6 +95,28 @@ const userStore = useUserStore()
 const widgetStore = useWidgetStore()
 
 const canvasImage = ref<typeof SaveImage | null>(null)
+const jpgRunning = ref(false)
+async function exportPrintJpg() {
+  if (jpgRunning.value) return
+  jpgRunning.value = true
+  try {
+    const id = await save(true)
+    if (!id) throw new Error('Không lưu được thiết kế')
+    const page = pageStore.dPage
+    const url = api.home.download({ id, width: page.width, height: page.height, index: pageStore.dCurrentPage, dpi: clampDpi(page.dpi || DEFAULT_DPI) }) + '&format=jpg'
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 120000)
+    try {
+      const response = await fetch(url, { signal: controller.signal })
+      if (!response.ok) throw new Error('Không tạo được JPG; kiểm tra ảnh và font rồi thử lại')
+      const blob = await response.blob()
+      const signature = new Uint8Array(await blob.slice(0, 3).arrayBuffer())
+      if (signature[0] !== 255 || signature[1] !== 216 || signature[2] !== 255) throw new Error('Máy chủ chưa trả về JPG hợp lệ. Hãy khởi động lại app sau khi cập nhật.')
+      downloadBlob(blob, `${(state.title || 'cat-dan').replace(/[<>:"/\\|?*]/g, '-')}.jpg`)
+    } finally { clearTimeout(timer) }
+  } catch (e:any) { useNotification('Xuất JPG thất bại', e?.message || '', { type: 'error' }) }
+  finally { jpgRunning.value = false }
+}
 
 const pageStore = useCanvasStore()
 const controlStore = useControlStore()

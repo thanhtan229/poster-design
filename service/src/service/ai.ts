@@ -200,7 +200,7 @@ function saveGeneratedImage(buffer: Buffer): { url: string; width: number; heigh
   let width = 0
   let height = 0
   try {
-    const sizeInfo = imageSize(targetPath)
+    const sizeInfo = imageSize(buffer)
     width = Number(sizeInfo.width)
     height = Number(sizeInfo.height)
   } catch (err) {

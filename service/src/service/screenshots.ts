@@ -19,6 +19,8 @@ import uuid from '../utils/uuid'
 import { filePath, upperLimit, drawLink } from '../configs'
 import { queueRun, queueList } from '../utils/node-queue'
 import { setPngFileDpi } from '../tinix/pngDpi' // [TINIX]
+import fs from 'fs'
+const sharp = require('sharp')
 // const path = require('path')
 
 /**
@@ -42,7 +44,10 @@ export async function screenshots(req: any, res: any) {
   id == 'undefined' && (id = null)
   const url = (screenshot_url || drawLink) + `${id ? '?id=' : '?tempid='}`
   id = id || tempid
-  const path = filePath + `${id}-screenshot.png`
+  // Xuất và tạo ảnh bìa có thể chạy đồng thời cho cùng một đơn.
+  // Mỗi lượt xuất cần tệp riêng để không đọc trúng PNG đang được ghi lại.
+  const path = filePath + (type === 'file' ? `${id}-screenshot-${uuid()}.png` : `${id}-screenshot.png`)
+  const cleanup = () => { if (type === 'file') fs.unlink(path, () => {}) }
   const thumbPath = type === 'cover' && tempType != 1 ? filePath + `${id}-cover.jpg` : null
 
   if (id && width && height) {
@@ -57,17 +62,29 @@ export async function screenshots(req: any, res: any) {
     const sign = uuid()
     req._queueSign = sign
     queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true }, sign)
-      .then(() => {
+      .then(async () => {
         if (res.headersSent) return
+        if (type === 'file' && req.query.format === 'jpg') {
+          const density = Math.min(1200, Math.max(36, Math.round(Number(dpi)) || 300))
+          const jpeg = await sharp(path).flatten({ background: '#ffffff' }).toColourspace('srgb')
+            .jpeg({ quality: 100, chromaSubsampling: '4:4:4' }).withMetadata({ density }).toBuffer()
+          res.setHeader('Content-Type', 'image/jpeg')
+          res.send(jpeg)
+          cleanup()
+          return
+        }
         type === 'file' && dpi && setPngFileDpi(path, Number(dpi)) // [TINIX] ảnh tải về mang đúng DPI (khổ in)
         res.setHeader('Content-Type', 'image/jpg')
         // const stats = fs.statSync(path)
         // res.setHeader('Cache-Control', stats.size)
         // 组件模板不生成 JPG 缩略图，cover 请求直接返回 PNG 截图，避免 sendFile(null)。
-        type === 'file' || !thumbPath ? res.sendFile(path) : res.sendFile(thumbPath)
+        if (type === 'file') res.sendFile(path, (error: any) => { cleanup(); if (error && !res.headersSent) res.status(500).end() })
+        else res.sendFile(!thumbPath ? path : thumbPath)
       })
       .catch((e: any) => {
-        if (!res.headersSent) res.status(500).json({ code: 500, msg: e && String(e.message).startsWith('Không tải được font yêu cầu') ? e.message : 'Lỗi khi tạo ảnh' })
+        console.error('[tinix:screenshot] Xuất ảnh thất bại:', e)
+        cleanup()
+        if (!res.headersSent) res.status(500).json({ code: 500, msg: e && e.message ? String(e.message) : 'Lỗi khi tạo ảnh', issues: e && e.issues })
       })
   } else {
     res.json({ code: 500, msg: 'Thiếu tham số, vui lòng kiểm tra' })

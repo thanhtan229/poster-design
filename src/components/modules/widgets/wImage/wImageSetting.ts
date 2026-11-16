@@ -51,6 +51,8 @@ export type TImageSetting = {
   fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
   cropX?: number
   cropY?: number
+  cutoutBorderUrl?: string
+  cutoutEdit?: { sourceUrl:string; cutoutUrl:string; mm:number;frame:{left:number;top:number;width:number;height:number} }
 }
 
 const setting: TImageSetting = {

@@ -58,6 +58,8 @@ export function collectUsedUrls(layouts: Array<{ global?: any; layers?: any[] }>
     for (const w of l.layers || []) {
       if (!w) continue
       if (w.imgUrl) out.push(w.imgUrl)
+      if (w.cutoutBorderUrl) out.push(w.cutoutBorderUrl)
+      if (w.cutoutEdit) out.push(w.cutoutEdit.sourceUrl, w.cutoutEdit.cutoutUrl)
       if (w.origin && w.origin.original) out.push(w.origin.original)
     }
   }

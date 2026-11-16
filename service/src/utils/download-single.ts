@@ -97,7 +97,18 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     }
     // 主动模式下注入全局方法
     await page.exposeFunction('loadFinishToInject', async (result: any) => {
-      if(result && result.error){clearTimeout(regulators);browserClose();reject(new Error(result.error));return}
+      if(result && result.error){clearTimeout(regulators);browserClose();reject(Object.assign(new Error(result.error), {issues:result.issues}));return}
+      if(String(url).includes('exportJob=') || new URL(url).searchParams.get('hq')==='1') {
+        try {
+          const problems = await page.evaluate(() => {
+            const errors:string[]=[]
+            for(const image of Array.from(document.querySelectorAll('#page-design img')) as HTMLImageElement[])if(image.getClientRects().length&&(!image.complete||!image.naturalWidth))errors.push('Ảnh không tải được')
+            for(const text of Array.from(document.querySelectorAll('#page-design .w-text')) as HTMLElement[])if(text.getClientRects().length&&(text.scrollWidth>text.clientWidth+3||text.scrollHeight>text.clientHeight+3))errors.push(JSON.stringify({code:'TEXT_OVERFLOW',layerId:text.id,overflowX:Math.max(0,text.scrollWidth-text.clientWidth),overflowY:Math.max(0,text.scrollHeight-text.clientHeight),message:'Chữ tràn khung'}))
+            return errors
+          })
+          if(problems.length){clearTimeout(regulators);browserClose();reject(Object.assign(new Error(problems.join('; ')), {issues:problems.flatMap((p:string)=>{try{return [JSON.parse(p)]}catch(_){return []}})}));return}
+        } catch(error) {clearTimeout(regulators);browserClose();reject(error);return}
+      }
       // console.log('-> 开始截图')
       // await page.evaluate(() => document.body.style.background = 'transparent');
       await page.screenshot({ path, omitBackground: true })

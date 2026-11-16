@@ -22,7 +22,7 @@
     </div>
     <div v-show="state.active" :class="['widget-wrap', { resizing: panelDragging }]" :style="{ width: panelWidth + 'px' }"><!-- [TINIX] độ rộng kéo chỉnh được -->
       <keep-alive>
-        <component :is="state.widgetClassifyList[state.activeWidgetClassify].component" />
+        <component :is="state.widgetClassifyList[state.activeWidgetClassify].component === 'collage-panel' ? CollagePanel : state.widgetClassifyList[state.activeWidgetClassify].component" />
       </keep-alive>
     </div>
     <!-- <div v-show="active" class="side-wrap"><div class="pack__up" @click="active = false">&lt;</div></div> -->
@@ -40,6 +40,7 @@
 // 组件面板
 // const NAME = 'widget-panel'
 import widgetClassifyListData from '@/assets/data/WidgetClassifyList'
+import CollagePanel from '@/components/business/collage/CollagePanel.vue'
 import { reactive, onMounted, watch, nextTick, } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePanelResize } from '@/utils/tinix/panel-resize' // [TINIX]
