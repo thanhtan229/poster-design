@@ -19,6 +19,7 @@ const widgetStore = useWidgetStore()
 const shortcuts = {
   methods: {
     handleKeydowm(store: TControlStore, checkCtrl: number | undefined, instance: any, dealCtrl: (e: any, instance: any) => void) {
+      let timer = checkCtrl
       return (e: any) => {
         if (e.defaultPrevented || isTextInput(e.target)) {
           return
@@ -36,11 +37,11 @@ const shortcuts = {
         if (shift || ctrl) {
           store.updateAltDown(true)
           // store.dispatch('updateAltDown', true)
-          clearInterval(checkCtrl)
-          checkCtrl = setInterval(() => {
+          clearInterval(timer)
+          timer = setInterval(() => {
             // TODO: 防止组合键导致页面失焦无法操作
             if (!document.hasFocus()) {
-              clearInterval(checkCtrl)
+              clearInterval(timer)
               hadDown = false
               store.updateAltDown(false)
               // store.dispatch('updateAltDown', false)

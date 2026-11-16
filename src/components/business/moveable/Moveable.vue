@@ -329,7 +329,9 @@ onMounted(() => {
     }
     dActiveElement.value.lock && stop()
   })
-  .on('drag', ({ target, left, top }) => {
+  .on('drag', ({ target, left: dragLeft, top: dragTop }) => {
+    let left = dragLeft
+    let top = dragTop
     // [TINIX] ảnh phủ kín trang (mẫu 1 ảnh mặc định): kéo di chuyển nhưng tới mép thì dừng, không để lộ khoảng trống
     const cover = dActiveElement.value as any
     if (cover && cover.keepCover) {

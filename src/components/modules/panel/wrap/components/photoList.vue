@@ -95,8 +95,8 @@ const mousemove = (e: MouseEvent) => {
 
 watch(
   () => props.listData,
-  async (newList: IGetTempListData[], oldList: IGetTempListData[]) => {
-    !oldList && (oldList = [])
+  async (newList: IGetTempListData[], prevList: IGetTempListData[]) => {
+    const oldList = prevList || []
     if (newList.length <= 0) {
       state.list.length = 0
       return

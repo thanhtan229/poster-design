@@ -3,8 +3,8 @@ export type PrintUnit={id:string;name:string;raised:boolean;ids:string[];bounds:
 const clone=(v:any)=>JSON.parse(JSON.stringify(v))
 export function printUnits(layers:any[]):PrintUnit[]{
  const all=new Map(layers.map(w=>[String(w.uuid),w]))
- const visible=layers.filter(w=>{const seen=new Set();while(w&&!seen.has(w.uuid)){if(w.hidden)return false;seen.add(w.uuid);w=all.get(String(w.parent))}return true}); const byId=new Map(visible.map(w=>[String(w.uuid),w]))
- const rootOf=(w:any)=>{const seen=new Set();while(w.parent&&byId.has(String(w.parent))&&!seen.has(w.uuid)){seen.add(w.uuid);w=byId.get(String(w.parent))}return w}
+ const visible=layers.filter(layer=>{let w=layer;const seen=new Set();while(w&&!seen.has(w.uuid)){if(w.hidden)return false;seen.add(w.uuid);w=all.get(String(w.parent))}return true}); const byId=new Map(visible.map(w=>[String(w.uuid),w]))
+ const rootOf=(start:any)=>{let w=start;const seen=new Set();while(w.parent&&byId.has(String(w.parent))&&!seen.has(w.uuid)){seen.add(w.uuid);w=byId.get(String(w.parent))}return w}
  const groups=new Map<string,any[]>()
  for(const w of visible){const root=rootOf(w); const key=String(root.printGroup||root.uuid);if(!groups.has(key))groups.set(key,[]);groups.get(key)!.push(w)}
  const units:PrintUnit[]=[]
