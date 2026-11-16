@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, '..')
 const node = process.execPath
 
 const suites = [
+  { name: 'Bộ đo font ảnh thực tế', args: [path.join(root, 'scripts/tinix-selftest/font-real-quality.cjs')], cwd: root },
+  { name: 'Duyệt font và lịch sử', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-review.ts'], cwd: root },
   { name: 'Đổi kích thước bố cục và hoàn tác', args: [path.join(root, 'scripts/tinix-selftest/resize-layout.cjs')], cwd: root },
   { name: 'So khớp ảnh chữ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-match.ts'], cwd: root },
   { name: 'Hồ sơ kỹ thuật font', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-profiles.ts'], cwd: root },

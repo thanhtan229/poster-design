@@ -1,6 +1,11 @@
 // [TINIX] Chuỗi giao diện của code TinixPoster (Trợ lý AI, lưu thành mẫu...). Tạo bằng công cụ trích xuất; sửa tay được.
 export default {
   visualFont: {
+    reviewTitle:'Duyệt và chỉnh font',reviewHint:'Đối chiếu ảnh mẫu với chữ render cùng nội dung. Chuyển ứng viên bằng nút hoặc phím ←/→. Điều chỉnh chỉ áp dụng sau khi xác nhận; đánh giá gần giống không xác minh font gốc.',
+    previewLoading:'Đang tải bản chữ xem thử…',livePreview:'Chữ render đang duyệt',previous:'Trước',next:'Sau',zoom:'Phóng xem',weight:'Độ đậm',italic:'Nghiêng',tracking:'Giãn chữ (%)',resetAdjustments:'Khôi phục thông số',
+    rating:'Mức gần giống',unreviewed:'Chưa đánh giá',close:'Gần mẫu',acceptable:'Chấp nhận được',poor:'Chưa đạt',note:'Ghi chú đánh giá',previousReview:'Lần duyệt đã lưu trên máy này',
+    cancel:'Hủy',exportReviews:'Xuất lịch sử duyệt',confirmReview:'Xác nhận và dùng font',saveFeedback:'Lưu nhận xét, giữ font hiện tại',reviewSaved:'Đã lưu đánh giá trên máy này',previewFailed:'Không tải được font để xem thử.',
+
     review:'Các cách đánh giá chưa thống nhất hoặc nét chữ chưa đủ rõ. Font hiện tại được giữ nguyên; hãy chọn bản chữ gần mẫu nhất.',detail:'Xem so sánh chi tiết ký tự',rank:'Theo nét: #{shape} · AI: #{ai} · Chi tiết: #{detail}',
     editCrop:'Chỉnh vùng chữ và nội dung mẫu',cropHint:'Kéo trên ảnh để khoanh lại vùng chữ. Có thể nhập X/Y/W/H theo phần trăm.',
     sourceText:'Chữ trong ảnh mẫu',sourceHint:'Sửa chữ AI đọc sai hoặc để trống để AI tự đọc. Không thay nội dung chữ trong thiết kế.',

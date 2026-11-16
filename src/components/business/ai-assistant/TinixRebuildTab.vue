@@ -257,7 +257,7 @@ async function analyze() {
     const res: any = await tinixAi.rebuild({ reference: state.reference, photo, lang: state.lang, mode: state.mode })
     if (tinixAi.isErr(res)) return ElMessage.error(res.msg || i18t('tinix.ui.rebuildTab.phan_tich_khong_thanh_cong'))
     const locked=(state.result?.regions||[]).filter((r:any)=>r.type==='text'&&r.fontLocked)
-    for(const region of res.regions){const prior=locked.find((r:any)=>r.text===region.text&&r.role===region.role);if(prior)Object.assign(region,{fontClass:prior.fontClass,fontFamily:prior.fontFamily,weight:prior.weight,italic:prior.italic,letterSpacing:prior.letterSpacing,fontLocked:true,visualFontMatch:prior.visualFontMatch,fontCrop:prior.fontCrop,fontReferenceText:prior.fontReferenceText})}
+    for(const region of res.regions){const prior=locked.find((r:any)=>r.text===region.text&&r.role===region.role);if(prior)Object.assign(region,{fontClass:prior.fontClass,fontFamily:prior.fontFamily,weight:prior.weight,italic:prior.italic,letterSpacing:prior.letterSpacing,fontLocked:true,visualFontMatch:prior.visualFontMatch,fontCrop:prior.fontCrop,fontReferenceText:prior.fontReferenceText,fontReview:prior.fontReview})}
     state.result = res;resultVersion.value++
     for (const r of res.regions) if (r.fontClass) ensureFont(r.fontClass.value, r.fontClass.url)
     // [TINIX] tự tạo ảnh nền ngay (chạy ở nền trong lúc bạn xem kết quả)

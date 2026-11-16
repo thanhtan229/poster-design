@@ -134,3 +134,37 @@ Báo cáo so sánh 12 ca mới: `.runtime/font-quality-v3/REPORT.md`; dữ liệ
 Đã kiểm thử giao diện: giữ font khi AI tin cậy cao nhưng bất đồng; mở bảng chi tiết và tên font đối chiếu; chọn tay/khóa; vùng cắt; lỗi nhà cung cấp; dựng không cắt chữ. 14/14 nhóm kiểm thử offline, TypeScript service và build frontend đều đạt. Kiểm thử trên app gọi so khớp thật cho Playfair Display, dựng/lưu/mở lại thiết kế QA số 18 và xuất PNG tiếng Việt. Kiểm thử Raleway dùng lại kết quả AI thật đã lưu (không gọi lại nhà cung cấp), dựng/lưu/mở lại thiết kế QA số 19 và xác nhận giữ độ giãn chữ 1.3888888889%; xuất PNG thành công. Phân tích bố cục trong hai ca QA dùng fixture một khối chữ để kiểm tra riêng luồng font.
 
 Ảnh xuất: `.runtime/font-v3-main-export.png` và `.runtime/font-v3-tracking-export.png`. Server chính phục vụ tại `http://127.0.0.1:7001`; server QA cổng 7002 được tắt sau khi hoàn tất đo.
+
+## Duyệt font trên ảnh mẫu thực tế (2026-11-16)
+
+Trong **Trợ lý AI → Dựng theo mẫu**, sau khi tìm font cho một khối, bấm **Duyệt và chỉnh font**. Màn hình mới đặt ảnh vùng chữ cạnh chữ render cùng nội dung mẫu; chuyển ứng viên bằng nút Trước/Sau hoặc phím ←/→ khi không nhập liệu. Có phóng xem 100/150/200%, độ đậm, kiểu nghiêng và giãn chữ (%). Font tĩnh chỉ dùng độ đậm/kiểu có thật; font biến thiên được chỉnh trong giới hạn hồ sơ. Preview tải tệp font thật; nếu tải lỗi, không cho xác nhận bằng font dự phòng.
+
+Các thay đổi trong màn hình này là bản nháp: **Hủy** không đổi font, không ghi lịch sử. Chọn **Gần mẫu** hoặc **Chấp nhận được**, rồi **Xác nhận và dùng font** để áp dụng font/độ đậm/kiểu nghiêng/giãn chữ. Chọn **Chưa đạt** chỉ lưu nhận xét, giữ font hiện tại. Điều này ghi nhận mức gần giống do người duyệt xác nhận, không xác minh font gốc. Khóa font ngăn thay đổi thông số; vẫn có thể mở xem đối chiếu.
+
+Lịch sử lưu tối đa 100 vùng trong localStorage của trình duyệt/cổng app đang dùng, không đồng bộ sang máy khác. Khóa SHA-256 bao gồm ảnh, vùng cắt, chữ mẫu và chữ thiết kế để tránh dùng nhầm đánh giá. Mở lại cùng vùng cho thấy lần duyệt trước; chọn font thủ công khác hoặc thay vùng xóa trạng thái xác nhận trên khối, không xóa lịch sử. **Xuất lịch sử duyệt** tải JSON gồm thông số và ghi chú, không nhúng ảnh tham chiếu. Nếu trình duyệt không lưu được lịch sử, hiện lỗi và không báo xác nhận thành công.
+
+### Bộ ca ảnh thực tế và báo cáo duyệt
+
+`npm run tinix:font-real-cases` lấy bốn ảnh poster người dùng đã gửi (Be Yourself, Tomorrow, New, Unveiling), đóng băng 22 vùng chữ vào `.runtime/font-real/cases.json`, sao chép ảnh tham chiếu, lưu hash, vùng cắt và chữ chép tay. `crops.html` giúp rà soát các vùng. Script từ chối ghi đè manifest đã tồn tại; ảnh và kết quả trong `.runtime/` không đưa vào Git. Chỉ lấy ảnh tham chiếu có sẵn, không thay bằng ảnh dựng tổng hợp.
+
+`npm run tinix:font-real-quality -- --live` gọi API AI thật cho từng vùng; tự bỏ qua ca đã thành công và chạy lại ca lỗi khi chạy tiếp. Mỗi ca có chữ mẫu được xác nhận để đo so khớp font, không phải đo OCR. Ảnh/nội dung/vùng/nhãn ground truth thay đổi thì bộ đo từ chối dùng lại kết quả cũ. Có thể đặt `TINIX_APP_URL`, `TINIX_REAL_CASES_OUT`, `TINIX_REAL_QUALITY_OUT` hoặc truyền `--manifest` để chọn nơi chạy và nơi lưu.
+
+Font gốc của bốn ảnh chưa được xác minh: các ca mang `groundTruth.kind=unknown`. Báo cáo không tính chúng thành đúng/sai Top 1/Top 3; chỉ tính độ chính xác trên ca có `groundTruth.kind=verified` và `fontId` xác minh riêng. Lỗi/không đọc được vùng vẫn hiện trong báo cáo, không bị loại âm thầm. Nhiều vùng cùng một poster không phải nhiều nguồn dữ liệu độc lập.
+
+Kết quả nằm tại `.runtime/font-real-results/REPORT.md`, `summary.json`, `results.json`, từng `*-match.json` và `review.html`. Trang `review.html` đặt ảnh mẫu cạnh từng bản render, cho chọn font, mức gần giống và ghi chú, rồi xuất JSON. Dùng `npm run tinix:font-real-quality -- --report-only --reviews <file.json>` để nhập đánh giá và tạo lại báo cáo mà không gọi AI. Chỉ nhận đánh giá khớp mã ca/chữ ký và font trong danh sách. Có thể nhập lịch sử xuất từ app khi ảnh, bbox, chữ mẫu và chữ thiết kế trùng chính xác ca đo. Duyệt độ gần giống luôn tách khỏi nhãn font gốc; chưa duyệt thì ghi rõ chờ duyệt.
+
+Kiểm thử bổ sung: `npm run tinix:test-font-review-ui` kiểm tra bản nháp/hủy, lưu/chọn ứng viên, lịch sử, nhận xét chưa đạt, tải font lỗi, điều khiển font tĩnh và dựng không cắt chữ. Bộ offline kiểm tra giới hạn kiểu font, khóa định danh vùng/nội dung, lịch sử tối đa 100 mục, dữ liệu lưu hỏng, tách font gốc/đánh giá gần giống và phát hiện manifest thay đổi.
+
+
+Kiểm tra toàn luồng duyệt trên app bằng kết quả AI thật đã lưu của vùng THURSDAY: chọn Montserrat, chỉnh độ đậm 500 và giãn chữ 3%, xác nhận, dựng một khối chữ, lưu/mở lại và xuất PNG. Phân tích bố cục được cố định một khối để kiểm tra riêng font; không giả lập xuất PNG. Nhận xét do tự động hóa QA tạo ra không được nhập vào nhãn đánh giá con người của bộ ảnh thực tế. Công cụ tái lập: `npm run tinix:test-font-review-app` (cần các artifact ảnh thật/kết quả đã có); đầu ra tại `.runtime/font-review-app/`, gồm `review.png`, `export.png`, `design-id.txt` và bản ghi QA.
+
+Kiểm tra bổ sung đã đạt: điều hướng bằng bàn phím, xuất JSON không nhúng ảnh, lỗi localStorage không xác nhận giả, và cửa sổ hẹp 700 px. `scripts/tinix-selftest/font-real-report-ui.cjs` kiểm tra chọn mức gần giống và tải JSON từ trang báo cáo offline, không gọi nhà cung cấp.
+
+
+### Kết quả bộ ảnh thực tế và xác minh cuối
+
+Đã chạy AI thật cho đủ **22/22 vùng chữ**, không còn ca lỗi. Font gốc đã xác minh: **0**; Top 1/Top 3 để `null`, không đưa ra tỷ lệ đúng font. Đánh giá con người đã nhập: **0**; **22 ca chờ duyệt mức gần giống**. Các lỗi fetch do cổng chính khởi động lại trong lúc chạy đã được chạy lại trên cổng QA riêng; kết quả cuối giữ đủ ca, không loại ca khó khỏi mẫu. Bộ ảnh thật đã cho thấy nhiều lựa chọn đầu khác phong cách mẫu, nên kết quả trên ảnh tổng hợp trước đây không được suy rộng thành độ chính xác ảnh thực tế. Bước cải thiện tách chữ/nền vẫn là công việc tiếp theo, chưa triển khai trong phạm vi này.
+
+Xác minh cuối: build frontend đạt; TypeScript service đạt; **16/16 nhóm kiểm thử offline đạt**. Kiểm thử màn hình duyệt trên app chính đạt (hủy/xác nhận, tải font lỗi, bàn phím, lịch sử JSON, lỗi dung lượng lưu trữ, cửa sổ hẹp, vùng cắt, khóa và giữ font khi lỗi). Trang báo cáo offline cũng chọn/xuất được đánh giá JSON. Kiểm thử thực tế trên cổng 7001 dùng lại kết quả AI của mẫu THURSDAY, chọn Montserrat 500 với giãn chữ 3%, lưu/mở lại thiết kế QA **53**, giữ đúng thông số và xuất PNG thành công; artifact ở `.runtime/font-review-app/review.png`, `reopened.png`, `export.png`. Nhãn đánh giá do automation QA tạo không nhập vào bộ duyệt con người.
+
+Server chính đã khởi động lại và xác minh `/` cùng `/design/list` trả HTTP 200. Cổng QA 7003 đã tắt.
