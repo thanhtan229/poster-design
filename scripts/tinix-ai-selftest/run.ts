@@ -28,7 +28,7 @@ let lastRequest: any = null
   lastRequest = { url, body }
   return { choices: [{ message: { content: answers.shift() || '' } }], usage: { prompt_tokens: 1200, completion_tokens: 300 } }
 }
-const img = 'data:image/png;base64,' + Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP8z8DwnwEIGBkZGBgYGAAqCQX/2nHkXwAAAABJRU5ErkJggg==', 'base64').toString('base64')
+const img = 'data:image/png;base64,' + Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR42mP4z8AARAwQCgAf7gP9Y167WwAAAABJRU5ErkJggg==', 'base64').toString('base64')
 
 async function main() {
   // 1) suggest: first answer is broken (prose), second is fenced JSON → retry must succeed
