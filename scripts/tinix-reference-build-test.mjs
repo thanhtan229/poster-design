@@ -123,6 +123,17 @@ try {
   await access(path.join(dir2, 'photo-placeholder.jpg'))
   await assert.rejects(access(path.join(dir2, 'photo-1.jpg')), 'không ghi ảnh cắt từ ảnh mẫu khi dùng ảnh giữ chỗ')
 
+  // 8b) nền có hoa văn/giấy màu: viền tối nhỏ không được thành màu nền; sticker keep:'box' giữ nguyên vùng chữ nhật, không gọi bộ tách nền
+  const tealSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="600" height="600" fill="#7fb5a0"/><rect x="0" y="0" width="600" height="60" fill="#3a2a20"/><rect x="200" y="200" width="100" height="100" fill="#cc4488"/></svg>'
+  const tealRef = await sharp(Buffer.from(tealSvg)).png().toBuffer()
+  let cutCalls = 0
+  const built3 = await buildFromReference({ ref: await loadReference(tealRef), spec: { name: 'teal', elements: [{ type: 'sticker', name: 'Hộp', box: [200, 200, 300, 300], keep: 'box', mask: 'ellipse' }] }, assetsDir: path.join(tmp, 'assets3'), assetsUrl: '/x', cutout: async (d) => { cutCalls++; return fakeCutout(d) }, measure: fakeMeasure, fonts })
+  assert.equal(built3.report.background.color, '#7fb5a0', 'nền lấy trung vị khi điểm tối chỉ là viền')
+  assert.equal(cutCalls, 0, 'keep:box không gọi tách nền')
+  const boxed = built3.draft.layers.find((l) => l.name === 'Hộp')
+  near(boxed.width, 400, 4, 'rộng sticker keep:box (×4)'); assert.ok(boxed.mask, 'mặt nạ của sticker keep:box')
+  await assert.rejects(buildFromReference({ ref: await loadReference(tealRef), spec: { name: 'teal', elements: [{ type: 'sticker', name: 'X', box: [0, 0, 50, 50], keep: 'khac' }] }, assetsDir: path.join(tmp, 'assets4'), assetsUrl: '/x', cutout: fakeCutout, measure: fakeMeasure, fonts }), /keep là cutout/)
+
   // 9) tự khớp chữ nhiều dòng: lineHeight lấy từ chiều cao mực mẫu
   const fit = await fitText(fakeMeasure, { family: 'Fake', url: '/x', text: 'AB\nCDEFG', targetInkWidth: 300, targetInkHeight: 200, center: [500, 500] })
   near(fit.fontSize, 100, 1, 'cỡ chữ nhiều dòng'); near(fit.lineHeight, 1.1, 0.02, 'lineHeight từ chiều cao mực'); assert.ok(fit.width >= 300 * 1.1)

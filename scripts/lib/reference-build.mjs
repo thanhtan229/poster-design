@@ -64,6 +64,8 @@ export function validateSpec(spec) {
         if (el.fontSize !== undefined && !(num(el.fontSize) && el.fontSize > 0)) throw new Error('fontSize là số dương (px canvas); bỏ trống để tự khớp')
       } else if (el.type === 'sticker') {
         box4(el.box, 'box')
+        if (el.keep !== undefined && !['cutout', 'box'].includes(el.keep)) throw new Error('keep là cutout (tách nền, mặc định) | box (giữ nguyên vùng chữ nhật)')
+        if (el.mask !== undefined && !['cloud', 'circle', 'ellipse', 'rounded'].includes(el.mask)) throw new Error('mask là cloud | circle | ellipse | rounded')
       } else throw new Error('type là frame | photo | label | sticker')
     } catch (e) { problems.push(`${at}: ${e.message}`) }
   }
@@ -320,6 +322,8 @@ export async function buildFromReference({ ref, spec, assetsDir, assetsUrl, cuto
       const g = grayAt(ref.raw, i)
       if (g < 110) { c[0].push(ref.raw[i * 3]); c[1].push(ref.raw[i * 3 + 1]); c[2].push(ref.raw[i * 3 + 2]) }
     }
+    // nền sáng hoặc có hoa văn (giấy màu): ít điểm tối → lấy trung vị của mọi điểm ngoài các thành phần
+    if (c[0].length * 3 < mask.reduce((n, v, i) => n + (i % 3 === 0 ? v : 0), 0)) for (let i = 0; i < ref.width * ref.height; i += 3) if (mask[i]) { c[0].push(ref.raw[i * 3]); c[1].push(ref.raw[i * 3 + 1]); c[2].push(ref.raw[i * 3 + 2]) }
     bgColor = c[0].length > 50 ? toHex(c.map((a) => { a.sort((p, q) => p - q); return a[a.length >> 1] })) : '#222222'
   }
   let seedRand = 7
@@ -429,10 +433,18 @@ export async function buildFromReference({ ref, spec, assetsDir, assetsUrl, cuto
       t.parent = g.uuid; t.printGroup = g.printGroup
       layers.push(t)
       Object.assign(info, { color, textColor, fontSize: fit.fontSize, lineHeight: fit.lineHeight, inkMeasured: !!ink, font: font.alias })
+      if (!el.lineHeight && el.text.includes(String.fromCharCode(10)) && fit.lineHeight > 1.5) report.warnings.push(`Khoảng cách dòng của "${el.name}" đo được ${fit.lineHeight} (quá thưa): textInk có thể bao cả viền giấy hoặc nền; thu hẹp textInk sát chữ hoặc đặt lineHeight`)
       if (!ink) report.warnings.push(`Không đo được mực chữ của "${el.name}" trong ảnh mẫu (chữ quá nhạt hoặc textInk sai); dùng ${Math.round(w * 0.8)} px theo khung`)
     } else if (el.type === 'sticker') {
       const [x0, y0, x1, y1] = clampRect(ref, el.box), up = Math.max(1, Math.min(4, 1600 / Math.max(x1 - x0, y1 - y0)))
       const crop = await sharp(ref.png).extract({ left: x0, top: y0, width: x1 - x0, height: y1 - y0 }).resize({ width: Math.round((x1 - x0) * up), kernel: 'cubic' }).png().toBuffer()
+      if (el.keep === 'box') {
+        // tách nền hay cắt hụt sticker mềm/nhiều lớp (chữ bút lông, số dán trên nền rối): giữ nguyên vùng chữ nhật, tùy chọn cắt theo mặt nạ
+        layers.push(imageLayer({ name: el.name, url: await write(`sticker-${++k}.png`, crop), ...geo((x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0), mask: el.mask ? maskDataUri(el.mask) : '' }))
+        info.box = [x0, y0, x1, y1]
+        report.elements.push(info)
+        continue
+      }
       const cut = await sharp(await cutout(crop)).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
       const { width: cw, height: ch } = cut.info
       let bx0 = cw, bx1 = 0, by0 = ch, by1 = 0
