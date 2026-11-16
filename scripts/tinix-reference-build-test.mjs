@@ -7,7 +7,7 @@ import { mkdtemp, rm, readFile, access } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { validate } from './tinix-drafts.mjs'
-import { validateSpec, loadReference, buildFromReference, fitText, compareToReference, drawGrid, drawSideBySide, elementRect, detectHearts, uprightCrop } from './lib/reference-build.mjs'
+import { validateSpec, loadReference, buildFromReference, fitText, compareToReference, drawGrid, drawSideBySide, elementRect, detectHearts, uprightCrop, inpaintPushPull } from './lib/reference-build.mjs'
 
 const sharp = createRequire(import.meta.url)('../service/node_modules/sharp')
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'tinix-refbuild-'))
@@ -133,6 +133,27 @@ try {
   const boxed = built3.draft.layers.find((l) => l.name === 'Hộp')
   near(boxed.width, 400, 4, 'rộng sticker keep:box (×4)'); assert.ok(boxed.mask, 'mặt nạ của sticker keep:box')
   await assert.rejects(buildFromReference({ ref: await loadReference(tealRef), spec: { name: 'teal', elements: [{ type: 'sticker', name: 'X', box: [0, 0, 50, 50], keep: 'khac' }] }, assetsDir: path.join(tmp, 'assets4'), assetsUrl: '/x', cutout: fakeCutout, measure: fakeMeasure, fonts }), /keep là cutout/)
+
+  // 8c) hoa văn nền lấy từ ảnh mẫu: ngoài phần tử giữ đúng hoa văn, trong vùng phần tử được vá bằng màu nền xung quanh (không còn màu phần tử)
+  let sx = ''
+  for (let k = -20; k < 40; k++) sx += `<polygon points="${k * 40},0 ${k * 40 + 20},0 ${k * 40 + 620},600 ${k * 40 + 600},600" fill="#2a8a7a"/>`
+  const patSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="600" height="600" fill="#8fd0c0"/>${sx}<rect x="200" y="200" width="100" height="100" fill="#cc2244"/></svg>`
+  const patFile = path.join(tmp, 'pat.png'); await sharp(Buffer.from(patSvg)).png().toFile(patFile)
+  const patRef = await loadReference(patFile)
+  const patDir = path.join(tmp, 'assets-pat')
+  const built4 = await buildFromReference({ ref: patRef, spec: { name: 'pat', background: { color: 'auto', pattern: 'reference' }, elements: [{ type: 'sticker', name: 'Hộp', box: [200, 200, 300, 300], keep: 'box' }] }, assetsDir: patDir, assetsUrl: '/x', cutout: fakeCutout, measure: fakeMeasure, fonts })
+  assert.equal(built4.report.background.pattern, 'reference'); assert.equal(built4.report.background.hearts, 0)
+  assert.ok(built4.draft.layers[0].imgUrl.endsWith('/background.jpg'), 'lớp nền dùng ảnh hoa văn')
+  const bgRaw = await sharp(path.join(patDir, 'background.jpg')).raw().toBuffer({ resolveWithObject: true })
+  const px = (x, y) => { const i = (Math.round(y) * bgRaw.info.width + Math.round(x)) * bgRaw.info.channels; return [bgRaw.data[i], bgRaw.data[i + 1], bgRaw.data[i + 2]] }
+  const refPx = (x, y) => { const i = (y * patRef.width + x) * 3; return [patRef.raw[i], patRef.raw[i + 1], patRef.raw[i + 2]] }
+  let worst = 0
+  for (const [rx, ry] of [[60, 80], [450, 120], [100, 500], [520, 520], [320, 40]]) { const a = px(rx * 4 + 2, ry * 4 + 2), b = refPx(rx, ry); worst = Math.max(worst, ...a.map((v, i) => Math.abs(v - b[i]))) }
+  assert.ok(worst < 40, `hoa văn nền ngoài phần tử phải giống ảnh mẫu (lệch tối đa ${worst})`)
+  const hole = px(1000, 1000)
+  assert.ok(hole[1] > hole[0] && hole[1] > 100, `vùng phần tử phải được vá bằng màu nền, không còn đỏ (đo được ${hole})`)
+  assert.ok(Math.abs(inpaintPushPull(Buffer.alloc(8 * 8 * 3, 100), Uint8Array.from({ length: 64 }, (_, i) => (i % 8 > 2 && i % 8 < 6 && i > 20 && i < 44 ? 1 : 0)), 8, 8)[27 * 3] - 100) <= 1, 'vá lỗ nền đồng màu')
+  assert.throws(() => validateSpec({ name: 'x', background: { pattern: 'khac' }, elements: [{ type: 'sticker', name: 'a', box: [0, 0, 5, 5] }] }), /pattern/)
 
   // 9) tự khớp chữ nhiều dòng: lineHeight lấy từ chiều cao mực mẫu
   const fit = await fitText(fakeMeasure, { family: 'Fake', url: '/x', text: 'AB\nCDEFG', targetInkWidth: 300, targetInkHeight: 200, center: [500, 500] })

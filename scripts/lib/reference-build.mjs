@@ -73,6 +73,7 @@ export function validateSpec(spec) {
     const b = spec.background
     if (b.color !== undefined && b.color !== 'auto' && !hex(b.color)) problems.push('background.color là "auto" hoặc #rrggbb')
     if (b.hearts !== undefined && typeof b.hearts !== 'boolean') problems.push('background.hearts là true/false')
+    if (b.pattern !== undefined && !['none', 'reference'].includes(b.pattern)) problems.push('background.pattern là none (mặc định) | reference (lấy hoa văn nền từ ảnh mẫu)')
   }
   if (problems.length) throw new Error('Spec không hợp lệ: ' + problems.join('; '))
   return spec
@@ -211,6 +212,50 @@ export async function uprightCrop(ref, cx, cy, w, h, rot, scale) {
     .resize(Math.max(1, Math.round(w * scale)), Math.max(1, Math.round(h * scale)), { fit: 'fill', kernel: 'lanczos3' })
 }
 
+/**
+ * Vá lỗ "đẩy-kéo" (push-pull): rgb là RGB w×h, hole[i] = 1 nơi cần vá. Thu nhỏ có trọng số (chỉ điểm biết) lên các mức thô,
+ * rồi kéo màu xuống lấp lỗ. Kết quả mịn (không tái tạo họa tiết trong lỗ) — đủ cho vùng bị phần tử khác che.
+ */
+export function inpaintPushPull(rgb, hole, w, h) {
+  const levels = []
+  let cw = w, ch = h
+  let col = new Float32Array(w * h * 3), wt = new Float32Array(w * h)
+  for (let i = 0; i < w * h; i++) if (!hole[i]) { wt[i] = 1; col[i * 3] = rgb[i * 3]; col[i * 3 + 1] = rgb[i * 3 + 1]; col[i * 3 + 2] = rgb[i * 3 + 2] }
+  levels.push({ w: cw, h: ch, col, wt })
+  while (cw > 1 || ch > 1) {
+    const nw = Math.max(1, (cw + 1) >> 1), nh = Math.max(1, (ch + 1) >> 1)
+    const nc = new Float32Array(nw * nh * 3), nwt = new Float32Array(nw * nh)
+    const prev = levels[levels.length - 1]
+    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+      const i = y * cw + x, j = (y >> 1) * nw + (x >> 1), q = prev.wt[i]
+      if (!q) continue
+      nwt[j] += q; nc[j * 3] += prev.col[i * 3] * q; nc[j * 3 + 1] += prev.col[i * 3 + 1] * q; nc[j * 3 + 2] += prev.col[i * 3 + 2] * q
+    }
+    for (let j = 0; j < nw * nh; j++) if (nwt[j] > 0) { nc[j * 3] /= nwt[j]; nc[j * 3 + 1] /= nwt[j]; nc[j * 3 + 2] /= nwt[j] }
+    levels.push({ w: nw, h: nh, col: nc, wt: new Float32Array(nw * nh).map((_, j) => Math.min(1, nwt[j])) })
+    cw = nw; ch = nh
+  }
+  // kéo: từ mức thô xuống mịn, nơi trọng số < 1 trộn với mức thô hơn
+  for (let l = levels.length - 2; l >= 0; l--) {
+    const f = levels[l], c = levels[l + 1]
+    for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) {
+      const i = y * f.w + x, q = f.wt[i]
+      if (q >= 1) continue
+      // nội suy song tuyến từ mức thô (tránh khối vuông khi phóng to)
+      const gx = Math.min(c.w - 1, Math.max(0, (x + 0.5) / 2 - 0.5)), gy = Math.min(c.h - 1, Math.max(0, (y + 0.5) / 2 - 0.5))
+      const x0 = Math.floor(gx), y0 = Math.floor(gy), x1 = Math.min(c.w - 1, x0 + 1), y1 = Math.min(c.h - 1, y0 + 1), tx = gx - x0, ty = gy - y0
+      for (let k = 0; k < 3; k++) {
+        const up = (c.col[(y0 * c.w + x0) * 3 + k] * (1 - tx) + c.col[(y0 * c.w + x1) * 3 + k] * tx) * (1 - ty) + (c.col[(y1 * c.w + x0) * 3 + k] * (1 - tx) + c.col[(y1 * c.w + x1) * 3 + k] * tx) * ty
+        f.col[i * 3 + k] = f.col[i * 3 + k] * q + up * (1 - q)
+      }
+      f.wt[i] = 1
+    }
+  }
+  const out = Buffer.alloc(w * h * 3), f0 = levels[0]
+  for (let i = 0; i < w * h * 3; i++) out[i] = hole[(i / 3) | 0] ? Math.round(f0.col[i]) : rgb[i]
+  return out
+}
+
 const heartPath = (cx, cy, s, ang) => {
   const pts = []
   for (let i = 0; i < 48; i++) {
@@ -311,7 +356,8 @@ export async function buildFromReference({ ref, spec, assetsDir, assetsUrl, cuto
   // nền
   const bgSpec = spec.background || {}
   const exclude = spec.elements.map((el) => { const r = rectOf(el); return [r[0] - 2, r[1] - 2, r[2] + 2, r[3] + 2] })
-  const hearts = bgSpec.hearts === false ? [] : detectHearts(ref, exclude)
+  const patterned = bgSpec.pattern === 'reference'
+  const hearts = bgSpec.hearts === false || patterned ? [] : detectHearts(ref, exclude)
   let bgColor = bgSpec.color && bgSpec.color !== 'auto' ? bgSpec.color : null
   if (!bgColor) {
     const mask = new Uint8Array(ref.width * ref.height).fill(1)
@@ -329,10 +375,19 @@ export async function buildFromReference({ ref, spec, assetsDir, assetsUrl, cuto
   let seedRand = 7
   const rnd = () => { seedRand = (seedRand * 16807) % 2147483647; return seedRand / 2147483647 }
   const heartSvg = hearts.map((h) => `<path d="${heartPath(h.x * S, h.y * S, h.size * S * 1.05, (rnd() - 0.5) * 0.7)}" fill="#eeeeee"/>`).join('')
-  const bgPng = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${bgColor}"/>${heartSvg}</svg>`)).png().toBuffer()
-  const bgUrl = await write('background.png', bgPng)
+  let bgUrl
+  if (patterned) {
+    // hoa văn nền lấy từ chính ảnh mẫu: xóa vùng các phần tử (nới 10 px) rồi vá lỗ bằng đẩy-kéo
+    const hole = new Uint8Array(ref.width * ref.height)
+    for (const [x0, y0, x1, y1] of exclude.map((r) => clampRect(ref, [r[0] - 8, r[1] - 8, r[2] + 8, r[3] + 8]))) for (let y = y0; y < y1; y++) hole.fill(1, y * ref.width + x0, y * ref.width + x1)
+    const filled = inpaintPushPull(ref.raw, hole, ref.width, ref.height)
+    bgUrl = await write('background.jpg', await sharp(filled, { raw: { width: ref.width, height: ref.height, channels: 3 } }).resize(W, H, { fit: 'fill', kernel: 'lanczos3' }).jpeg({ quality: 88 }).toBuffer())
+  } else {
+    const bgPng = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${bgColor}"/>${heartSvg}</svg>`)).png().toBuffer()
+    bgUrl = await write('background.png', bgPng)
+  }
   layers.push(imageLayer({ name: 'Nền · cố định', url: bgUrl, left: 0, top: 0, width: W, height: H, printRole: 'base', lock: true }))
-  report.background = { color: bgColor, hearts: hearts.length }
+  report.background = { color: bgColor, hearts: hearts.length, ...(patterned ? { pattern: 'reference' } : {}) }
 
   // ảnh giữ chỗ trung tính (khi không dùng ảnh trong ảnh mẫu)
   let placeholderUrl = null
