@@ -65,7 +65,7 @@ for (const [name, command, description, required, optional] of commands) {
 }
 server.registerTool('view_image', { description: 'Inspect a local PNG or JPEG, resized to a maximum edge of 1600 pixels. Returns an image directly.', inputSchema: { file: z.string().min(1) } }, async ({ file }) => {
   try {
-    const input = await readFile(file), metadata = await sharp(input, { limitInputPixels: 80000000 }).metadata()
+    const input = await readFile(file), metadata = await sharp(input, { limitInputPixels: 100000000 }).metadata()
     if (!['png', 'jpeg'].includes(metadata.format)) throw new Error('Only PNG and JPEG are supported')
     const preview = await sharp(input).resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }).flatten({ background: '#ffffff' }).jpeg({ quality: 85 }).toBuffer()
     return { content: [{ type: 'text', text: JSON.stringify({ file: path.resolve(file), width: metadata.width, height: metadata.height }) }, { type: 'image', data: preview.toString('base64'), mimeType: 'image/jpeg' }] }

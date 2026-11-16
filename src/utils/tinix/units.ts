@@ -8,7 +8,19 @@ export const MIN_DPI = 36
 export const MAX_DPI = 1200
 /** Giới hạn mỗi cạnh canvas (khớp maxValue của ô nhập) */
 export const MAX_SIDE_PX = 12000
-/** Trên ngưỡng này việc xuất ảnh dễ quá thời gian chờ của server (30 giây) */
+/**
+ * Giới hạn tổng điểm ảnh khi tạo canvas / xuất ảnh. Phải khớp `maxPXs` ở service/src/utils/download-single.ts
+ * (và scripts/tinix-cli.mjs, tinix-mcp.mjs). Đo thật: trang 8268×11220 (92,8 triệu) chụp ~6,5 giây,
+ * Chromium đỉnh ~2,3 GB RAM; 12000×12000 (144 triệu) ~10 giây, ~3,1 GB.
+ */
+export const MAX_PIXELS = 100_000_000
+/** Thời gian chờ tối đa (ms) phía giao diện cho một lần xuất trang w×h: trần của service (exportTimeoutSec) + 30 giây dự phòng */
+export function exportTimeoutMs(wPx: number, hPx: number): number {
+  const px = Number(wPx) * Number(hPx)
+  const sec = isFinite(px) && px > 0 ? Math.max(60, 30 + Math.ceil(px / 1e6)) : 60
+  return (sec + 30) * 1000
+}
+/** Trên ngưỡng này xuất ảnh chậm hơn và tốn RAM (vài GB); chỉ cảnh báo, không chặn */
 export const WARN_PIXELS = 60_000_000
 
 export function clampDpi(v: any): number {

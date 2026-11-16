@@ -64,7 +64,7 @@
 import ImageFramePanel from './ImageFramePanel.vue'
 import ImageEffectsPanel from './ImageEffectsPanel.vue'
 import i18n from '@/languages'
-import { nextTick, reactive, ref, watch, onBeforeUnmount, computed } from 'vue'
+import { nextTick, reactive, ref, watch, onBeforeUnmount } from 'vue'
 
 import numberInput from '../../settings/numberInput.vue'
 import iconItemSelect, { TIconItemSelectData } from '../../settings/iconItemSelect.vue'
@@ -82,7 +82,7 @@ import imageCutout from '@/components/business/image-cutout'
 import wImageSetting, { TImageSetting } from './wImageSetting'
 import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
-import { useCanvasStore, useControlStore, useForceStore, useUserStore, useWidgetStore } from '@/store'
+import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
  // [TINIX]
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
@@ -137,17 +137,6 @@ const canvasStore = useCanvasStore()
 const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
 const { dActiveElement } = storeToRefs(widgetStore)
-// [TINIX] đang sửa mẫu → hiện ô "Khung ảnh"; gợi ý lớp có vẻ là chỗ đặt ảnh (đủ lớn, không phủ kín trang, tỉ lệ vừa phải)
-const { tempEditing: _tempEditing } = storeToRefs(useUserStore())
-const _looksLikeSlot = computed(() => {
-  const a = dActiveElement.value as any
-  if (!a || a.slot) return false
-  const { width: pw, height: ph } = canvasStore.dPage
-  const area = (Number(a.width) * Number(a.height)) / (pw * ph)
-  const ratio = Number(a.width) / (Number(a.height) || 1)
-  return area >= 0.08 && area <= 0.9 && ratio >= 0.4 && ratio <= 2.5
-})
-
 let lastUuid: string | undefined
 let tag: boolean
 let toolBarStyle: { left: string; top: string } | null = null

@@ -66,7 +66,7 @@ import downloadBlob from '@/common/methods/download/downloadBlob'
 import { useControlStore, useCanvasStore, useUserStore, useWidgetStore } from '@/store/index'
 import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
-import { clampDpi, DEFAULT_DPI } from '@/utils/tinix/units' // [TINIX]
+import { clampDpi, DEFAULT_DPI, exportTimeoutMs } from '@/utils/tinix/units' // [TINIX]
 import { withPngDpi } from '@/utils/tinix/png-dpi' // [TINIX]
 import { zipImages } from '@/utils/tinix/zip' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
@@ -105,7 +105,7 @@ async function exportPrintJpg() {
     const page = pageStore.dPage
     const url = api.home.download({ id, width: page.width, height: page.height, index: pageStore.dCurrentPage, dpi: clampDpi(page.dpi || DEFAULT_DPI) }) + '&format=jpg'
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 120000)
+    const timer = setTimeout(() => controller.abort(), Math.max(120000, exportTimeoutMs(page.width, page.height)))
     try {
       const response = await fetch(url, { signal: controller.signal })
       if (!response.ok) throw new Error('Không tạo được JPG; kiểm tra ảnh và font rồi thử lại')
@@ -169,7 +169,7 @@ async function runBatch(retry: boolean) {
         if (!page) throw new Error('Page unavailable')
         const url = api.home.download({ id, width: page.width, height: page.height, index, dpi: clampDpi(page.dpi || DEFAULT_DPI) })
         const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), 90000)
+        const timer = setTimeout(() => controller.abort(), Math.max(90000, exportTimeoutMs(page.width, page.height)))
         let response: Response
         try { response = await fetch(url, { signal: controller.signal }) } finally { clearTimeout(timer) }
         if (!response.ok) throw new Error(`HTTP ${response.status}`)

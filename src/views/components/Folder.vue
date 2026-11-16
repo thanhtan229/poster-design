@@ -35,19 +35,14 @@
 
 <script setup lang="ts">
 // import { ref, Ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
 
 defineEmits<{ select: [action: string] }>()
 
-const router = useRouter()
 
 // [TINIX] chỉ admin thấy mục "Lưu thành mẫu"
 const isAdmin = () => true
 
-const _openPSD = () => {
-  window.open(router.resolve('/psd').href, '_blank')
-}
 </script>
 
 <style lang="less" scoped>

@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts" setup>
-import { StyleValue, onMounted, reactive, nextTick } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import api from '@/api'
 import config from '@/config'
 import {loadLibraryFont} from '@/utils/tinix/font-loader'
@@ -24,16 +24,7 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useWidgetStore } from '@/store'
 
-type TState = {
-  style: StyleValue
-}
-
 const route = useRoute()
-const _state = reactive<TState>({
-  style: {
-    left: '0px',
-  },
-})
 const pageStore = useCanvasStore()
 const widgetStore = useWidgetStore()
 const { dPage } = storeToRefs(pageStore)

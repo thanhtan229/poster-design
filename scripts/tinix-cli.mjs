@@ -192,7 +192,7 @@ async function main() {
     case 'drafts create': {
       check(options, ['width', 'height', 'output'])
       const width = positive(options.width, 'width'), height = positive(options.height, 'height')
-      if (!options.output || width > 12000 || height > 12000 || width * height > 80000000) throw new Error('Invalid output or page dimensions')
+      if (!options.output || width > 12000 || height > 12000 || width * height > 100000000) throw new Error('Invalid output or page dimensions')
       await createJson(options.output, { global: { name: 'Agent draft', type: 'page', uuid: '-1', left: 0, top: 0, width, height, dpi: 300, backgroundColor: '#ffffffff', backgroundGradient: '', backgroundImage: '', backgroundTransform: {}, opacity: 1, record: {} }, layers: [] })
       result = { output: path.resolve(options.output) }
       break
@@ -203,7 +203,7 @@ async function main() {
       const layout = await readJson(options.input), issues = validate(layout)
       if (issues.some(i => i.severity === 'error')) throw new Error(JSON.stringify(issues))
       const { width, height } = layout.global
-      if (width > 12000 || height > 12000 || width * height > 80000000) throw new Error('Page exceeds render limits')
+      if (width > 12000 || height > 12000 || width * height > 100000000) throw new Error('Page exceeds render limits')
       const saved = await json(base, '/design/save', post({ title: 'Temporary CLI draft render', data: JSON.stringify([layout]), width, height }))
       if (!Number.isSafeInteger(saved?.id) || saved.id <= 0) throw new Error('Service did not return a design ID')
       try {
@@ -254,7 +254,7 @@ async function main() {
     case 'designs render': {
       check(options, ['id', 'width', 'height', 'output'])
       const id = positive(options.id, 'id'), width = positive(options.width, 'width'), height = positive(options.height, 'height')
-      if (!options.output || width > 12000 || height > 12000 || width * height > 80000000) throw new Error('Invalid output or render dimensions')
+      if (!options.output || width > 12000 || height > 12000 || width * height > 100000000) throw new Error('Invalid output or render dimensions')
       const response = await request(base, `/api/screenshots?id=${id}&width=${width}&height=${height}`, { timeout: 180000 })
       await saveResponse(response, options.output)
       result = { output: path.resolve(options.output), id }

@@ -28,7 +28,7 @@ import CanvasSizes from './CanvasSizes.vue'
 
 import { useControlStore } from '@/store';
 import { resizeCanvas } from '@/common/methods/resizeCanvas'
-import { cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX } from '@/utils/tinix/units' // [TINIX]
+import { cmToPx, clampDpi, useSizeUnit, DEFAULT_DPI, MAX_SIDE_PX, MAX_PIXELS } from '@/utils/tinix/units' // [TINIX]
 
 const router = useRouter()
 const controlStore = useControlStore()
@@ -46,7 +46,7 @@ const isAdaptive: Ref<boolean> = ref(true)
 const page: any = ref({ width: 100, height: 100, dpi: DEFAULT_DPI }) // [TINIX] dpi
 const { setUnit, unit } = useSizeUnit()
 const sizesRef = ref<any>()
-function chooseSize(s: any) { const dpi = s.unit === 'cm' ? clampDpi(s.dpi) : clampDpi(page.value.dpi); const w = s.unit === 'cm' ? cmToPx(s.width,dpi) : s.width; const h = s.unit === 'cm' ? cmToPx(s.height,dpi) : s.height; if (w > MAX_SIDE_PX || h > MAX_SIDE_PX || w*h > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas; hãy giảm DPI hoặc kích thước.'); return } page.value.dpi=dpi; page.value.width=w; page.value.height=h; setUnit(s.unit) }
+function chooseSize(s: any) { const dpi = s.unit === 'cm' ? clampDpi(s.dpi) : clampDpi(page.value.dpi); const w = s.unit === 'cm' ? cmToPx(s.width,dpi) : s.width; const h = s.unit === 'cm' ? cmToPx(s.height,dpi) : s.height; if (w > MAX_SIDE_PX || h > MAX_SIDE_PX || w*h > MAX_PIXELS) { ElMessage.error('Kích thước vượt giới hạn canvas; hãy giảm DPI hoặc kích thước.'); return } page.value.dpi=dpi; page.value.width=w; page.value.height=h; setUnit(s.unit) }
 
 const open = () => {
   controlStore.setShowMoveable(false) // 清理掉上一次的选择框
@@ -61,7 +61,7 @@ const open = () => {
 
 function finish() {
   const { width, height } = page.value
-  if (![width, height].every(n => Number.isFinite(n) && n > 0) || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > 80000000) { ElMessage.error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 80 triệu pixel).'); return }
+  if (![width, height].every(n => Number.isFinite(n) && n > 0) || width > MAX_SIDE_PX || height > MAX_SIDE_PX || width * height > MAX_PIXELS) { ElMessage.error('Kích thước vượt giới hạn canvas (12.000 px mỗi cạnh, tối đa 100 triệu pixel).'); return }
   if (props.params) {
     resizeCanvas(page.value, isAdaptive.value)
     dialogVisible.value = false

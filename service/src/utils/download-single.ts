@@ -18,11 +18,11 @@ const isDev = process.env.NODE_ENV === 'development'
 const puppeteer = require('puppeteer')
 const sharp = require('sharp')
 const { executablePath } = require('../configs.ts')
-const forceTimeOut = 60 // 强制超时时间，单位：秒
+import { MAX_EXPORT_SIDE, MAX_EXPORT_PIXELS, exportTimeoutSec } from './export-limits'
 // 4K规格，总计约830万像素 3840 * 2160 2K规格，总计约830万像素 2048 * 1080
 // const maxPXs = 8294400 
-const maxPXs = 80000000 // exported canvas keeps its original pixels up to the supported limit
-const maximum = 12000 // [TINIX] was 5000 → 10000 → 12000: trang PSD 8268×11220 bị cắt mất ~11% phía dưới ở mức 10000 (larger is clipped)
+const maxPXs = MAX_EXPORT_PIXELS // exported canvas keeps its original pixels up to the supported limit
+const maximum = MAX_EXPORT_SIDE // [TINIX] was 5000 → 10000 → 12000: trang PSD 8268×11220 bị cắt mất ~11% phía dưới ở mức 10000 (larger is clipped)
 
 export const saveScreenshot = async (url: string, { path, width, height, thumbPath, size = 0, quality = 0, prevent, ua, devices, scale, wait }: any) => {
   return new Promise(async (resolve: Function, reject: Function) => {
@@ -32,7 +32,7 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     width = Number(width).toFixed(0)
     height = Number(height).toFixed(0)
     if (Number(width) < 1 || Number(height) < 1 || Number(width) > maximum || Number(height) > maximum || Number(width) * Number(height) > maxPXs) {
-      reject(new Error('Kích thước xuất vượt giới hạn 12000 px mỗi cạnh hoặc 80 triệu pixel'))
+      reject(new Error('Kích thước xuất vượt giới hạn 12000 px mỗi cạnh hoặc 100 triệu pixel'))
       return
     }
 
@@ -62,7 +62,7 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
       browser = null
       console.log('超时强制释放浏览器')
       reject(new Error('Chụp ảnh quá thời gian, trang chưa render xong'))
-    }, forceTimeOut * 1000)
+    }, exportTimeoutSec(width, height) * 1000) // [TINIX] tỉ lệ theo số điểm ảnh (tối thiểu 60 giây)
 
     // 打开页面
     const page = await browser.newPage()

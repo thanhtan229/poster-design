@@ -85,7 +85,6 @@ import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
 import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
 import { placePhotos } from '@/utils/tinix/photo-place' // [TINIX]
-import PointImg from '@/utils/plugins/pointImg'
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
 import { moveInit } from '@/mixins/move'
 import { useCanvasStore, useControlStore, useWidgetStore } from '@/store'
@@ -144,7 +143,6 @@ onMounted(() => {
   const pageDesignEl = document.getElementById('page-design')
   if (!pageDesignEl) return
   pageDesignEl.addEventListener('mousedown', handleSelection, false)
-  // pageDesignEl.addEventListener('mousemove', debounce(100, false, handleMouseMove), false)
   // 绑定空格事件
   const scrollContainer: any = document.querySelector('#main')
   const dragContainer: any = pageDesignEl
@@ -359,23 +357,6 @@ function getScreen() {
   //   width: pageDesignEl.offsetWidth,
   //   height: pageDesignEl.offsetHeight,
   // })
-}
-
-async function _handleMouseMove(e: MouseEvent) {
-  if (!e || !e.target) return
-  const imageTarget = e.target as HTMLImageElement
-  const pImg = new PointImg(imageTarget)
-  const { rgba } = pImg.getColorXY(e.offsetX, e.offsetY)
-  if (rgba && rgba === 'rgba(0,0,0,0)') {
-    console.log('解析点位颜色: ', rgba)
-    let target = await getTarget(imageTarget)
-    if (!target) return
-    target.style.pointerEvents = 'none'
-    setTimeout(() => {
-      if (!target) return
-      target.style.pointerEvents = 'auto'
-    }, 300)
-  }
 }
 
 async function handleSelection(e: MouseEvent) {

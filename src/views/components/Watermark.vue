@@ -9,12 +9,3 @@
   <!-- <el-switch v-model="wmBollean" @change="wmChange" size="large" inline-prompt style="--el-switch-off-color: #9999999e" active-text="移除水印" inactive-text="官方水印" /> -->
 </template>
 
-<script setup lang="ts">
-import { useBaseStore } from '@/store'
-
-const baseStore = useBaseStore()
-
-function _wmChange(isRemove: string | number | boolean) {
-  baseStore.changeWatermark(isRemove ? '' : ['TinixPoster', 'poster-design'])
-}
-</script>

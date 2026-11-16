@@ -375,7 +375,7 @@ export default {
     quy_doi: '= {w} × {h} px ({mp} MP)',
     quy_doi_cm: '= {w} × {h} cm ở {dpi} DPI',
     kho_in: 'Khổ in (cm)',
-    qua_gioi_han_canh: 'Một cạnh vượt 10.000 px: giảm DPI hoặc kích thước.',
-    qua_nhieu_diem_anh: 'Trên 60 triệu điểm ảnh: xuất ảnh dễ quá thời gian chờ. Nên giảm DPI (ví dụ 150).',
+    qua_gioi_han_canh: 'Một cạnh vượt 12.000 px: giảm DPI hoặc kích thước.',
+    qua_nhieu_diem_anh: 'Trên 60 triệu điểm ảnh: xuất ảnh chậm và tốn nhiều RAM (vài GB). Có thể giảm DPI (ví dụ 150) nếu máy yếu.',
   },
 }

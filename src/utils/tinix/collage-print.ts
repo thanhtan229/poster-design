@@ -1,5 +1,8 @@
 /** Pure production planner shared by editor and server. Coordinates remain document pixels. */
 export type PrintUnit={id:string;name:string;raised:boolean;ids:string[];bounds:{x:number;y:number;width:number;height:number}}
+// Giới hạn xuất: khớp MAX_SIDE_PX / MAX_PIXELS ở src/utils/tinix/units.ts. Không import units.ts vì file này dùng chung với server (units.ts kéo theo vue).
+const MAX_SIDE=12000
+const MAX_PIXELS=100000000
 const clone=(v:any)=>JSON.parse(JSON.stringify(v))
 export function printUnits(layers:any[]):PrintUnit[]{
  const all=new Map(layers.map(w=>[String(w.uuid),w]))
@@ -30,12 +33,12 @@ export function planCollagePrint(layout:any,options:PrintOptions){
  const page=layout.global; const layers=layout.layers
  if(!page||!Array.isArray(layers)||!Number.isFinite(Number(page.width))||!Number.isFinite(Number(page.height)))throw new Error('Thiết kế không hợp lệ')
  const dpi=Number(page.dpi)||300
- if(page.width<1||page.height<1||page.width>12000||page.height>12000||page.width*page.height>80000000)throw new Error('Kích thước thành phẩm vượt giới hạn xuất')
+ if(page.width<1||page.height<1||page.width>MAX_SIDE||page.height>MAX_SIDE||page.width*page.height>MAX_PIXELS)throw new Error('Kích thước thành phẩm vượt giới hạn xuất')
  if(dpi<36||dpi>1200)throw new Error('DPI không hợp lệ')
  const values=[options.marginMm,options.gapMm]
  if(values.some(v=>!Number.isFinite(v))||options.marginMm<0||options.gapMm<0)throw new Error('Khổ giấy, lề hoặc khoảng cách không hợp lệ')
  const px=(mm:number)=>mm*dpi/25.4; const W=Math.round(Number(page.width)); const H=Math.round(Number(page.height)); const margin=Math.ceil(px(options.marginMm)); const gap=Math.ceil(px(options.gapMm))
- if(W>12000||H>12000||W*H>80000000||W-2*margin<=0||H-2*margin<=0)throw new Error('Khổ giấy/lề vượt giới hạn xuất ảnh')
+ if(W>MAX_SIDE||H>MAX_SIDE||W*H>MAX_PIXELS||W-2*margin<=0||H-2*margin<=0)throw new Error('Khổ giấy/lề vượt giới hạn xuất ảnh')
  const units=printUnits(layers); const raisedIds=new Set(units.filter(u=>u.raised).flatMap(u=>u.ids))
  // Cut sheets are production artwork: omit synthetic outlines and cast shadows.
  // Work on copies so saved designs and approved/final artwork stay intact.
