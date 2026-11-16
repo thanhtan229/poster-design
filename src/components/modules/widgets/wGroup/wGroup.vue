@@ -133,10 +133,6 @@ function touchstart() {
   if (dActiveElement.value?.uuid !== props.params.uuid) {
     return
   }
-  const tempRecord = {
-    width: props.params.width,
-    height: props.params.height,
-  }
   for (let i = dWidgets.value.length - 1; i >= 0; --i) {
     if (dWidgets.value[i].parent === props.params.uuid) {
       const el = document.getElementById(dWidgets.value[i].uuid)

@@ -138,8 +138,8 @@ const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
 const { dActiveElement } = storeToRefs(widgetStore)
 // [TINIX] đang sửa mẫu → hiện ô "Khung ảnh"; gợi ý lớp có vẻ là chỗ đặt ảnh (đủ lớn, không phủ kín trang, tỉ lệ vừa phải)
-const { tempEditing } = storeToRefs(useUserStore())
-const looksLikeSlot = computed(() => {
+const { tempEditing: _tempEditing } = storeToRefs(useUserStore())
+const _looksLikeSlot = computed(() => {
   const a = dActiveElement.value as any
   if (!a || a.slot) return false
   const { width: pw, height: ph } = canvasStore.dPage

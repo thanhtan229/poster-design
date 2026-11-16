@@ -361,7 +361,7 @@ function getScreen() {
   // })
 }
 
-async function handleMouseMove(e: MouseEvent) {
+async function _handleMouseMove(e: MouseEvent) {
   if (!e || !e.target) return
   const imageTarget = e.target as HTMLImageElement
   const pImg = new PointImg(imageTarget)

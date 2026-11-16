@@ -21,7 +21,6 @@ const toggleRuler=()=>{shown.value=!shown.value}
 onMounted(()=>window.addEventListener('tinix-toggle-ruler',toggleRuler))
 onBeforeUnmount(()=>window.removeEventListener('tinix-toggle-ruler',toggleRuler))
 const scale=computed(()=>Math.max(.01,props.zoom/100))
-const inverse=computed(()=>({transform:`scale(${1/scale.value})`}))
 const horizontalStyle=computed(()=>({top:-24/scale.value+'px',width:props.page.width*scale.value+'px',transform:`scale(${1/scale.value})`}))
 const verticalStyle=computed(()=>({left:-24/scale.value+'px',height:props.page.height*scale.value+'px',transform:`scale(${1/scale.value})`}))
 const guides=computed(()=>props.page.tinixGuides || {x:[],y:[]})

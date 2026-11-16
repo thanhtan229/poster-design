@@ -29,7 +29,7 @@ type TState = {
 }
 
 const route = useRoute()
-const state = reactive<TState>({
+const _state = reactive<TState>({
   style: {
     left: '0px',
   },

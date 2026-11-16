@@ -45,7 +45,7 @@ const router = useRouter()
 // [TINIX] chỉ admin thấy mục "Lưu thành mẫu"
 const isAdmin = () => true
 
-const openPSD = () => {
+const _openPSD = () => {
   window.open(router.resolve('/psd').href, '_blank')
 }
 </script>

@@ -1,30 +1,4 @@
 import {fontFaceCss} from '@/utils/tinix/font-loader'
-interface TextItem {
-  text: string
-  [porpname: string]: any
-}
-interface CloudText {
-  fontFamily: string
-  fontSize: number
-  textAlign: string
-  color: string
-  textDecoration: string
-  writingMode: string
-  fontWeight: string | number
-  fontStyle: string
-  lineHeight: number
-  shadows: Record<string, unknown>[]
-  strokes: Record<string, unknown>[]
-  text: string
-  texts: TextItem[]
-  type: string
-  letterSpacing: number
-  [propsName: string]: unknown
-}
-const CLOUD_TYPE = {
-  text: 'text',
-  image: 'image',
-}
 
 // https://www.zhangxinxu.com/wordpress/2018/02/js-detect-suppot-font-family/
 export const isSupportFontFamily = (f: string) => {

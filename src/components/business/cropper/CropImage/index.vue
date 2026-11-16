@@ -55,7 +55,7 @@ const handleClose = (done: () => void) => {
   done()
 }
 
-const open = async (item: TOpenItem, data: Cropper.Data) => {
+const _open = async (item: TOpenItem, data: Cropper.Data) => {
   state.loading = true
   item.rawImg = item.rawImg ? item.rawImg : item.imgUrl
   cropData = data

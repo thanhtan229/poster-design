@@ -70,7 +70,7 @@ const controlStore = useControlStore()
 const { dWidgets } = storeToRefs(widgetStore)
 
 const canvasImage = ref<typeof SaveImage | null>(null)
-const state = reactive<TState>({
+const _state = reactive<TState>({
   stateBollean: false,
   title: '',
   loading: false,

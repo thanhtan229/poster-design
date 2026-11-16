@@ -11,7 +11,6 @@ import { TControlStore } from '@/store/design/control'
 import { useControlStore, useWidgetStore } from '@/store'
 import { isTextInput } from '@/common/methods/selectionShortcuts'
 
-let hadDown = false
 const appContainer: any = document.querySelector('#app')
 const controlStore = useControlStore()
 const widgetStore = useWidgetStore()
@@ -42,7 +41,6 @@ const shortcuts = {
             // TODO: 防止组合键导致页面失焦无法操作
             if (!document.hasFocus()) {
               clearInterval(timer)
-              hadDown = false
               store.updateAltDown(false)
               // store.dispatch('updateAltDown', false)
             }
@@ -66,7 +64,6 @@ const shortcuts = {
     handleKeyup(store: TControlStore, checkCtrl: number | undefined) {
       return (e: any) => {
         clearInterval(checkCtrl)
-        hadDown = false
         if (e.key === 'Alt' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Meta') {
           store.updateAltDown(false)
         }

@@ -14,7 +14,7 @@ import { useBaseStore } from '@/store'
 
 const baseStore = useBaseStore()
 
-function wmChange(isRemove: string | number | boolean) {
+function _wmChange(isRemove: string | number | boolean) {
   baseStore.changeWatermark(isRemove ? '' : ['TinixPoster', 'poster-design'])
 }
 </script>
