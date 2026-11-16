@@ -52,7 +52,7 @@ async function renderingTest() {
     const path = require('path'), fs = require('fs'), sharp = require('../../service/node_modules/sharp');
     const root = path.resolve(__dirname, '../..'), target = path.resolve('static/fonts/match.woff2');
     fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.copyFileSync(path.join(root, 'service/static/fonts/be-vietnam-pro-400.woff2'), target);
+    fs.copyFileSync(path.join(root, 'service/seed/static/fonts/be-vietnam-pro-400.woff2'), target);
     const fontsModule = require('../../service/src/tinix/ai/fonts'), vision = require('../../service/src/tinix/ai/vision');
     const originalFonts = fontsModule.libraryFonts, originalCall = vision.callVisionJSON;
     const testFont = { id: 91, value: 'Match fixture', alias: 'Match fixture', woff: '/static/fonts/match.woff2', category: 'sans', tags: [], supports_vietnamese: true, profile: { ...profile, weight: 400, coverage: [[32, 126]] } };

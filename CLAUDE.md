@@ -31,12 +31,12 @@ Fork của [palxiao/poster-design](https://github.com/palxiao/poster-design) (AG
 - Code mới đặt trong `service/src/tinix/` (backend) và `src/utils/tinix/`, `src/components/business/ai-assistant/` (frontend).
 - Hạn chế sửa file gốc. Mỗi chỗ sửa file gốc: thêm comment `[TINIX]` và ghi vào `TINIX.md`.
 - Mọi lời gọi AI đi qua `service/src/tinix/ai/vision.ts` (`callVisionJSON`); kiểm tra JSON bằng `service/src/tinix/ai/validate.ts` (KHÔNG dùng zod: service biên dịch bằng TypeScript 3.9); lịch sử/chi phí ghi vào `ai_jobs`.
-- Service dùng TypeScript 3.9: không có `catch (e: any)`, labeled tuple, `satisfies`… Kiểm tra: `cd service && npx tsc --noEmit -p .` (bỏ qua lỗi sẵn có trong `node_modules/axios`).
+- Service dùng TypeScript 3.9: không có `catch (e: any)`, labeled tuple, `satisfies`… Kiểm tra: `npm run tinix:typecheck-service` (ở thư mục gốc). **Đừng dùng `tsc --noEmit` trần trong `service`**: các khai báo kiểu mới trong `node_modules` có cú pháp TS 3.9 không đọc nổi (163 lỗi cú pháp), và khi có lỗi cú pháp `tsc` bỏ qua toàn bộ bước kiểm tra kiểu, nên nó luôn báo lỗi mà không kiểm tra mã dự án. Lệnh trên dùng TypeScript API và chỉ tính file ngoài `node_modules`. Lib DOM của TS 3.9 thiếu API mới (`FontFace`, `document.fonts`, `replaceChildren`, `letterSpacing`): mã chạy trong Chromium thì ép `any`.
 - Sau khi sửa phần AI: chạy `npm run tinix:test-ai`; sau khi sửa font/admin/i18n: chạy `npm run tinix:test`.
 - AI trả tọa độ tỉ lệ 0–1; widget dùng px → đổi bằng kích thước trang.
 - Chuỗi giao diện mới của TinixPoster: thêm khóa vào `src/languages/modules/vi/tinix-ui.ts` rồi dùng `$t('tinix.ui.<nhóm>.<khóa>')` / `i18t(...)`, không viết cứng tiếng Việt trong component.
 - Ghi chú code mới bằng tiếng Việt hoặc tiếng Anh (code gốc ghi chú tiếng Trung).
-- Frontend phải qua 3 cổng trước khi commit: `npm run lint` (hiện **0 lỗi**, giữ nguyên như vậy), `npx vue-tsc --noEmit` (0 lỗi) và `npx vite build`. Lưu ý: `vite build` KHÔNG kiểm tra kiểu, nên luôn chạy `vue-tsc`.
+- Frontend phải qua 3 cổng trước khi commit: `npm run lint` (hiện **0 lỗi**, giữ nguyên như vậy), `npx vue-tsc --noEmit` (0 lỗi) và `npx vite build`; sửa `service/` thì thêm `npm run tinix:typecheck-service`. Bản CI (chạy đúng các bước này + `tinix:test`) nằm ở `.github/ci.yml.example`, chưa bật vì token đẩy mã thiếu quyền `workflow` (xem đầu file đó). Lưu ý: `vite build` KHÔNG kiểm tra kiểu, nên luôn chạy `vue-tsc`.
 - Lint — những điều đã gặp:
   - Đừng dùng `eslint --fix` bừa với `vue/v-on-function-call`: nó đổi `@click="fn()"` thành `@click="fn"` và làm sự kiện bị truyền vào làm tham số. Với hàm có tham số, viết `@click="() => fn()"`.
   - Đừng gỡ import trong `src/types/*.d.ts` (cần để file là module khi `declare module` mở rộng kiểu của `vue`); nếu import thừa thì thay bằng `export {}`.

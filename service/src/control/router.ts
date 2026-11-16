@@ -27,8 +27,8 @@ import aiService from '../service/ai'
 import api from './api'
 import { requireAdmin } from '../utils/auth'
 const rRouter = rExpress.Router()
-rRouter.get('/api/admin/fonts/normalize',requireAdmin,(_req,res)=>res.json({code:200,msg:'ok',result:normalizationStatus()}))
-rRouter.post('/api/admin/fonts/normalize',requireAdmin,(_req,res)=>res.json({code:200,msg:'ok',result:startNormalization()}))
+rRouter.get('/api/admin/fonts/normalize',requireAdmin,(_req:any,res:any)=>res.json({code:200,msg:'ok',result:normalizationStatus()}))
+rRouter.post('/api/admin/fonts/normalize',requireAdmin,(_req:any,res:any)=>res.json({code:200,msg:'ok',result:startNormalization()}))
 
 rRouter.get(api.SCREENGHOT, screenshots.screenshots)
 rRouter.get(api.PRINTSCREEN, screenshots.printscreen)

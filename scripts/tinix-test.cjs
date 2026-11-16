@@ -22,6 +22,12 @@ const suites = [
   { name: 'Nhóm mẫu thiết kế', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'groups.ts'], cwd: root },
   { name: 'Khung ảnh của mẫu (lọc theo số ảnh)', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'slots.ts'], cwd: root },
   { name: 'Ảnh tải lên (ảnh nhẹ, xóa an toàn, yêu thích)', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'photos.ts'], cwd: root },
+  // Kiểm thử offline thuần (thư mục tạm, không cần app/trình duyệt/DB thật) — chuyển từ các script rời trong scripts/
+  { name: 'Kế hoạch in cắt dán (collage-print)', args: [path.join(root, 'scripts/tinix-collage-print-test.cjs')], cwd: root },
+  { name: 'Dựng mẫu từ bản nháp (instantiate)', args: [path.join(root, 'scripts/tinix-instantiate-test.mjs')], cwd: root },
+  { name: 'Mặt nạ cắt ảnh (mask)', args: [path.join(root, 'scripts/tinix-mask-test.mjs')], cwd: root },
+  { name: 'MCP (client chính thức)', args: [path.join(root, 'scripts/tinix-mcp-test.mjs')], cwd: root },
+  { name: 'Tên scrapbook', args: [path.join(root, 'scripts/tinix-scrapbook-name-test.mjs')], cwd: root },
   {
     name: 'Khóa i18n',
     args: ['-e', "require('./service/node_modules/ts-node').register({ transpileOnly: true, compilerOptions: { module: 'commonjs', esModuleInterop: true } }); require('./scripts/check-i18n-keys.ts')"],
