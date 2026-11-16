@@ -28,7 +28,7 @@ const fs=require('fs'),path=require('path'),crypto=require('crypto'),DB=require(
  label('Lời yêu thương','how sweet it is to be loved by you',1270,100,1030,140,38)
  const yellow=await asset('yellow-label',800,180,'<path d="M35 30Q0 90 35 150L730 165Q800 90 745 15Z" fill="#e8d48b" stroke="#fffdf1" stroke-width="16"/>')
  label('Say cheese','SAY CHEESE',90,1010,740,175,62,yellow)
- label('Lời nhắn','We were just kids\nwhen we fell in love',1570,1140,720,180,38)
+ label('Lời nhắn','We all just kids\nwhen we fell in love',1570,1140,720,180,38)
  const arrow=await asset('heart-arrow',800,240,'<g fill="none" stroke="#fffdf1" stroke-width="35" stroke-linecap="round" stroke-linejoin="round"><path d="M70 80L730 190M70 80L145 35M70 80L120 150M650 100L630 170 580 220M720 110L690 180 640 230"/><path d="M380 105C290-30 255 85 390 205C560 95 480 0 380 105Z"/></g><g fill="none" stroke="#34352d" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"><path d="M70 80L730 190M70 80L145 35M70 80L120 150M650 100L630 170 580 220M720 110L690 180 640 230"/><path d="M380 105C290-30 255 85 390 205C560 95 480 0 380 105Z"/></g>')
  image('Mũi tên trái tim',arrow,1580,920,730,225)
  let keys='';for(let r=0;r<4;r++)for(let c=0;c<10;c++)keys+=`<rect x="${75+c*29}" y="${245+r*27}" width="21" height="18" rx="5" fill="#fff8dd"/>`
