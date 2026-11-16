@@ -307,6 +307,7 @@ So với bản dựng thủ công bằng script, trên cùng ảnh mẫu (`--pho
 - **SSIM phạt nặng chữ lệch vài pixel** (vùng chữ 0,23–0,48 dù nhìn bằng mắt khá gần); xem thêm ảnh cạnh nhau.
 - Biểu tượng nhỏ trong nhãn (máy ảnh trên nhãn hồng) không được giữ: nhãn `cutout` chỉ lấy hình dạng và màu.
 - Bóng đổ `effects.shadow` của ứng dụng vẽ theo **hình chữ nhật** của lớp, nên chỉ đặt cho lớp chữ nhật thật (giấy khung, nhãn `rect`); ruy băng đuôi én, nhãn `cutout` và ảnh có mặt nạ không có bóng, nếu không sẽ lộ khối vuông.
+- **`textInk` phải sát chữ**: nếu vùng này bao cả viền giấy hoặc nền tối, chiều cao mực bị thổi phồng và chữ nhiều dòng bị giãn dòng quá thưa (nhãn "Lời nhắn": 1,67 → 1,14 sau khi thu hẹp). Công cụ cảnh báo khi `lineHeight` đo được > 1,5.
 - Đo chữ bằng Chromium cần trang cùng nguồn gốc với máy chủ Tinix (trang `about:blank` bị chặn tải font: `NetworkError`).
 
 Kiểm thử offline `scripts/tinix-reference-build-test.mjs` (trong `npm run tinix:test`) dùng ảnh tổng hợp có đáp án biết trước, bộ tách nền và bộ đo chữ giả: duỗi thẳng khung xoay 10° (đo hướng gradient chủ đạo, có phép đối chứng không duỗi), đếm trái tim, màu giấy/nền/mực, vị trí sticker, cỡ chữ tự khớp và khung chữ không tràn, ảnh giữ chỗ, so sánh, kiểm tra spec. Phần Chromium, BiRefNet và font thật không chạy trong CI.

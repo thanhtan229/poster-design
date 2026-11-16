@@ -27,7 +27,7 @@
     { "type": "label", "name": "Say cheese", "center": [222, 530], "size": [355, 104], "rotate": -1, "shape": "cutout",
       "text": "SAY CHEESE", "font": "Permanent Marker", "textInk": [112, 498, 392, 568] },
     { "type": "label", "name": "Lời nhắn", "center": [946, 610], "size": [328, 110], "rotate": 3, "shape": "ribbon", "notch": 26,
-      "text": "We all just kids\nwhen we fell in love ♥", "font": "Patrick Hand", "textInk": [792, 562, 1100, 658] },
+      "text": "We all just kids\nwhen we fell in love ♥", "font": "Patrick Hand", "textInk": [800, 576, 1092, 646] },
 
     { "type": "sticker", "name": "Mũi tên trái tim", "box": [770, 445, 1140, 570] },
     { "type": "sticker", "name": "Máy chữ", "box": [460, 730, 695, 1000] },
