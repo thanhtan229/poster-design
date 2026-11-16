@@ -256,3 +256,57 @@ Kiểm thử tách nền, hai cực sáng/tối, vùng trắng và giảm trọn
 
 
 [TINIX] Bé yêu v4 phiên bản 2 giới hạn vùng tên cách sticker máy ảnh; mặc định viền chủ thể mới 0 mm. Kiểm thử giao diện và xuất đơn 215 qua scripts/tinix-baby-v4-ui-test.cjs và tinix-production-pilot.cjs.
+
+
+## Dựng mẫu cắt dán từ ảnh tham chiếu (2026-11-16)
+
+Lệnh CLI/MCP dựng **bản nháp** mẫu cắt dán từ một ảnh chụp trang scrapbook thật: `reference grid`, `drafts from-reference`, `reference compare` (MCP: `reference_grid`, `draft_from_reference`, `reference_compare`). Không gọi AI trả phí. Cần app đang chạy (tải font, tách nền BiRefNet). Mã ở `scripts/lib/reference-build.mjs` và `scripts/lib/text-measure.mjs`; ví dụ spec ở `scripts/examples/smile-darling.spec.json` (chỉ có toạ độ và chữ, không có ảnh).
+
+### Phân công người/tác tử và máy
+
+Thử nghiệm cho thấy dò tự động "mù" không tách được các khung chồng lớp (thành phần màu trắng dính nhau, tỉ lệ lấp đầy 0,11–0,33). Vì vậy **vị trí, kích thước và góc xoay từng thành phần do người hoặc tác tử đọc từ ảnh** rồi ghi vào spec; máy làm phần đo đếm:
+
+- cắt ảnh trong khung **đã duỗi thẳng** (khung xoay, ảnh bên trong vẫn thẳng);
+- tách **sticker thật** bằng BiRefNet (không vẽ lại bằng SVG); nhãn `shape: "cutout"` lấy hình nét cọ từ mặt nạ tách nền rồi điền màu giấy;
+- lấy màu nền, màu giấy khung (từ dải viền ngoài), màu nhãn, màu mực; dò các trái tim trắng làm nền;
+- **tự khớp cỡ chữ**: đo "mực" chữ trong ảnh mẫu (ngưỡng Otsu), rồi đo font thật bằng Chromium của Puppeteer (cùng engine với bộ render, có kerning) để tìm cỡ chữ cho bề rộng mực bằng nhau; khung chữ luôn rộng hơn dòng dài nhất nên không xuống dòng; chữ nhiều dòng lấy `lineHeight` từ chiều cao mực mẫu; tâm mực trùng tâm mực trong ảnh mẫu.
+
+### Quy trình
+
+```text
+node scripts/tinix-cli.mjs reference grid --input ref.png --output ref-grid.png            # lưới toạ độ (px ảnh gốc) để đọc vị trí
+# viết spec.json (xem bên dưới), rồi:
+node scripts/tinix-cli.mjs drafts from-reference --reference ref.png --spec spec.json --output draft.json
+node scripts/tinix-cli.mjs drafts render --input draft.json --output render.png
+node scripts/tinix-cli.mjs reference compare --reference ref.png --render render.png --spec spec.json --output cmp.png
+node scripts/tinix-cli.mjs templates save-collage --input draft.json --name "Tên mẫu"      # khi đã hài lòng
+```
+
+Tài nguyên ghi vào `service/static/collage/<name>/`. Mặc định `--photos placeholder`: khung ảnh dùng ảnh giữ chỗ trung tính, **không nhúng ảnh người của ảnh mẫu vào mẫu**. `--photos reference` chỉ để đo độ khớp (ảnh trong khung lấy từ ảnh mẫu). `reference compare` in MAE (0–255) và SSIM (1 = giống hệt) toàn trang và theo từng phần tử, kèm ảnh cạnh nhau (mẫu | render | bản đồ lệch).
+
+### Spec
+
+`name` (slug), `title`, `canvas.width` (mặc định 2400; chiều cao theo tỉ lệ ảnh mẫu), `background` (`color: "auto"`, `hearts: true`) và `elements` theo thứ tự lớp từ dưới lên:
+
+| `type` | trường chính |
+|---|---|
+| `frame` | `center [x,y]`, `size [w,h]`, `rotate` (độ, dương = thuận chiều kim đồng hồ), `photos [{name, offset, size}]`, `paper` (`auto` hoặc `#rrggbb`) |
+| `photo` | `center`, `size`, `rotate`, `mask` (`cloud`, `circle`, `ellipse`, `rounded`) |
+| `label` | `center`, `size`, `rotate`, `shape` (`rect`, `ribbon` + `notch`, `cutout`), `color`, `text`, `font` (tên trong kho font), `textInk [x0,y0,x1,y1]` (vùng chứa chữ để đo mực), `textColor`, `fontSize` (bỏ trống để tự khớp), `letterSpacing`, `lineHeight` |
+| `sticker` | `box [x0,y0,x1,y1]` |
+
+Toạ độ trong spec là **pixel của ảnh tham chiếu**. Spec sai hoặc font không có trong kho báo lỗi rõ (kèm gợi ý tên font gần giống) và không ghi tệp đầu ra.
+
+### Kết quả trên trang "Smile, Darling" và các điều đã học
+
+So với bản dựng thủ công bằng script, trên cùng ảnh mẫu (`--photos reference`): MAE 26,5 so với 28,5; sticker SSIM 0,82–0,87; "SAY CHEESE" 0,48 so với 0,39; chữ không còn tràn hay gãy dòng. Điểm yếu còn lại:
+
+- **Toạ độ khung do người ước lượng**: hai khung ảnh lớn còn SSIM 0,52–0,54 (viền lệch vài pixel). Đã thử bước tự tinh chỉnh khung bằng leo đồi trên độ tương phản viền giấy: **làm kết quả tệ hơn** (SSIM toàn trang 0,652 → 0,599) nên đã gỡ bỏ. Dùng `reference compare` và bản đồ lệch để sửa spec bằng tay.
+- **Font**: kho chỉ có `Amatic SC` bản mảnh nên "SMILE, DARLING" mảnh và cao hơn mẫu khi khớp theo bề rộng.
+- **Nền**: chỉ dò được ~29 trái tim trong ~50 (tim bé hoặc bị khung che); tim bị che được vẽ trọn dưới khung nên không lộ.
+- **SSIM phạt nặng chữ lệch vài pixel** (vùng chữ 0,23–0,48 dù nhìn bằng mắt khá gần); xem thêm ảnh cạnh nhau.
+- Biểu tượng nhỏ trong nhãn (máy ảnh trên nhãn hồng) không được giữ: nhãn `cutout` chỉ lấy hình dạng và màu.
+- Bóng đổ `effects.shadow` của ứng dụng vẽ theo **hình chữ nhật** của lớp, nên chỉ đặt cho lớp chữ nhật thật (giấy khung, nhãn `rect`); ruy băng đuôi én, nhãn `cutout` và ảnh có mặt nạ không có bóng, nếu không sẽ lộ khối vuông.
+- Đo chữ bằng Chromium cần trang cùng nguồn gốc với máy chủ Tinix (trang `about:blank` bị chặn tải font: `NetworkError`).
+
+Kiểm thử offline `scripts/tinix-reference-build-test.mjs` (trong `npm run tinix:test`) dùng ảnh tổng hợp có đáp án biết trước, bộ tách nền và bộ đo chữ giả: duỗi thẳng khung xoay 10° (đo hướng gradient chủ đạo, có phép đối chứng không duỗi), đếm trái tim, màu giấy/nền/mực, vị trí sticker, cỡ chữ tự khớp và khung chữ không tràn, ảnh giữ chỗ, so sánh, kiểm tra spec. Phần Chromium, BiRefNet và font thật không chạy trong CI.

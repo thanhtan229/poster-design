@@ -12,6 +12,7 @@ const client = new Client({ name: 'tinix-test', version: '1.0.0' })
 try {
   await client.connect(transport)
   const list = await client.listTools(); assert(list.tools.some(t => t.name === 'draft_create')); assert(list.tools.some(t => t.name === 'view_image'))
+  for (const name of ['draft_from_reference', 'reference_grid', 'reference_compare']) assert(list.tools.some(t => t.name === name), `thiếu công cụ ${name}`)
   const draft = path.join(dir, 'draft.json')
   let result = await client.callTool({ name: 'draft_create', arguments: { width: '600', height: '400', output: draft } })
   assert(!result.isError, JSON.stringify(result))
