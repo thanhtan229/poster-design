@@ -1,6 +1,6 @@
 # PLAN — Việt hóa giao diện TinixPoster
 
-> Trạng thái: **Hoàn tất triển khai và nghiệm thu (2026-11-12)** — chưa commit
+> Trạng thái: **Hoàn tất triển khai và nghiệm thu (2026-11-12)** — đã commit và merge vào `main` (PR #1 của fork). Tài liệu lịch sử, không còn việc dang dở.
 
 ## 1. Mục tiêu
 

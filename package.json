@@ -11,6 +11,7 @@
     "tinix:font-previews": "node scripts/tinix-font-previews.mjs",
     "tinix:winfonts": "node scripts/tinix-winfonts.mjs",
     "tinix:backup": "node scripts/tinix-backup.mjs",
+    "tinix:backup-schedule": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tinix-backup-schedule.ps1",
     "tinix:test-ai": "node scripts/tinix-ai-selftest/index.cjs",
     "tinix:test": "node scripts/tinix-test.cjs",
     "tinix:typecheck-service": "node scripts/tinix-typecheck-service.cjs",
