@@ -144,20 +144,16 @@ async function load() {
       pageStore.setDPage({...content.page, ...{backgroundImage}})
       // store.commit('setDPage', {...content.page, ...{backgroundImage}})
     }
-    try {
-      fontMinWithDraw && (await font2style(fontContent, fontData))
-      // console.log('1. base64 yes')
-      const preload = new Preload(imgsData)
-      await preload.doms()
-      const failedImage = imgsData.find((image) => image.getClientRects().length && !image.naturalWidth)
-      if (failedImage) throw Object.assign(new Error('Không tải được ảnh: ' + (failedImage.closest('.w-image')?.id || failedImage.currentSrc || failedImage.src)), {issues:[{code:'IMAGE_LOAD_FAILED',layerId:failedImage.closest('.w-image')?.id,url:failedImage.currentSrc||failedImage.src}]})
-      // console.log('2. image yes')
-      const preload2 = new Preload(svgsData)
-      await preload2.svgs()
-      // console.log('3. svg yes')
-    } catch (e) {
-      throw e
-    }
+    fontMinWithDraw && (await font2style(fontContent, fontData))
+    // console.log('1. base64 yes')
+    const preload = new Preload(imgsData)
+    await preload.doms()
+    const failedImage = imgsData.find((image) => image.getClientRects().length && !image.naturalWidth)
+    if (failedImage) throw Object.assign(new Error('Không tải được ảnh: ' + (failedImage.closest('.w-image')?.id || failedImage.currentSrc || failedImage.src)), {issues:[{code:'IMAGE_LOAD_FAILED',layerId:failedImage.closest('.w-image')?.id,url:failedImage.currentSrc||failedImage.src}]})
+    // console.log('2. image yes')
+    const preload2 = new Preload(svgsData)
+    await preload2.svgs()
+    // console.log('3. svg yes')
     try {
       await Promise.all(fontLoaders)
       // console.log('4. font yes')
