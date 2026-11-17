@@ -33,3 +33,30 @@ assert.equal(clean.layouts[1].layers[0].effects.border,0);assert.equal(clean.lay
 assert.equal(clean.placements[0].width,200);assert.equal(clean.placements[0].height,300)
 assert.deepEqual(clean.layouts.at(-1),decorated);assert.equal(JSON.stringify(decorated),decoratedBefore)
 console.log('PASS cut-only border/shadow removal, original dimensions, other effects and final artwork preserved')
+
+// printInset: phần đệm trong suốt của lớp ảnh (bóng/viền) không tính vào hộp cắt → xếp được nhiều mảnh hơn trên một tờ
+{
+  const pad=100, visible=300, box=visible+2*pad // mỗi sticker 700×700 nhưng chỉ 500×500 nhìn thấy
+  const mk=(inset)=>({global:{width:1000,height:1000,dpi:254,backgroundColor:'#eee'},layers:[image('bg',0,0,1000,1000,{printRole:'base'}),...Array.from({length:4},(_,i)=>image('s'+i,0,0,box,box,{printRole:'raised',...(inset?{printInset:pad}:{})}))]})
+  const opt={paperWidthMm:100,paperHeightMm:100,marginMm:5,gapMm:2}
+  const padded=planCollagePrint(mk(false),opt), tight=planCollagePrint(mk(true),opt)
+  assert.ok(padded.layouts.length>tight.layouts.length,`inset phải giảm số tờ (${padded.layouts.length} → ${tight.layouts.length})`)
+  const u=printUnits(mk(true).layers).filter(v=>v.raised)[0]
+  assert.equal(Math.round(u.bounds.width),visible,'hộp cắt chỉ gồm phần nhìn thấy'); assert.equal(Math.round(u.bounds.height),visible)
+  const again=planCollagePrint(mk(true),opt); assert.deepEqual(again.placements,tight.placements,'kết quả xếp phải lặp lại được (hạt giống cố định)')
+  // lớp có printInset phải nằm đúng chỗ: phần nhìn thấy (sau đệm) nằm trong lề
+  for(const p of tight.placements){assert.ok(p.x>=Math.ceil(5*254/25.4)-1&&p.y>=Math.ceil(5*254/25.4)-1,'mảnh không vào vùng lề')}
+}
+// nhiều mảnh: thêm thứ tự thử ngẫu nhiên không bao giờ cho kết quả tệ hơn 12 thứ tự cơ bản và vẫn đủ mảnh, không chồng nhau
+{
+  const sizes=[[420,260],[300,300],[180,520],[250,250],[350,120],[200,200],[150,330],[400,180],[120,120],[280,140],[220,260],[90,300]]
+  const lay={global:{width:1000,height:1000,dpi:254,backgroundColor:'#eee'},layers:[image('bg',0,0,1000,1000,{printRole:'base'}),...sizes.map(([w,h],i)=>image('p'+i,0,0,w,h,{printRole:'raised'}))]}
+  const plan=planCollagePrint(lay,{paperWidthMm:100,paperHeightMm:100,marginMm:5,gapMm:2})
+  assert.equal(plan.placements.length,sizes.length,'đủ mọi mảnh')
+  const gap=Math.ceil(2*254/25.4)
+  for(let i=0;i<plan.placements.length;i++)for(let j=i+1;j<plan.placements.length;j++){const a=plan.placements[i],b=plan.placements[j]
+   if(a.sheet!==b.sheet)continue
+   const apart=a.x+a.width+gap<=b.x||b.x+b.width+gap<=a.x||a.y+a.height+gap<=b.y||b.y+b.height+gap<=a.y
+   assert.ok(apart,`mảnh ${i} và ${j} chồng nhau hoặc sát hơn khoảng cách`)}
+}
+console.log('PASS printInset (hộp cắt chỉ gồm phần nhìn thấy, ít tờ hơn), xếp lặp lại được, nhiều mảnh không chồng nhau')

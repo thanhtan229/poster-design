@@ -152,6 +152,10 @@ const tape = async (name, kind, tw, th, deg) => {
 }
 const putTape = async (name, kind, cx, cy, tw, th, deg, parent) => {
   const t = await tape(name, kind, tw, th, deg)
+  if (parent && extents.has(parent.uuid)) { // băng dính nhô ra ngoài khung → nới hộp nhìn thấy của cụm
+    const r = (deg * Math.PI) / 180, hw = (tw * Math.abs(Math.cos(r)) + th * Math.abs(Math.sin(r))) / 2, hh = (tw * Math.abs(Math.sin(r)) + th * Math.abs(Math.cos(r))) / 2, e = extents.get(parent.uuid)
+    extents.set(parent.uuid, [Math.min(e[0], cx - hw), Math.min(e[1], cy - hh), Math.max(e[2], cx + hw), Math.max(e[3], cy + hh)])
+  }
   const l = place(name, t.url, cx - t.S / 2, cy - t.S / 2, t.S, t.S, parent ? { parent: parent.uuid, printGroup: parent.printGroup } : {})
   return l
 }
@@ -176,8 +180,10 @@ const slotPhoto = (name, photo, x, y, w, h, cropY, parent, mask) => {
   if (!placeholders) p.origin = { proxy: photo.web_url, original: photo.url }
   return p
 }
-const CL = 90 // nới hộp nhóm mỗi phía để băng dính nhô ra vẫn nằm trong mảnh cắt
-const cluster = (name, x, y, w, h, rot) => { const g = groupLayer({ name, left: Math.round(x - CL), top: Math.round(y - CL), width: Math.round(w + 2 * CL), height: Math.round(h + 2 * CL), rotate: rot }); layers.push(g); return g }
+// hộp nhóm = hộp NHÌN THẤY của cụm (khung + băng dính nhô ra); bộ xếp mảnh cắt dùng hộp này nên càng sát nội dung càng tiết kiệm giấy
+const extents = new Map()
+const cluster = (name, x, y, w, h, rot) => { const g = groupLayer({ name, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), rotate: rot }); layers.push(g); extents.set(g.uuid, [x, y, x + w, y + h]); return g }
+const finishCluster = (g) => { const [x0, y0, x1, y1] = extents.get(g.uuid); g.left = Math.round(x0); g.top = Math.round(y0); g.width = Math.round(x1 - x0); g.height = Math.round(y1 - y0); g.record.width = g.width; g.record.height = g.height }
 const placeIn = (g, name, asset, x, y) => place(name, asset.url, x, y, asset.W2, asset.H2, { parent: g.uuid, printGroup: g.printGroup })
 
 const PW = 440, PH = 620, B = 20 // ảnh dọc: vùng ảnh và độ dày viền giấy
@@ -191,6 +197,7 @@ if (placeholders) {
   placeIn(g, 'Khung giấy vòm', fr, x - fr.pad, y - fr.pad)
   slotPhoto('Ảnh Bloom', photos[0], x + B, y + B, PW, PH, 35, g, maskUri(PW, PH, `<path d="${archPath(0, 0, PW, PH)}" fill="#fff"/>`))
   await putTape('Băng dính sọc', 'stripe', x + 70, y + 40, 190, 54, -38, g)
+  finishCluster(g)
 }
 // P2 — Pure Joy: mask bo tròn lớn (gối) + băng dính chấm vàng
 {
@@ -200,6 +207,7 @@ if (placeholders) {
   placeIn(g, 'Khung giấy bo tròn', fr, x - fr.pad, y - fr.pad)
   slotPhoto('Ảnh Pure Joy', photos[1], x + B, y + B, PW, PH, 30, g, maskUri(PW, PH, `<path d="${roundPath(0, 0, PW, PH, R)}" fill="#fff"/>`))
   await putTape('Băng dính chấm', 'dots', x + PW - 40, y + 30, 190, 54, 36, g)
+  finishCluster(g)
 }
 // P3 — My birthday: khung giấy cạnh thẳng, góc bo vừa phải (dễ cắt tay), đường khâu nét đứt
 {
@@ -209,6 +217,7 @@ if (placeholders) {
   placeIn(g, 'Khung giấy cạnh thẳng', fr, x - fr.pad, y - fr.pad)
   slotPhoto('Ảnh sinh nhật', photos[2], x + B3, y + B3, PW, PH, 40, g, maskUri(PW, PH, `<path d="${roundPath(0, 0, PW, PH, R)}" fill="#fff"/>`))
   await putTape('Băng dính caro', 'gingham', x + PW + 2 * B3 - 60, y + PH + 2 * B3 - 24, 190, 54, -33, g)
+  finishCluster(g)
 }
 // P4 — The Beginning: polaroid có chú thích viết tay
 {
@@ -219,6 +228,7 @@ if (placeholders) {
   slotPhoto('Ảnh ba chị em', photos[3], x + B, y + B, PW, PH, 28, g)
   caption(g, 'together', x + (PW + 2 * B) / 2, y + B + PH + 54, 50)
   await putTape('Băng dính kraft', 'kraft', x + (PW + 2 * B) / 2, y + 4, 170, 46, -3, g) // đặt ở mép trên, không che chữ THE BEGINNING trong ảnh
+  finishCluster(g)
 }
 // P5 — Cả nhà: khung giấy cạnh thẳng, góc bo (dễ cắt tay) + hai băng dính
 {
@@ -229,6 +239,7 @@ if (placeholders) {
   slotPhoto('Ảnh cả nhà', photos[4], x + b, y + b, pw, ph, 50, g, maskUri(pw, ph, `<path d="${roundPath(0, 0, pw, ph, R)}" fill="#fff"/>`))
   await putTape('Băng dính sọc trái', 'stripe', x + 28, y + 34, 210, 56, -35, g)
   await putTape('Băng dính chấm phải', 'dots', x + pw + 2 * b - 40, y + 26, 210, 56, 33, g)
+  finishCluster(g)
 }
 
 // ───────────────────────── 4b. ẢNH CHÍNH: tách nền (BiRefNet) + viền trắng ôm theo dáng người + bóng ─────────────────────────
@@ -289,7 +300,8 @@ if (!placeholders) {
   const disc = await makeAsset('hero-disc.png', S, S, `<g filter="url(#sh)"><circle cx="${S / 2}" cy="${S / 2}" r="${R}" fill="url(#d)"/></g><circle cx="${S / 2}" cy="${S / 2}" r="${R - 22}" fill="none" stroke="#fff" stroke-width="3.4" stroke-dasharray="15 11" stroke-linecap="round" stroke-opacity="0.9"/>${Array.from({ length: 16 }, (_, i) => `<circle cx="${f1(S / 2 + (R - 60) * Math.cos((i * Math.PI) / 8))}" cy="${f1(S / 2 + (R - 60) * Math.sin((i * Math.PI) / 8))}" r="4.5" fill="#fff" fill-opacity="0.7"/>`).join('')}`,
     `<radialGradient id="d" cx="50%" cy="42%" r="65%"><stop offset="0" stop-color="#fde6df"/><stop offset="1" stop-color="#f4c3ba"/></radialGradient>` + dropFilter('sh', S, S, 9, 10, 0.26))
   place('Nền tròn sau ảnh chính', disc, 285 - S / 2, 490 - S / 2, S, S, { printRole: 'base' })
-  const gh = groupLayer({ name: 'Ảnh chính Bloom', left: 70, top: 20, width: heroInfo.cw + 100, height: heroInfo.ch + 100, rotate: -3 })
+  const hv = 20 + 5 + 8 // viền trắng + viền xanh + chút bóng sát mép
+  const gh = groupLayer({ name: 'Ảnh chính Bloom', left: 120 - hv, top: 70 - hv, width: heroInfo.cw + 2 * hv, height: heroInfo.ch + 2 * hv, rotate: -3 })
   layers.push(gh)
   const ph = place('Ảnh chính Bloom (tách nền, viền trắng)', heroInfo.url, 120 - heroInfo.pad, 70 - heroInfo.pad, heroInfo.W2, heroInfo.H2, { parent: gh.uuid, printGroup: gh.printGroup })
   ph.origin = { proxy: photos[0].web_url, original: photos[0].url }
@@ -301,7 +313,7 @@ const sticker = async (name, w, h, art, sil, { rot = 0, ow = 11 } = {}) => {
   const url = await makeAsset(name + '.png', S1, S2, `<g filter="url(#sh)" transform="translate(${pad} ${pad}) rotate(${rot} ${w / 2} ${h / 2})"><g fill="#fff" stroke="#fff" stroke-width="${ow * 2}" stroke-linejoin="round" stroke-linecap="round">${sil}</g>${art}</g>`, dropFilter('sh', S1, S2, 6, 7, 0.3))
   return { url, S1, S2, pad }
 }
-const putSticker = (name, st, x, y) => place(name, st.url, x - st.pad, y - st.pad, st.S1, st.S2)
+const putSticker = (name, st, x, y) => { const l = place(name, st.url, x - st.pad, y - st.pad, st.S1, st.S2); l.printInset = st.pad - 12; return l } // đệm trong suốt (trừ ~12 px viền/bóng sát mép) không tính vào hộp cắt
 
 const cloudSil = `<circle cx="62" cy="96" r="42"/><circle cx="118" cy="64" r="56"/><circle cx="190" cy="82" r="46"/><circle cx="238" cy="104" r="36"/><rect x="40" y="96" width="230" height="46" rx="23"/>`
 const cloudArt = `<g fill="#fff"><circle cx="62" cy="96" r="42"/><circle cx="118" cy="64" r="56"/><circle cx="190" cy="82" r="46"/><circle cx="238" cy="104" r="36"/><rect x="40" y="96" width="230" height="46" rx="23"/></g><path d="M52 132 Q150 152 262 132" fill="none" stroke="#c4dbea" stroke-width="7" stroke-linecap="round"/><path d="M96 48 Q112 36 132 42" fill="none" stroke="#dbe9f3" stroke-width="6" stroke-linecap="round"/>`
@@ -354,11 +366,11 @@ titleBlock('Tiêu đề Moments', 'Moments', 1340, 1040, 980, 212, 'Pacifico', '
 {
   // chữ nằm CÙNG mảnh cắt với nhãn/thẻ (cùng printGroup) để in và cắt chung một mảnh
   const gRibbon = globalThis.crypto.randomUUID(), gTag = globalThis.crypto.randomUUID()
-  place('Nhãn ruy băng', ribbonSt.url, 1260 - ribbonSt.pad, 1285 - ribbonSt.pad, ribbonSt.S1, ribbonSt.S2, { printGroup: gRibbon })
+  place('Nhãn ruy băng', ribbonSt.url, 1260 - ribbonSt.pad, 1285 - ribbonSt.pad, ribbonSt.S1, ribbonSt.S2, { printGroup: gRibbon }).printInset = ribbonSt.pad - 12
   const t = mkText('Dòng phụ', 'Những khoảnh khắc nhỏ bé, trọn vẹn yêu thương', 1260 + 30, 1285 + 38, 740, 34, 'Patrick Hand', C.text, { align: 'center' })
   t.printGroup = gRibbon
   layers.push(t)
-  place('Thẻ kraft', tag.url, 2058 - tag.pad, 1352 - tag.pad, tag.S1, tag.S2, { printGroup: gTag })
+  place('Thẻ kraft', tag.url, 2058 - tag.pad, 1352 - tag.pad, tag.S1, tag.S2, { printGroup: gTag }).printInset = tag.pad - 12
   const w = mkText('Chữ thẻ', 'with love', 2082, 1392, 170, 40, 'Patrick Hand', C.text, { align: 'center' })
   w.printGroup = gTag
   layers.push(w)

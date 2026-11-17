@@ -15,10 +15,11 @@ export function printUnits(layers:any[]):PrintUnit[]{
   const roots=members.filter(w=>!byId.has(String(w.parent))); const primary=roots.find(w=>w.printRole)||roots[0]||members[0]
   let x=Infinity; let y=Infinity; let right=-Infinity; let bottom=-Infinity
   for(const w of roots){
-   const width=Number(w.width)||0; const height=Number(w.height)||0; const angle=(parseFloat(String(w.rotate||w.degree||0))||0)*Math.PI/180
+   // printInset: số px đệm TRONG SUỐT ở mỗi cạnh của lớp ảnh (chỗ chứa bóng/viền); hộp cắt chỉ tính phần nhìn thấy để xếp tiết kiệm giấy.
+   const inset=w.isContainer?0:Math.max(0,Number(w.printInset)||0); const width=Math.max(1,(Number(w.width)||0)-2*inset); const height=Math.max(1,(Number(w.height)||0)-2*inset); const angle=(parseFloat(String(w.rotate||w.degree||0))||0)*Math.PI/180
    // Groups render around top-left; individual images render around their centre.
    const ox=w.isContainer?0:width/2; const oy=w.isContainer?0:height/2; const c=Math.cos(angle); const s=Math.sin(angle)
-   const corners=[[0,0],[width,0],[0,height],[width,height]].map(([px,py])=>({x:Number(w.left)+ox+(px-ox)*c-(py-oy)*s,y:Number(w.top)+oy+(px-ox)*s+(py-oy)*c}))
+   const corners=[[0,0],[width,0],[0,height],[width,height]].map(([px,py])=>({x:Number(w.left)+inset+ox+(px-ox)*c-(py-oy)*s,y:Number(w.top)+inset+oy+(px-ox)*s+(py-oy)*c}))
    // Leave room for visible shadows as well as the cut contour.
    const padding=Math.max(0,...members.map(v=>Number(v.effects?.shadow)||0))*2
    x=Math.min(x,...corners.map(p=>p.x-padding));y=Math.min(y,...corners.map(p=>p.y-padding));right=Math.max(right,...corners.map(p=>p.x+padding));bottom=Math.max(bottom,...corners.map(p=>p.y+padding))
@@ -78,6 +79,9 @@ export function planCollagePrint(layout:any,options:PrintOptions){
  }
  const scores=[(v:typeof items[number])=>v.width*v.height,(v:typeof items[number])=>Math.max(v.width,v.height),(v:typeof items[number])=>v.height,(v:typeof items[number])=>v.width]
  const candidates=scores.flatMap(score=>[0,1,2].map(mode=>pack([...items].sort((a,b)=>score(b)-score(a)),mode)))
+ // Thêm các thứ tự xáo trộn (LCG hạt giống cố định): nhiều mảnh thì có thể tiết kiệm thêm một tờ giấy.
+ if(items.length>3){let seed=items.length*7919+W; const rnd=()=>{seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}
+  for(let t=0;t<80;t++){const order=[...items].sort((a,b)=>(Math.max(b.width,b.height)*(0.6+0.8*rnd()))-(Math.max(a.width,a.height)*(0.6+0.8*rnd())));candidates.push(pack(order,t%3))}}
  const occupied=(c:typeof candidates[number])=>Array.from({length:c.count},(_,sheet)=>{
   const p=c.placed.filter(v=>v.sheet===sheet)
   return Math.max(0,...p.map(v=>v.x+v.width-margin))*Math.max(0,...p.map(v=>v.y+v.height-margin))
