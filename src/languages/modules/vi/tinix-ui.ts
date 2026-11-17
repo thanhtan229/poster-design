@@ -376,6 +376,14 @@ export default {
     da_xoa: 'Đã xóa mẫu',
     xoa_that_bai: 'Không xóa được mẫu, vui lòng thử lại',
   },
+  printLaser: {
+    marks: 'Dấu căn laser (chữ L ở 3 góc tờ cắt)',
+    svg: 'Thêm file SVG đường cắt cho máy laser',
+    tip: 'Mỗi tờ chi tiết cắt có thêm một file SVG đơn vị mm, tỉ lệ 1:1: lớp đỏ là đường cắt (lùi vào giữa viền trắng), lớp xanh là dấu căn. Nhập vào LightBurn, đặt Start From: User Origin, Job Origin: Top-Left, đưa tia laser lên đỉnh chữ L trên-trái đã in rồi bấm Set Origin; bấm Frame để kiểm tra hai dấu còn lại. In JPG ở 100%, không co vừa trang. Cắt thử trên giấy rẻ trước.',
+    can_le: 'Dấu căn cần lề từ {mm} mm trở lên; với lề hiện tại sẽ không có dấu căn.',
+    dang_xuat: 'Đang dò đường cắt {i}/{n}: {name}',
+    loi_svg: 'Không tạo được file đường cắt laser',
+  },
   sizeUnit: {
     don_vi: 'Đơn vị',
     dpi: 'DPI',

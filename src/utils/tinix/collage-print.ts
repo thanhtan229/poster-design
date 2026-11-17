@@ -29,7 +29,26 @@ export function printUnits(layers:any[]):PrintUnit[]{
  })
  return units
 }
-export type PrintOptions={paperWidthMm?:number;paperHeightMm?:number;marginMm:number;gapMm:number}
+export type PrintOptions={paperWidthMm?:number;paperHeightMm?:number;marginMm:number;gapMm:number;marks?:boolean}
+// Dấu căn laser: 3 góc chữ L (trên-trái, trên-phải, dưới-trái) nằm trong vùng lề, cách mép tờ MARK.offsetMm, hai cạnh dài MARK.armMm.
+// In lên tờ cắt (JPG) và nằm trong SVG đường cắt: đặt đầu laser lên đỉnh chữ L để căn. Chỉ thêm khi options.marks===true và lề >= MARK.minMarginMm.
+export const MARK={offsetMm:3,armMm:5,strokeMm:0.3,minMarginMm:4}
+export function markCorners(width:number,height:number,dpi:number){
+ const px=dpi/25.4; const o=MARK.offsetMm*px; const a=MARK.armMm*px
+ return [{x:o,y:o,dx:1,dy:1,arm:a},{x:width-o,y:o,dx:-1,dy:1,arm:a},{x:o,y:height-o,dx:1,dy:-1,arm:a}]
+}
+function markLayers(width:number,height:number,dpi:number){
+ const stroke=Math.max(2,Math.round(MARK.strokeMm*dpi/25.4))
+ return markCorners(width,height,dpi).map((c,i)=>{
+  const arm=Math.round(c.arm); const size=arm+stroke
+  const vx=c.dx>0?stroke/2:size-stroke/2; const vy=c.dy>0?stroke/2:size-stroke/2 // đỉnh chữ L trong hệ tọa độ của lớp
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><path d="M${vx+c.dx*arm} ${vy}H${vx}V${vy+c.dy*arm}" fill="none" stroke="#000" stroke-width="${stroke}"/></svg>`
+  const left=Math.round(c.x-vx); const top=Math.round(c.y-vy)
+  return {name:'Dấu căn laser '+(i+1),type:'w-image',uuid:'print-mark-'+(i+1),printMark:true,left,top,width:size,height:size,zoom:1,transform:'scale(1)',radius:0,opacity:1,parent:'-1',
+   imgUrl:'data:image/svg+xml,'+encodeURIComponent(svg),mask:'',isContainer:false,setting:[],rotate:0,record:{width:size,height:size,minWidth:10,minHeight:10,dir:'all'},lock:true,isNinePatch:false,flip:'',
+   sliceData:{ratio:0,left:0},fit:'fill',slot:false,printRole:'raised',degree:0,templateRole:'fixed',cropX:50,cropY:50,effects:{}}
+ })
+}
 export function planCollagePrint(layout:any,options:PrintOptions){
  const page=layout.global; const layers=layout.layers
  if(!page||!Array.isArray(layers)||!Number.isFinite(Number(page.width))||!Number.isFinite(Number(page.height)))throw new Error('Thiết kế không hợp lệ')
@@ -91,10 +110,12 @@ export function planCollagePrint(layout:any,options:PrintOptions){
  for(const {unit,width,height,x,y,sheet} of selected.placed){
   const ids=new Set(unit.ids); const copies=clone(cutLayers.filter((v:any)=>ids.has(String(v.uuid))))
   for(const v of copies){v.left+=x-unit.bounds.x;v.top+=y-unit.bounds.y}
-  sheets[sheet].layers.push(...copies);placements.push({unitId:unit.id,sheet,x,y,width,height})
+  sheets[sheet].layers.push(...copies);placements.push({unitId:unit.id,sheet,x,y,width,height,cutInset:Math.max(0,...copies.map((v:any)=>Number(v.cutInset)||0))})
  }
  // Preserve layer stacking order on each sheet even though packing order differs.
  const order=new Map(layers.map((w:any,i:number)=>[String(w.uuid),i]))
  for(const s of sheets)s.layers.sort((a:any,b:any)=>Number(order.get(String(a.uuid)))-Number(order.get(String(b.uuid))))
+ // Dấu căn laser nằm trong lề, thêm SAU khi sắp lớp; không thuộc mảnh nào nên không vào placements.
+ if(options.marks===true&&options.marginMm>=MARK.minMarginMm)for(const s of sheets)s.layers.push(...markLayers(W,H,dpi))
  return {layouts:[base,...sheets,clone(layout)],names:['01_nen.jpg',...sheets.map((_,i)=>`02_chi_tiet_cat_${String(i+1).padStart(2,'0')}.jpg`),'03_thanh_pham.jpg'],units,placements,dpi}
 }
