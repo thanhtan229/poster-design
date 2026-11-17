@@ -5,6 +5,8 @@
   <fieldset :disabled="running">
    <p><b>Tất cả JPG cùng khổ {{ (canvas.dPage.width*25.4/(canvas.dPage.dpi||300)).toFixed(1) }} × {{ (canvas.dPage.height*25.4/(canvas.dPage.dpi||300)).toFixed(1) }} mm</b> · {{ canvas.dPage.width }} × {{ canvas.dPage.height }} px. Tự thêm tờ cùng khổ khi thiếu chỗ.</p>
    <label>Lề <input v-model.number="margin" type="number" min="0" max="100" /> mm</label><label>Khoảng cách <input v-model.number="gap" type="number" min="0" max="100" /> mm</label>
+   <label><input v-model="laserSvg" type="checkbox" /> {{ $t('tinix.ui.printLaser.svg') }}</label><label><input v-model="marks" type="checkbox" /> {{ $t('tinix.ui.printLaser.marks') }}</label>
+   <p v-if="(marks||laserSvg) && margin<markMinMargin" class="error">{{ $t('tinix.ui.printLaser.can_le', { mm: markMinMargin }) }}</p><p v-if="laserSvg">{{ $t('tinix.ui.printLaser.tip') }}</p>
    <p>Cụm nhiều lớp được xuất thành một mảnh. Đổi lựa chọn ở đây sẽ được lưu cùng thiết kế.</p>
    <div v-for="unit in units" :key="unit.id" class="unit"><span>{{ unit.name }}</span><select :value="unit.raised?'raised':'base'" @change="setRole(unit,($event.target as HTMLSelectElement).value)"><option value="base">In trên nền</option><option value="raised">Cắt nổi</option></select></div>
   </fieldset>
@@ -28,7 +30,8 @@
 <script setup lang="ts">
 import {computed,ref,watch,onBeforeUnmount} from 'vue'
 import {useWidgetStore,useCanvasStore} from '@/store'
-import {printUnits,planCollagePrint, type PrintUnit} from '@/utils/tinix/collage-print'
+import {printUnits,planCollagePrint,MARK, type PrintUnit} from '@/utils/tinix/collage-print'
+import i18n from '@/languages'
 
 import config from '@/config'
 import {zipImages} from '@/utils/tinix/zip'
@@ -43,7 +46,9 @@ async function archive(){
  try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${activeJob.value}/approve`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operatorReviewed:true,customerApproved:true,note:approvalNote.value})});const data=await r.json();if(!r.ok)throw new Error(data.message);archivedId.value=data.id;window.dispatchEvent(new Event('tinix:approved-prints-changed'))}catch(e:any){failure.value=e.message}finally{running.value=false}
 }
 const margin=ref(10); const gap=ref(5)
-const options=computed(()=>({marginMm:margin.value,gapMm:gap.value}))
+const laserSvg=ref(true); const marks=ref(true); const markMinMargin=MARK.minMarginMm
+const t=(k:string,p?:any)=>i18n.global.t(k,p) as string
+const options=computed(()=>({marginMm:margin.value,gapMm:gap.value,marks:marks.value||laserSvg.value}))
 const files=ref<Array<{name:string;blob:Blob;url:string}>>([]); const issues=ref<Array<{severity:string;message:string}>>([]); const approved=ref(false); const previewSignature=ref('')
 const signature=computed(()=>JSON.stringify({page:canvas.dPage,layers:store.dWidgets,options:options.value}))
 const stale=computed(()=>signature.value!==previewSignature.value)
@@ -70,6 +75,14 @@ async function exportBundle(){
    if(!r.ok){const e=await r.json();throw new Error(e.message||'Lỗi xuất ảnh')}
    const blob=await r.blob(); const bytes=new Uint8Array(await blob.slice(0,3).arrayBuffer());if(bytes[0]!==255||bytes[1]!==216)throw new Error('Máy chủ chưa hỗ trợ bộ JPG. Hãy khởi động lại app.')
    const file={name:job.names[i],blob,url:URL.createObjectURL(blob)};files.value.push(file)
+  }
+  // File SVG đường cắt cho máy laser: mỗi tờ chi tiết cắt một file (mm, 1:1, lớp Cat đỏ + lớp Can xanh)
+  if(laserSvg.value)for(let i=0;i<job.names.length;i++){
+   if(!/^02_chi_tiet_cat_/.test(job.names[i]))continue
+   progress.value=t('tinix.ui.printLaser.dang_xuat',{i,n:job.names.length-2,name:job.names[i]})
+   const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${job.id}/cut/${i}`,{signal:AbortSignal.timeout(300000)})
+   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.message||t('tinix.ui.printLaser.loi_svg'))}
+   const blob=new Blob([await r.text()],{type:'image/svg+xml'});files.value.push({name:job.names[i].replace('02_chi_tiet_cat_','02_duong_cat_').replace(/\.jpg$/,'.svg'),blob,url:URL.createObjectURL(blob)})
   }
   previewSignature.value=captured
   progress.value='Đã kiểm tra và tạo toàn bộ ảnh xem trước. Xem từng ảnh trước khi tải.'

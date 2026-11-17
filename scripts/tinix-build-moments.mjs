@@ -305,15 +305,16 @@ if (!placeholders) {
   layers.push(gh)
   const ph = place('Ảnh chính Bloom (tách nền, viền trắng)', heroInfo.url, 120 - heroInfo.pad, 70 - heroInfo.pad, heroInfo.W2, heroInfo.H2, { parent: gh.uuid, printGroup: gh.printGroup })
   ph.origin = { proxy: photos[0].web_url, original: photos[0].url }
+  ph.cutInset = 5 + 20 / 2 // đường cắt laser nằm giữa viền trắng: viền xanh ngoài 5 px + nửa viền trắng 20 px
 }
 
 // ───────────────────────── 5. STICKER (viền trắng cắt rời + bóng) ─────────────────────────
 const sticker = async (name, w, h, art, sil, { rot = 0, ow = 11 } = {}) => {
   const pad = Math.ceil(Math.max(w, h) * 0.22 + 26), S1 = w + 2 * pad, S2 = h + 2 * pad
   const url = await makeAsset(name + '.png', S1, S2, `<g filter="url(#sh)" transform="translate(${pad} ${pad}) rotate(${rot} ${w / 2} ${h / 2})"><g fill="#fff" stroke="#fff" stroke-width="${ow * 2}" stroke-linejoin="round" stroke-linecap="round">${sil}</g>${art}</g>`, dropFilter('sh', S1, S2, 6, 7, 0.3))
-  return { url, S1, S2, pad }
+  return { url, S1, S2, pad, cutInset: ow / 2 } // cutInset: đường cắt laser nằm giữa viền trắng (viền dày ow px)
 }
-const putSticker = (name, st, x, y) => { const l = place(name, st.url, x - st.pad, y - st.pad, st.S1, st.S2); l.printInset = st.pad - 12; return l } // đệm trong suốt (trừ ~12 px viền/bóng sát mép) không tính vào hộp cắt
+const putSticker = (name, st, x, y) => { const l = place(name, st.url, x - st.pad, y - st.pad, st.S1, st.S2); l.printInset = st.pad - 12; l.cutInset = st.cutInset; return l } // đệm trong suốt (trừ ~12 px viền/bóng sát mép) không tính vào hộp cắt
 
 const cloudSil = `<circle cx="62" cy="96" r="42"/><circle cx="118" cy="64" r="56"/><circle cx="190" cy="82" r="46"/><circle cx="238" cy="104" r="36"/><rect x="40" y="96" width="230" height="46" rx="23"/>`
 const cloudArt = `<g fill="#fff"><circle cx="62" cy="96" r="42"/><circle cx="118" cy="64" r="56"/><circle cx="190" cy="82" r="46"/><circle cx="238" cy="104" r="36"/><rect x="40" y="96" width="230" height="46" rx="23"/></g><path d="M52 132 Q150 152 262 132" fill="none" stroke="#c4dbea" stroke-width="7" stroke-linecap="round"/><path d="M96 48 Q112 36 132 42" fill="none" stroke="#dbe9f3" stroke-width="6" stroke-linecap="round"/>`
@@ -366,11 +367,13 @@ titleBlock('Tiêu đề Moments', 'Moments', 1340, 1040, 980, 212, 'Pacifico', '
 {
   // chữ nằm CÙNG mảnh cắt với nhãn/thẻ (cùng printGroup) để in và cắt chung một mảnh
   const gRibbon = globalThis.crypto.randomUUID(), gTag = globalThis.crypto.randomUUID()
-  place('Nhãn ruy băng', ribbonSt.url, 1260 - ribbonSt.pad, 1285 - ribbonSt.pad, ribbonSt.S1, ribbonSt.S2, { printGroup: gRibbon }).printInset = ribbonSt.pad - 12
+  const rl = place('Nhãn ruy băng', ribbonSt.url, 1260 - ribbonSt.pad, 1285 - ribbonSt.pad, ribbonSt.S1, ribbonSt.S2, { printGroup: gRibbon })
+  rl.printInset = ribbonSt.pad - 12; rl.cutInset = ribbonSt.cutInset
   const t = mkText('Dòng phụ', 'Những khoảnh khắc nhỏ bé, trọn vẹn yêu thương', 1260 + 30, 1285 + 38, 740, 34, 'Patrick Hand', C.text, { align: 'center' })
   t.printGroup = gRibbon
   layers.push(t)
-  place('Thẻ kraft', tag.url, 2058 - tag.pad, 1352 - tag.pad, tag.S1, tag.S2, { printGroup: gTag }).printInset = tag.pad - 12
+  const tl = place('Thẻ kraft', tag.url, 2058 - tag.pad, 1352 - tag.pad, tag.S1, tag.S2, { printGroup: gTag })
+  tl.printInset = tag.pad - 12; tl.cutInset = tag.cutInset
   const w = mkText('Chữ thẻ', 'with love', 2082, 1392, 170, 40, 'Patrick Hand', C.text, { align: 'center' })
   w.printGroup = gTag
   layers.push(w)

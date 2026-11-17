@@ -3,7 +3,8 @@ import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
 import { getDesign } from '../db/designs'
-import { planCollagePrint } from '../../../src/utils/tinix/collage-print'
+import { planCollagePrint, markCorners } from '../../../src/utils/tinix/collage-print'
+import { alphaFromRenders, buildCutSvg } from './cutPaths'
 import { filePath, drawLink } from '../configs'
 import { queueRun } from '../utils/node-queue'
 import { saveScreenshot } from '../utils/download-single'
@@ -60,5 +61,37 @@ router.get('/api/tinix/collage-print/:id/image/:index',async(req:any,res:any)=>{
   if(!res.headersSent)res.type('jpeg').send(jpeg)
  }catch(e){if(!res.headersSent)res.status(500).json({message:(e as Error).message,issues:(e as any).issues||[]})}
  finally{if(temporary)try{fs.unlinkSync(temporary)}catch(_){} }
+})
+// ───────────── Đường cắt laser (SVG) cho từng tờ chi tiết cắt ─────────────
+// Dựng tờ cắt (bỏ dấu căn) hai lần trên nền trắng và nền đen → alpha → đường viền lùi vào "giữa viền" → SVG mm 1:1.
+async function renderRaw(job:any,layout:any){
+ const tmpId=crypto.randomBytes(16).toString('hex'),sign=crypto.randomBytes(16).toString('hex')
+ const directory=path.join(filePath,'print-exports');fs.mkdirSync(directory,{recursive:true})
+ const temporary=path.join(directory,sign+'.png')
+ jobs.set(tmpId,{layouts:[layout],names:['tam.png'],dpi:job.dpi,images:{},expires:Date.now()+10*60*1000})
+ try{
+  await queueRun(saveScreenshot,`${drawLink}?exportJob=${tmpId}&index=0&hq=1`,{width:layout.global.width,height:layout.global.height,path:temporary,prevent:true},sign)
+  return await sharp(temporary).removeAlpha().raw().toBuffer({resolveWithObject:true})
+ }finally{dispose(tmpId);try{fs.unlinkSync(temporary)}catch(_){} }
+}
+router.get('/api/tinix/collage-print/:id/cut/:index',async(req:any,res:any)=>{
+ try{
+  const job=lookup(req.params.id),index=Number(req.params.index)
+  if(!Number.isInteger(index)||index<1||index>job.layouts.length-2)throw new Error('Không phải tờ chi tiết cắt')
+  const inset=req.query.inset===undefined?0.3:Number(req.query.inset)
+  if(!Number.isFinite(inset)||inset<0||inset>5)throw new Error('Khoảng lùi phải từ 0 đến 5 mm')
+  job.cuts=job.cuts||{};const cacheKey=index+':'+inset
+  if(job.cuts[cacheKey])return res.type('image/svg+xml').send(job.cuts[cacheKey])
+  const layout=job.layouts[index],width=layout.global.width,height=layout.global.height
+  const variant=(color:string)=>{const v=JSON.parse(JSON.stringify(layout));v.layers=v.layers.filter((l:any)=>!l.printMark);v.global.backgroundColor=color;v.global.backgroundImage='';v.global.backgroundGradient='';return v}
+  const white=await renderRaw(job,variant('#ffffff')),black=await renderRaw(job,variant('#000000'))
+  if(white.info.width!==width||white.info.height!==height||black.info.width!==width||black.info.height!==height)throw new Error('Ảnh dựng sai kích thước, không dò được đường cắt')
+  const alpha=alphaFromRenders(white.data,black.data,width,height,white.info.channels)
+  const hasMarks=layout.layers.some((l:any)=>l.printMark)
+  const result=buildCutSvg({alpha,width,height,dpi:job.dpi,placements:job.placements.filter((p:any)=>p.sheet===index-1),defaultInsetMm:inset,marks:hasMarks?markCorners(width,height,job.dpi):[],title:(job.title||'Đường cắt')+' · '+job.names[index]})
+  if(!result.pieces)throw new Error('Không dò được mảnh nào trên tờ này')
+  job.cuts[cacheKey]=result.svg
+  res.type('image/svg+xml').send(result.svg)
+ }catch(e){if(!res.headersSent)res.status(500).json({message:(e as Error).message})}
 })
 export default router
