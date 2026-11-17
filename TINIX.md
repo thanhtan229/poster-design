@@ -348,3 +348,5 @@ Hộp "Xuất bộ JPG cắt dán" có hai tùy chọn mới: **Thêm file SVG �
 - Chữ rộng (Playfair 700 ở cỡ lớn, câu trích dài) dễ báo `TEXT_OVERFLOW` vì khung chữ mặc định cao 1,6 lần cỡ chữ: đặt chiều cao khung đủ cho số dòng.
 
 **Khung ảnh đa dạng (trang báo chí, cập nhật 2026-11-17):** vì dùng máy cắt nên không còn ràng buộc đường thẳng. `shapePath(kind,w,h)` trong `scripts/tinix-build-newspaper.mjs` trả path SVG kín (`ellipse`, `cloud`, `flower`, `heart`), dùng chung cho mask ảnh và khung giấy trắng (stroke dày). Thêm dáng mới: thêm một hàm bán kính theo góc (hoặc đường tham số) vào `shapePath`. Nên luôn đổi dáng khung giữa các ảnh trong một trang.
+
+**Bố cục chồng lấn (trang báo chí, 2026-11-17):** khung ảnh lớn đè lên nhau và lên ảnh tách nền, thêm sticker (sao, tim) và nhãn (HAPPINESS, SMILE) để lấp chỗ trống như trang scrapbook thật. Thứ tự lớp = thứ tự dòng trong script (dòng sau nằm trên); `await slot(...)` đặt khung nằm dưới trước. Mỗi mảnh vẫn là mảnh `raised` riêng nên bộ xếp tờ cắt không bị ảnh hưởng bởi chồng lấn trên trang thành phẩm.

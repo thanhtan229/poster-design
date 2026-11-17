@@ -42,7 +42,7 @@ db.close()
 const fontClass = (alias) => { const f = fontRows.get(alias); if (!f) throw new Error(`Thiếu font ${alias}`); return { alias: f.alias, id: f.id, value: f.alias, url: f.ttf } }
 
 const step = async (buf, w, h, fn) => { const { data, info } = await fn(sharp(buf, { raw: { width: w, height: h, channels: 1 } })).extractChannel(0).raw().toBuffer({ resolveWithObject: true }); if (info.channels !== 1) throw new Error('kênh alpha'); return data }
-const HERO = { x: 1340, y: 862, h: 630, border: 16 }
+const HERO = { x: 1250, y: 880, h: 620, border: 16 }
 const readFile = (await import('node:fs/promises')).readFile
 const layers = []
 const place = (name, url, x, y, w, h, extra = {}) => { const l = imageLayer({ name, url, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), ...extra }); layers.push(l); return l }
@@ -128,20 +128,17 @@ const slot = async (name, photo, x, y, w, h, cropY, tape = null, kind = 'ellipse
   return p
 }
 const maskUri = (w, h, body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`)
-await slot('Ảnh Pure Joy', photos[1], 70, 650, 560, 640, 0, [500, 590, 28], 'ellipse')
-await slot('Ảnh sinh nhật', photos[2], 680, 650, 560, 640, 40, [490, 600, 28], 'flower')
-await slot('Ảnh The Beginning', photos[3], 1660, 870, 680, 560, 28, [60, 24, -22], 'heart')
-await slot('Ảnh cả nhà', photos[4], 1170, 318, 1170, 520, 50, [1090, 470, -22], 'cloud')
+// Bố cục chồng lấn như trang scrapbook thật: thứ tự lớp = thứ tự dòng (dòng sau nằm trên)
+await slot('Ảnh chị em (trái tim)', photos[3], 1540, 790, 800, 660, 28, [70, 30, -22], 'heart')
+await slot('Ảnh Pure Joy', photos[1], 40, 650, 620, 700, 0, [520, 600, 28], 'ellipse')
+await slot('Ảnh sinh nhật', photos[2], 560, 640, 660, 720, 40, [520, 620, 28], 'flower')
+await slot('Ảnh cả nhà', photos[4], 1080, 300, 1260, 580, 50, [1120, 520, -22], 'cloud')
 
 // chú thích báo dưới ảnh
-text('Chú thích 1', 'Hình 1. Cả nhà, một khung hình →', 600, 590, 540, 28, 'Montserrat', GREY, { italic: false, ls: 1, align: 'right' })
-text('Chú thích 2', 'Hình 2. Bé và chiếc ghế gỗ.', 80, 1310, 560, 26, 'Montserrat', GREY)
-text('Chú thích 3', 'Hình 3. Sinh nhật số một.', 690, 1310, 560, 26, 'Montserrat', GREY)
-text('Chú thích 4', 'Hình 4. Chị em, và một chiếc váy.', 1700, 1440, 640, 26, 'Montserrat', GREY)
 
 // ── 5. CỘT BÀI: trích dẫn lớn + đoạn văn giả (vạch xám) + một khung chữ cắt đỏ ──
-text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 80, 1345, 900, 42, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15 })
-text('Tác giả', '— Mục Gia đình', 80, 1430, 800, 30, 'Montserrat', RED, { ls: 3, weight: '700' })
+text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 80, 1432, 820, 36, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15 })
+text('Tác giả', '— Mục Gia đình', 80, 1484, 700, 28, 'Montserrat', RED, { ls: 3, weight: '700' })
 {
   let rows = ''
   for (let y = 0; y < 3; y++) for (let x = 0; x < 1; x++) rows += ''
@@ -152,9 +149,9 @@ text('Tác giả', '— Mục Gia đình', 80, 1430, 800, 30, 'Montserrat', RED,
 // khung chữ cắt đỏ (ô trích nổi)
 {
   const body = `<rect x="6" y="6" width="300" height="110" fill="${RED}"/><rect x="0" y="0" width="300" height="110" fill="${INK}"/>`
-  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(306, 116, `<g transform="rotate(-2 153 58)">${body}</g>`)), 980, 1380, 306, 116, { printRole: 'raised' })
+  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(306, 116, `<g transform="rotate(-2 153 58)">${body}</g>`)), 900, 1400, 306, 116, { printRole: 'raised' })
 }
-text('Chữ ô đỏ', 'NGÀY MỚI', 984, 1404, 296, 40, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
+text('Chữ ô đỏ', 'NGÀY MỚI', 904, 1424, 296, 40, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
 
 // ── 5b. ẢNH CHỦ ĐẠO TÁCH NỀN (GIỮ MÀU): bé gái (ảnh Bloom), dùng kết quả tách nền đã lưu ──
 {
@@ -185,6 +182,18 @@ text('Chữ ô đỏ', 'NGÀY MỚI', 984, 1404, 296, 40, 'Playfair Display', PA
   place('Ảnh chủ đạo (tách nền, giữ màu)', url, gx, gy, W2, H2, { printRole: 'raised' }).cutInset = HERO.border / 2
 }
 function f2(n) { return n }
+// ── 5c. STICKER LẤP CHỖ TRỐNG, chồng lên mép ảnh như trang scrapbook ──
+{
+  const star = (R, r, n = 5) => Array.from({ length: n * 2 }, (_, i) => { const a = (i / (n * 2)) * Math.PI * 2 - Math.PI / 2, d = i % 2 ? r : R; return `${f(R + d * Math.cos(a))},${f(R + d * Math.sin(a))}` }).join(' ')
+  const sticker = async (name, x, y, size, body) => place(name, await writeAsset(name.replace(/\s+/g, '-') + '.png', await svgPng(size, size, `<g filter="url(#sh)">${body}</g>`, `<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.35"/></filter>`)), x, y, size, size, { printRole: 'raised' })
+  const heart = (S, fill) => { const pts = Array.from({ length: 120 }, (_, i) => { const t = (i / 120) * Math.PI * 2; return [16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))] }); return `<polygon transform="translate(${S / 2} ${S / 2}) scale(${S / 40})" points="${pts.map((q) => q.map(f).join(',')).join(' ')}" fill="${fill}" stroke="#fffdf8" stroke-width="2.2" stroke-linejoin="round"/>` }
+  await sticker('Sao vàng', 1450, 800, 150, `<polygon points="${star(66, 30)}" transform="translate(9 9)" fill="#f3c93b" stroke="#fffdf8" stroke-width="5" stroke-linejoin="round"/>`)
+  await sticker('Tim đỏ nhỏ', 2200, 1340, 170, heart(150, RED).replace('<polygon', '<polygon transform-origin="0 0"'))
+  await sticker('Tim hồng nhỏ', 1180, 1180, 130, heart(110, '#f08aa0'))
+  await sticker('Sao đỏ', 540, 560, 120, `<polygon points="${star(48, 22)}" transform="translate(12 12)" fill="${RED}" stroke="#fffdf8" stroke-width="4" stroke-linejoin="round"/>`)
+  const ribbon = text('Nhãn HAPPINESS', 'HAPPINESS', 600, 1345, 380, 44, 'Montserrat', INK, { align: 'center', weight: '700', ls: 8, bg: '#f3d36b', h: 70 }); ribbon.rotate = '-4deg'
+  const smile = text('Nhãn SMILE', 'SMILE', 2020, 1440, 260, 40, 'Montserrat', PAPER, { align: 'center', weight: '700', ls: 8, bg: INK, h: 66 }); smile.rotate = '3deg'
+}
 // ── 6. CHÂN TRANG ──
 place('Vạch chân trang', await writeAsset('rule-foot.png', await svgPng(2280, 4, `<rect width="2280" height="4" fill="${INK}"/>`)), 60, 1530, 2280, 4, { printRole: 'base' })
 text('Chân trang', 'TRANG 1 · 30 × 20 CM · DÁN TAY, IN TỜ TỔNG HỢP', 60, 1548, 2280, 24, 'Montserrat', GREY, { align: 'center', ls: 4 })
