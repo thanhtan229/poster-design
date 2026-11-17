@@ -8,6 +8,7 @@ import { editMask, borderMask, placeCutout } from './tinix-mask.mjs'
 import { instantiate } from './tinix-instantiate.mjs'
 import { fileURLToPath } from 'node:url'
 import { validateSpec, loadReference, buildFromReference, compareToReference, drawGrid, drawSideBySide } from './lib/reference-build.mjs'
+import { overlayImages, checkLayout } from './lib/spec-compare.mjs'
 import { createChromiumMeasurer } from './lib/text-measure.mjs'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -35,6 +36,8 @@ Usage: node scripts/tinix-cli.mjs <command> [options]
   drafts from-reference --reference FILE --spec FILE --output FILE [--photos placeholder|reference]
   reference grid --input FILE --output FILE [--step N]
   reference compare --reference FILE --render FILE --spec FILE [--output FILE]
+  reference overlay --reference FILE --render FILE --output FILE [--mode blend|diff] [--opacity 0.5]
+  reference check-layout --input DRAFT --spec FILE   (so bản nháp với spec bố cục: vị trí, cỡ, góc, thứ tự lớp)
   drafts apply --input FILE --operations FILE --output FILE
   designs create --input FILE --title TITLE
   designs render --id N --width PX --height PX --output FILE
@@ -356,6 +359,22 @@ async function main() {
       const { render, ...stats } = await compareToReference(ref, options.render, spec)
       if (options.output) { await writeFile(options.output, await drawSideBySide(ref, render), { flag: 'wx' }); stats.output = path.resolve(options.output) }
       result = stats
+      break
+    }
+    case 'reference overlay': {
+      check(options, ['reference', 'render', 'output', 'mode', 'opacity'])
+      if (!options.reference || !options.render || !options.output) throw new Error('--reference, --render and --output are required')
+      const mode = options.mode || 'blend'
+      if (!['blend', 'diff'].includes(mode)) throw new Error('--mode must be blend or diff')
+      const { buffer, meanDiff } = await overlayImages(options.reference, options.render, mode, options.opacity === undefined ? 0.5 : Number(options.opacity))
+      await writeFile(options.output, buffer, { flag: 'wx' })
+      result = { output: path.resolve(options.output), mode, ...(meanDiff === undefined ? {} : { meanDiff }) }
+      break
+    }
+    case 'reference check-layout': {
+      check(options, ['input', 'spec'])
+      if (!options.input || !options.spec) throw new Error('--input and --spec are required')
+      result = checkLayout(await readJson(options.input), await readJson(options.spec))
       break
     }
     case 'drafts from-reference': {

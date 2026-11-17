@@ -1,0 +1,527 @@
+{
+  "name": "tet-yeu-thuong",
+  "ref": {
+    "width": 1086,
+    "height": 1448
+  },
+  "note": "Đơn vị = điểm ảnh của ảnh mẫu 1086×1448. box=[x,y,w,h] là hộp chưa xoay; rot độ (dương = xoay thuận chiều kim đồng hồ); z nhỏ nằm dưới.",
+  "items": [
+    {
+      "id": "nen-do-tren",
+      "type": "paper",
+      "box": [
+        20,
+        14,
+        560,
+        340
+      ],
+      "fill": "#c43a45",
+      "z": 1
+    },
+    {
+      "id": "nen-do-phai",
+      "type": "paper",
+      "box": [
+        560,
+        30,
+        505,
+        260
+      ],
+      "fill": "#d0505a",
+      "z": 1
+    },
+    {
+      "id": "nen-kem-giua",
+      "type": "paper",
+      "box": [
+        450,
+        195,
+        130,
+        62
+      ],
+      "fill": "#f1ddc2",
+      "z": 2,
+      "rot": -18
+    },
+    {
+      "id": "nen-do-sam-giua",
+      "type": "paper",
+      "box": [
+        380,
+        300,
+        250,
+        540
+      ],
+      "fill": "#b9343f",
+      "z": 1
+    },
+    {
+      "id": "nen-hong-duoi",
+      "type": "paper",
+      "box": [
+        20,
+        760,
+        1045,
+        600
+      ],
+      "fill": "#cc4650",
+      "z": 1
+    },
+    {
+      "id": "nen-kem-trai",
+      "type": "paper",
+      "box": [
+        20,
+        500,
+        40,
+        280
+      ],
+      "fill": "#f1ddc2",
+      "z": 1
+    },
+    {
+      "id": "nen-song-trai",
+      "type": "wave",
+      "box": [
+        15,
+        1331,
+        315,
+        96
+      ],
+      "fill": "#f2d9a8",
+      "z": 2
+    },
+    {
+      "id": "nen-song-phai",
+      "type": "wave",
+      "box": [
+        770,
+        1377,
+        307,
+        50
+      ],
+      "fill": "#f2d9a8",
+      "z": 2
+    },
+    {
+      "id": "vien-so-tem",
+      "type": "scallop",
+      "box": [
+        214,
+        816,
+        364,
+        364
+      ],
+      "fill": "#fbe3dd",
+      "z": 5
+    },
+    {
+      "id": "anh-lon-trai",
+      "type": "photo",
+      "box": [
+        221,
+        312,
+        392,
+        516
+      ],
+      "rot": -2.5,
+      "shape": "squircle",
+      "z": 6
+    },
+    {
+      "id": "anh-tron-tren",
+      "type": "photo",
+      "box": [
+        618,
+        162,
+        336,
+        336
+      ],
+      "rot": 0,
+      "shape": "ellipse",
+      "z": 6
+    },
+    {
+      "id": "anh-phai-giua",
+      "type": "photo",
+      "box": [
+        635,
+        565,
+        411,
+        285
+      ],
+      "rot": -3,
+      "shape": "squircle",
+      "z": 6
+    },
+    {
+      "id": "anh-tem",
+      "type": "photo",
+      "box": [
+        242,
+        850,
+        308,
+        308
+      ],
+      "rot": 0,
+      "shape": "ellipse",
+      "z": 7
+    },
+    {
+      "id": "anh-lon-duoi-phai",
+      "type": "photo",
+      "box": [
+        553,
+        862,
+        455,
+        366
+      ],
+      "rot": 3,
+      "shape": "squircle",
+      "z": 8
+    },
+    {
+      "id": "bang-dinh-trai-tren",
+      "type": "tape",
+      "box": [
+        440,
+        255,
+        150,
+        55
+      ],
+      "rot": -20,
+      "z": 9
+    },
+    {
+      "id": "bang-dinh-phai",
+      "type": "tape",
+      "box": [
+        922,
+        577,
+        150,
+        55
+      ],
+      "rot": 35,
+      "z": 9
+    },
+    {
+      "id": "bang-dinh-duoi",
+      "type": "tape",
+      "box": [
+        860,
+        869,
+        150,
+        55
+      ],
+      "rot": 30,
+      "z": 9
+    },
+    {
+      "id": "den-long-trai",
+      "type": "sticker",
+      "box": [
+        35,
+        362,
+        161,
+        223
+      ],
+      "z": 10
+    },
+    {
+      "id": "den-long-phai",
+      "type": "sticker",
+      "box": [
+        935,
+        258,
+        142,
+        211
+      ],
+      "z": 10
+    },
+    {
+      "id": "bang-loc",
+      "type": "sticker",
+      "box": [
+        42,
+        538,
+        227,
+        222
+      ],
+      "z": 10
+    },
+    {
+      "id": "lan",
+      "type": "sticker",
+      "box": [
+        12,
+        758,
+        246,
+        284
+      ],
+      "z": 10
+    },
+    {
+      "id": "meo",
+      "type": "sticker",
+      "box": [
+        8,
+        1058,
+        269,
+        300
+      ],
+      "z": 10
+    },
+    {
+      "id": "hoa-dao-trai",
+      "type": "sticker",
+      "box": [
+        250,
+        1204,
+        81,
+        69
+      ],
+      "z": 10
+    },
+    {
+      "id": "nhanh-dao",
+      "type": "sticker",
+      "box": [
+        754,
+        0,
+        332,
+        215
+      ],
+      "z": 10
+    },
+    {
+      "id": "hoa-vang-tren",
+      "type": "sticker",
+      "box": [
+        338,
+        12,
+        89,
+        84
+      ],
+      "z": 10
+    },
+    {
+      "id": "hoa-vang-phai",
+      "type": "sticker",
+      "box": [
+        919,
+        1169,
+        135,
+        146
+      ],
+      "z": 10
+    },
+    {
+      "id": "hop-qua",
+      "type": "sticker",
+      "box": [
+        758,
+        1223,
+        215,
+        189
+      ],
+      "rot": -8,
+      "z": 11
+    },
+    {
+      "id": "no",
+      "type": "sticker",
+      "box": [
+        427,
+        1181,
+        181,
+        69
+      ],
+      "z": 12
+    },
+    {
+      "id": "dam-kem-yeu-thuong",
+      "type": "paper",
+      "box": [
+        42,
+        219,
+        420,
+        142
+      ],
+      "fill": "#fbefd8",
+      "z": 9
+    },
+    {
+      "id": "chu-tet",
+      "type": "text",
+      "box": [
+        42,
+        42,
+        281,
+        181
+      ],
+      "rot": -8,
+      "text": "Tết",
+      "z": 13
+    },
+    {
+      "id": "chu-yeu-thuong",
+      "type": "text",
+      "box": [
+        62,
+        223,
+        392,
+        115
+      ],
+      "rot": -10,
+      "text": "yêu thương",
+      "z": 14
+    },
+    {
+      "id": "nhan-mung-xuan",
+      "type": "label",
+      "box": [
+        396,
+        46,
+        416,
+        142
+      ],
+      "rot": -3,
+      "text": "Mừng Xuân",
+      "z": 13
+    },
+    {
+      "id": "nhan-be-ngoan",
+      "type": "label",
+      "box": [
+        735,
+        473,
+        250,
+        85
+      ],
+      "rot": -2,
+      "text": "Bé ngoan",
+      "z": 13
+    },
+    {
+      "id": "nhan-chuc-be",
+      "type": "label",
+      "box": [
+        285,
+        1227,
+        465,
+        188
+      ],
+      "rot": 0,
+      "text": "Chúc bé hay ăn chóng lớn",
+      "z": 13
+    },
+    {
+      "id": "dong-tien-loc",
+      "type": "sticker",
+      "box": [
+        138,
+        1227,
+        116,
+        127
+      ],
+      "rot": 8,
+      "z": 11
+    },
+    {
+      "id": "tim-do-trai",
+      "type": "heart",
+      "box": [
+        642,
+        492,
+        44,
+        58
+      ],
+      "fill": "#e8505b",
+      "z": 14
+    },
+    {
+      "id": "tim-do-phai",
+      "type": "heart",
+      "box": [
+        962,
+        492,
+        65,
+        48
+      ],
+      "fill": "#e8505b",
+      "z": 14
+    },
+    {
+      "id": "tim-hong-phai",
+      "type": "heart",
+      "box": [
+        973,
+        765,
+        58,
+        66
+      ],
+      "fill": "#f08a8c",
+      "z": 14
+    },
+    {
+      "id": "tim-do-nho",
+      "type": "heart",
+      "box": [
+        319,
+        158,
+        32,
+        42
+      ],
+      "fill": "#d8242b",
+      "z": 14
+    },
+    {
+      "id": "tia-vang-tet",
+      "type": "spark",
+      "box": [
+        8,
+        158,
+        77,
+        73
+      ],
+      "fill": "#f6c445",
+      "z": 14
+    },
+    {
+      "id": "tia-trang-anh-tron",
+      "type": "spark",
+      "box": [
+        688,
+        296,
+        35,
+        46
+      ],
+      "fill": "#ffffff",
+      "z": 14
+    },
+    {
+      "id": "tim-chuc-trai",
+      "type": "heart",
+      "box": [
+        365,
+        1269,
+        43,
+        46
+      ],
+      "fill": "#d8242b",
+      "z": 14
+    },
+    {
+      "id": "tim-chuc-phai",
+      "type": "heart",
+      "box": [
+        627,
+        1269,
+        43,
+        46
+      ],
+      "fill": "#d8242b",
+      "z": 14
+    }
+  ]
+}

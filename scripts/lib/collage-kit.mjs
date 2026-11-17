@@ -181,11 +181,20 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
       return top + bot + ' Z'
     }
     if (kind === 'stitch') return `M10 0 L${w - 10} 0 Q${w} 0 ${w} 10 L${w} ${h - 10} Q${w} ${h} ${w - 10} ${h} L10 ${h} Q0 ${h} 0 ${h - 10} L0 10 Q0 0 10 0 Z`
-    throw new Error(`Kiểu nhãn "${kind}" chưa có (ribbon, torn, tag, stitch)`)
+    if (kind === 'cloud') {
+      // hình mây: siêu elip bo tròn có các múi nhỏ dọc viền
+      const N = 160, pts = []
+      for (let i = 0; i < N; i++) {
+        const t = (i / N) * Math.PI * 2, c = Math.cos(t), sn = Math.sin(t), k = 1 + 0.04 * Math.cos(t * 14)
+        pts.push([w / 2 + (w / 2) * Math.sign(c) * Math.pow(Math.abs(c), 0.45) * k, h / 2 + (h / 2) * Math.sign(sn) * Math.pow(Math.abs(sn), 0.45) * k])
+      }
+      return 'M' + pts.map((q) => `${f(Math.min(w, Math.max(0, q[0])))} ${f(Math.min(h, Math.max(0, q[1])))}`).join(' L') + ' Z'
+    }
+    throw new Error(`Kiểu nhãn "${kind}" chưa có (ribbon, torn, tag, stitch, cloud)`)
   }
   const label = async (name, value, x, y, w, h, { kind = 'ribbon', fill = '#f3d36b', ink = '#141414', alias, size, rot = 0, weight = '700', ls = 4, italic = false } = {}) => {
     const b = 8, pad = 26, W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
-    const stitch = kind === 'stitch' ? `<path transform="translate(${pad + b} ${pad + b})" d="${labelPath('stitch', w - 12, h - 12)}" fill="none" stroke="${ink}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="7 6" style="transform:translate(6px,6px)"/>` : ''
+    const stitch = kind === 'stitch' || kind === 'cloud' ? `<path transform="translate(${pad + b} ${pad + b})" d="${labelPath(kind === 'cloud' ? 'cloud' : 'stitch', w - 12, h - 12)}" fill="none" stroke="${ink}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="7 6" style="transform:translate(6px,6px)"/>` : ''
     const png = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${labelPath(kind, w, h)}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>${stitch}`, DROP(W2, H2, 4, 6, 0.38))
     const g = groupLayer({ name: 'Cụm ' + name, left: x - b - pad, top: y - b - pad, width: W2, height: H2, rotate: rot }); layers.push(g)
     const shape = place(name + ' · nền nhãn', await writeAsset(`label-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
