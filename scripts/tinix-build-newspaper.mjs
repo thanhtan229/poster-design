@@ -128,17 +128,21 @@ const slot = async (name, photo, x, y, w, h, cropY, tape = null, kind = 'ellipse
   return p
 }
 const maskUri = (w, h, body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`)
-// Bố cục chồng lấn như trang scrapbook thật: thứ tự lớp = thứ tự dòng (dòng sau nằm trên)
-await slot('Ảnh chị em (trái tim)', photos[3], 1540, 790, 800, 660, 28, [70, 30, -22], 'heart')
-await slot('Ảnh Pure Joy', photos[1], 40, 650, 620, 700, 0, [520, 600, 28], 'ellipse')
-await slot('Ảnh sinh nhật', photos[2], 560, 640, 660, 720, 40, [520, 620, 28], 'flower')
+// Bố cục chồng lấn: lớp dưới → trên theo thứ tự dòng. Ảnh tách nền (hero) cỡ lớn đè lên khung và giấy nền hình.
+const paperShape = async (name, kind, x, y, w, h, fill) => {
+  const b = 14, pad = 36, d = shapePath(kind, w, h), W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
+  const png = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${d}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>`,
+    `<filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${W2}" height="${H2}"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="8" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`)
+  place(name, await writeAsset(`paper-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+}
 await slot('Ảnh cả nhà', photos[4], 1080, 300, 1260, 580, 50, [1120, 520, -22], 'cloud')
-
-// chú thích báo dưới ảnh
+await paperShape('Giấy tim đỏ', 'heart', 1600, 740, 740, 700, RED)
+await paperShape('Giấy hoa vàng', 'flower', 420, 700, 700, 760, '#f3d36b')
+await slot('Ảnh Pure Joy', photos[1], 40, 650, 600, 620, 0, [500, 560, 28], 'ellipse')
 
 // ── 5. CỘT BÀI: trích dẫn lớn + đoạn văn giả (vạch xám) + một khung chữ cắt đỏ ──
-text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 80, 1432, 820, 36, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15 })
-text('Tác giả', '— Mục Gia đình', 80, 1484, 700, 28, 'Montserrat', RED, { ls: 3, weight: '700' })
+text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 70, 1330, 330, 34, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15, h: 150 })
+text('Tác giả', '— Mục Gia đình', 70, 1480, 330, 26, 'Montserrat', RED, { ls: 3, weight: '700' })
 {
   let rows = ''
   for (let y = 0; y < 3; y++) for (let x = 0; x < 1; x++) rows += ''
@@ -149,26 +153,33 @@ text('Tác giả', '— Mục Gia đình', 80, 1484, 700, 28, 'Montserrat', RED,
 // khung chữ cắt đỏ (ô trích nổi)
 {
   const body = `<rect x="6" y="6" width="300" height="110" fill="${RED}"/><rect x="0" y="0" width="300" height="110" fill="${INK}"/>`
-  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(306, 116, `<g transform="rotate(-2 153 58)">${body}</g>`)), 900, 1400, 306, 116, { printRole: 'raised' })
+  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(306, 116, `<g transform="rotate(-2 153 58)">${body}</g>`)), 1470, 1390, 306, 116, { printRole: 'raised' })
 }
-text('Chữ ô đỏ', 'NGÀY MỚI', 904, 1424, 296, 40, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
+text('Chữ ô đỏ', 'NGÀY MỚI', 1474, 1414, 296, 40, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
 
-// ── 5b. ẢNH CHỦ ĐẠO TÁCH NỀN (GIỮ MÀU): bé gái (ảnh Bloom), dùng kết quả tách nền đã lưu ──
-{
-  const cutFile = path.join(assetsDir, '..', 'moments-a', 'cutout-1713.png')
-  const cut = await readFile(cutFile)
+// ── 5b. ẢNH CHỦ ĐẠO TÁCH NỀN (GIỮ MÀU): kết quả tách nền BiRefNet lưu cache theo mã ảnh, viền trắng ôm dáng người + bóng ──
+const BASE = process.env.TINIX_APP_URL || 'http://127.0.0.1:7001'
+const cutoutOf = async (photo) => {
+  const cached = path.join(assetsDir, '..', 'moments-a', `cutout-${photo.id}.png`)
+  try { return await readFile(cached) } catch { /* chưa tách nền */ }
+  const body = new FormData()
+  body.append('file', new Blob([await readFile(path.join(root, 'service', photo.url.replace(/^\//, '')))]), 'subject.jpg')
+  const res = await fetch(BASE + '/api/tinix/cutout/birefnet', { method: 'POST', body })
+  if (!res.ok || !(res.headers.get('content-type') || '').startsWith('image/png')) throw new Error('BiRefNet không trả về PNG (service 7001 đang chạy chưa?)')
+  const png = Buffer.from(await res.arrayBuffer()); await writeFile(cached, png); return png
+}
+const hero = async (name, photo, x, y, targetH, border = 16) => {
+  const cut = await cutoutOf(photo)
   const { data, info } = await sharp(cut).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
   let x0 = info.width, x1 = 0, y0 = info.height, y1 = 0
-  for (let y = 0; y < info.height; y++) for (let x = 0; x < info.width; x++) if (data[(y * info.width + x) * 4 + 3] > 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y }
-  const bw = x1 - x0 + 1, bh = y1 - y0 + 1
-  const targetH = HERO.h, sc = targetH / bh, cw = Math.round(bw * sc), ch = targetH
-  const pad = 40
+  for (let yy = 0; yy < info.height; yy++) for (let xx = 0; xx < info.width; xx++) if (data[(yy * info.width + xx) * 4 + 3] > 128) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy }
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1, sc = targetH / bh, cw = Math.round(bw * sc), ch = targetH, pad = 40
   const subject = await sharp(cut).extract({ left: x0, top: y0, width: bw, height: bh }).resize(cw, ch, { kernel: 'lanczos3' }).png().toBuffer()
   const W2 = cw + 2 * pad, H2 = ch + 2 * pad
   const canvas = await sharp({ create: { width: W2, height: H2, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite([{ input: subject, left: pad, top: pad }]).png().toBuffer()
   const alpha = await sharp(canvas).extractChannel(3).raw().toBuffer()
   const grow = async (r) => { let b = await step(alpha, W2, H2, (q) => q.blur(Math.max(0.5, r / 1.47))); b = await step(b, W2, H2, (q) => q.threshold(18)); b = await step(b, W2, H2, (q) => q.blur(3)); return step(b, W2, H2, (q) => q.threshold(128)) }
-  const white = await grow(HERO.border), ink = await grow(HERO.border + 3)
+  const white = await grow(border), ink = await grow(border + 3)
   const solid = (rgb, a) => sharp(Buffer.alloc(W2 * H2 * 3).map((_, i) => rgb[i % 3]), { raw: { width: W2, height: H2, channels: 3 } }).joinChannel(a, { raw: { width: W2, height: H2, channels: 1 } }).png().toBuffer()
   const shadow = await step(await step(white, W2, H2, (q) => q.blur(12)), W2, H2, (q) => q.linear(0.45, 0))
   const png = await sharp({ create: { width: W2, height: H2, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } }).composite([
@@ -177,10 +188,12 @@ text('Chữ ô đỏ', 'NGÀY MỚI', 904, 1424, 296, 40, 'Playfair Display', PA
     { input: await solid([255, 255, 255], white), left: 0, top: 0 },
     { input: canvas, left: 0, top: 0 },
   ]).png().toBuffer()
-  const url = await writeAsset('hero-color.png', png)
-  const gx = HERO.x - pad, gy = HERO.y - pad
-  place('Ảnh chủ đạo (tách nền, giữ màu)', url, gx, gy, W2, H2, { printRole: 'raised' }).cutInset = HERO.border / 2
+  place(name, await writeAsset(`hero-${photo.id}.png`, png), x - pad, y - pad, W2, H2, { printRole: 'raised' }).cutInset = border / 2
+  return { w: cw, h: ch }
 }
+await hero('Ảnh chủ đạo · bé gái', photos[0], 1000, 500, 1000)
+await hero('Ảnh chủ đạo · bé ngồi', photos[2], 420, 735, 760)
+await hero('Ảnh chủ đạo · chị em', photos[3], 1800, 680, 820)
 function f2(n) { return n }
 // ── 5c. STICKER LẤP CHỖ TRỐNG, chồng lên mép ảnh như trang scrapbook ──
 {
