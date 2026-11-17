@@ -1,10 +1,3 @@
-# [TINIX] BẢN CI CHƯA BẬT — token đẩy mã (PAT chỉ có quyền `repo`) không được phép tạo file trong .github/workflows/.
-# Để bật CI: chuyển file này thành .github/workflows/ci.yml bằng một trong hai cách:
-#   1) Giao diện GitHub: Add file > Create new file > .github/workflows/ci.yml, dán nội dung bên dưới; hoặc
-#   2) Cấp scope `workflow` cho token rồi: git mv .github/ci.yml.example .github/workflows/ci.yml && git push
-# Các bước đã mô phỏng thành công trên bản clone sạch (npm ci, lint, vue-tsc, typecheck service, vite build, tinix:test 21/21),
-# nhưng CHƯA chạy trên runner GitHub thật.
-
 # [TINIX] Kiểm tra tự động cho mỗi PR vào main và mỗi lần push lên main/tinix.
 # Chạy trên Windows vì app này phát triển/dùng trên Windows (font, đường dẫn, better-sqlite3/sharp).
 # Các bước khớp CLAUDE.md ("ba cổng trước khi commit") cộng kiểm tra kiểu service và bộ kiểm thử offline.
