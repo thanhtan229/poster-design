@@ -20,9 +20,6 @@ jobs:
   check:
     runs-on: windows-latest
     timeout-minutes: 30
-    env:
-      # Không tải Chromium (~170 MB): các bước dưới đây không cần trình duyệt.
-      PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +47,9 @@ jobs:
 
       - name: Build frontend
         run: npx vite build
+
+      - name: Cài Chromium cho Puppeteer (bài test khớp font và mặt nạ cần trình duyệt)
+        run: npm --prefix service exec -- puppeteer browsers install chrome
 
       - name: Kiểm thử offline
         run: npm run tinix:test
