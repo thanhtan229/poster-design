@@ -1,6 +1,7 @@
-// [TINIX] Dựng trang scrapbook "Little One" (30×20 cm) theo phong cách ảnh mẫu bé 1 tuổi: nền pastel họa tiết, ảnh nghiêng nhẹ,
-// ba ảnh tách nền cỡ lớn, chữ lớn die-cut, nhiều nhãn/ruy băng kiểu khác nhau, sticker chủ đề. Quy tắc: DESIGN-RULES.md; hàm: scripts/lib/collage-kit.mjs.
-//   node scripts/tinix-build-tet.mjs --output FILE [--photos 1713,1714,1715,1716,1717] [--placeholders]
+// [TINIX] Mẫu scrapbook Tết "Cổng xuân" (30×20 cm): nền đỏ thẫm họa tiết ô vàng, hai khung vòm cổng ở giữa, khung vuông bo (squircle) và khung tem,
+// ba ảnh tách nền cỡ lớn ở hai bên và dưới, chữ "Tết" die-cut cỡ lớn, nhãn ruy băng. Quy tắc: DESIGN-RULES.md; hàm: scripts/lib/collage-kit.mjs.
+//   node scripts/tinix-build-tet.mjs --output FILE [--photos 1722,1723,1724,1725,1720,1721,1718] [--placeholders]
+// Thứ tự --photos: vòm trái, vòm phải, hero mẹ-con (cao), hero bé-lân, hero bé-lân thứ hai, khung vuông bo, khung tem.
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { writeFile } from 'node:fs/promises'
@@ -12,13 +13,13 @@ const Database = createRequire(path.join(root, 'service', 'package.json'))('bett
 const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : undefined }
 const out = arg('--output')
 if (!out) throw new Error('--output FILE là bắt buộc')
-const ids = (arg('--photos') || '1713,1714,1715,1716,1717').split(',').map(Number)
-if (ids.length !== 5 || ids.some((n) => !Number.isInteger(n))) throw new Error('--photos cần đúng 5 mã ảnh')
+const ids = (arg('--photos') || '1722,1723,1724,1725,1720,1721,1718').split(',').map(Number)
+if (ids.length !== 7 || ids.some((n) => !Number.isInteger(n))) throw new Error('--photos cần đúng 7 mã ảnh')
 const placeholders = process.argv.includes('--placeholders')
 
 const W = 2400, H = 1600, DPI = +(W / (30 / 2.54)).toFixed(1)
-const C = { mint: '#f6e3c4', ink: '#5a0f14', coral: '#c8102e', pink: '#f4a7a0', yellow: '#f2c14e', teal: '#b5452f', lilac: '#f7d9a8', white: '#fffdf8' }
-let seed = 2024
+const C = { red: '#a31621', gold: '#f2c14e', cream: '#fbeed3', ink: '#4a0d12', coral: '#e0503a', pink: '#f4a7a0', white: '#fffdf8' }
+let seed = 2026
 const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296 }
 
 const db = new Database(path.join(root, 'service', 'data', 'poster.db'), { readonly: true })
@@ -35,47 +36,50 @@ const kit = await createCollageKit({
   assetsDir: path.join(root, 'service', 'static', 'collage', 'tet-a'), assetsUrl: '/static/collage/tet-a',
   cutoutCacheDir: path.join(root, 'service', 'static', 'collage', 'moments-a'),
 })
-const { layers, text, dieText, slot, paperShape, hero, label, themeSticker, patternBackground, starSticker, heartSticker, tapePiece } = kit
-const COLOR = {} // ảnh giữ màu gốc (không hiệu ứng đen trắng); chọn "Gốc" trong app vẫn đúng
+const { layers, dieText, slot, paperShape, hero, label, patternBackground, starSticker, heartSticker } = kit
+const COLOR = {} // ảnh giữ màu gốc
 
-// ── 1. NỀN pastel họa tiết chấm trắng + vân giấy/hạt của app (quy tắc 3.3, 3.6) ──
-const bg = await patternBackground('Nền vàng chấm', 'dots', W, H, { base: C.mint, ink: '#f2c14e', opacity: 0.6, size: 26 })
-bg.effects = { paper: 40, grain: 14 }
+// ── 1. NỀN đỏ thẫm họa tiết ô vàng mờ + vân giấy/hạt của app ──
+const bg = await patternBackground('Nền đỏ ô vàng', 'check', W, H, { base: C.red, ink: C.gold, opacity: 0.5, size: 34 })
+bg.effects = { paper: 35, grain: 12 }
 
-// ── 2. ẢNH PHỤ trong khung nghiêng + giấy màu hình hoa/tim dưới ảnh tách nền ──
-await slot('Ảnh cả nhà', photos[4], 1040, 100, 1220, 560, 25, [1080, 470, -24], 'cloud', COLOR, -2)
-await paperShape('Giấy tim hồng', 'heart', 1560, 760, 760, 780, C.pink)
-await paperShape('Giấy hoa vàng', 'flower', 130, 640, 720, 780, C.yellow)
-await slot('Ảnh khung tròn', photos[1], 110, 100, 540, 700, 0, [440, 610, 30], 'ellipse', COLOR, 2)
+// ── 2. GIẤY MÀU nền cho ảnh tách nền (hình tem tròn và vuông bo) ──
+await paperShape('Giấy tem vàng', 'stamp', 1700, 560, 620, 620, C.gold)
+await paperShape('Giấy vuông kem', 'squircle', 60, 740, 560, 740, C.cream)
 
-// ── 3. ẢNH TÁCH NỀN CỠ LỚN, nghiêng nhẹ, đè lên khung và giấy màu (quy tắc 1.2, 2.8) ──
-await hero('Ảnh chủ đạo · bé ngồi', photos[2], 250, 690, 800, 16, -3)
-await hero('Ảnh chủ đạo · bé gái', photos[0], 840, 470, 1080, 16, 2)
-await hero('Ảnh chủ đạo · chị em', photos[3], 1760, 640, 840, 16, 2)
+// ── 3. HAI KHUNG VÒM CỔNG ở giữa (so le độ cao), ảnh người nhìn thẳng, đầu nằm trong khung ──
+await slot('Ảnh vòm trái', photos[0], 720, 130, 500, 860, 20, [80, 60, -18], 'arch', COLOR, -2)
+await slot('Ảnh vòm phải', photos[1], 1250, 230, 470, 700, 25, [380, 30, 20], 'arch', COLOR, 2)
 
-// ── 4. CHỮ LỚN: ONE bằng chữ giấy màu + lettering die-cut ──
-const word = 'TẾT', fills = [C.coral, C.yellow, C.teal], inks = ['#fffdf8', C.ink, '#fffdf8']
-for (let i = 0; i < word.length; i++) text('Chữ giấy ' + word[i], word[i], 680 + i * 150, 70 + (i % 2 ? 26 : 0), 140, 170, 'Playfair Display', inks[i], { align: 'center', weight: '700', bg: fills[i], h: 240, rot: i % 2 ? 4 : -4 })
-dieText('Lettering Xuân về', 'Xuân\nvề', 570, 290, 470, 120, 'Pacifico', C.coral, { align: 'center', lh: 1.0, h: 330, rot: -6, edge: C.ink })
+// ── 4. ẢNH TÁCH NỀN CỠ LỚN (quy tắc 1.2): mẹ con bên phải, bé và lân bên trái, bé và lân thứ hai ở dưới ──
+await hero('Hero mẹ con', photos[2], 1800, 130, 1250, 16, 2)
+await hero('Hero bé và lân', photos[3], 110, 620, 860, 16, -3)
+await hero('Hero bé và sư tử', photos[4], 660, 770, 740, 16, 2)
 
-// ── 5. NHÃN / RUY BĂNG đủ kiểu (quy tắc 4.9) ──
-await label('Nhãn an khang', 'AN KHANG', 70, 1430, 400, 90, { kind: 'ribbon', fill: C.coral, ink: '#fffdf8', alias: 'Montserrat', size: 40, rot: -3 })
-await label('Nhãn Just Smile', 'PHÚC LỘC', 1230, 1380, 330, 78, { kind: 'tag', fill: C.white, ink: C.ink, alias: 'Montserrat', size: 32, rot: 3 })
-await label('Nhãn Best Day', 'VẠN SỰ NHƯ Ý', 700, 1470, 430, 76, { kind: 'torn', fill: C.yellow, ink: C.ink, alias: 'Montserrat', size: 32, rot: -2 })
-await label('Nhãn Joy', 'SUM VẦY', 1010, 640, 360, 74, { kind: 'stitch', fill: C.lilac, ink: C.ink, alias: 'Montserrat', size: 30, rot: 4 })
-await label('Nhãn Love', 'NĂM MỚI', 2030, 1450, 230, 66, { kind: 'ribbon', fill: C.teal, ink: '#fffdf8', alias: 'Montserrat', size: 32, rot: -4 })
+// ── 5. KHUNG VUÔNG BO + KHUNG TEM nhỏ ở dưới (hai dáng mới, khác mẫu trước) ──
+await slot('Ảnh khung bo', photos[5], 1180, 1040, 560, 470, 40, [70, 20, -22], 'squircle', COLOR, -3)
+await slot('Ảnh khung tem', photos[6], 1900, 1130, 380, 380, 40, null, 'stamp', COLOR, 4)
 
-// ── 6. STICKER CHỦ ĐỀ + sao tim nhỏ ──
-await themeSticker('Bánh sinh nhật', 'cake', 1330, 1130, 250, { a: C.coral, b: C.pink, c: C.teal, d: C.yellow })
-await themeSticker('Máy ảnh', 'camera', 2100, 1200, 230, { a: C.pink, b: C.white, d: C.yellow })
-await heartSticker('Tim coral', 1210, 560, 140, 110, C.coral)
-await heartSticker('Tim lilac', 1170, 770, 230, 190, C.lilac)
-await starSticker('Sao vàng', 2230, 560, 120, 48, 22, C.yellow)
-await starSticker('Sao lilac', 600, 1360, 120, 46, 21, C.lilac)
+// ── 6. CHỮ LỚN: "Tết" die-cut vàng viền mực ở góc trên trái; câu chúc nhỏ dưới ──
+dieText('Lettering Tết', 'Tết', 70, 60, 620, 330, 'Pacifico', C.gold, { align: 'center', lh: 1.0, h: 470, rot: -6, edge: C.ink })
+dieText('Lettering đoàn viên', 'đoàn viên', 90, 440, 560, 110, 'Pacifico', C.ink, { align: 'center', lh: 1.0, h: 190, rot: -4, edge: C.gold })
+
+// ── 7. NHÃN / RUY BĂNG đủ kiểu (quy tắc 4.9) ──
+await label('Nhãn chúc mừng', 'CHÚC MỪNG NĂM MỚI', 720, 38, 520, 74, { kind: 'ribbon', fill: C.coral, ink: C.white, alias: 'Montserrat', size: 32, rot: 0 })
+await label('Nhãn an khang', 'AN KHANG', 130, 1440, 330, 74, { kind: 'torn', fill: C.gold, ink: C.ink, alias: 'Montserrat', size: 32, rot: -3 })
+await label('Nhãn phúc lộc', 'PHÚC LỘC', 1840, 70, 300, 70, { kind: 'tag', fill: C.cream, ink: C.ink, alias: 'Montserrat', size: 30, rot: 4 })
+await label('Nhãn vạn sự', 'VẠN SỰ NHƯ Ý', 1980, 1090, 380, 70, { kind: 'stitch', fill: C.pink, ink: C.ink, alias: 'Montserrat', size: 28, rot: -4 })
+await label('Nhãn sum vầy', 'SUM VẦY', 560, 1460, 290, 70, { kind: 'ribbon', fill: C.cream, ink: C.coral, alias: 'Montserrat', size: 30, rot: 3 })
+
+// ── 8. STICKER nhỏ lấp chỗ trống ──
+await heartSticker('Tim vàng', 1700, 960, 150, 120, C.gold)
+await starSticker('Sao kem', 1240, 1000, 110, 44, 20, C.cream)
+await starSticker('Sao vàng 2', 640, 140, 110, 44, 20, C.gold)
+await heartSticker('Tim hồng', 2220, 840, 130, 105, C.pink)
 
 const global = {
-  name: 'Tết · scrapbook xuân', type: 'page', uuid: '-1', left: 0, top: 0, width: W, height: H, backgroundColor: C.mint, backgroundGradient: '', backgroundImage: '', backgroundTransform: {},
-  opacity: 1, tag: 0, record: {}, dpi: DPI, collage: { template: 'tet-a', version: 1, customer: placeholders ? 'Mẫu' : 'Tết', printWorkflow: 'separate-sheets' },
+  name: 'Tết · scrapbook cổng xuân', type: 'page', uuid: '-1', left: 0, top: 0, width: W, height: H, backgroundColor: C.red, backgroundGradient: '', backgroundImage: '', backgroundTransform: {},
+  opacity: 1, tag: 0, record: {}, dpi: DPI, collage: { template: 'tet-a', version: 2, customer: placeholders ? 'Mẫu' : 'Tết', printWorkflow: 'separate-sheets' },
 }
 await writeFile(out, JSON.stringify({ global, layers }, null, 2), { flag: 'wx' })
 console.log(JSON.stringify({ output: path.resolve(out), canvas: { W, H, dpi: DPI }, layers: layers.length, placeholders }))

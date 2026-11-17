@@ -7,7 +7,7 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { imageLayer, textLayer, groupLayer } from './reference-build.mjs'
 
-export const SHAPES = ['ellipse', 'cloud', 'flower', 'heart'] // quy tắc 2.1: luôn đa dạng dáng khung giữa các ảnh trong một trang
+export const SHAPES = ['ellipse', 'cloud', 'flower', 'heart', 'arch', 'squircle', 'stamp'] // quy tắc 2.1: luôn đa dạng dáng khung giữa các ảnh trong một trang
 const f = (n) => +n.toFixed(1)
 const DROP = (w, h, std, dy, slope) => `<filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}"><feGaussianBlur in="SourceAlpha" stdDeviation="${std}"/><feOffset dy="${dy}" result="o"/><feComponentTransfer><feFuncA type="linear" slope="${slope}"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
 const heartPoints = (n) => Array.from({ length: n }, (_, i) => { const t = (i / n) * Math.PI * 2; return [16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))] })
@@ -55,9 +55,15 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
       const raw = heartPoints(N)
       const xs = raw.map((q) => q[0]), ys = raw.map((q) => q[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
       pts = raw.map((q) => [m + ((q[0] - x0) / (x1 - x0)) * (w - 2 * m), m + ((q[1] - y0) / (y1 - y0)) * (h - 2 * m)])
+    } else if (kind === 'arch') {
+      // Khung vòm (cổng/cửa sổ): nửa tròn ở trên, thân thẳng, đáy bo góc
+      const R = cx - m, r = Math.min(26, R / 3), top = []
+      for (let i = 0; i <= 90; i++) { const a = Math.PI + (i / 90) * Math.PI; top.push([cx + R * Math.cos(a), m + R + R * Math.sin(a)]) }
+      const corner = (ccx, ccy, a0) => Array.from({ length: 13 }, (_, i) => { const a = a0 + (i / 12) * (Math.PI / 2); return [ccx + r * Math.cos(a), ccy + r * Math.sin(a)] })
+      pts = [...top, ...corner(w - m - r, h - m - r, 0), ...corner(m + r, h - m - r, Math.PI / 2)]
     } else {
       const ph = rnd() * 6
-      const radius = { ellipse: () => 1, cloud: (t) => 0.9 + 0.1 * Math.abs(Math.sin(5.5 * t + ph)), flower: (t) => 0.7 + 0.3 * Math.abs(Math.cos(3.5 * t + ph)) }[kind]
+      const radius = { ellipse: () => 1, cloud: (t) => 0.9 + 0.1 * Math.abs(Math.sin(5.5 * t + ph)), flower: (t) => 0.7 + 0.3 * Math.abs(Math.cos(3.5 * t + ph)), squircle: (t) => 1 / Math.pow(Math.abs(Math.cos(t)) ** 4 + Math.abs(Math.sin(t)) ** 4, 0.25), stamp: (t) => 0.93 + 0.07 * Math.abs(Math.sin(15 * t)) }[kind]
       if (!radius) throw new Error(`Dáng khung "${kind}" chưa có (có: ${SHAPES.join(', ')})`)
       const rs = Array.from({ length: N }, (_, i) => radius((i / N) * Math.PI * 2)), rmax = Math.max(...rs)
       pts = rs.map((r, i) => { const t = (i / N) * Math.PI * 2; return [cx + (rx * r * Math.cos(t)) / rmax, cy + (ry * r * Math.sin(t)) / rmax] })
