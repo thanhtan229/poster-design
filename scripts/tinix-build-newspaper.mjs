@@ -42,7 +42,7 @@ db.close()
 const fontClass = (alias) => { const f = fontRows.get(alias); if (!f) throw new Error(`Thiếu font ${alias}`); return { alias: f.alias, id: f.id, value: f.alias, url: f.ttf } }
 
 const step = async (buf, w, h, fn) => { const { data, info } = await fn(sharp(buf, { raw: { width: w, height: h, channels: 1 } })).extractChannel(0).raw().toBuffer({ resolveWithObject: true }); if (info.channels !== 1) throw new Error('kênh alpha'); return data }
-const HERO = { x: 1250, y: 862, h: 630, border: 16 }
+const HERO = { x: 1340, y: 862, h: 630, border: 16 }
 const readFile = (await import('node:fs/promises')).readFile
 const layers = []
 const place = (name, url, x, y, w, h, extra = {}) => { const l = imageLayer({ name, url, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), ...extra }); layers.push(l); return l }
@@ -128,20 +128,20 @@ const slot = async (name, photo, x, y, w, h, cropY, tape = null, kind = 'ellipse
   return p
 }
 const maskUri = (w, h, body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`)
-await slot('Ảnh Pure Joy', photos[1], 84, 654, 490, 548, 0, [446, 520, 28], 'ellipse')
-await slot('Ảnh sinh nhật', photos[2], 644, 654, 490, 548, 40, [430, 538, 28], 'flower')
-await slot('Ảnh The Beginning', photos[3], 1726, 836, 586, 428, 28, [60, 14, -22], 'heart')
-await slot('Ảnh cả nhà', photos[4], 1186, 336, 1128, 448, 50, [1040, 436, -22], 'cloud')
+await slot('Ảnh Pure Joy', photos[1], 70, 650, 560, 640, 0, [500, 590, 28], 'ellipse')
+await slot('Ảnh sinh nhật', photos[2], 680, 650, 560, 640, 40, [490, 600, 28], 'flower')
+await slot('Ảnh The Beginning', photos[3], 1660, 870, 680, 560, 28, [60, 24, -22], 'heart')
+await slot('Ảnh cả nhà', photos[4], 1170, 318, 1170, 520, 50, [1090, 470, -22], 'cloud')
 
 // chú thích báo dưới ảnh
-text('Chú thích 1', 'Hình 1. Cả nhà, một khung hình.', 1180, 800, 1140, 28, 'Montserrat', GREY, { italic: false, ls: 1 })
-text('Chú thích 2', 'Hình 2. Bé và chiếc ghế gỗ.', 80, 1222, 500, 26, 'Montserrat', GREY)
-text('Chú thích 3', 'Hình 3. Sinh nhật số một.', 640, 1222, 500, 26, 'Montserrat', GREY)
-text('Chú thích 4', 'Hình 4. Chị em, và một chiếc váy.', 1720, 1278, 600, 26, 'Montserrat', GREY)
+text('Chú thích 1', 'Hình 1. Cả nhà, một khung hình →', 600, 590, 540, 28, 'Montserrat', GREY, { italic: false, ls: 1, align: 'right' })
+text('Chú thích 2', 'Hình 2. Bé và chiếc ghế gỗ.', 80, 1310, 560, 26, 'Montserrat', GREY)
+text('Chú thích 3', 'Hình 3. Sinh nhật số một.', 690, 1310, 560, 26, 'Montserrat', GREY)
+text('Chú thích 4', 'Hình 4. Chị em, và một chiếc váy.', 1700, 1440, 640, 26, 'Montserrat', GREY)
 
 // ── 5. CỘT BÀI: trích dẫn lớn + đoạn văn giả (vạch xám) + một khung chữ cắt đỏ ──
-text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 80, 1280, 1080, 46, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15 })
-text('Tác giả', '— Mục Gia đình', 80, 1400, 1000, 30, 'Montserrat', RED, { ls: 3, weight: '700' })
+text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 80, 1345, 900, 42, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15 })
+text('Tác giả', '— Mục Gia đình', 80, 1430, 800, 30, 'Montserrat', RED, { ls: 3, weight: '700' })
 {
   let rows = ''
   for (let y = 0; y < 3; y++) for (let x = 0; x < 1; x++) rows += ''
@@ -151,10 +151,10 @@ text('Tác giả', '— Mục Gia đình', 80, 1400, 1000, 30, 'Montserrat', RED
 }
 // khung chữ cắt đỏ (ô trích nổi)
 {
-  const body = `<rect x="6" y="6" width="420" height="150" fill="${RED}"/><rect x="0" y="0" width="420" height="150" fill="${INK}"/>`
-  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(426, 156, `<g transform="rotate(-2 213 78)">${body}</g>`)), 1700, 1336, 426, 156, { printRole: 'raised' })
+  const body = `<rect x="6" y="6" width="300" height="110" fill="${RED}"/><rect x="0" y="0" width="300" height="110" fill="${INK}"/>`
+  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(306, 116, `<g transform="rotate(-2 153 58)">${body}</g>`)), 980, 1380, 306, 116, { printRole: 'raised' })
 }
-text('Chữ ô đỏ', 'NGÀY MỚI', 1712, 1376, 404, 48, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
+text('Chữ ô đỏ', 'NGÀY MỚI', 984, 1404, 296, 40, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
 
 // ── 5b. ẢNH CHỦ ĐẠO TÁCH NỀN (GIỮ MÀU): bé gái (ảnh Bloom), dùng kết quả tách nền đã lưu ──
 {
