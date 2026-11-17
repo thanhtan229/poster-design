@@ -26,6 +26,9 @@ export const listPhotos = () => fetch<{ list: TPhoto[]; favorites: TLibraryFavor
 export const deletePhoto = (id: number, inUse: string[]) => fetch<{ removed: boolean; filesDeleted: boolean }>(`${base}/delete`, { id, inUse }, 'post')
 export const clearPreview = (inUse: string[]) => fetch<{ total: number; deletable: number; kept: number }>(`${base}/clear-preview`, { inUse }, 'post')
 export const clearAll = (inUse: string[]) => fetch<{ removed: number; filesDeleted: number; kept: number }>(`${base}/clear`, { inUse }, 'post')
+/** Ảnh chưa thuộc thiết kế đã lưu/mẫu nào và không nằm trên canvas; olderThanDays > 0: chỉ ảnh tải lên cách đây ít nhất ngần ấy ngày */
+export const unusedPreview = (inUse: string[], olderThanDays = 0) => fetch<{ total: number; count: number; kept: number; bytes: number }>(`${base}/unused-preview`, { inUse, olderThanDays }, 'post')
+export const clearUnused = (inUse: string[], olderThanDays = 0) => fetch<{ removed: number; bytes: number; kept: number }>(`${base}/unused-clear`, { inUse, olderThanDays }, 'post')
 /** ★: thêm ảnh vào một nhóm có sẵn (cate) hoặc nhóm mới (newName) trong tab Ảnh */
 export const favorite = (id: number, target: { cate?: string; newName?: string }) => fetch<{ item: any; created: boolean; cate: string; catName: string }>(`${base}/favorite`, { id, ...target }, 'post')
 export const unfavorite = (hash: string, inUse: string[]) => fetch<{ removed: boolean; filesDeleted: boolean }>(`${base}/unfavorite`, { hash, inUse }, 'post')

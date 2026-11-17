@@ -6,6 +6,8 @@
  *   POST /api/tinix/photos/delete           { id, inUse?: [url] }
  *   POST /api/tinix/photos/clear-preview    { inUse?: [url] }   → { total, deletable, kept }
  *   POST /api/tinix/photos/clear            { inUse?: [url] }   → { removed, filesDeleted, kept }
+ *   POST /api/tinix/photos/unused-preview   { inUse?: [url], olderThanDays? } → { total, count, kept, bytes }  (ảnh chưa thuộc thiết kế/mẫu nào)
+ *   POST /api/tinix/photos/unused-clear     { inUse?: [url], olderThanDays? } → { removed, bytes, kept }
  *   POST /api/tinix/photos/favorite         { id, cate? | newName? } → { item, created, cate, catName }  (thêm vào nhóm trong tab Ảnh)
  *   POST /api/tinix/photos/unfavorite       { hash, inUse?: [url] }
  * `inUse`: các URL ảnh đang nằm trên canvas (kể cả thiết kế chưa lưu) — không bao giờ xóa tệp của chúng.
@@ -14,7 +16,7 @@ import express from 'express'
 import multiparty from 'multiparty'
 import { send } from '../../utils/tools'
 import { getRequestUser } from '../../utils/auth'
-import { MAX_BYTES, addFavorite, backfillLegacy, clearAll, clearPreview, deletePhoto, ingestPhoto, libraryFavorites, listPhotos, removeFavorite } from './core'
+import { MAX_BYTES, addFavorite, backfillLegacy, clearAll, clearPreview, clearUnused, deletePhoto, ingestPhoto, libraryFavorites, listPhotos, removeFavorite, unusedPreview } from './core'
 
 const router = express.Router()
 const PREFIX = '/api/tinix/photos'
@@ -62,6 +64,9 @@ router.get(`${PREFIX}`, requireLogin, handle(async (_b, req) => {
 router.post(`${PREFIX}/delete`, requireLogin, handle(async (b, req) => deletePhoto(Number(b.id), uid(req), urls(b.inUse))))
 router.post(`${PREFIX}/clear-preview`, requireLogin, handle(async (b, req) => clearPreview(uid(req), urls(b.inUse))))
 router.post(`${PREFIX}/clear`, requireLogin, handle(async (b, req) => clearAll(uid(req), urls(b.inUse))))
+const days = (v: any): number => Math.max(0, Math.min(3650, Math.floor(Number(v) || 0)))
+router.post(`${PREFIX}/unused-preview`, requireLogin, handle(async (b, req) => unusedPreview(uid(req), urls(b.inUse), days(b.olderThanDays))))
+router.post(`${PREFIX}/unused-clear`, requireLogin, handle(async (b, req) => clearUnused(uid(req), urls(b.inUse), days(b.olderThanDays))))
 router.post(`${PREFIX}/favorite`, requireLogin, handle(async (b, req) => {
   const r = addFavorite(Number(b.id), uid(req), { cate: b.cate ? String(b.cate) : '', newName: b.newName ? String(b.newName) : '' })
   if (!r) throw new Error('Không tìm thấy ảnh')

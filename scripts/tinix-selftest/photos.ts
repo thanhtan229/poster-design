@@ -139,6 +139,30 @@ async function main() {
   const d2 = p.deletePhoto(l2, 2, [])
   check('xóa ảnh còn lại: dọn sạch cả ảnh nhẹ/thu nhỏ', d2.removed && !exists(g2.web_url) && !exists(g2.thumb_url) && !exists(g2.url))
 
+  console.log('Dọn ảnh chưa dùng')
+  const mk = async (name: string, r: number, g: number) => {
+    const f = path.join(tmp, name)
+    await sharp({ create: { width: 800, height: 600, channels: 3, background: { r, g, b: 30 } } }).jpeg().toFile(f)
+    return (await p.ingestPhoto(f, name, 0, 3)).photo
+  }
+  const uOld = await mk('u-old.jpg', 10, 20)
+  const uNew = await mk('u-new.jpg', 40, 90)
+  const uUsed = await mk('u-used.jpg', 90, 160)
+  const uCanvas = await mk('u-canvas.jpg', 160, 10)
+  db.prepare("UPDATE user_images SET created_at = datetime('now', '-40 days') WHERE id = ?").run(uOld.id)
+  db.prepare("INSERT INTO designs (user_id, template_id, title, data, cover, width, height) VALUES (1, 0, 'u', ?, '', 100, 100)").run(JSON.stringify({ widgets: [{ imgUrl: uUsed.web_url + '?v=3' }] }))
+  const upv = p.unusedPreview(3, [], 0)
+  check('xem trước: 4 ảnh, 3 chưa dùng (1 được thiết kế đã lưu dùng), có dung lượng', upv.total === 4 && upv.count === 3 && upv.kept === 1 && upv.bytes > 0, upv)
+  const upv2 = p.unusedPreview(3, [uCanvas.web_url], 0)
+  check('ảnh đang trên canvas (inUse) không tính là chưa dùng', upv2.count === 2 && upv2.kept === 2, upv2)
+  const upv3 = p.unusedPreview(3, [uCanvas.web_url], 30)
+  check('lọc cũ hơn 30 ngày: chỉ ảnh tải lên từ 40 ngày trước', upv3.count === 1 && upv3.total === 4, upv3)
+  const cu = p.clearUnused(3, [uCanvas.web_url], 30)
+  check('xóa chưa dùng cũ hơn 30 ngày: xóa đúng ảnh cũ (dòng + 3 tệp), giữ các ảnh còn lại', cu.removed === 1 && cu.bytes === upv3.bytes && !exists(uOld.url) && !exists(uOld.web_url) && !exists(uOld.thumb_url) && p.listPhotos(3).length === 3 && exists(uNew.url) && exists(uUsed.url) && exists(uCanvas.url), cu)
+  const cu2 = p.clearUnused(3, [uCanvas.web_url], 0)
+  check('xóa mọi ảnh chưa dùng: giữ ảnh của thiết kế đã lưu và ảnh trên canvas (cả dòng lẫn tệp)', cu2.removed === 1 && !exists(uNew.url) && !exists(uNew.web_url) && p.listPhotos(3).length === 2 && exists(uUsed.url) && exists(uUsed.web_url) && exists(uCanvas.url), cu2)
+  check('xóa lại không còn gì để xóa', p.clearUnused(3, [uCanvas.web_url], 0).removed === 0 && p.unusedPreview(3, [uCanvas.web_url], 0).bytes === 0)
+
   console.log(failed ? `\n✗ ${failed} kiểm tra lỗi` : '\n✓ tất cả kiểm tra ảnh tải lên đạt')
   process.exit(failed ? 1 : 0)
 }

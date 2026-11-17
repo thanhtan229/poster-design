@@ -228,6 +228,52 @@ export function clearAll(userId: number, inUse: string[]): { removed: number; fi
   return { removed: rows.length, filesDeleted, kept }
 }
 
+// ───────────────────────── Dọn ảnh chưa dùng ─────────────────────────
+export type UnusedPreview = { total: number; count: number; kept: number; bytes: number }
+
+/** Ảnh tải lên KHÔNG thuộc thiết kế đã lưu/mẫu nào, không nằm trên canvas (inUse); olderThanDays > 0: chỉ ảnh tải lên cách đây ít nhất ngần ấy ngày */
+function unusedRows(userId: number, inUse: string[], olderThanDays: number): { rows: PhotoRow[]; total: number; refs: Set<string> } {
+  const all = listPhotos(userId)
+  const refs = referencedPaths(inUse)
+  const cutoff = olderThanDays > 0 ? Date.now() - olderThanDays * 86400000 : Infinity
+  const rows = all.filter((r) => {
+    if (refs.has(staticPath(r.url)) || refs.has(staticPath(r.web_url))) return false
+    if (olderThanDays <= 0) return true
+    const t = Date.parse(String(r.created_at || '').replace(' ', 'T') + 'Z') // created_at của SQLite là giờ UTC
+    return Number.isFinite(t) && t <= cutoff
+  })
+  return { rows, total: all.length, refs }
+}
+
+/** Dung lượng sẽ giải phóng khi xóa dòng ảnh này (tệp còn được dòng khác dùng chung thì không tính) */
+function freedBytes(row: PhotoRow): number {
+  let sum = 0
+  const seen = new Set<string>()
+  for (const u of [row.url, row.web_url, row.thumb_url]) {
+    if (!u || seen.has(u)) continue
+    seen.add(u)
+    if (sharedByOtherRow(u, row.id)) continue
+    try { sum += fs.statSync(abs(u)).size } catch (e) { /* không có tệp */ }
+  }
+  return sum
+}
+
+export function unusedPreview(userId: number, inUse: string[], olderThanDays = 0): UnusedPreview {
+  const { rows, total } = unusedRows(userId, inUse, olderThanDays)
+  return { total, count: rows.length, kept: total - rows.length, bytes: rows.reduce((n, r) => n + freedBytes(r), 0) }
+}
+
+/** Xóa MỌI ảnh chưa dùng (dòng + tệp gốc/nhẹ/thu nhỏ); ảnh đang được dùng giữ nguyên cả dòng lẫn tệp */
+export function clearUnused(userId: number, inUse: string[], olderThanDays = 0): { removed: number; bytes: number; kept: number } {
+  const { rows, total, refs } = unusedRows(userId, inUse, olderThanDays)
+  let bytes = 0
+  for (const r of rows) {
+    bytes += freedBytes(r)
+    removeRow(r, refs)
+  }
+  return { removed: rows.length, bytes, kept: total - rows.length }
+}
+
 // ───────────────────────── Yêu thích = thêm vào thư viện "Ảnh" của app ─────────────────────────
 // ★ trên một ảnh tải lên → sao chép tệp sang static/favorites/ và thêm vào MỘT NHÓM CÓ SẴN trong tab "Ảnh" (bảng photos / asset_categories),
 // hoặc nhóm mới do người dùng đặt tên. Mục thư viện: url = ảnh nhẹ, hq = ảnh gốc, hash để nhận ra ảnh đã ★. Còn nguyên khi xóa tất cả.
