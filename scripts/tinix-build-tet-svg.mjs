@@ -41,7 +41,7 @@ const kit = await createCollageKit({
 const { layers, place, writeAsset, svgPng, slot, patternBackground, label, dieText, text } = kit
 
 // Bộ lọc viền trắng + bóng cho trang trí dán (kiểu sticker như ảnh mẫu)
-const STICK = `<filter id="st" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="8" result="d"/><feFlood flood-color="#fffaf0"/><feComposite in2="d" operator="in" result="w"/><feGaussianBlur in="d" stdDeviation="3" result="bl"/><feOffset in="bl" dx="0" dy="5" result="o"/><feFlood flood-color="#000" flood-opacity="0.28"/><feComposite in2="o" operator="in" result="sh"/><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="4" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.32  0 0 0 0 0.22  0 0 0 0.34 -0.1" result="g"/><feComposite in="g" in2="SourceAlpha" operator="in" result="grain"/><feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur in="inv" stdDeviation="3.2" result="ib"/><feComposite in="ib" in2="SourceAlpha" operator="in" result="ir"/><feColorMatrix in="ir" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.32 0" result="rim"/><feMerge><feMergeNode in="sh"/><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/><feMergeNode in="rim"/><feMergeNode in="grain"/></feMerge></filter>`
+const STICK = `<filter id="st" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="8" result="d"/><feFlood flood-color="#fffaf0"/><feComposite in2="d" operator="in" result="w"/><feGaussianBlur in="d" stdDeviation="3" result="bl"/><feOffset in="bl" dx="0" dy="5" result="o"/><feFlood flood-color="#000" flood-opacity="0.28"/><feComposite in2="o" operator="in" result="sh"/><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="2" seed="4" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.32  0 0 0 0 0.22  0 0 0 0.34 -0.1" result="g"/><feComposite in="g" in2="SourceAlpha" operator="in" result="grain"/><feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer><feGaussianBlur in="inv" stdDeviation="3.2" result="ib"/><feComposite in="ib" in2="SourceAlpha" operator="in" result="ir"/><feColorMatrix in="ir" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.2  0 0 0 0 0.12  0 0 0 0.32 0" result="rim"/><feMerge><feMergeNode in="sh"/><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/><feMergeNode in="rim"/><feMergeNode in="grain"/></feMerge></filter>`
 
 // Vẽ một mảnh trang trí: body viết bằng tọa độ ảnh mẫu, PNG có kích thước của hộp (bx,by,bw,bh) × S
 async function deco(name, bx, by, bw, bh, body, sticker = true) {
@@ -228,26 +228,40 @@ for (const it of items.filter((i) => (i.type === 'paper' || i.type === 'wave') &
 place('Nền giấy xé chồng lớp', await writeAsset('bands.png', await svgPng(W, H, `<g transform="scale(${S})">${baseSvg}<rect x="6" y="6" width="1074" height="1436" fill="none" stroke="#f8ead2" stroke-width="10" opacity="0.9"/></g>`, PAPERFX)), 0, 0, W, H, { printRole: 'base', lock: true })
 
 // ── Vẽ một mảnh dán: art theo tọa độ ảnh mẫu (hộp tự nhiên nat), co đều vào hộp spec, xoay theo spec ──
-const PADPX = 14
+// Bộ lọc STICK mở rộng tối đa ~24 đơn vị quanh nét vẽ (dilate 8 + nhòe 3σ ≈ 9 + lệch bóng 5): đệm PNG tính theo đó
+const FILTER_REACH = 24
 async function decoBox(it, name, art, nat, { sticker = true } = {}) {
   const [bx, by, bw, bh] = it.box
-  const w = px(bw) + 2 * PADPX, h = px(bh) + 2 * PADPX
   const k = Math.min(bw / nat[2], bh / nat[3])
+  const pad = sticker ? Math.ceil(S * k * FILTER_REACH) + 2 : 14
+  const w = px(bw) + 2 * pad, h = px(bh) + 2 * pad
   const ncx = nat[0] + nat[2] / 2, ncy = nat[1] + nat[3] / 2
   const tr = `translate(${w / 2} ${h / 2}) scale(${S * k}) translate(${-ncx} ${-ncy})`
   let png = await svgPng(w, h, `<g transform="${tr}"${sticker ? ' filter="url(#st)"' : ''}>${art}</g>`, STICK)
+  // Kiểm tra: viền ngoài cùng của PNG phải trong suốt, nếu không là hình bị cắt ngang mép (lỗi tim bị cụt mũi)
+  const { data, info } = await kit.sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  // cạnh nằm ngoài trang thì bị cắt theo mép trang (cố ý), bỏ qua cạnh đó
+  const left = px(bx) - pad, top = px(by) - pad
+  const skip = { t: top < 0, b: top + h > H, l: left < 0, r: left + w > W }
+  const alphaAt = (x, y) => data[(y * info.width + x) * info.channels + info.channels - 1]
+  let hit = 0
+  for (let x = 0; x < info.width; x++) { if (!skip.t && alphaAt(x, 0) > 8) hit++; if (!skip.b && alphaAt(x, info.height - 1) > 8) hit++ }
+  for (let y = 0; y < info.height; y++) { if (!skip.l && alphaAt(0, y) > 8) hit++; if (!skip.r && alphaAt(info.width - 1, y) > 8) hit++ }
+  if (hit > 0) console.error(`CẢNH BÁO: sticker "${it.id}" có ${hit} điểm ảnh không trong suốt ở mép PNG (hình có thể bị cắt ngang): tăng đệm hoặc thu nhỏ hình trong hộp`)
   // cắt theo mép trang: mảnh chạm mép (cành đào, mèo...) bị cắt đúng mép thành phẩm, không báo "vượt mép"
-  const left = px(bx) - PADPX, top = px(by) - PADPX
   const cl = Math.max(0, left), ct = Math.max(0, top), cr = Math.min(W, left + w), cb = Math.min(H, top + h)
   const clamped = cl !== left || ct !== top || cr !== left + w || cb !== top + h
   if (clamped) png = await kit.sharp(png).extract({ left: cl - left, top: ct - top, width: cr - cl, height: cb - ct }).png().toBuffer()
   const l = place(name, await writeAsset(`deco-${it.id}.png`, png), cl, ct, cr - cl, cb - ct, { printRole: 'raised' })
   l.rotate = `${it.rot || 0}deg`
-  return tag(l, it.id, clamped ? { specCenterOnly: true } : { specInset: PADPX })
+  return tag(l, it.id, clamped ? { specCenterOnly: true } : { specInset: pad })
 }
 const heartPathD = (cx, cy, w, h) => {
-  const pts = []
-  for (let i = 0; i < 64; i++) { const t = (i / 64) * Math.PI * 2; const x = 16 * Math.sin(t) ** 3, y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); pts.push([cx + (x / 32) * w * 1.6, cy + ((y + 2) / 30) * h * 1.6]) }
+  const raw = []
+  for (let i = 0; i < 96; i++) { const t = (i / 96) * Math.PI * 2; raw.push([16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))]) }
+  const xs = raw.map((q) => q[0]), ys = raw.map((q) => q[1])
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
+  const pts = raw.map((q) => [cx + ((q[0] - (x0 + x1) / 2) / (x1 - x0)) * w, cy + ((q[1] - (y0 + y1) / 2) / (y1 - y0)) * h])
   return 'M' + pts.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L') + ' Z'
 }
 const scallopRing = (cx, cy, R, n, bump) => {
@@ -299,11 +313,11 @@ for (const it of items) {
   if (it.id === 'dong-tien-loc') { tag(text('Chữ Lộc trên đồng', 'Lộc', px(145), px(1262), px(100), 62, 'Lobster', C.red, { align: 'center', h: 90, lh: 1.0, rot: it.rot || 0 }), it.id, { specCenterOnly: true }); continue }
   if (it.type === 'heart') {
     const outline = it.id.startsWith('tim-chuc')
-    await decoBox(it, it.id, `<path d="${heartPathD(cx, cy, bw * 0.6, bh * 0.58)}" fill="${outline ? 'none' : it.fill}" stroke="${outline ? it.fill : 'none'}" stroke-width="5" stroke-linejoin="round"/>`, [bx, by, bw, bh]); continue
+    await decoBox(it, it.id, `<path d="${heartPathD(cx, cy, bw * 0.88, bh * 0.84)}" fill="${outline ? 'none' : it.fill}" stroke="${outline ? it.fill : 'none'}" stroke-width="5" stroke-linejoin="round"/>`, [bx, by, bw, bh]); continue
   }
   if (it.type === 'spark') {
     const base = it.id === 'tia-vang-tet' ? 215 : 160, len = Math.max(bw, bh)
-    const sk = [0, 1, 2].map((k) => { const a = ((base + k * 38) * Math.PI) / 180; return `<path d="M${(cx + Math.cos(a) * len * 0.18).toFixed(1)} ${(cy + Math.sin(a) * len * 0.18).toFixed(1)} L${(cx + Math.cos(a) * len * 0.5).toFixed(1)} ${(cy + Math.sin(a) * len * 0.5).toFixed(1)}" stroke="${it.fill}" stroke-width="9" stroke-linecap="round"/>` }).join('')
+    const sk = [0, 1, 2].map((k) => { const a = ((base + k * 38) * Math.PI) / 180; return `<path d="M${(cx + Math.cos(a) * len * 0.14).toFixed(1)} ${(cy + Math.sin(a) * len * 0.14).toFixed(1)} L${(cx + Math.cos(a) * len * 0.38).toFixed(1)} ${(cy + Math.sin(a) * len * 0.38).toFixed(1)}" stroke="${it.fill}" stroke-width="9" stroke-linecap="round"/>` }).join('')
     await decoBox(it, it.id, sk, [bx, by, bw, bh], { sticker: it.fill !== '#ffffff' }); continue
   }
   if (it.type === 'text') {
