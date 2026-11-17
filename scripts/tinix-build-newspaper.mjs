@@ -130,8 +130,12 @@ const slot = async (name, photo, x, y, w, h, cropY, tape = null, kind = 'ellipse
   const W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
   const frame = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${shape}" fill="#fffdf8" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round"/></g>`,
     `<filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${W2}" height="${H2}"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="8" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`)
-  place(name + ' · khung giấy trắng cắt tay', await writeAsset(`cut-${name.replace(/\s+/g, '-')}.png`, frame), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+  // khung giấy trắng + ảnh gộp trong MỘT nhóm: khi cắt là một mảnh duy nhất (ảnh đã nằm sẵn trên viền trắng)
+  const g = groupLayer({ name: 'Cụm ' + name, left: x - b - pad, top: y - b - pad, width: W2, height: H2, rotate: 0 }); layers.push(g)
+  const fr = place(name + ' · khung giấy trắng cắt tay', await writeAsset(`cut-${name.replace(/\s+/g, '-')}.png`, frame), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+  fr.parent = g.uuid; fr.printGroup = g.printGroup
   const p = place(name, placeholders ? '/static/collage/smile-darling-ref/photo-placeholder.jpg' : photo.web_url, x, y, w, h, { fit: 'cover', slot: true, role: 'photo', mask: maskUri(w, h, `<path d="${shape}" fill="#fff"/>`) })
+  p.parent = g.uuid; p.printGroup = g.printGroup
   p.cropY = cropY
   p.effects = bwEffect()
   if (!placeholders) p.origin = { proxy: photo.web_url, original: photo.url }
