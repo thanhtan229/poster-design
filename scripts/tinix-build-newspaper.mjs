@@ -50,6 +50,7 @@ const text = (name, value, x, y, w, size, alias, color, extra = {}) => {
   const t = textLayer({ name, text: value, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(extra.h || size * 1.6), fontSize: size, lineHeight: extra.lh || 1.1, letterSpacing: extra.ls || 0, fontClass: fontClass(alias), color })
   t.textAlign = extra.align || 'left'; t.fontWeight = extra.weight || 'normal'; t.fontStyle = extra.italic ? 'italic' : 'normal'
   if (extra.bg) t.backgroundColor = extra.bg
+  if (extra.base) t.printRole = 'base' // chữ in thẳng lên tờ nền, không phải mảnh cắt rời
   layers.push(t); return t
 }
 
@@ -82,10 +83,10 @@ const dieText = (name, value, x, y, w, size, alias, color, extra = {}) => {
 function f(n) { return +n.toFixed(1) }
 
 // ── 2. MASTHEAD: tên báo, hai vạch kẻ đen, dòng số báo ──
-text('Tên báo', 'THE DAILY FAMILY', 60, 40, 2280, 170, 'Playfair Display', INK, { align: 'center', weight: '700', ls: 4 })
+text('Tên báo', 'THE DAILY FAMILY', 60, 40, 2280, 170, 'Playfair Display', INK, { align: 'center', weight: '700', ls: 4 , base: true })
 place('Vạch đen dày', await writeAsset('rule-thick.png', await svgPng(2280, 14, `<rect width="2280" height="14" fill="${INK}"/>`)), 60, 232, 2280, 14, { printRole: 'base' })
 place('Vạch đen mảnh', await writeAsset('rule-thin.png', await svgPng(2280, 4, `<rect width="2280" height="4" fill="${INK}"/>`)), 60, 254, 2280, 4, { printRole: 'base' })
-text('Dòng số báo', 'SỐ 1 · ẤN BẢN GIA ĐÌNH · GIÁ: MỘT NỤ CƯỜI', 60, 272, 2280, 30, 'Montserrat', INK, { align: 'center', ls: 6, weight: '400' })
+text('Dòng số báo', 'SỐ 1 · ẤN BẢN GIA ĐÌNH · GIÁ: MỘT NỤ CƯỜI', 60, 272, 2280, 30, 'Montserrat', INK, { align: 'center', ls: 6, weight: '400' , base: true })
 
 // ── 3. TIÊU ĐỀ GHÉP TỪ CHỮ CẮT RỜI: mỗi chữ một ô giấy màu, lệch nhẹ ──
 const word = 'FAMILY'
@@ -94,7 +95,7 @@ const inks = [PAPER, PAPER, INK, PAPER, PAPER, INK]
 for (let i = 0; i < word.length; i++) {
   text('Chữ cắt ' + word[i], word[i], 70 + i * 178, 330 + (i % 2 ? 14 : 0), 172, 190, 'Playfair Display', inks[i], { align: 'center', weight: '700', bg: cols[i], ls: 0, h: 230 })
 }
-text('Tiêu đề phụ', 'Một ngày, và cả đời', 70, 572, 1040, 52, 'Playfair Display', INK, { italic: true, weight: '400' })
+text('Tiêu đề phụ', 'Một ngày, và cả đời', 70, 572, 1040, 52, 'Playfair Display', INK, { italic: true, weight: '400' , base: true })
 
 // ── 4. ẢNH ĐEN TRẮNG (hiệu ứng của app, bấm "gốc" là về màu) TRONG KHUNG GIẤY TRẮNG CẮT TAY ──
 // Mép khung như cắt kéo: bốn góc lệch, mỗi cạnh có hai điểm gãy nhẹ; toàn đường thẳng nên dễ cắt tay. Viền trắng dày + bóng nướng sẵn.
@@ -148,11 +149,11 @@ const paperShape = async (name, kind, x, y, w, h, fill) => {
 await slot('Ảnh cả nhà', photos[4], 1040, 300, 1300, 620, 50, [1120, 520, -22], 'cloud')
 await paperShape('Giấy tim đỏ', 'heart', 1500, 700, 840, 780, RED)
 await paperShape('Giấy hoa vàng', 'flower', 420, 700, 700, 760, '#f3d36b')
-await slot('Ảnh Pure Joy', photos[1], 40, 650, 600, 620, 0, [500, 560, 28], 'ellipse')
+await slot('Ảnh Pure Joy', photos[1], 60, 640, 620, 700, 0, [500, 610, 28], 'ellipse')
 
 // ── 5. CỘT BÀI: trích dẫn lớn + đoạn văn giả (vạch xám) + một khung chữ cắt đỏ ──
-dieText('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 70, 1330, 330, 34, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15, h: 150 })
-text('Tác giả', '— Mục Gia đình', 70, 1480, 330, 26, 'Montserrat', RED, { ls: 3, weight: '700' })
+dieText('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 60, 1390, 360, 30, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15, h: 110 })
+text('Tác giả', '— Mục Gia đình', 70, 1492, 330, 24, 'Montserrat', RED, { ls: 3, weight: '700' , base: true })
 {
   let rows = ''
   for (let y = 0; y < 3; y++) for (let x = 0; x < 1; x++) rows += ''
@@ -160,12 +161,8 @@ text('Tác giả', '— Mục Gia đình', 70, 1480, 330, 26, 'Montserrat', RED,
   for (let k = 0; k < 6; k++) lines.push(`<rect x="0" y="${k * 22}" width="${k === 5 ? 260 : 500}" height="6" fill="${INK}" fill-opacity="0.55"/>`)
   
 }
-// khung chữ cắt đỏ (ô trích nổi)
-{
-  const body = `<rect x="6" y="6" width="300" height="110" fill="${RED}"/><rect x="0" y="0" width="300" height="110" fill="${INK}"/>`
-  place('Ô đỏ', await writeAsset('box-red.png', await svgPng(306, 116, `<g transform="rotate(-2 153 58)">${body}</g>`)), 1470, 1390, 306, 116, { printRole: 'raised' })
-}
-text('Chữ ô đỏ', 'NGÀY MỚI', 1474, 1414, 296, 40, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0 })
+// ô chữ đen: chữ có nền riêng nên là một mảnh cắt duy nhất (không tách chữ khỏi ô)
+const noteBox = text('Ô NGÀY MỚI', 'NGÀY MỚI', 1470, 1410, 306, 44, 'Playfair Display', PAPER, { align: 'center', weight: '700', lh: 1.0, bg: INK, h: 70 }); noteBox.rotate = '-2deg'
 
 // ── 5b. ẢNH CHỦ ĐẠO TÁCH NỀN (GIỮ MÀU): kết quả tách nền BiRefNet lưu cache theo mã ảnh, viền trắng ôm dáng người + bóng ──
 const BASE = process.env.TINIX_APP_URL || 'http://127.0.0.1:7001'
@@ -206,7 +203,7 @@ await hero('Ảnh chủ đạo · bé ngồi', photos[2], 420, 735, 760)
 await hero('Ảnh chủ đạo · chị em', photos[3], 1800, 680, 820)
 // chữ dán (die-cut) lấp khoảng trống, viền trắng ôm theo nét chữ
 dieText('Chữ Sum vầy', 'Sum\nvầy', 1390, 930, 420, 130, 'Pacifico', RED, { align: 'center', lh: 1.0, h: 360, rot: -9 })
-dieText('Chữ Yêu thương', 'Yêu thương', 600, 520, 520, 90, 'Pacifico', INK, { align: 'center', rot: -4, h: 180 })
+dieText('Chữ Yêu thương', 'Yêu thương', 620, 545, 500, 84, 'Pacifico', INK, { align: 'center', rot: -4, h: 180 })
 function f2(n) { return n }
 // ── 5c. STICKER LẤP CHỖ TRỐNG, chồng lên mép ảnh như trang scrapbook ──
 {
@@ -215,14 +212,15 @@ function f2(n) { return n }
   const heart = (S, fill) => { const pts = Array.from({ length: 120 }, (_, i) => { const t = (i / 120) * Math.PI * 2; return [16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))] }); return `<polygon transform="translate(${S / 2} ${S / 2}) scale(${S / 40})" points="${pts.map((q) => q.map(f).join(',')).join(' ')}" fill="${fill}" stroke="#fffdf8" stroke-width="2.2" stroke-linejoin="round"/>` }
   await sticker('Sao vàng', 1450, 800, 150, `<polygon points="${star(66, 30)}" transform="translate(9 9)" fill="#f3c93b" stroke="#fffdf8" stroke-width="5" stroke-linejoin="round"/>`)
   await sticker('Tim đỏ nhỏ', 2200, 1340, 170, heart(150, RED).replace('<polygon', '<polygon transform-origin="0 0"'))
-  await sticker('Tim hồng nhỏ', 1180, 1180, 130, heart(110, '#f08aa0'))
+  await sticker('Tim hồng nhỏ', 1290, 1290, 130, heart(110, '#f08aa0'))
   await sticker('Sao đỏ', 540, 560, 120, `<polygon points="${star(48, 22)}" transform="translate(12 12)" fill="${RED}" stroke="#fffdf8" stroke-width="4" stroke-linejoin="round"/>`)
-  const ribbon = text('Nhãn HAPPINESS', 'HAPPINESS', 600, 1345, 380, 44, 'Montserrat', INK, { align: 'center', weight: '700', ls: 8, bg: '#f3d36b', h: 70 }); ribbon.rotate = '-4deg'
+  const ribbon = text('Nhãn HAPPINESS', 'HAPPINESS', 720, 1440, 330, 36, 'Montserrat', INK, { align: 'center', weight: '700', ls: 8, bg: '#f3d36b', h: 70 }); ribbon.rotate = '-4deg'
+  await sticker('Sao vàng nhỏ', 1180, 1400, 110, `<polygon points="${star(45, 21)}" transform="translate(10 10)" fill="#f3c93b" stroke="#fffdf8" stroke-width="4" stroke-linejoin="round"/>`)
   const smile = text('Nhãn SMILE', 'SMILE', 2020, 1440, 260, 40, 'Montserrat', PAPER, { align: 'center', weight: '700', ls: 8, bg: INK, h: 66 }); smile.rotate = '3deg'
 }
 // ── 6. CHÂN TRANG ──
 place('Vạch chân trang', await writeAsset('rule-foot.png', await svgPng(2280, 4, `<rect width="2280" height="4" fill="${INK}"/>`)), 60, 1530, 2280, 4, { printRole: 'base' })
-text('Chân trang', 'TRANG 1 · 30 × 20 CM · DÁN TAY, IN TỜ TỔNG HỢP', 60, 1548, 2280, 24, 'Montserrat', GREY, { align: 'center', ls: 4 })
+text('Chân trang', 'TRANG 1 · 30 × 20 CM · DÁN TAY, IN TỜ TỔNG HỢP', 60, 1548, 2280, 24, 'Montserrat', GREY, { align: 'center', ls: 4 , base: true })
 
 const global = {
   name: 'The Daily Family · báo chí cắt dán', type: 'page', uuid: '-1', left: 0, top: 0, width: W, height: H, backgroundColor: PAPER, backgroundGradient: '', backgroundImage: '', backgroundTransform: {},
