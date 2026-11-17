@@ -86,27 +86,48 @@ for (let i = 0; i < word.length; i++) {
 }
 text('Tiêu đề phụ', 'Một ngày, và cả đời', 70, 572, 1040, 52, 'Playfair Display', INK, { italic: true, weight: '400' })
 
-// ── 4. ẢNH ĐEN TRẮNG VIỀN ĐEN (dùng hiệu ứng của app: grayscale, contrast, border) ──
-const bw = { grayscale: true, contrast: 118, border: 10, borderColor: INK, shadow: 0 }
-const bwUrl = async (photo) => {
-  // ảnh đen trắng, tương phản mạnh, tạo sẵn từ ảnh trong thư viện (để mọi trình xem đều hiển thị đúng)
-  if (placeholders) return '/static/collage/smile-darling-ref/photo-placeholder.jpg'
-  const file = path.join(root, 'service', photo.web_url.replace(/^\//, ''))
-  const buf = await sharp(file).greyscale().normalise().linear(1.12, -12).jpeg({ quality: 90 }).toBuffer()
-  return writeAsset(`bw-${photo.id}.jpg`, buf)
+// ── 4. ẢNH ĐEN TRẮNG (hiệu ứng của app, bấm "gốc" là về màu) TRONG KHUNG GIẤY TRẮNG CẮT TAY ──
+// Mép khung như cắt kéo: bốn góc lệch, mỗi cạnh có hai điểm gãy nhẹ; toàn đường thẳng nên dễ cắt tay. Viền trắng dày + bóng nướng sẵn.
+const bwEffect = () => ({ grayscale: true, contrast: 118 }) // chọn "gốc" trong app sẽ đặt lại hiệu ứng
+const handCut = (w, h, variant = 0) => {
+  const c = (n) => rnd() * n // lệch hướng vào trong để ảnh luôn phủ kín khung
+  const tl = [10 + c(34), 8 + c(30)], tr = [w - 10 - c(34), 8 + c(30)], br = [w - 10 - c(34), h - 8 - c(30)], bl = [10 + c(34), h - 8 - c(30)]
+  const mid = (a, b, t, off) => { const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t; const nx = b[1] - a[1], ny = a[0] - b[0], l = Math.hypot(nx, ny) || 1; return [x + (nx / l) * off, y + (ny / l) * off] }
+  const edge = (a, b) => [mid(a, b, 0.3 + c(0.06), (rnd() - 0.3) * 18), mid(a, b, 0.66 + c(0.06), (rnd() - 0.3) * 18)]
+  const pts = [tl, ...edge(tl, tr), tr, ...edge(tr, br), br, ...edge(br, bl), bl, ...edge(bl, tl)]
+  // góc cắt chéo (như nhát kéo vát): variant 1 vát góc trên-phải, 2 vát góc dưới-trái
+  const clip = (k, d) => { const q = pts[k], prev = pts[(k + pts.length - 1) % pts.length], next = pts[(k + 1) % pts.length]; const toward = (a, b, dist) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [a[0] + (dx / l) * dist, a[1] + (dy / l) * dist] }; pts.splice(k, 1, toward(q, prev, d), toward(q, next, d)) }
+  if (variant === 1) clip(4, 70 + c(30))
+  if (variant === 2) clip(10, 70 + c(30))
+  return pts
 }
-const slot = async (name, photo, x, y, w, h, cropY, rot = 0) => {
-  // khung đen mỏng phía sau ảnh (viền báo chí), vẽ sát ngoài ảnh 10 px
-  const frameUrl = await writeAsset('frame-ink.png', await svgPng(4, 4, `<rect width="4" height="4" fill="${INK}"/>`))
-  place(name + ' · viền', frameUrl, x - 10, y - 10, w + 20, h + 20, { printRole: 'raised' })
-  const p = place(name, await bwUrl(photo), x, y, w, h, { fit: 'cover', slot: true, role: 'photo' })
-  p.cropY = cropY; p.rotate = rot
+const polyPath = (pts, dx = 0, dy = 0) => 'M' + pts.map((q) => `${f(q[0] + dx)} ${f(q[1] + dy)}`).join(' L') + ' Z'
+const tapePiece = async (name, cx, cy, tw, th, deg) => {
+  const pad = Math.ceil(Math.hypot(tw, th) / 2 + 10), S = pad * 2
+  const zig = (x0, dir) => Array.from({ length: 5 }, (_, k) => `${f(x0 + (k % 2 ? dir * 7 : 0))},${f((th / 4) * k)}`).join(' ')
+  const poly = `${zig(0, 1)} ${zig(tw, -1).split(' ').reverse().join(' ')}`
+  const defs = `<pattern id="t" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><rect width="22" height="22" fill="#efe4c4"/><rect width="11" height="22" fill="#fff" fill-opacity="0.55"/></pattern><filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${S}" height="${S}"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dy="3" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
+  const url = await writeAsset(name + '.png', await svgPng(S, S, `<g transform="translate(${pad} ${pad}) rotate(${deg}) translate(${-tw / 2} ${-th / 2})"><g filter="url(#sh)"><polygon points="${poly}" fill="url(#t)" fill-opacity="0.9" stroke="#d6c79b" stroke-opacity="0.6"/></g></g>`, defs))
+  place(name, url, cx - S / 2, cy - S / 2, S, S, { printRole: 'raised' })
+}
+const slot = async (name, photo, x, y, w, h, cropY, tape = null, variant = 0) => {
+  const b = 16, pad = 36, shape = handCut(w, h, variant)
+  const W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
+  const frame = await svgPng(W2, H2, `<g filter="url(#sh)"><path d="${polyPath(shape, pad + b, pad + b)}" fill="#fffdf8" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round"/></g>`,
+    `<filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${W2}" height="${H2}"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="8" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`)
+  place(name + ' · khung giấy trắng cắt tay', await writeAsset(`cut-${name.replace(/\s+/g, '-')}.png`, frame), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+  const p = place(name, placeholders ? '/static/collage/smile-darling-ref/photo-placeholder.jpg' : photo.web_url, x, y, w, h, { fit: 'cover', slot: true, role: 'photo', mask: maskUri(w, h, `<path d="${polyPath(shape)}" fill="#fff"/>`) })
+  p.cropY = cropY
+  p.effects = bwEffect()
+  if (!placeholders) p.origin = { proxy: photo.web_url, original: photo.url }
+  if (tape) await tapePiece(name + ' · băng dính', x + tape[0], y + tape[1], 190, 50, tape[2])
   return p
 }
-await slot('Ảnh Pure Joy', photos[1], 80, 650, 500, 560, 0, -1.2)
-await slot('Ảnh sinh nhật', photos[2], 640, 650, 500, 560, 40, 1)
-await slot('Ảnh The Beginning', photos[3], 1720, 830, 600, 440, 28, -0.8)
-await slot('Ảnh cả nhà', photos[4], 1180, 330, 1140, 460, 50, 0)
+const maskUri = (w, h, body) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`)
+await slot('Ảnh Pure Joy', photos[1], 84, 654, 490, 548, 0, [446, 520, 28], 1)
+await slot('Ảnh sinh nhật', photos[2], 644, 654, 490, 548, 40, [430, 538, 28], 2)
+await slot('Ảnh The Beginning', photos[3], 1726, 836, 586, 428, 28, [60, 14, -22], 1)
+await slot('Ảnh cả nhà', photos[4], 1186, 336, 1128, 448, 50, [1040, 436, -22], 2)
 
 // chú thích báo dưới ảnh
 text('Chú thích 1', 'Hình 1. Cả nhà, một khung hình.', 1180, 800, 1140, 28, 'Montserrat', GREY, { italic: false, ls: 1 })
