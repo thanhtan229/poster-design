@@ -27,6 +27,12 @@
       <span v-if="photoState.up.active" class="progress">{{ $t('tinix.ui.photoDock.dang_tai', { done: photoState.up.done, total: photoState.up.total }) }}</span>
       <el-button size="small" :disabled="photoState.up.active" @click="pickFiles">{{ $t('tinix.ui.photoDock.tai_anh') }}</el-button>
       <el-button size="small" :disabled="photoState.up.active" @click="pickFolder">{{ $t('tinix.ui.photoDock.chon_thu_muc') }}</el-button>
+      <select v-model.number="cleanDays" class="sort" :title="$t('tinix.ui.photoDock.loc_ngay')">
+        <option :value="0">{{ $t('tinix.ui.photoDock.moi_luc') }}</option>
+        <option :value="7">{{ $t('tinix.ui.photoDock.cu_hon_n_ngay', { n: 7 }) }}</option>
+        <option :value="30">{{ $t('tinix.ui.photoDock.cu_hon_n_ngay', { n: 30 }) }}</option>
+      </select>
+      <el-button size="small" type="warning" plain :disabled="photoState.up.active || !photoState.photos.length" :title="$t('tinix.ui.photoDock.xoa_chua_dung_tip')" @click="() => clearUnusedPhotos()">{{ $t('tinix.ui.photoDock.xoa_chua_dung') }}</el-button>
       <el-button size="small" type="danger" plain :disabled="photoState.up.active || !photoState.photos.length" @click="clearAllPhotos">{{ $t('tinix.ui.photoDock.xoa_tat_ca') }}</el-button>
     </div>
     <!-- [TINIX] hàng công cụ: ảnh đã chọn + tự áp dụng mẫu phù hợp cho lượt ảnh thêm vào trang -->
@@ -358,6 +364,28 @@ async function removePhoto(it: StripItem) {
   if (apiFailed(res)) return ElMessage.error(apiMessage(res, t('tinix.ui.photoDock.that_bai')))
   photoState.photos = photoState.photos.filter((p) => p.id !== it.id)
   selected.value = selected.value.filter((k) => k !== it.key)
+}
+
+// Xóa ảnh chưa thuộc thiết kế đã lưu/mẫu nào (và không nằm trên trang đang mở); có thể giới hạn theo ngày tải lên. Luôn xem trước và hỏi lại.
+const cleanDays = ref(0)
+const fmtMB = (n: number) => (n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : (n / 1048576).toFixed(1) + ' MB')
+async function clearUnusedPhotos() {
+  const pv: any = await photosApi.unusedPreview(usedUrls.value, cleanDays.value)
+  if (apiFailed(pv)) return ElMessage.error(apiMessage(pv, t('tinix.ui.photoDock.that_bai')))
+  if (!pv.count) return ElMessage.info(t('tinix.ui.photoDock.khong_co_chua_dung'))
+  try {
+    await ElMessageBox.confirm(t('tinix.ui.photoDock.xac_nhan_xoa_chua_dung', { count: pv.count, size: fmtMB(pv.bytes), kept: pv.kept }), t('tinix.ui.photoDock.xoa_chua_dung'), {
+      type: 'warning',
+      confirmButtonText: t('tinix.ui.photoDock.xoa'),
+      cancelButtonText: t('tinix.ui.photoDock.huy'),
+    })
+  } catch {
+    return
+  }
+  const res: any = await photosApi.clearUnused(usedUrls.value, cleanDays.value)
+  if (apiFailed(res)) return ElMessage.error(apiMessage(res, t('tinix.ui.photoDock.that_bai')))
+  ElMessage.success(t('tinix.ui.photoDock.da_xoa_chua_dung', { n: res.removed, size: fmtMB(res.bytes) }))
+  await reloadPhotos()
 }
 
 async function clearAllPhotos() {

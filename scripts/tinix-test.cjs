@@ -28,6 +28,7 @@ const suites = [
   { name: 'Mặt nạ cắt ảnh (mask)', args: [path.join(root, 'scripts/tinix-mask-test.mjs')], cwd: root },
   { name: 'MCP (client chính thức)', args: [path.join(root, 'scripts/tinix-mcp-test.mjs')], cwd: root },
   { name: 'Tên scrapbook', args: [path.join(root, 'scripts/tinix-scrapbook-name-test.mjs')], cwd: root },
+  { name: 'Dọn tệp ảnh mồ côi', args: [path.join(root, 'scripts/tinix-clean-orphans-test.mjs')], cwd: root },
   { name: 'Dựng mẫu từ ảnh tham chiếu', args: [path.join(root, 'scripts/tinix-reference-build-test.mjs')], cwd: root },
   { name: 'Content-Type của /static (font, webp)', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'content-type.ts'], cwd: root },
   { name: 'Sao lưu (toàn vẹn, giữ N bản, lỗi không xóa bản cũ)', args: [path.join(root, 'scripts/tinix-backup-test.mjs')], cwd: root },
