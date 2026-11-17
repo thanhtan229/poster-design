@@ -1,7 +1,8 @@
 // [TINIX] Sao lưu dữ liệu: database (bản sao nhất quán bằng SQLite backup API) + file tĩnh người dùng (ảnh bìa, ảnh tải lên...).
 // Không sao lưu service/static/fonts và font-previews (dựng lại được bằng tinix:fonts / tinix:winfonts / tinix:font-previews).
-// Ảnh người dùng tải lên chỉ là ĐẦU VÀO để thiết kế: không sao lưu service/static/photos/ và bản sao DB không chứa danh sách ảnh tải lên
-// (user_images.source = 'upload') nên khôi phục không bị dòng ảnh trỏ vào tệp đã mất. Ảnh đã ★ vào thư viện "Ảnh" (static/favorites/) vẫn được sao lưu.
+// Ảnh tải lên (static/photos/, static/user/) chỉ sao lưu những tệp mà thiết kế đã lưu, mẫu hoặc phiên bản mẫu cắt dán còn tham chiếu tới
+// (cùng cách quét `referencedPaths` của service/src/tinix/photos/core.ts). Ảnh tải lên không ai dùng thì không nằm trong bản sao: cả tệp lẫn dòng
+// user_images trong BẢN SAO DB (khôi phục không có dòng ảnh trỏ vào tệp đã mất). Ảnh đã ★ vào thư viện "Ảnh" (static/favorites/) luôn được sao lưu.
 //
 //   npm run tinix:backup            → tạo backups/<ngày-giờ>/poster.db và static.tar.gz, giữ 10 bản mới nhất
 //   npm run tinix:backup -- --keep 5
@@ -56,15 +57,31 @@ try {
   db.close()
 }
 if (fs.existsSync(approvedDir)) fs.cpSync(approvedDir, path.join(dest, 'approved-prints'), { recursive: true })
-// bỏ danh sách ảnh tải lên khỏi BẢN SAO (không đụng DB đang chạy)
+// Ảnh tải lên: bản sao chỉ giữ những ảnh còn được thiết kế/mẫu tham chiếu (không đụng DB đang chạy)
+const relStatic = (u) => { const t = String(u || '').replace(/\?.*$/, '').replace(/^.*\/static\//, ''); try { return decodeURIComponent(t) } catch { return t } }
+let keepFiles = null // tập đường dẫn tương đối trong static của ảnh tải lên được giữ; null = không có bảng user_images
 const copy = new Database(path.join(dest, 'poster.db'))
 try {
-  const cols = copy.prepare('PRAGMA table_info(user_images)').all().map((c) => c.name)
+  const hasTable = (n) => !!copy.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(n)
+  const refs = new Set()
+  for (const t of ['designs', 'templates', 'collage_template_versions']) {
+    if (!hasTable(t) || !copy.prepare(`PRAGMA table_info(${t})`).all().some((c) => c.name === 'data')) continue
+    for (const r of copy.prepare(`SELECT data FROM ${t}`).all()) for (const m of String(r.data || '').match(/\/static\/[^"'\\\s)]+/g) || []) refs.add(relStatic(m))
+  }
+  const cols = hasTable('user_images') ? copy.prepare('PRAGMA table_info(user_images)').all().map((c) => c.name) : []
+  keepFiles = new Set(refs)
   if (cols.includes('source')) {
-    const n = copy.prepare("DELETE FROM user_images WHERE source = 'upload'").run().changes
+    const uploads = copy.prepare("SELECT id, url, web_url, thumb_url FROM user_images WHERE source = 'upload'").all()
+    const drop = []
+    for (const r of uploads) {
+      if (refs.has(relStatic(r.url)) || refs.has(relStatic(r.web_url))) for (const u of [r.url, r.web_url, r.thumb_url]) { if (u) keepFiles.add(relStatic(u)) }
+      else drop.push(r.id)
+    }
+    const del = copy.prepare('DELETE FROM user_images WHERE id = ?')
+    copy.transaction(() => { for (const id of drop) del.run(id) })()
     copy.exec('VACUUM')
     copy.pragma('journal_mode = DELETE') // bản sao gọn một tệp, không để lại poster.db-wal/-shm
-    if (n) console.log(`- bản sao DB không gồm ${n} dòng ảnh tải lên (đầu vào thiết kế)`)
+    if (uploads.length) console.log(`- bản sao DB giữ ${uploads.length - drop.length} ảnh tải lên đang được thiết kế/mẫu dùng, bỏ ${drop.length} ảnh không dùng`)
   }
 } finally {
   copy.close()
@@ -82,10 +99,39 @@ try {
 }
 
 if (fs.existsSync(staticDir)) {
+  // ảnh tải lên (photos/, user/) không được thiết kế/mẫu nào dùng → loại khỏi bản nén; tệp còn được dùng thì giữ
+  const walk = (dir, rel, out) => {
+    if (!fs.existsSync(dir)) return out
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const r = rel ? rel + '/' + e.name : e.name
+      if (e.isDirectory()) walk(path.join(dir, e.name), r, out)
+      else out.push(r)
+    }
+    return out
+  }
+  const skipped = []
+  let skippedBytes = 0, keptCount = 0
+  if (keepFiles) {
+    for (const top of ['photos', 'user']) {
+      for (const rel of walk(path.join(staticDir, top), top, [])) {
+        if (keepFiles.has(rel)) { keptCount++; continue }
+        skipped.push(rel)
+        try { skippedBytes += fs.statSync(path.join(staticDir, rel)).size } catch { /* tệp biến mất giữa chừng */ }
+      }
+    }
+  }
+  const tarArgs = ['-czf', 'static.tar.gz', '--exclude=./fonts', '--exclude=./font-previews']
+  // keepFiles = null (không có DB/bảng để biết ảnh nào được dùng) thì giữ cả photos/ + user/ thay vì làm mất ảnh
+  if (keepFiles && skipped.length) {
+    fs.writeFileSync(path.join(dest, 'loai-tru.txt'), skipped.map((x) => './' + x).join('\n') + '\n')
+    tarArgs.push('-X', 'loai-tru.txt')
+  }
   // chạy trong thư mục đích + đường dẫn tương đối: GNU tar coi 'D:\...' là tên máy từ xa
-  const r = spawnSync('tar', ['-czf', 'static.tar.gz', '--exclude=./fonts', '--exclude=./font-previews', '--exclude=./photos', '-C', staticDir, '.'], { stdio: 'inherit', cwd: dest })
-  if (r.status === 0 && fs.existsSync(path.join(dest, 'static.tar.gz'))) console.log(`✓ static.tar.gz (không gồm fonts/, font-previews/, photos/)`)
-  else { ok = false; console.error('✗ Không nén được thư mục static (cần lệnh tar). Đã có bản sao DB.') }
+  const r = spawnSync('tar', [...tarArgs, '-C', staticDir, '.'], { stdio: 'inherit', cwd: dest })
+  fs.rmSync(path.join(dest, 'loai-tru.txt'), { force: true })
+  if (r.status === 0 && fs.existsSync(path.join(dest, 'static.tar.gz'))) {
+    console.log(`✓ static.tar.gz (không gồm fonts/, font-previews/; ảnh tải lên: giữ ${keptCount} tệp đang được dùng, bỏ ${skipped.length} tệp không dùng, ~${(skippedBytes / 1048576).toFixed(0)} MB)`)
+  } else { ok = false; console.error('✗ Không nén được thư mục static (cần lệnh tar). Đã có bản sao DB.') }
 }
 
 // giữ `keep` bản mới nhất trong `dir`
