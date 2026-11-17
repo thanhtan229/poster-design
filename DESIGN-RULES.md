@@ -60,3 +60,4 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 - 2026-11-17: tạo từ phiên dựng trang báo chí (khung đa dạng, bố cục chồng lấn, ảnh tách nền cỡ lớn, chữ die-cut, gộp khung với ảnh một mảnh, chữ in nền `base`).
 - 2026-11-17: thêm quy tắc từ 6 ảnh scrapbook tham khảo (1.7, 2.8, 3.6, 4.8–4.11): khung/ảnh nghiêng, nền họa tiết, nhãn nhiều kiểu, sticker chủ đề, chữ lớn die-cut viền mực; mẫu thử `scripts/tinix-build-little-one.mjs`.
 - 2026-11-17: thêm 2.9 (dáng khung arch/squircle/stamp; mẫu mới phải khác cả bố cục). Mẫu Tết dựng lại hoàn toàn: nền đỏ ô vàng, hai vòm cổng, ba ảnh tách nền hai bên.
+- 2026-11-19: thêm quy trình "dựng theo ảnh mẫu bằng spec + ảnh chồng" (TINIX.md): đo spec trước, kiểm bằng `reference check-layout`/`overlay`, không chỉnh bằng mắt; mẫu Tết 64 dựng lại theo spec.

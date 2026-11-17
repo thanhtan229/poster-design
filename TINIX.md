@@ -362,3 +362,14 @@ Hộp "Xuất bộ JPG cắt dán" có hai tùy chọn mới: **Thêm file SVG �
 **Quy tắc thiết kế + bộ dựng dùng chung (2026-11-17):** các quy tắc rút ra từ trang báo chí nằm ở `DESIGN-RULES.md`; các hàm dựng (`slot`, `hero`, `dieText`, `paperShape`, `shapePath`, sticker...) được tách khỏi `scripts/tinix-build-newspaper.mjs` sang `scripts/lib/collage-kit.mjs` (`createCollageKit`) để mẫu mới dùng lại. Skill `.claude/skills/tinix-collage-design` chỉ trỏ tới file quy tắc.
 
 **Kit mở rộng + mẫu "Little One" (2026-11-17):** `collage-kit.mjs` thêm khung/ảnh nghiêng (`rot` của `slot`/`hero`), `patternBackground`, `label` (ribbon/tag/torn/stitch), `themeSticker` (cake/camera/arrow), viền mực `edge` cho `dieText`. Mẫu thử `scripts/tinix-build-little-one.mjs` (nền pastel chấm, ảnh màu, 3 ảnh tách nền, chữ ONE ghép + Happy Days, 5 nhãn). Dựng: `node scripts/tinix-build-little-one.mjs --output FILE`. Xuất cắt không cảnh báo.
+
+## Dựng theo ảnh mẫu bằng spec bố cục + ảnh chồng (2026-11-19)
+
+Dùng khi cần trang giống ảnh mẫu (tranh minh họa có nhiều chồng lấn) mà **không** cắt pixel của ảnh mẫu. Ví dụ: `scripts/tinix-build-tet-svg.mjs` + `scripts/specs/tet-yeu-thuong.json`.
+
+1. **Đo một lần thành spec JSON** (`ref`, `items[]`: `id`, `type`, `box:[x,y,w,h]` chưa xoay theo điểm ảnh ảnh mẫu, `rot`, `z`). Dùng `reference grid` để đọc tọa độ; vẽ khung bao của spec đè lên ảnh mẫu để kiểm phép đo **trước** khi dựng. Chiều xoay: dương = thuận chiều kim đồng hồ; đo cạnh trên/dưới của khung, đừng đoán.
+2. **Script dựng đọc spec**, xếp lớp đúng `z`, gắn `specId` cho lớp chính của từng mục. Không viết cứng tọa độ trong code; sửa vị trí = sửa spec.
+3. **Kiểm bằng máy, không bằng mắt**: `node scripts/tinix-cli.mjs reference check-layout --input DRAFT --spec SPEC` (vị trí, cỡ, góc, thứ tự lớp; mục `specCenterOnly`/`specSkip` chỉ so tâm hoặc bỏ qua) và `reference overlay --reference REF --render PNG --output OUT [--mode blend|diff]` để xem chồng mờ. Chữ: so bằng ảnh chồng vì hộp lớp chữ khác hộp nét chữ.
+4. **Hình trang trí tự vẽ SVG** (nguồn không bản quyền): art vẽ theo tọa độ ảnh mẫu, co đều vào hộp spec (`decoBox`), chừa đệm cho viền trắng, **cắt theo mép trang** nếu chạm mép (tránh cảnh báo "vượt mép"). Lớp ảnh phải gán `rotate` dạng chuỗi `"Ndeg"`; truyền qua `place(..., {rotate})` bị bỏ qua.
+5. **Nền giấy xé**: các mảng giấy `paper` z thấp vẽ chung một lớp nền in (viền gợn bằng điểm lệch ngẫu nhiên hạt giống cố định, vân giấy bằng `feTurbulence`, loang màu tần số thấp); mảng giấy z cao (đám kem sau chữ) là mảnh dán riêng.
+6. Nhãn kiểu `cloud` (siêu elip có múi) trong `collage-kit` cho nhãn dạng mây.

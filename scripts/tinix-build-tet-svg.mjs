@@ -1,10 +1,11 @@
 // [TINIX] Mẫu Tết dọc "Tết yêu thương" (20×26,7 cm), bố cục theo ảnh mẫu, VẼ HOÀN TOÀN BẰNG SVG (không copy pixel ảnh mẫu).
 // Tọa độ đo trên ảnh mẫu 1086×1448, nhân S = 1600/1086 để ra trang. Chữ lớn dùng lớp chữ của app (font thật).
 // Ảnh người là ảnh tải lên của người dùng. Quy tắc: DESIGN-RULES.md; hàm: scripts/lib/collage-kit.mjs.
-//   node scripts/tinix-build-tet-svg.mjs --output FILE [--photos 1720,1721,1722,1723,1724] [--placeholders]
+//   node scripts/tinix-build-tet-svg.mjs --output FILE [--photos 1720,1721,1722,1723,1724] [--placeholders] [--reference-image FILE]
+//   --reference-image: thêm ảnh mẫu mờ 30% (khóa) trên cùng để kéo thả tinh chỉnh trong app; XÓA lớp này trước khi lưu thành mẫu.
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { writeFile } from 'node:fs/promises'
+import { writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { createCollageKit } from './lib/collage-kit.mjs'
 
@@ -29,7 +30,7 @@ const photos = ids.map((id) => {
   if (!r) throw new Error(`Không thấy ảnh ${id} trong thư viện`)
   return r
 })
-const fontRows = new Map(db.prepare("SELECT id, alias, ttf FROM fonts WHERE alias IN ('Playfair Display', 'Montserrat', 'Pacifico', 'Anton', 'Lobster')").all().map((r) => [r.alias, r]))
+const fontRows = new Map(db.prepare("SELECT id, alias, ttf FROM fonts WHERE alias IN ('Playfair Display', 'Montserrat', 'Anton', 'Lobster')").all().map((r) => [r.alias, r]))
 db.close()
 
 const kit = await createCollageKit({
@@ -37,7 +38,7 @@ const kit = await createCollageKit({
   assetsDir: path.join(root, 'service', 'static', 'collage', 'tet-svg-a'), assetsUrl: '/static/collage/tet-svg-a',
   cutoutCacheDir: path.join(root, 'service', 'static', 'collage', 'moments-a'),
 })
-const { layers, place, writeAsset, svgPng, slot, patternBackground, heartSticker, label, dieText, text } = kit
+const { layers, place, writeAsset, svgPng, slot, patternBackground, label, dieText, text } = kit
 
 // Bộ lọc viền trắng + bóng cho trang trí dán (kiểu sticker như ảnh mẫu)
 const STICK = `<filter id="st" x="-20%" y="-20%" width="140%" height="140%"><feMorphology in="SourceAlpha" operator="dilate" radius="6" result="d"/><feFlood flood-color="#fffaf0"/><feComposite in2="d" operator="in" result="w"/><feGaussianBlur in="d" stdDeviation="3" result="bl"/><feOffset in="bl" dx="0" dy="5" result="o"/><feFlood flood-color="#000" flood-opacity="0.28"/><feComposite in2="o" operator="in" result="sh"/><feMerge><feMergeNode in="sh"/><feMergeNode in="w"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
@@ -60,15 +61,28 @@ const petals5Yellow = (cx, cy, r) => blossom(cx, cy, r, C.yellow)
 
 // Đèn lồng: thân elip có sườn, nắp vàng, tua đỏ
 const lantern = (cx, cy, rx, ry, tassel) => {
-  let s = `<rect x="${cx - rx * 0.32}" y="${cy - ry - 16}" width="${rx * 0.64}" height="14" rx="4" fill="${C.gold}"/>`
-  s += `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${C.lanRed}"/>`
-  for (let k = -2; k <= 2; k++) s += `<ellipse cx="${cx + k * rx * 0.28}" cy="${cy}" rx="${rx * 0.12}" ry="${ry * 0.96}" fill="#b5121b" opacity="0.55"/>`
-  s += `<ellipse cx="${cx - rx * 0.35}" cy="${cy - ry * 0.35}" rx="${rx * 0.18}" ry="${ry * 0.2}" fill="#ffb3a8" opacity="0.5"/>`
-  s += `<rect x="${cx - rx * 0.3}" y="${cy + ry - 2}" width="${rx * 0.6}" height="12" rx="3" fill="${C.gold}"/>`
-  s += `<line x1="${cx}" y1="${cy + ry + 12}" x2="${cx}" y2="${tassel}" stroke="${C.gold}" stroke-width="5"/>`
-  s += `<ellipse cx="${cx}" cy="${tassel + 14}" rx="${rx * 0.22}" ry="${rx * 0.36}" fill="${C.deep}"/>`
+  // thân đèn: đỏ, bóng sáng bên trái, bóng tối bên phải, sườn cong
+  let s = ''
+  s += '<ellipse cx="' + cx + '" cy="' + (cy + ry * 0.12) + '" rx="' + (rx * 1.02) + '" ry="' + (ry * 1.02) + '" fill="#8e0d18" opacity="0.35"/>'
+  s += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + rx + '" ry="' + ry + '" fill="' + C.lanRed + '"/>'
+  s += '<ellipse cx="' + (cx + rx * 0.28) + '" cy="' + cy + '" rx="' + (rx * 0.72) + '" ry="' + (ry * 0.98) + '" fill="#b5121b" opacity="0.35"/>'
+  s += '<ellipse cx="' + (cx - rx * 0.36) + '" cy="' + (cy - ry * 0.22) + '" rx="' + (rx * 0.22) + '" ry="' + (ry * 0.42) + '" fill="#ff8a7a" opacity="0.55"/>'
+  // sườn: các đường cong dọc theo thân
+  for (let k = -3; k <= 3; k++) {
+    const x = cx + k * rx * 0.24
+    s += '<path d="M' + x.toFixed(1) + ' ' + (cy - ry * 0.9).toFixed(1) + ' Q' + (x + (k === 0 ? 0 : k * 2)).toFixed(1) + ' ' + cy + ' ' + x.toFixed(1) + ' ' + (cy + ry * 0.9).toFixed(1) + '" fill="none" stroke="#9e0f1d" stroke-width="' + (k === 0 ? 3 : 2.2) + '" opacity="0.6"/>'
+  }
+  // vành trên và dưới bằng vàng, có viền sẫm
+  s += '<rect x="' + (cx - rx * 0.42) + '" y="' + (cy - ry - 18) + '" width="' + (rx * 0.84) + '" height="20" rx="6" fill="' + C.gold + '" stroke="' + C.goldDk + '" stroke-width="2"/>'
+  s += '<rect x="' + (cx - rx * 0.3) + '" y="' + (cy - ry - 28) + '" width="' + (rx * 0.6) + '" height="12" rx="4" fill="' + C.goldDk + '"/>'
+  s += '<rect x="' + (cx - rx * 0.42) + '" y="' + (cy + ry - 2) + '" width="' + (rx * 0.84) + '" height="20" rx="6" fill="' + C.gold + '" stroke="' + C.goldDk + '" stroke-width="2"/>'
+  // tua dưới: dây vàng + chùm tua đỏ có sợi
+  s += '<line x1="' + cx + '" y1="' + (cy + ry + 18) + '" x2="' + cx + '" y2="' + (tassel - 18) + '" stroke="' + C.gold + '" stroke-width="5"/>'
+  s += '<ellipse cx="' + cx + '" cy="' + (tassel - 4) + '" rx="' + (rx * 0.26) + '" ry="' + (rx * 0.2) + '" fill="' + C.gold + '" stroke="' + C.goldDk + '" stroke-width="2"/>'
+  for (let k = -3; k <= 3; k++) s += '<line x1="' + (cx + k * 4) + '" y1="' + (tassel + 2) + '" x2="' + (cx + k * 5) + '" y2="' + (tassel + 44) + '" stroke="#c4161c" stroke-width="5" stroke-linecap="round"/>'
   return s
 }
+
 
 // Lân múa (vẽ lại gần ảnh mẫu): mũ đỏ, bờm đỏ viền lông kem, mắt to tròng cam, miệng há hồng có răng, thân xếp lớp đỏ viền kem
 const lionHead = () => {
@@ -136,9 +150,16 @@ const catBody = () => {
 }
 
 const gift = () => `
+  <ellipse cx="872" cy="1362" rx="120" ry="12" fill="#2a1410" opacity="0.18"/>
   <rect x="770" y="1262" width="200" height="140" rx="8" fill="${C.green}"/>
+  <rect x="770" y="1262" width="200" height="30" rx="8" fill="#5a9468"/>
+  <rect x="770" y="1262" width="200" height="140" rx="8" fill="none" stroke="#2c4f33" stroke-width="3"/>
+  <g fill="#4f8a5a" opacity="0.55">${[0, 1, 2, 3, 4, 5].map((k) => '<rect x="' + (784 + k * 32) + '" y="1308" width="16" height="16" rx="3"/>').join('')}</g>
   <rect x="856" y="1262" width="14" height="140" fill="${C.gold}"/>
   <rect x="770" y="1312" width="200" height="12" fill="${C.gold}"/>
+  <ellipse cx="846" cy="1246" rx="22" ry="14" fill="none" stroke="${C.gold}" stroke-width="7" transform="rotate(-28 846 1246)"/>
+  <ellipse cx="892" cy="1246" rx="22" ry="14" fill="none" stroke="${C.gold}" stroke-width="7" transform="rotate(28 892 1246)"/>
+  <circle cx="869" cy="1252" r="9" fill="${C.goldDk}"/>
   <polygon points="870,1268 904,1296 870,1322 836,1296" fill="${C.red}" stroke="${C.gold}" stroke-width="3"/>
   ${blossom(870, 1296, 14, C.bloom)}`
 
@@ -160,62 +181,150 @@ const diamond = () => `
   <polygon points="155,556 240,645 155,734 70,645" fill="none" stroke="${C.gold}" stroke-width="3"/>
   ${blossom(155, 702, 22, C.bloom)}`
 
-const cloudPath = (x, y, w, h) => {
-  const n = 9; let d = ''
-  for (let i = 0; i <= n; i++) { const t = (i / n) * Math.PI * 2; const px = x + w / 2 + Math.cos(t) * (w / 2 - 6), py = y + h / 2 + Math.sin(t) * (h / 2 - 6); d += (i ? ' L' : 'M') + px.toFixed(1) + ' ' + py.toFixed(1) }
-  return d + ' Z'
+// ═══════════ DỰNG THEO SPEC (scripts/specs/tet-yeu-thuong.json) ═══════════
+// Mỗi mục spec → một lớp/nhóm mang `specId`; thứ tự xếp lớp = z của spec. Kiểm tra: reference check-layout.
+import { readFileSync } from 'node:fs'
+const spec = JSON.parse(readFileSync(path.join(root, 'scripts', 'specs', 'tet-yeu-thuong.json'), 'utf8'))
+const items = spec.items.map((it, i) => ({ ...it, _i: i })).sort((a, b) => a.z - b.z || a._i - b._i)
+const px = (n) => Math.round(n * S)
+const tag = (layer, id, extra = {}) => { layer.specId = id; Object.assign(layer, extra); return layer }
+
+// Đường viền giấy xé: các điểm dọc 4 cạnh lệch ngẫu nhiên (hạt giống cố định)
+const tornPath = (x, y, w, h, jag = 5) => {
+  const pts = [], step = 16, j = () => (rnd() - 0.5) * 2 * jag
+  for (let t = 0; t < w; t += step) pts.push([x + t, y + j()])
+  for (let t = 0; t < h; t += step) pts.push([x + w + j(), y + t])
+  for (let t = w; t > 0; t -= step) pts.push([x + t, y + h + j()])
+  for (let t = h; t > 0; t -= step) pts.push([x + j(), y + t])
+  return 'M' + pts.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L') + ' Z'
+}
+// Vân giấy: nhiễu mịn nhân lên màu + bóng mép mỏng
+const PAPERFX = `<filter id="pp" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0.45  0 0 0 0 0.3  0 0 0 0 0.25  0 0 0 0.24 0" result="g"/><feComposite in="g" in2="SourceGraphic" operator="in" result="gi"/><feDropShadow dx="0" dy="1.5" stdDeviation="1.6" flood-color="#3a1010" flood-opacity="0.3" in="SourceGraphic" result="sh"/><feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="2" seed="11" result="n2"/><feColorMatrix in="n2" type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.1  0 0 0 0 0.1  0 0 0 0.5 -0.12" result="g2"/><feComposite in="g2" in2="SourceGraphic" operator="in" result="gi2"/><feMerge><feMergeNode in="sh"/><feMergeNode in="SourceGraphic"/><feMergeNode in="gi"/><feMergeNode in="gi2"/></feMerge></filter>`
+// Hoa văn sóng vàng (seigaiha)
+const waveSvg = (b, fill) => {
+  const [x, y, w, h] = b, r = 34
+  let s = `<clipPath id="wv${Math.round(x)}"><rect x="${x}" y="${y}" width="${w}" height="${h}"/></clipPath><g clip-path="url(#wv${Math.round(x)})"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`
+  for (let row = 0; row * r * 0.5 < h + r; row++) for (let col = -1; col * r * 2 < w + r * 2; col++) {
+    const cx = x + col * r * 2 + (row % 2 ? r : 0), cy = y + row * r * 0.5 + r * 0.4
+    for (let k = 3; k >= 1; k--) s += `<circle cx="${cx}" cy="${cy}" r="${(r * k) / 3}" fill="${k % 2 ? '#fbeccb' : fill}" stroke="#dcb978" stroke-width="2"/>`
+  }
+  return s + '</g>'
 }
 
-// ── 1. NỀN: giấy kem + băng giấy đỏ xé (SVG, lớp nền in) ──
-const bandsSvg = `
-  <path d="M0 0 L1086 0 L1086 226 L620 224 L560 240 L420 216 L300 250 L170 230 L0 268 Z" fill="${C.red}"/>
-  <path d="M0 1262 L1086 1244 L1086 1448 L0 1448 Z" fill="${C.deep}"/>`
-const bandsPng = await svgPng(W, H, `<g transform="scale(${S})">${bandsSvg}</g>`)
-const bg = await patternBackground('Nền giấy kem', 'dots', W, H, { base: C.cream, ink: '#e7cfa6', opacity: 0.35, size: 34 })
-bg.effects = { paper: 45, grain: 14 }
-place('Băng đỏ xé nền', await writeAsset('bands.png', bandsPng), 0, 0, W, H, { printRole: 'base', lock: true })
+// ── NỀN: giấy kem + các mảng giấy xé (z < 5) vẽ vào một lớp nền in ──
+const bg = await patternBackground('Nền giấy kem', 'dots', W, H, { base: C.cream, ink: '#e7cfa6', opacity: 0.25, size: 34 })
+bg.effects = { paper: 70, grain: 22 }
+let baseSvg = ''
+for (const it of items.filter((i) => (i.type === 'paper' || i.type === 'wave') && i.z < 5)) {
+  const [x, y, w, h] = it.box
+  const shade = (hex, f) => '#' + [1, 3, 5].map((o) => Math.max(0, Math.min(255, Math.round(parseInt(hex.slice(o, o + 2), 16) * f))).toString(16).padStart(2, '0')).join('')
+  if (it.type === 'paper' && w * h > 60000) {
+    baseSvg += `<path d="${tornPath(x, y, w, h, 5)}" fill="${it.fill}" filter="url(#pp)"/>`
+    for (let q = 0; q < 7; q++) { const pw = w * (0.25 + rnd() * 0.3), ph = h * (0.14 + rnd() * 0.2), px0 = x + rnd() * (w - pw), py0 = y + rnd() * (h - ph); baseSvg += `<path d="${tornPath(px0, py0, pw, ph, 6)}" fill="${shade(it.fill, 0.86 + rnd() * 0.26)}" opacity="0.9" filter="url(#pp)"/>` }
+    continue
+  }
+  baseSvg += it.type === 'wave' ? waveSvg(it.box, it.fill) : `<path d="${tornPath(x, y, w, h, 5)}" fill="${it.fill}" filter="url(#pp)"${it.rot ? ` transform="rotate(${it.rot} ${x + w / 2} ${y + h / 2})"` : ''}/>`
+}
+place('Nền giấy xé chồng lớp', await writeAsset('bands.png', await svgPng(W, H, `<g transform="scale(${S})">${baseSvg}<rect x="6" y="6" width="1074" height="1436" fill="none" stroke="#f8ead2" stroke-width="10" opacity="0.9"/></g>`, PAPERFX)), 0, 0, W, H, { printRole: 'base', lock: true })
 
-// ── 2. KHUNG ẢNH (ảnh của người dùng), đúng vị trí ảnh mẫu ──
-const F = (x, y, w, h) => [Math.round(x * S), Math.round(y * S), Math.round(w * S), Math.round(h * S)]
-let [x, y, w, h] = F(215, 290, 400, 555)
-await slot('Ảnh lớn trái', photos[0], x, y, w, h, 50, [w - 80, -14, -4], 'squircle', {}, 1)
-;[x, y, w, h] = F(620, 160, 340, 340)
-await slot('Ảnh tròn trên', photos[1], x, y, w, h, 85, [200, -12, 14], 'ellipse', {}, 2)
-;[x, y, w, h] = F(635, 565, 415, 315)
-await slot('Ảnh bo phải giữa', photos[2], x, y, w, h, 40, [w - 90, -14, 22], 'squircle', {}, -2)
-;[x, y, w, h] = F(225, 845, 330, 335)
-await slot('Ảnh tem dưới', photos[3], x, y, w, h, 40, null, 'stamp', {}, 0)
-;[x, y, w, h] = F(555, 855, 475, 360)
-await slot('Ảnh bo lớn dưới', photos[4], x, y, w, h, 30, [w - 100, -14, -3], 'squircle', {}, -2)
+// ── Vẽ một mảnh dán: art theo tọa độ ảnh mẫu (hộp tự nhiên nat), co đều vào hộp spec, xoay theo spec ──
+const PADPX = 14
+async function decoBox(it, name, art, nat, { sticker = true } = {}) {
+  const [bx, by, bw, bh] = it.box
+  const w = px(bw) + 2 * PADPX, h = px(bh) + 2 * PADPX
+  const k = Math.min(bw / nat[2], bh / nat[3])
+  const ncx = nat[0] + nat[2] / 2, ncy = nat[1] + nat[3] / 2
+  const tr = `translate(${w / 2} ${h / 2}) scale(${S * k}) translate(${-ncx} ${-ncy})`
+  let png = await svgPng(w, h, `<g transform="${tr}"${sticker ? ' filter="url(#st)"' : ''}>${art}</g>`, STICK)
+  // cắt theo mép trang: mảnh chạm mép (cành đào, mèo...) bị cắt đúng mép thành phẩm, không báo "vượt mép"
+  const left = px(bx) - PADPX, top = px(by) - PADPX
+  const cl = Math.max(0, left), ct = Math.max(0, top), cr = Math.min(W, left + w), cb = Math.min(H, top + h)
+  const clamped = cl !== left || ct !== top || cr !== left + w || cb !== top + h
+  if (clamped) png = await kit.sharp(png).extract({ left: cl - left, top: ct - top, width: cr - cl, height: cb - ct }).png().toBuffer()
+  const l = place(name, await writeAsset(`deco-${it.id}.png`, png), cl, ct, cr - cl, cb - ct, { printRole: 'raised' })
+  l.rotate = `${it.rot || 0}deg`
+  return tag(l, it.id, clamped ? { specCenterOnly: true } : { specInset: PADPX })
+}
+const heartPathD = (cx, cy, w, h) => {
+  const pts = []
+  for (let i = 0; i < 64; i++) { const t = (i / 64) * Math.PI * 2; const x = 16 * Math.sin(t) ** 3, y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); pts.push([cx + (x / 32) * w * 1.6, cy + ((y + 2) / 30) * h * 1.6]) }
+  return 'M' + pts.map((q) => q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' L') + ' Z'
+}
+const scallopRing = (cx, cy, R, n, bump) => {
+  let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#fbe3dd" stroke="#f3c2bd" stroke-width="3"/>`
+  for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; s += `<circle cx="${(cx + Math.cos(a) * R).toFixed(1)}" cy="${(cy + Math.sin(a) * R).toFixed(1)}" r="${bump}" fill="#fbe3dd" stroke="#f3c2bd" stroke-width="2.5"/>` }
+  return s + `<circle cx="${cx}" cy="${cy}" r="${R - 12}" fill="#fff6ec"/>`
+}
+// Đèn lồng sinh theo hộp: thân elip rộng (ry = 0,7 rx), nắp vàng, tua đỏ
+const lanternIn = (b) => { const [x, y, w, h] = b, rx = w / 2 - 6, ry = rx * 0.7, cy = y + 28 + ry; return lantern(x + w / 2, cy, rx, ry, y + h - 44) }
+const boxOf = (id) => items.find((i) => i.id === id).box
 
-// ── 3. TRANG TRÍ VẼ SVG (mỗi cụm là một mảnh cắt) ──
-await deco('Đèn lồng trái', 30, 345, 170, 245, lantern(115, 440, 58, 62, 585))
-await deco('Đèn lồng phải', 935, 250, 145, 220, lantern(1010, 335, 50, 56, 455))
-await deco('Nhành đào', 760, 0, 326, 150, plum(), true)
-await deco('Hoa trái', 240, 1205, 100, 85, flowerL())
-await deco('Lộc (bảng vuông)', 40, 525, 230, 240, diamond())
-await text('Chữ Lộc', 'Lộc', Math.round(70 * S), Math.round(600 * S), Math.round(170 * S), 80, 'Pacifico', C.paper, { align: 'center', h: 120, lh: 1.0 })
-await deco('Đầu lân', 15, 760, 245, 300, lionHead())
-await deco('Mèo may mắn', 15, 1055, 255, 290, catBody())
-await text('Chữ Lộc trên đồng', 'Lộc', Math.round(145 * S), Math.round(1262 * S), Math.round(100 * S), 62, 'Pacifico', C.red, { align: 'center', h: 90, lh: 1.0 })
-await deco('Nơ hồng', 420, 1175, 190, 85, bow())
-await deco('Hộp quà', 750, 1215, 235, 195, gift())
-await deco('Hoa vàng phải', 925, 1165, 135, 135, flowerR())
+const PHOTO = { 'anh-lon-trai': [0, 50], 'anh-tron-tren': [1, 85], 'anh-phai-giua': [2, 40], 'anh-tem': [3, 40], 'anh-lon-duoi-phai': [4, 30] }
+const STICKERS = {
+  'den-long-trai': { art: () => lanternIn(boxOf('den-long-trai')) },
+  'den-long-phai': { art: () => lanternIn(boxOf('den-long-phai')) },
+  'bang-loc': { art: diamond, nat: [40, 525, 230, 240] },
+  'lan': { art: lionHead, nat: [15, 760, 245, 300] },
+  'meo': { art: catBody, nat: [15, 1055, 255, 290] },
+  'hoa-dao-trai': { art: flowerL, nat: [240, 1205, 100, 85] },
+  'nhanh-dao': { art: plum, nat: [760, 0, 326, 150] },
+  'hoa-vang-tren': { art: () => petals5Yellow(385, 50, 40) + petals5Yellow(415, 78, 18), nat: [335, 5, 100, 95] },
+  'hoa-vang-phai': { art: flowerR, nat: [925, 1165, 135, 135] },
+  'hop-qua': { art: gift, nat: [750, 1215, 235, 195] },
+  'no': { art: bow, nat: [420, 1175, 190, 85] },
+}
+for (const it of items) {
+  const [bx, by, bw, bh] = it.box
+  const cx = bx + bw / 2, cy = by + bh / 2
+  if ((it.type === 'paper' || it.type === 'wave') && it.z < 5) continue
+  if (it.type === 'scallop') { await decoBox(it, 'Viền sò hồng', scallopRing(cx, cy, bw / 2 - 20, 24, 20), [bx, by, bw, bh]); continue }
+  if (it.type === 'paper') {
+    const blob = `<ellipse cx="${bx + bw * 0.28}" cy="${by + bh * 0.62}" rx="${bw * 0.27}" ry="${bh * 0.4}" fill="${it.fill}"/><ellipse cx="${bx + bw * 0.55}" cy="${by + bh * 0.5}" rx="${bw * 0.36}" ry="${bh * 0.46}" fill="${it.fill}"/><ellipse cx="${bx + bw * 0.82}" cy="${by + bh * 0.6}" rx="${bw * 0.2}" ry="${bh * 0.38}" fill="${it.fill}"/>`
+    await decoBox(it, 'Đám kem chữ', blob, [bx, by, bw, bh]); continue
+  }
+  if (it.type === 'photo') {
+    const [pi, cropY] = PHOTO[it.id]
+    tag(await slot(it.id, photos[pi], px(bx), px(by), px(bw), px(bh), cropY, null, it.shape || 'squircle', {}, it.rot || 0), it.id); continue
+  }
+  if (it.type === 'tape') {
+    await kit.tapePiece('Băng dính ' + it.id, px(cx), px(cy), px(bw), px(bh) * 0.85, it.rot || 0)
+    tag(layers[layers.length - 1], it.id, { specCenterOnly: true }); continue
+  }
+  if (it.type === 'sticker' && STICKERS[it.id]) {
+    const d = STICKERS[it.id]
+    await decoBox(it, it.id, d.art(), d.nat || [bx, by, bw, bh])
+    if (it.id === 'bang-loc') tag(text('Chữ Lộc', 'Lộc', px(70), px(605), px(170), 80, 'Lobster', C.paper, { align: 'center', h: 120, lh: 1.0 }), 'chu-loc-bang', { specCenterOnly: true })
+    continue
+  }
+  if (it.id === 'dong-tien-loc') { tag(text('Chữ Lộc trên đồng', 'Lộc', px(145), px(1262), px(100), 62, 'Lobster', C.red, { align: 'center', h: 90, lh: 1.0, rot: it.rot || 0 }), it.id, { specCenterOnly: true }); continue }
+  if (it.type === 'heart') {
+    const outline = it.id.startsWith('tim-chuc')
+    await decoBox(it, it.id, `<path d="${heartPathD(cx, cy, bw * 0.6, bh * 0.58)}" fill="${outline ? 'none' : it.fill}" stroke="${outline ? it.fill : 'none'}" stroke-width="5" stroke-linejoin="round"/>`, [bx, by, bw, bh]); continue
+  }
+  if (it.type === 'spark') {
+    const base = it.id === 'tia-vang-tet' ? 215 : 160, len = Math.max(bw, bh)
+    const sk = [0, 1, 2].map((k) => { const a = ((base + k * 38) * Math.PI) / 180; return `<path d="M${(cx + Math.cos(a) * len * 0.18).toFixed(1)} ${(cy + Math.sin(a) * len * 0.18).toFixed(1)} L${(cx + Math.cos(a) * len * 0.5).toFixed(1)} ${(cy + Math.sin(a) * len * 0.5).toFixed(1)}" stroke="${it.fill}" stroke-width="9" stroke-linecap="round"/>` }).join('')
+    await decoBox(it, it.id, sk, [bx, by, bw, bh], { sticker: it.fill !== '#ffffff' }); continue
+  }
+  if (it.type === 'text') {
+    const big = it.id === 'chu-tet'
+    tag(dieText(big ? 'Chữ Tết' : 'Chữ yêu thương', it.text, px(bx + (big ? 3 : -4)), px(by - (big ? 1 : 23)), px(bw + 120), big ? 285 : 136, 'Lobster', big ? C.red : C.deep, { align: 'left', lh: 1.0, h: big ? 420 : 190, rot: it.rot || 0, edge: C.paper }), it.id, { specSkip: true }); continue
+  }
+  if (it.type === 'label') {
+    const chuc = it.id === 'nhan-chuc-be'
+    const hh = chuc ? bh : bh * 0.78
+    const g = await label(it.id, chuc ? '' : it.text, px(bx), px(cy - hh / 2), px(bw), px(hh), { kind: it.id === 'nhan-mung-xuan' ? 'ribbon' : 'cloud', fill: C.paper, ink: C.red, alias: 'Lobster', size: it.id === 'nhan-mung-xuan' ? 66 : 54, rot: it.rot || 0 })
+    tag(g, it.id, { specCenterOnly: true })
+    if (chuc) for (const [k, line, sz] of [[0, 'Chúc bé', 70], [1, 'hay ăn chóng lớn', 62]]) text('Chữ chúc bé ' + k, line, px(bx + 30), px(cy - 58 + k * 62), px(bw - 60), sz, 'Lobster', C.red, { align: 'center', h: Math.round(sz * 1.3), lh: 1.0 })
+    continue
+  }
+}
 
-// ── 4. CHỮ + NHÃN (lớp chữ của app; nhãn là một nhóm nền + chữ) ──
-dieText('Chữ Tết', 'Tết', 40, 40, 560, 300, 'Pacifico', C.red, { align: 'left', lh: 1.0, h: 420, rot: -6, edge: C.paper })
-dieText('Chữ yêu thương', 'yêu thương', 40, 320, 600, 96, 'Pacifico', C.deep, { align: 'left', lh: 1.0, h: 160, rot: -4, edge: C.paper })
-await label('Nhãn Mừng Xuân', 'Mừng Xuân', Math.round(395 * S), Math.round(50 * S), Math.round(415 * S), Math.round(120 * S), { kind: 'ribbon', fill: C.paper, ink: C.red, alias: 'Pacifico', size: 64, rot: -3 })
-await label('Nhãn Bé ngoan', 'Bé ngoan', Math.round(730 * S), Math.round(470 * S), Math.round(300 * S), Math.round(92 * S), { kind: 'stitch', fill: C.paper, ink: C.red, alias: 'Pacifico', size: 50, rot: -2 })
-await label('Nhãn chúc bé', 'Chúc bé hay ăn chóng lớn', Math.round(290 * S), Math.round(1240 * S), Math.round(460 * S), Math.round(170 * S), { kind: 'torn', fill: C.paper, ink: C.red, alias: 'Pacifico', size: 52, rot: 0 })
-
-// ── 5. TIM DÁN như ảnh mẫu ──
-await heartSticker('Tim đỏ trái', Math.round(640 * S), Math.round(490 * S), 110, 92, '#e8505b')
-await heartSticker('Tim đỏ phải', Math.round(975 * S), Math.round(515 * S), 110, 92, '#e8505b')
-await heartSticker('Tim hồng phải', Math.round(975 * S), Math.round(780 * S), 90, 76, '#f08aa0')
+const refImg = arg('--reference-image')
+if (refImg) { const rl = place('ẢNH MẪU – xóa trước khi lưu', await writeAsset('reference.webp', await readFile(refImg)), 0, 0, W, H, { lock: true }); rl.opacity = 0.3 }
 
 const global = {
-  name: 'Tết yêu thương · vẽ SVG theo ảnh mẫu', type: 'page', uuid: '-1', left: 0, top: 0, width: W, height: H, backgroundColor: C.cream, backgroundGradient: '', backgroundImage: '', backgroundTransform: {},
+  name: 'Tết yêu thương · vẽ SVG theo spec', type: 'page', uuid: '-1', left: 0, top: 0, width: W, height: H, backgroundColor: C.cream, backgroundGradient: '', backgroundImage: '', backgroundTransform: {},
   opacity: 1, tag: 0, record: {}, dpi: DPI, collage: { template: 'tet-svg-a', version: 1, customer: placeholders ? 'Mẫu' : 'Tết', printWorkflow: 'separate-sheets' },
 }
 await writeFile(out, JSON.stringify({ global, layers }, null, 2), { flag: 'wx' })
