@@ -20,18 +20,22 @@ const extra = path.join(tmp, 'ocung-khac', 'sao-luu')
 fs.mkdirSync(dataDir, { recursive: true })
 const dbPath = path.join(dataDir, 'poster.db')
 
-// DB giả: bảng designs + user_images (có dòng 'upload' phải bị loại khỏi BẢN SAO, nhưng còn nguyên trong DB gốc)
+// DB giả: thiết kế dùng một ảnh tải lên; ảnh tải lên không ai dùng phải bị loại khỏi BẢN SAO (cả dòng lẫn tệp), DB gốc còn nguyên
 const db = new Database(dbPath)
-db.exec("CREATE TABLE designs(id INTEGER PRIMARY KEY, title TEXT); CREATE TABLE user_images(id INTEGER PRIMARY KEY, url TEXT, source TEXT)")
-db.prepare('INSERT INTO designs(title) VALUES (?)').run('Thiết kế thử')
-db.prepare('INSERT INTO user_images(url, source) VALUES (?, ?)').run('/static/photos/a.jpg', 'upload')
-db.prepare('INSERT INTO user_images(url, source) VALUES (?, ?)').run('/static/favorites/b.jpg', 'favorite')
+db.exec("CREATE TABLE designs(id INTEGER PRIMARY KEY, title TEXT, data TEXT); CREATE TABLE user_images(id INTEGER PRIMARY KEY, url TEXT, web_url TEXT, thumb_url TEXT, source TEXT)")
+db.prepare('INSERT INTO designs(title, data) VALUES (?, ?)').run('Thiết kế thử', JSON.stringify({ layers: [{ imgUrl: '/static/photos/web/used.jpg?v=2' }, { imgUrl: '/static/user/kept.png' }] }))
+const addImg = db.prepare('INSERT INTO user_images(url, web_url, thumb_url, source) VALUES (?, ?, ?, ?)')
+addImg.run('/static/photos/used.jpg', '/static/photos/web/used.jpg', '/static/photos/thumb/used.jpg', 'upload') // được thiết kế dùng (qua ảnh nhẹ)
+addImg.run('/static/photos/unused.jpg', '/static/photos/web/unused.jpg', '/static/photos/thumb/unused.jpg', 'upload') // không ai dùng
+addImg.run('/static/user/kept.png', '', '', 'upload') // được thiết kế dùng (qua tệp gốc)
+addImg.run('/static/user/test.png', '', '', 'upload') // không ai dùng
+addImg.run('/static/favorites/b.jpg', '', '', 'favorite')
 db.close()
 
-// static giả: cover/ được sao lưu; fonts/ và photos/ bị loại
-for (const [dir, file] of [['cover', 'c.jpg'], ['fonts', 'f.ttf'], ['photos', 'p.jpg']]) {
+// static giả: cover/ và ảnh được dùng được sao lưu; fonts/ và ảnh tải lên không ai dùng bị loại
+for (const [dir, file] of [['cover', 'c.jpg'], ['fonts', 'f.ttf'], ['photos', 'used.jpg'], ['photos/web', 'used.jpg'], ['photos/thumb', 'used.jpg'], ['photos', 'unused.jpg'], ['photos/web', 'unused.jpg'], ['photos/thumb', 'unused.jpg'], ['user', 'kept.png'], ['user', 'test.png']]) {
   fs.mkdirSync(path.join(staticDir, dir), { recursive: true })
-  fs.writeFileSync(path.join(staticDir, dir, file), dir + '-noi-dung')
+  fs.writeFileSync(path.join(staticDir, dir, file), dir + '/' + file + '-noi-dung')
 }
 fs.mkdirSync(path.join(dataDir, 'approved-prints', '7'), { recursive: true })
 fs.writeFileSync(path.join(dataDir, 'approved-prints', '7', 'snapshot.json'), '{"ok":true}')
@@ -56,9 +60,9 @@ try {
   assert.ok(fs.existsSync(path.join(extra, first, 'poster.db')) && fs.existsSync(path.join(extra, first, 'static.tar.gz')), 'bản chép đủ tệp')
 
   // 2) Bản sao DB không chứa ảnh tải lên, nhưng DB gốc còn nguyên
-  assert.deepEqual(rows(path.join(snap, 'poster.db'), 'SELECT source FROM user_images'), [{ source: 'favorite' }])
+  assert.deepEqual(rows(path.join(snap, 'poster.db'), "SELECT url FROM user_images ORDER BY id").map((x) => x.url), ['/static/photos/used.jpg', '/static/user/kept.png', '/static/favorites/b.jpg'], 'bản sao DB giữ ảnh tải lên đang được dùng, bỏ ảnh không dùng')
   assert.equal(rows(path.join(snap, 'poster.db'), 'SELECT title FROM designs')[0].title, 'Thiết kế thử')
-  assert.equal(rows(dbPath, 'SELECT COUNT(*) n FROM user_images')[0].n, 2, 'DB gốc không bị sửa')
+  assert.equal(rows(dbPath, 'SELECT COUNT(*) n FROM user_images')[0].n, 5, 'DB gốc không bị sửa')
   assert.equal(fs.existsSync(path.join(snap, 'poster.db-wal')), false, 'bản sao gọn một tệp')
 
   // 3) static.tar.gz: có cover/, KHÔNG có fonts/ và photos/
@@ -68,7 +72,11 @@ try {
   const list = tarList.stdout.split(String.fromCharCode(92)).join('/')
   assert.match(list, /cover\/c\.jpg/)
   assert.doesNotMatch(list, /fonts\/f\.ttf/)
-  assert.doesNotMatch(list, /photos\/p\.jpg/)
+  // ảnh tải lên: chỉ tệp đang được dùng (kể cả ảnh nhẹ/thu nhỏ của nó; tham chiếu có ?v=) nằm trong bản nén
+  for (const f of ['photos/used.jpg', 'photos/web/used.jpg', 'photos/thumb/used.jpg', 'user/kept.png']) assert.ok(list.includes('/' + f), `phải có ${f}`)
+  for (const f of ['photos/unused.jpg', 'photos/web/unused.jpg', 'photos/thumb/unused.jpg', 'user/test.png']) assert.ok(!list.includes('/' + f), `không được có ${f}`)
+  assert.match(r.stdout, /giữ 2 ảnh tải lên đang được thiết kế\/mẫu dùng, bỏ 2 ảnh không dùng/)
+  assert.equal(fs.existsSync(path.join(snap, 'loai-tru.txt')), false, 'không để lại tệp loại trừ tạm')
 
   // 4) Giữ đúng --keep ở CẢ hai nơi (mốc thời gian theo giây nên chờ >1s giữa các lần)
   await sleep(1100); assert.equal(run('--keep', '2', '--copy-to', extra).status, 0)
