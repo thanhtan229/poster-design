@@ -41,7 +41,6 @@
   },
   "dependencies": {
     "@bunnio/rembg-web": "^1.0.2",
-    "@modelcontextprotocol/sdk": "^1.32.2",
     "@palxp/color-picker": "workspace:*",
     "@palxp/image-extraction": "workspace:*",
     "@scena/guides": "^0.18.1",

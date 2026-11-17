@@ -10,7 +10,7 @@ export const MAX_DPI = 1200
 export const MAX_SIDE_PX = 12000
 /**
  * Giới hạn tổng điểm ảnh khi tạo canvas / xuất ảnh. Phải khớp `maxPXs` ở service/src/utils/download-single.ts
- * (và scripts/tinix-cli.mjs, tinix-mcp.mjs). Đo thật: trang 8268×11220 (92,8 triệu) chụp ~6,5 giây,
+ * (và scripts/tinix-cli.mjs). Đo thật: trang 8268×11220 (92,8 triệu) chụp ~6,5 giây,
  * Chromium đỉnh ~2,3 GB RAM; 12000×12000 (144 triệu) ~10 giây, ~3,1 GB.
  */
 export const MAX_PIXELS = 100_000_000

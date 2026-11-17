@@ -260,7 +260,7 @@ Kiểm thử tách nền, hai cực sáng/tối, vùng trắng và giảm trọn
 
 ## Dựng mẫu cắt dán từ ảnh tham chiếu (2026-11-16)
 
-Lệnh CLI/MCP dựng **bản nháp** mẫu cắt dán từ một ảnh chụp trang scrapbook thật: `reference grid`, `drafts from-reference`, `reference compare` (MCP: `reference_grid`, `draft_from_reference`, `reference_compare`). Không gọi AI trả phí. Cần app đang chạy (tải font, tách nền BiRefNet). Mã ở `scripts/lib/reference-build.mjs` và `scripts/lib/text-measure.mjs`; ví dụ spec ở `scripts/examples/smile-darling.spec.json` (chỉ có toạ độ và chữ, không có ảnh).
+Lệnh CLI dựng **bản nháp** mẫu cắt dán từ một ảnh chụp trang scrapbook thật: `reference grid`, `drafts from-reference`, `reference compare`. Không gọi AI trả phí. Cần app đang chạy (tải font, tách nền BiRefNet). Mã ở `scripts/lib/reference-build.mjs` và `scripts/lib/text-measure.mjs`; ví dụ spec ở `scripts/examples/smile-darling.spec.json` (chỉ có toạ độ và chữ, không có ảnh).
 
 ### Phân công người/tác tử và máy
 

@@ -26,7 +26,6 @@ const suites = [
   { name: 'Kế hoạch in cắt dán (collage-print)', args: [path.join(root, 'scripts/tinix-collage-print-test.cjs')], cwd: root },
   { name: 'Dựng mẫu từ bản nháp (instantiate)', args: [path.join(root, 'scripts/tinix-instantiate-test.mjs')], cwd: root },
   { name: 'Mặt nạ cắt ảnh (mask)', args: [path.join(root, 'scripts/tinix-mask-test.mjs')], cwd: root },
-  { name: 'MCP (client chính thức)', args: [path.join(root, 'scripts/tinix-mcp-test.mjs')], cwd: root },
   { name: 'Tên scrapbook', args: [path.join(root, 'scripts/tinix-scrapbook-name-test.mjs')], cwd: root },
   { name: 'Dọn tệp ảnh mồ côi', args: [path.join(root, 'scripts/tinix-clean-orphans-test.mjs')], cwd: root },
   { name: 'Dựng mẫu từ ảnh tham chiếu', args: [path.join(root, 'scripts/tinix-reference-build-test.mjs')], cwd: root },
