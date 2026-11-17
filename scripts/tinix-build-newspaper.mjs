@@ -37,7 +37,7 @@ const photos = ids.map((id) => {
   if (!r) throw new Error(`Không thấy ảnh ${id} trong thư viện`)
   return r
 })
-const fontRows = new Map(db.prepare("SELECT id, alias, ttf FROM fonts WHERE alias IN ('Playfair Display', 'Montserrat')").all().map((f) => [f.alias, f]))
+const fontRows = new Map(db.prepare("SELECT id, alias, ttf FROM fonts WHERE alias IN ('Playfair Display', 'Montserrat', 'Pacifico', 'Anton', 'Lobster')").all().map((f) => [f.alias, f]))
 db.close()
 const fontClass = (alias) => { const f = fontRows.get(alias); if (!f) throw new Error(`Thiếu font ${alias}`); return { alias: f.alias, id: f.id, value: f.alias, url: f.ttf } }
 
@@ -53,6 +53,16 @@ const text = (name, value, x, y, w, size, alias, color, extra = {}) => {
   layers.push(t); return t
 }
 
+// Chữ có viền cắt trắng ôm theo nét chữ (hiệu ứng chữ của app: nét viền dày + bóng), như chữ dán die-cut
+const dieText = (name, value, x, y, w, size, alias, color, extra = {}) => {
+  const t = text(name, value, x, y, w, size, alias, color, extra)
+  const o = extra.outline || 14
+  t.textEffects = [{ filling: { enable: false, type: 0, color: '#ffffff' }, stroke: { enable: true, width: o * 2, color: '#fffdf8' }, shadow: { enable: true, offsetX: 0, offsetY: 6, blur: 8, color: 'rgba(0,0,0,0.4)' }, offset: { enable: false, x: 0, y: 0 } },
+  // lớp tô màu chữ nằm trên lớp viền (các lớp hiệu ứng vẽ đè lên chữ gốc)
+  { filling: { enable: true, type: 0, color }, stroke: { enable: false, width: 0, color: '#000' }, shadow: { enable: false, offsetX: 0, offsetY: 0, blur: 0, color: '#000' }, offset: { enable: false, x: 0, y: 0 } }]
+  if (extra.rot) t.rotate = `${extra.rot}deg`
+  return t
+}
 // ── 1. NỀN GIẤY BÁO: màu ngà, hạt, và các dòng chữ báo mờ (vạch xám ngắn) ──
 {
   let rows = ''
@@ -135,13 +145,13 @@ const paperShape = async (name, kind, x, y, w, h, fill) => {
     `<filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${W2}" height="${H2}"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="8" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`)
   place(name, await writeAsset(`paper-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
 }
-await slot('Ảnh cả nhà', photos[4], 1080, 300, 1260, 580, 50, [1120, 520, -22], 'cloud')
-await paperShape('Giấy tim đỏ', 'heart', 1600, 740, 740, 700, RED)
+await slot('Ảnh cả nhà', photos[4], 1040, 300, 1300, 620, 50, [1120, 520, -22], 'cloud')
+await paperShape('Giấy tim đỏ', 'heart', 1500, 700, 840, 780, RED)
 await paperShape('Giấy hoa vàng', 'flower', 420, 700, 700, 760, '#f3d36b')
 await slot('Ảnh Pure Joy', photos[1], 40, 650, 600, 620, 0, [500, 560, 28], 'ellipse')
 
 // ── 5. CỘT BÀI: trích dẫn lớn + đoạn văn giả (vạch xám) + một khung chữ cắt đỏ ──
-text('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 70, 1330, 330, 34, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15, h: 150 })
+dieText('Trích dẫn', '"Gia đình là nơi mọi khoảnh khắc bắt đầu."', 70, 1330, 330, 34, 'Playfair Display', INK, { italic: true, weight: '700', lh: 1.15, h: 150 })
 text('Tác giả', '— Mục Gia đình', 70, 1480, 330, 26, 'Montserrat', RED, { ls: 3, weight: '700' })
 {
   let rows = ''
@@ -194,6 +204,9 @@ const hero = async (name, photo, x, y, targetH, border = 16) => {
 await hero('Ảnh chủ đạo · bé gái', photos[0], 1000, 500, 1000)
 await hero('Ảnh chủ đạo · bé ngồi', photos[2], 420, 735, 760)
 await hero('Ảnh chủ đạo · chị em', photos[3], 1800, 680, 820)
+// chữ dán (die-cut) lấp khoảng trống, viền trắng ôm theo nét chữ
+dieText('Chữ Sum vầy', 'Sum\nvầy', 1390, 930, 420, 130, 'Pacifico', RED, { align: 'center', lh: 1.0, h: 360, rot: -9 })
+dieText('Chữ Yêu thương', 'Yêu thương', 600, 520, 520, 90, 'Pacifico', INK, { align: 'center', rot: -4, h: 180 })
 function f2(n) { return n }
 // ── 5c. STICKER LẤP CHỖ TRỐNG, chồng lên mép ảnh như trang scrapbook ──
 {
