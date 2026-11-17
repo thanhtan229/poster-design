@@ -38,7 +38,9 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
   const dieText = (name, value, x, y, w, size, alias, color, extra = {}) => {
     const t = text(name, value, x, y, w, size, alias, color, extra)
     const o = extra.outline || 14
+    const edge = extra.edge ? [{ filling: { enable: false, type: 0, color: '#ffffff' }, stroke: { enable: true, width: (o + (extra.edgeW || 3)) * 2, color: extra.edge }, shadow: { enable: false, offsetX: 0, offsetY: 0, blur: 0, color: '#000' }, offset: { enable: false, x: 0, y: 0 } }] : []
     t.textEffects = [
+      ...edge,
       { filling: { enable: false, type: 0, color: '#ffffff' }, stroke: { enable: true, width: o * 2, color: '#fffdf8' }, shadow: { enable: true, offsetX: 0, offsetY: 6, blur: 8, color: 'rgba(0,0,0,0.4)' }, offset: { enable: false, x: 0, y: 0 } },
       { filling: { enable: true, type: 0, color }, stroke: { enable: false, width: 0, color: '#000' }, shadow: { enable: false, offsetX: 0, offsetY: 0, blur: 0, color: '#000' }, offset: { enable: false, x: 0, y: 0 } },
     ]
@@ -74,10 +76,10 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
 
   // Ảnh trong khung giấy trắng hình tự do. Khung + ảnh gộp MỘT nhóm → khi cắt là một mảnh duy nhất (quy tắc 4.2).
   // effects: hiệu ứng của app (mặc định đen trắng; chọn "Gốc" trong app sẽ về màu). tape = [dx, dy, độ]
-  const slot = async (name, photo, x, y, w, h, cropY, tape = null, kind = 'ellipse', effects = { grayscale: true, contrast: 118 }) => {
+  const slot = async (name, photo, x, y, w, h, cropY, tape = null, kind = 'ellipse', effects = { grayscale: true, contrast: 118 }, rot = 0) => {
     const b = 16, pad = 36, shape = shapePath(kind, w, h), W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
     const frame = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${shape}" fill="#fffdf8" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round"/></g>`, DROP(W2, H2, 5, 8, 0.4))
-    const g = groupLayer({ name: 'Cụm ' + name, left: x - b - pad, top: y - b - pad, width: W2, height: H2, rotate: 0 }); layers.push(g)
+    const g = groupLayer({ name: 'Cụm ' + name, left: x - b - pad, top: y - b - pad, width: W2, height: H2, rotate: rot }); layers.push(g)
     const fr = place(name + ' · khung giấy trắng cắt tay', await writeAsset(`cut-${name.replace(/\s+/g, '-')}.png`, frame), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
     fr.parent = g.uuid; fr.printGroup = g.printGroup
     const p = place(name, placeholders ? '/static/collage/smile-darling-ref/photo-placeholder.jpg' : photo.web_url, x, y, w, h, { fit: 'cover', slot: true, role: 'photo', mask: maskUri(w, h, `<path d="${shape}" fill="#fff"/>`) })
@@ -106,7 +108,7 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
     if (!res.ok || !(res.headers.get('content-type') || '').startsWith('image/png')) throw new Error('BiRefNet không trả về PNG (service 7001 đang chạy chưa?)')
     const png = Buffer.from(await res.arrayBuffer()); await mkdir(path.dirname(cached), { recursive: true }); await writeFile(cached, png); return png
   }
-  const hero = async (name, photo, x, y, targetH, border = 16) => {
+  const hero = async (name, photo, x, y, targetH, border = 16, rot = 0) => {
     const cut = await cutoutOf(photo)
     const { data, info } = await sharp(cut).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
     let x0 = info.width, x1 = 0, y0 = info.height, y1 = 0
@@ -126,7 +128,12 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
       { input: await solid([255, 255, 255], white), left: 0, top: 0 },
       { input: canvas, left: 0, top: 0 },
     ]).png().toBuffer()
-    place(name, await writeAsset(`hero-${photo.id}.png`, png), x - pad, y - pad, W2, H2, { printRole: 'raised' }).cutInset = border / 2
+    const url = await writeAsset(`hero-${photo.id}.png`, png)
+    if (rot) {
+      // xoay quanh tâm: bọc ảnh trong nhóm (một mảnh cắt duy nhất)
+      const g = groupLayer({ name: 'Cụm ' + name, left: x - pad, top: y - pad, width: W2, height: H2, rotate: rot }); g.cutInset = border / 2; layers.push(g)
+      const l = place(name, url, x - pad, y - pad, W2, H2, { printRole: 'raised' }); l.cutInset = border / 2; l.parent = g.uuid; l.printGroup = g.printGroup
+    } else place(name, url, x - pad, y - pad, W2, H2, { printRole: 'raised' }).cutInset = border / 2
     return { w: cw, h: ch }
   }
 
@@ -136,5 +143,66 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
   const starSticker = (name, x, y, size, R, r, fill) => sticker(name, x, y, size, `<polygon points="${star(R, r)}" transform="translate(${(size - 2 * R) / 2} ${(size - 2 * R) / 2})" fill="${fill}" stroke="#fffdf8" stroke-width="${R > 55 ? 5 : 4}" stroke-linejoin="round"/>`)
   const heartSticker = (name, x, y, size, S, fill) => sticker(name, x, y, size, `<polygon transform="translate(${size / 2} ${size / 2}) scale(${S / 40})" points="${heartPoints(120).map((q) => q.map(f).join(',')).join(' ')}" fill="${fill}" stroke="#fffdf8" stroke-width="2.2" stroke-linejoin="round"/>`)
 
-  return { layers, sharp, f, place, text, dieText, shapePath, tapePiece, slot, paperShape, hero, sticker, starSticker, heartSticker, svgPng, writeAsset, maskUri, step, fontClass }
+
+  // Nền họa tiết theo chủ đề (quy tắc 3.6): hearts | stripes | dots | check. opts: base, ink, opacity, size
+  const patternBackground = async (name, kind, W, H, opts = {}) => {
+    const base = opts.base || '#1d1d1f', ink = opts.ink || '#ffffff', op = opts.opacity ?? 0.85, sz = opts.size || 22
+    let body = `<rect width="${W}" height="${H}" fill="${base}"/>`
+    if (kind === 'hearts') {
+      const pts = heartPoints(48).map((q) => q.map(f).join(',')).join(' ')
+      const n = Math.round((W * H) / (sz * sz * 9))
+      for (let i = 0; i < n; i++) body += `<polygon transform="translate(${f(rnd() * W)} ${f(rnd() * H)}) rotate(${f((rnd() - 0.5) * 70)}) scale(${f((sz * (0.6 + rnd() * 0.7)) / 40)})" points="${pts}" fill="${ink}" fill-opacity="${f(op * (0.6 + rnd() * 0.4))}"/>`
+    } else if (kind === 'stripes') {
+      const w = sz * 1.6
+      for (let x = 0; x < W; x += w * 2) body += `<rect x="${f(x)}" y="0" width="${f(w)}" height="${H}" fill="${ink}" fill-opacity="${op}"/>`
+    } else if (kind === 'dots') {
+      for (let y = sz; y < H; y += sz * 2) for (let x = sz + ((y / (sz * 2)) % 2 ? sz : 0); x < W; x += sz * 2) body += `<circle cx="${x}" cy="${y}" r="${f(sz * 0.28)}" fill="${ink}" fill-opacity="${op}"/>`
+    } else if (kind === 'check') {
+      const c = sz * 2
+      for (let y = 0; y < H; y += c) for (let x = (y / c) % 2 ? c : 0; x < W; x += c * 2) body += `<rect x="${x}" y="${y}" width="${c}" height="${c}" fill="${ink}" fill-opacity="${op * 0.5}"/>`
+    } else throw new Error(`Nền họa tiết "${kind}" chưa có (hearts, stripes, dots, check)`)
+    const l = place(name, await writeAsset(`bg-${kind}.png`, await svgPng(W, H, body)), 0, 0, W, H, { printRole: 'base', lock: true })
+    return l
+  }
+
+  // Nhãn/ruy băng có chữ (quy tắc 4.9): shape + chữ gộp một nhóm = một mảnh cắt. kind: ribbon | torn | tag | stitch
+  const labelPath = (kind, w, h) => {
+    if (kind === 'ribbon') { const n = Math.round(h * 0.4); return `M0 0 L${w} 0 L${w - n} ${h / 2} L${w} ${h} L0 ${h} L${n} ${h / 2} Z` }
+    if (kind === 'tag') { const n = Math.round(h * 0.45); return `M0 ${h / 2} L${n} 0 L${w} 0 L${w} ${h} L${n} ${h} Z` }
+    if (kind === 'torn') {
+      const seg = Math.max(6, Math.round(w / 40)); let top = '', bot = ''
+      for (let i = 0; i <= seg; i++) { const x = f((w * i) / seg), a = i % 2 ? 5 : 0; top += `${i ? ' L' : 'M'}${x} ${a}`; bot = ` L${x} ${f(h - (i % 2 ? 0 : 5))}` + bot }
+      return top + bot + ' Z'
+    }
+    if (kind === 'stitch') return `M10 0 L${w - 10} 0 Q${w} 0 ${w} 10 L${w} ${h - 10} Q${w} ${h} ${w - 10} ${h} L10 ${h} Q0 ${h} 0 ${h - 10} L0 10 Q0 0 10 0 Z`
+    throw new Error(`Kiểu nhãn "${kind}" chưa có (ribbon, torn, tag, stitch)`)
+  }
+  const label = async (name, value, x, y, w, h, { kind = 'ribbon', fill = '#f3d36b', ink = '#141414', alias, size, rot = 0, weight = '700', ls = 4, italic = false } = {}) => {
+    const b = 8, pad = 26, W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
+    const stitch = kind === 'stitch' ? `<path transform="translate(${pad + b} ${pad + b})" d="${labelPath('stitch', w - 12, h - 12)}" fill="none" stroke="${ink}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="7 6" style="transform:translate(6px,6px)"/>` : ''
+    const png = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${labelPath(kind, w, h)}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>${stitch}`, DROP(W2, H2, 4, 6, 0.38))
+    const g = groupLayer({ name: 'Cụm ' + name, left: x - b - pad, top: y - b - pad, width: W2, height: H2, rotate: rot }); layers.push(g)
+    const shape = place(name + ' · nền nhãn', await writeAsset(`label-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+    shape.parent = g.uuid; shape.printGroup = g.printGroup
+    const sz = size || Math.round(h * 0.5)
+    const t = text(name + ' · chữ', value, x + (kind === 'ribbon' || kind === 'tag' ? Math.round(h * 0.3) : 6), y + Math.round((h - sz * 1.25) / 2), w - (kind === 'ribbon' ? Math.round(h * 0.6) : 12), sz, alias, ink, { align: 'center', weight, ls, italic, h: Math.round(sz * 1.4), lh: 1.0 })
+    t.parent = g.uuid; t.printGroup = g.printGroup
+    return g
+  }
+
+  // Sticker chủ đề lớn (quy tắc 4.10): cake | camera | arrow. size = cạnh ô vuông; viền trắng + bóng
+  const themeSticker = async (name, kind, x, y, size, colors = {}) => {
+    const c = { a: '#e8607a', b: '#f6d6dc', c: '#8ec3b0', d: '#f3d36b', e: '#3a3a3a', ...colors }
+    const draw = (m) => {
+      const fl = (col) => (m === 'out' ? '#fffdf8' : col), sw = m === 'out' ? 'stroke="#fffdf8" stroke-width="18" stroke-linejoin="round"' : ''
+      if (kind === 'cake') return `<g ${sw}><rect x="22" y="150" width="156" height="14" rx="7" fill="${fl(c.e)}"/><rect x="92" y="164" width="16" height="22" fill="${fl(c.e)}"/><rect x="40" y="98" width="120" height="52" rx="8" fill="${fl(c.b)}"/><rect x="64" y="58" width="72" height="40" rx="8" fill="${fl(c.a)}"/>${[78, 94, 110, 126].map((cx) => `<rect x="${cx - 3}" y="30" width="6" height="28" fill="${fl(c.c)}"/><ellipse cx="${cx}" cy="24" rx="5" ry="8" fill="${fl(c.d)}"/>`).join('')}</g>`
+      if (kind === 'camera') return `<g ${sw}><rect x="18" y="62" width="164" height="110" rx="16" fill="${fl(c.a)}"/><rect x="62" y="40" width="48" height="26" rx="8" fill="${fl(c.a)}"/><circle cx="100" cy="118" r="38" fill="${fl(c.b)}"/><circle cx="100" cy="118" r="22" fill="${fl(c.e)}"/><rect x="142" y="74" width="26" height="14" rx="4" fill="${fl(c.d)}"/></g>`
+      if (kind === 'arrow') return `<g ${sw}><path d="M16 120 L150 120" stroke="${fl(c.e)}" stroke-width="10" fill="none"/><path d="M150 96 L188 120 L150 144 Z" fill="${fl(c.e)}"/><polygon transform="translate(96 96) scale(2.1)" points="${heartPoints(60).map((q) => q.map(f).join(',')).join(' ')}" fill="${fl(c.a)}"/></g>`
+      throw new Error(`Sticker "${kind}" chưa có (cake, camera, arrow)`)
+    }
+    const png = await svgPng(size, size, `<g transform="scale(${size / 200})"><g filter="url(#sh)">${draw('out')}</g>${draw('fill')}</g>`, `<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.35"/></filter>`)
+    return place(name, await writeAsset(`sticker-${kind}-${name.replace(/\s+/g, '-')}.png`, png), x, y, size, size, { printRole: 'raised' })
+  }
+
+  return { layers, sharp, patternBackground, label, themeSticker, f, place, text, dieText, shapePath, tapePiece, slot, paperShape, hero, sticker, starSticker, heartSticker, svgPng, writeAsset, maskUri, step, fontClass }
 }
