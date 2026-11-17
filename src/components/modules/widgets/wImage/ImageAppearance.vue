@@ -4,4 +4,4 @@ import { computed } from 'vue'
 import { imageEffects, textureUrl } from '@/utils/tinix/image-effects'
 const props=defineProps<{image:any}>();const e=computed(()=>imageEffects(props.image))
 </script>
-<style scoped>.appearance,.texture{position:absolute;inset:0;pointer-events:none}.appearance{overflow:hidden;z-index:1}.texture{mix-blend-mode:multiply;background-repeat:repeat;background-size:180px 180px}</style>
+<style scoped>.appearance,.texture{position:absolute;inset:0;pointer-events:none}.appearance{overflow:hidden} /* [TINIX] bỏ z-index:1: lớp phủ vân giấy/hạt/viền nằm trong ngữ cảnh xếp chồng chung của trang nên z-index:1 làm nó vẽ ĐÈ lên mọi lớp phía sau (chữ đen thành xám). Không z-index thì nó chỉ phủ lên ảnh của chính lớp, đúng thứ tự DOM */.texture{mix-blend-mode:multiply;background-repeat:repeat;background-size:180px 180px}</style>
