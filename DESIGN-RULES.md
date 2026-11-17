@@ -21,6 +21,7 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 2.4. **Khung to:** ảnh phụ tối thiểu ~560×620 px; ảnh cả nhà dạng ngang ~1300×620. Đừng thu nhỏ để "cho thoáng".
 2.5. **Khung không vượt mép thành phẩm** (bộ xuất cảnh báo "vượt mép").
 2.6. Có thể thêm giấy màu hình hoa/tim đặt dưới ảnh tách nền (`paperShape`) để tạo nền nổi cho hình chủ đạo.
+2.7. **Giữ đầu người trong khung:** luôn chỉnh vị trí ảnh (`cropY`/vùng cắt) sao cho phần đầu người không bị khung cắt và không bị thành phần nào (chữ, sticker, nhãn, băng dính, ảnh khác) che. Nếu không gian khung không cho phép, chấp nhận mất phần chân. *Vì sao:* người dùng yêu cầu rõ; đầu là phần quan trọng nhất của ảnh gia đình.
 
 ## 3. Ảnh và hiệu ứng
 3.1. **Dùng ảnh gốc + hiệu ứng của app** (`effects.grayscale`, `contrast`, `paper`, `grain`), không nướng sẵn ảnh đen trắng. *Vì sao:* chọn "Gốc" trong app phải đưa ảnh về màu.
@@ -46,4 +47,5 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 5.5. Chưa cắt thử trên máy thật thì phải nói rõ là chưa kiểm chứng.
 
 ## Nhật ký thay đổi quy tắc
+- 2026-11-17: thêm 2.7 (giữ đầu người trong khung, chấp nhận mất chân khi thiếu chỗ) theo yêu cầu người dùng.
 - 2026-11-17: tạo từ phiên dựng trang báo chí (khung đa dạng, bố cục chồng lấn, ảnh tách nền cỡ lớn, chữ die-cut, gộp khung với ảnh một mảnh, chữ in nền `base`).
