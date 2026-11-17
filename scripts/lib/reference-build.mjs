@@ -280,7 +280,7 @@ const maskDataUri = (kind) => {
 
 // ───────────────────────────── lớp mặc định (khớp widget thật của ứng dụng) ──────────────────────────────────────────
 const record = (w, h) => ({ width: w, height: h, minWidth: 10, minHeight: 10, dir: 'all' })
-function imageLayer(o) {
+export function imageLayer(o) {
   return {
     name: o.name, type: 'w-image', uuid: uid(), width: o.width, height: o.height, left: o.left, top: o.top, zoom: 1, transform: 'scale(1)', radius: 0, opacity: 1,
     parent: o.parent || '-1', imgUrl: o.url, mask: o.mask || '', isContainer: false, setting: [], rotate: 0, record: record(o.width, o.height), lock: !!o.lock, isNinePatch: false,
@@ -288,13 +288,13 @@ function imageLayer(o) {
     degree: 0, templateRole: o.role || 'fixed', cropX: 50, cropY: 50, effects: o.shadow ? { shadow: o.shadow } : {},
   }
 }
-function groupLayer(o) {
+export function groupLayer(o) {
   return {
     type: 'w-group', name: 'Cụm ' + o.name, uuid: uid(), left: o.left, top: o.top, width: o.width, height: o.height, parent: '-1', isContainer: true, opacity: 1,
     rotate: `${o.rotate}deg`, printGroup: uid(), printRole: 'raised', templateRole: 'fixed', record: { width: o.width, height: o.height, minWidth: 0, minHeight: 0, dir: 'none' },
   }
 }
-function textLayer(o) {
+export function textLayer(o) {
   return {
     name: o.name, type: 'w-text', uuid: uid(), editable: false, left: o.left, top: o.top, transform: '', lineHeight: o.lineHeight, letterSpacing: o.letterSpacing || 0, fontSize: o.fontSize, zoom: 1,
     fontClass: o.fontClass, fontFamily: o.fontClass.value, fontWeight: 'normal', fontStyle: 'normal', writingMode: 'horizontal-tb', textDecoration: 'none', color: o.color,

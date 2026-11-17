@@ -316,3 +316,14 @@ So với bản dựng thủ công bằng script, trên cùng ảnh mẫu (`--pho
 - Đo chữ bằng Chromium cần trang cùng nguồn gốc với máy chủ Tinix (trang `about:blank` bị chặn tải font: `NetworkError`).
 
 Kiểm thử offline `scripts/tinix-reference-build-test.mjs` (trong `npm run tinix:test`) dùng ảnh tổng hợp có đáp án biết trước, bộ tách nền và bộ đo chữ giả: duỗi thẳng khung xoay 10° (đo hướng gradient chủ đạo, có phép đối chứng không duỗi), đếm trái tim, màu giấy/nền/mực, vị trí sticker, cỡ chữ tự khớp và khung chữ không tràn, ảnh giữ chỗ, so sánh, kiểm tra spec. Phần Chromium, BiRefNet và font thật không chạy trong CI.
+
+## Dựng trang scrapbook từ ảnh thật bằng SVG (2026-11-17)
+
+`scripts/tinix-build-moments.mjs` dựng một trang scrapbook 30×20 cm (2400×1600 px, 203,2 DPI) từ 5 ảnh trong thư viện (mã `--photos`), **không dùng pixel nào của ảnh mẫu**: mọi đồ họa vẽ bằng SVG/thuật toán, chữ dùng font thật (Pacifico, Patrick Hand). `--placeholders` dựng bản ảnh giữ chỗ để lưu thành mẫu. Kết quả là bản nháp `{global, layers}`; lưu bằng `designs create` hoặc `templates save-collage`.
+
+Những điều đã học (đừng làm lại):
+- **Mask của app kéo giãn theo khung** (`-webkit-mask-size: 100% 100%`), nên tạo SVG mask đúng tỉ lệ từng khung. Khung giấy phía sau (vòm, bo tròn) là ảnh PNG cùng hình dạng + viền trắng (nở ra bằng `stroke-width` nét trắng) + bóng nướng sẵn. `effects.shadow` vẽ theo hình chữ nhật nên không dùng cho hình bất kỳ.
+- **Khung răng cưa (tem thư, lượn sóng) đẹp nhưng khó cắt tay** → dùng cạnh thẳng, góc bo.
+- **Ảnh chính tách nền + viền trắng ôm dáng người**: tách bằng BiRefNet (`/api/tinix/cutout/birefnet`), kết quả lưu vào `service/static/collage/moments-a/cutout-<id>.png` nên lần dựng sau không gọi lại. Viền = nở alpha bằng blur + threshold, rồi làm mịn; thêm một đường viền xanh khói mảnh ngoài viền trắng vì viền trắng trên nền kem gần như vô hình. Độ dày hiện tại: trắng 20 px (~2,5 mm), xanh +5 px.
+- **`sharp` chạy blur/threshold/linear theo thứ tự cố định bên trong**: gọi lặp `blur(...).threshold(...).blur(...).threshold(...)` trong một chuỗi sẽ ghi đè nhau (viền không hề nở ra). Phải tách mỗi phép thành một bước (`toBuffer`) và ép về 1 kênh (`extractChannel(0)`), nếu không buffer bị đọc lệch (hộp mờ, vệt sọc quanh chủ thể).
+- Bộ xuất của app báo `TEXT_OVERFLOW` khi chữ xuống dòng ngoài ý muốn: font viết tay rộng (Pacifico) cần khung rộng ~0,55×cỡ chữ×số ký tự.
