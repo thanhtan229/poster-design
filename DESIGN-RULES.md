@@ -17,6 +17,7 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 
 ## 2. Khung ảnh
 2.1. **Đa dạng dáng khung** trong cùng một trang: elip, đám mây, bông hoa, trái tim (`SHAPES`). Không dùng toàn chữ nhật. Dáng mới: thêm hàm bán kính theo góc vào `shapePath`.
+2.9. **Dáng khung mở rộng:** ngoài ellipse/cloud/flower/heart còn `arch` (vòm cổng, đứng), `squircle` (vuông bo), `stamp` (tem răng cưa). Mẫu mới phải đổi cả **cấu trúc bố cục** (cột vòm, dải ngang, tâm lệch...) và bộ dáng khung, không chỉ đổi màu/chữ của mẫu trước. *Vì sao:* mẫu Tết đầu tiên bị chê chỉ là Little One đổi màu (2026-11-17).
 2.2. **Máy cắt nên đường cong thoải mái;** không còn ràng buộc "đường thẳng dễ cắt tay".
 2.3. **Khung giấy trắng dày (~16 px) có bóng đổ,** viền cắt màu **trắng**, không đen. Ảnh tách nền cũng có viền trắng ôm dáng + bóng.
 2.4. **Khung to:** ảnh phụ tối thiểu ~560×620 px; ảnh cả nhà dạng ngang ~1300×620. Đừng thu nhỏ để "cho thoáng".
@@ -58,3 +59,4 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 - 2026-11-17: thêm 2.7 (giữ đầu người trong khung, chấp nhận mất chân khi thiếu chỗ) theo yêu cầu người dùng.
 - 2026-11-17: tạo từ phiên dựng trang báo chí (khung đa dạng, bố cục chồng lấn, ảnh tách nền cỡ lớn, chữ die-cut, gộp khung với ảnh một mảnh, chữ in nền `base`).
 - 2026-11-17: thêm quy tắc từ 6 ảnh scrapbook tham khảo (1.7, 2.8, 3.6, 4.8–4.11): khung/ảnh nghiêng, nền họa tiết, nhãn nhiều kiểu, sticker chủ đề, chữ lớn die-cut viền mực; mẫu thử `scripts/tinix-build-little-one.mjs`.
+- 2026-11-17: thêm 2.9 (dáng khung arch/squircle/stamp; mẫu mới phải khác cả bố cục). Mẫu Tết dựng lại hoàn toàn: nền đỏ ô vàng, hai vòm cổng, ba ảnh tách nền hai bên.
