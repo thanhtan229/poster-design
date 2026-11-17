@@ -94,11 +94,12 @@ const tornPaper = async (name, x, y, w, h, { fill, edge = '#fffdf8', amp = 7, st
   const url = await makeAsset(name + '.png', W2, H2, body, dropFilter('sh', W2, H2, shadowDy, 10, 0.26))
   return rot ? { url, x: x - pad, y: y - pad, w: W2, h: H2, rot, cx: x + w / 2, cy: y + h / 2 } : { url, x: x - pad, y: y - pad, w: W2, h: H2 }
 }
-const rotated = (name, asset, rot) => {
-  // bọc ảnh trong nhóm xoay quanh tâm của nó
+const rotated = (name, asset, rot, role = 'raised') => {
+  // bọc ảnh trong nhóm xoay quanh tâm của nó; role 'base' = in trên tờ nền (không phải mảnh cắt rời)
   const g = groupLayer({ name, left: asset.x, top: asset.y, width: asset.w, height: asset.h, rotate: rot })
+  g.printRole = role
   layers.push(g)
-  const l = imageLayer({ name, url: asset.url, left: asset.x, top: asset.y, width: asset.w, height: asset.h, parent: g.uuid, printGroup: g.printGroup })
+  const l = imageLayer({ name, url: asset.url, left: asset.x, top: asset.y, width: asset.w, height: asset.h, parent: g.uuid, printGroup: g.printGroup, printRole: role })
   layers.push(l)
 }
 {
@@ -106,12 +107,12 @@ const rotated = (name, asset, rot) => {
   let tiny = ''
   for (let i = 0; i < 90; i++) tiny += `<path d="${heartPath(0, 0, 7)}" transform="translate(${f1(rnd() * 2200 + 20)} ${f1(rnd() * 700 + 20)}) rotate(${f1((rnd() - 0.5) * 50)})" fill="${C.blush}" fill-opacity="0.55"/>`
   const band = await tornPaper('paper-band', 40, 64, 2320, 740, { fill: C.cream, amp: 8, stitch: C.coral, tiny, shadowDy: 9 })
-  rotated('Giấy kem phía sau ảnh', band, -0.6)
+  rotated('Giấy kem phía sau ảnh', band, -0.6, 'base')
   // mảnh giấy vàng bơ phía sau tiêu đề
   let dots = ''
   for (let y = 38, r = 0; y < 700; y += 46, r++) for (let x = r % 2 ? 22 : 45; x < 1190; x += 46) dots += `<circle cx="${x}" cy="${y}" r="4" fill="#fff" fill-opacity="0.65"/>`
   const patch = await tornPaper('paper-patch', 1150, 845, 1190, 690, { fill: C.butter, amp: 7, stitch: '#c79a3b', tiny: dots, shadowDy: 8 })
-  rotated('Giấy vàng bơ phía sau tiêu đề', patch, 0.9)
+  rotated('Giấy vàng bơ phía sau tiêu đề', patch, 0.9, 'base')
 }
 
 // ───────────────────────── 3. CỜ PHƯỚN treo trên đỉnh trang ─────────────────────────
@@ -131,7 +132,7 @@ const rotated = (name, asset, rot) => {
     }
   })
   var buntingUrl = await makeAsset('bunting.png', W, bh, `<g filter="url(#sh)"><path d="${stringD}" fill="none" stroke="#9c7f5c" stroke-width="4.5"/>${flags}</g>`, dropFilter('sh', W, bh, 6, 7, 0.28))
-  place('Cờ phướn', buntingUrl, 0, 0, W, bh)
+  place('Cờ phướn', buntingUrl, 0, 0, W, bh, { printRole: 'base' })
 }
 
 // ───────────────────────── 4. ẢNH: khung giấy trắng theo hình dạng + mask + băng dính ─────────────────────────
@@ -175,7 +176,8 @@ const slotPhoto = (name, photo, x, y, w, h, cropY, parent, mask) => {
   if (!placeholders) p.origin = { proxy: photo.web_url, original: photo.url }
   return p
 }
-const cluster = (name, x, y, w, h, rot) => { const g = groupLayer({ name, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), rotate: rot }); layers.push(g); return g }
+const CL = 90 // nới hộp nhóm mỗi phía để băng dính nhô ra vẫn nằm trong mảnh cắt
+const cluster = (name, x, y, w, h, rot) => { const g = groupLayer({ name, left: Math.round(x - CL), top: Math.round(y - CL), width: Math.round(w + 2 * CL), height: Math.round(h + 2 * CL), rotate: rot }); layers.push(g); return g }
 const placeIn = (g, name, asset, x, y) => place(name, asset.url, x, y, asset.W2, asset.H2, { parent: g.uuid, printGroup: g.printGroup })
 
 const PW = 440, PH = 620, B = 20 // ảnh dọc: vùng ảnh và độ dày viền giấy
@@ -286,8 +288,8 @@ if (!placeholders) {
   const R = 250, S = R * 2 + 90 // nền tròn
   const disc = await makeAsset('hero-disc.png', S, S, `<g filter="url(#sh)"><circle cx="${S / 2}" cy="${S / 2}" r="${R}" fill="url(#d)"/></g><circle cx="${S / 2}" cy="${S / 2}" r="${R - 22}" fill="none" stroke="#fff" stroke-width="3.4" stroke-dasharray="15 11" stroke-linecap="round" stroke-opacity="0.9"/>${Array.from({ length: 16 }, (_, i) => `<circle cx="${f1(S / 2 + (R - 60) * Math.cos((i * Math.PI) / 8))}" cy="${f1(S / 2 + (R - 60) * Math.sin((i * Math.PI) / 8))}" r="4.5" fill="#fff" fill-opacity="0.7"/>`).join('')}`,
     `<radialGradient id="d" cx="50%" cy="42%" r="65%"><stop offset="0" stop-color="#fde6df"/><stop offset="1" stop-color="#f4c3ba"/></radialGradient>` + dropFilter('sh', S, S, 9, 10, 0.26))
-  place('Nền tròn sau ảnh chính', disc, 285 - S / 2, 490 - S / 2, S, S)
-  const gh = groupLayer({ name: 'Ảnh chính Bloom', left: 120, top: 70, width: heroInfo.cw, height: heroInfo.ch, rotate: -3 })
+  place('Nền tròn sau ảnh chính', disc, 285 - S / 2, 490 - S / 2, S, S, { printRole: 'base' })
+  const gh = groupLayer({ name: 'Ảnh chính Bloom', left: 70, top: 20, width: heroInfo.cw + 100, height: heroInfo.ch + 100, rotate: -3 })
   layers.push(gh)
   const ph = place('Ảnh chính Bloom (tách nền, viền trắng)', heroInfo.url, 120 - heroInfo.pad, 70 - heroInfo.pad, heroInfo.W2, heroInfo.H2, { parent: gh.uuid, printGroup: gh.printGroup })
   ph.origin = { proxy: photos[0].web_url, original: photos[0].url }
@@ -344,19 +346,23 @@ putSticker('Sao vàng nhỏ', starY, 2215, 905)
 // ───────────────────────── 6. CHỮ: tiêu đề viết tay có bóng lệch, nhãn ruy băng, thẻ kraft ─────────────────────────
 const mkText = (name, text, x, y, w, size, alias, color, extra = {}) => { const t = textLayer({ name, text, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(size * 1.5), fontSize: size, lineHeight: 1.15, letterSpacing: extra.ls || 0, fontClass: fontClass(alias), color }); t.textAlign = extra.align || 'left'; return t }
 const titleBlock = (name, text, x, y, w, size, alias, color, shade, rot) => {
-  const g = groupLayer({ name, left: x, top: y, width: w, height: Math.round(size * 1.5), rotate: rot }); layers.push(g)
-  for (const [dx, dy, col, nm] of [[7, 7, shade, 'bóng'], [0, 0, color, 'chữ']]) { const t = mkText(`${name} · ${nm}`, text, x + dx, y + dy, w, size, alias, col); t.parent = g.uuid; t.printGroup = g.printGroup; layers.push(t) }
+  const g = groupLayer({ name, left: x, top: y, width: w, height: Math.round(size * 1.5), rotate: rot }); g.printRole = 'base'; layers.push(g)
+  for (const [dx, dy, col, nm] of [[7, 7, shade, 'bóng'], [0, 0, color, 'chữ']]) { const t = mkText(`${name} · ${nm}`, text, x + dx, y + dy, w, size, alias, col); t.parent = g.uuid; t.printGroup = g.printGroup; t.printRole = 'base'; layers.push(t) }
 }
 titleBlock('Tiêu đề Little', 'Little', 1230, 860, 700, 230, 'Pacifico', '#5b88a6', '#ffffff', -4)
 titleBlock('Tiêu đề Moments', 'Moments', 1340, 1040, 980, 212, 'Pacifico', '#e07a69', '#ffffff', -4)
 {
-  place('Nhãn ruy băng', ribbonSt.url, 1260 - ribbonSt.pad, 1285 - ribbonSt.pad, ribbonSt.S1, ribbonSt.S2)
+  // chữ nằm CÙNG mảnh cắt với nhãn/thẻ (cùng printGroup) để in và cắt chung một mảnh
+  const gRibbon = globalThis.crypto.randomUUID(), gTag = globalThis.crypto.randomUUID()
+  place('Nhãn ruy băng', ribbonSt.url, 1260 - ribbonSt.pad, 1285 - ribbonSt.pad, ribbonSt.S1, ribbonSt.S2, { printGroup: gRibbon })
   const t = mkText('Dòng phụ', 'Những khoảnh khắc nhỏ bé, trọn vẹn yêu thương', 1260 + 30, 1285 + 38, 740, 34, 'Patrick Hand', C.text, { align: 'center' })
+  t.printGroup = gRibbon
   layers.push(t)
-  putSticker('Thẻ kraft', tag, 2058, 1352)
-  putSticker('Máy bay giấy', plane, 1265, 1432) // vẽ SAU nhãn ruy băng để nằm đè lên góc nhãn
+  place('Thẻ kraft', tag.url, 2058 - tag.pad, 1352 - tag.pad, tag.S1, tag.S2, { printGroup: gTag })
   const w = mkText('Chữ thẻ', 'with love', 2082, 1392, 170, 40, 'Patrick Hand', C.text, { align: 'center' })
+  w.printGroup = gTag
   layers.push(w)
+  putSticker('Máy bay giấy', plane, 1265, 1432) // vẽ SAU nhãn ruy băng để nằm đè lên góc nhãn
 }
 
 const global = {
