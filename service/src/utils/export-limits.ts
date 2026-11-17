@@ -1,6 +1,6 @@
 /**
  * [TINIX] Giới hạn xuất ảnh dùng chung cho service (download-single, timeout, canvasSizes).
- * Phải khớp MAX_SIDE_PX / MAX_PIXELS ở src/utils/tinix/units.ts (frontend) và scripts/tinix-cli.mjs, tinix-mcp.mjs.
+ * Phải khớp MAX_SIDE_PX / MAX_PIXELS ở src/utils/tinix/units.ts (frontend) và scripts/tinix-cli.mjs.
  *
  * Đo thật bằng Chromium của Puppeteer (nội dung đơn giản): 8268×11220 (92,8 triệu điểm ảnh) chụp ~6,5 giây,
  * Chromium đỉnh ~2,3 GB RAM; 12000×12000 (144 triệu) ~10 giây, ~3,1 GB. Nội dung thật (nhiều ảnh, font, đổ bóng)
