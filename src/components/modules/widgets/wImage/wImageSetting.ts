@@ -51,6 +51,7 @@ export type TImageSetting = {
   fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
   cropX?: number
   cropY?: number
+  imgRotate?: number // [TINIX] xoay ảnh bên trong khung (độ), xem utils/tinix/photo-frame.ts
   cutoutBorderUrl?: string
   cutoutEdit?: { sourceUrl:string; cutoutUrl:string; mm:number;frame:{left:number;top:number;width:number;height:number} }
 }

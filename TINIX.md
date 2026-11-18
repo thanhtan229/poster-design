@@ -382,3 +382,11 @@ Người dùng tự lưu mỗi thiết kế theo tên khách trong thư mục m�
 - **Xuất ảnh không ghi CSDL**: `POST /api/tinix/export-render` (`collagePrint.ts`) nhận bố cục đang mở, dựng bằng Puppeteer qua job `exportJob` + `relaxed=1` (ảnh gốc, nhưng không chặn khi chữ tràn), trả PNG/JPG kèm DPI. Dùng cho Xuất JPG để in, Tải ảnh xuống (trang có mặt nạ/SVG), Xuất nhiều trang. Riêng "Xuất bộ JPG cắt dán" (PrintBundle) vẫn cần bản lưu CSDL (`saveToDb`).
 - Ẩn nút "Đơn cắt dán" và "Bản khách đã duyệt" khỏi thanh trên (mã `CustomerOrders.vue`, `ApprovedPrints.vue` giữ nguyên). **Lưu ý**: "Xóa ảnh chưa dùng" chỉ giữ ảnh của thiết kế/mẫu trong CSDL, nên ảnh chỉ nằm trong tệp .tinix.zip có thể bị xóa; mở lại tệp sẽ ghi ảnh về.
 - Sửa file gốc (đánh dấu `[TINIX]`): `HeaderOptions.vue`, `Index.vue`, `Folder.vue`, `service/src/utils/download-single.ts` (`relaxed=1`), `service/src/utils/timeout.ts`, `service/src/main.ts`.
+
+## Phóng to / xoay ảnh trong khung ảnh (2026-11-19)
+Khung ảnh `fit: 'cover'` trước chỉ kéo ảnh (cropX/cropY) và có thanh phóng 1–3×. Nay có thêm:
+- **Lăn chuột** trên khung đang chọn (chế độ "Căn ảnh") để phóng/thu ảnh, **Shift + lăn** để xoay ảnh; Alt/Ctrl + lăn vẫn là phóng canvas. Một đợt lăn (400 ms) = một bước hoàn tác.
+- Panel "Căn ảnh và khung": thanh phóng tới 5×, thanh **Xoay ảnh** (−180°…180°), nút xoay trái/phải 90°, "Vừa khung" đặt lại cả xoay.
+- Dữ liệu: trường `imgRotate` (độ) trên lớp ảnh; xoay quanh **tâm khung**, áp sau phép phóng quanh điểm căn nên `imgRotate = 0` giống hệt cách cũ. Khi xoay, ảnh được vẽ ở cỡ phủ khung (`RotatedCover.vue`) để phần ảnh thừa hiện ra, và mức phóng tự nâng tới mức đủ phủ khung (`coverMinZoom` trong `src/utils/tinix/photo-frame.ts`); căn sát mép ảnh khi đang xoay vẫn có thể lộ nền — dùng "Căn giữa ảnh". Kéo ảnh khi đã xoay đi theo con trỏ (`unrotateDelta`).
+- Xuất ảnh (Chromium của service) dùng cùng thành phần nên khớp canvas. Chưa hỗ trợ: ảnh xem trước thẻ mẫu (`CollagePreviewNode`) và xuất PSD bỏ qua xoay/phóng ảnh trong khung (như vốn bỏ qua phóng).
+- Sửa file gốc (`[TINIX]`): `wImage.vue`, `ImageSurface.vue`, `wImageSetting.ts`, `store/design/widget/index.ts`.

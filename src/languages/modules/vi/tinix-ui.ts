@@ -394,6 +394,12 @@ export default {
     qua_gioi_han_canh: 'Một cạnh vượt 12.000 px: giảm DPI hoặc kích thước.',
     qua_nhieu_diem_anh: 'Trên 60 triệu điểm ảnh: xuất ảnh chậm và tốn nhiều RAM (vài GB). Có thể giảm DPI (ví dụ 150) nếu máy yếu.',
   },
+  photoFrame: {
+    rotate: 'Xoay ảnh',
+    turn_left: 'Xoay trái 90°',
+    turn_right: 'Xoay phải 90°',
+    wheel_hint: 'Lăn chuột trên khung đang chọn để phóng/thu ảnh, Shift + lăn để xoay ảnh. Khi xoay, ảnh tự phóng thêm vừa đủ để không lộ nền.',
+  },
   localFile: {
     untitled: 'thiet-ke',
     save: 'Lưu về máy',
