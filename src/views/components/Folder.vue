@@ -21,8 +21,9 @@
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item><div class="item" @click="$emit('select', 'newDesign')">{{ $t('tinix.folder.newDesign') }}</div></el-dropdown-item>
-        <!-- <el-dropdown-item @click="openPSD">导入文件</el-dropdown-item> -->
-        <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.folder.save') }}<!-- [TINIX] --></el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'openFile')">{{ $t('tinix.ui.localFile.open') }}<!-- [TINIX] --></el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.localFile.save') }}<!-- [TINIX] --></el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.localFile.save_as') }}<!-- [TINIX] --></el-dropdown-item>
         <el-dropdown-item v-if="isAdmin()" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.folder.saveAsTemplate') }}<!-- [TINIX] --></el-dropdown-item>
         <el-dropdown-item @click="$emit('select', 'download')">{{ $t('tinix.folder.download') }}</el-dropdown-item>
         <!-- <el-dropdown-item disabled>版本记录</el-dropdown-item> -->

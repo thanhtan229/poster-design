@@ -37,7 +37,7 @@
           <el-divider direction="vertical" />
         </div>
         <HeaderOptions ref="optionsRef" v-model="state.isContinue" @change="optionsChange">
-          <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('header.save') }}</el-button>
+          <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('tinix.ui.localFile.save') }}</el-button><!-- [TINIX] lưu ra tệp trên máy -->
           <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('download')">{{ $t('header.download') }}</el-button>
           <!-- [TINIX] xuất PSD (mỗi lớp một layer) -->
           <el-button size="large" class="primary-btn" plain :loading="psdState.loading" @click="exportPsd">{{ psdState.loading ? $t('tinix.ui.psdExport.dang_xuat', { n: psdState.done, total: psdState.total }) : $t('tinix.ui.psdExport.xuat_psd') }}</el-button>
@@ -104,6 +104,7 @@ import ProgressLoading from '@/components/common/ProgressLoading/download.vue'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore } from '@/store'
+import { useRoute } from 'vue-router' // [TINIX]
 import { ElMessage, type ButtonInstance } from 'element-plus'
 import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
 import downloadBlob from '@/common/methods/download/downloadBlob'
@@ -114,6 +115,7 @@ import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
 import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
 import useHistory from '@/common/hooks/history'
+import { isDirty, markSaved, pickAndOpen, startAutosave, offerDraftRestore } from '@/utils/tinix/design-file' // [TINIX]
 useHistory()
 
 function jump2admin() {
@@ -138,6 +140,7 @@ type TState = {
 // const {
 //   dActiveElement, dCopyElement
 // } = useSetupMapGetters(['dActiveElement', 'dCopyElement'])
+const route = useRoute() // [TINIX]
 const widgetStore = useWidgetStore()
 const historyStore = useHistoryStore()
 const groupStore = useGroupStore()
@@ -168,7 +171,7 @@ function openAiAssistant() {
 }
 
 const beforeUnload = function (e: Event): any {
-  if (dHistoryStack.value.changes.length > 0) {
+  if (isDirty()) { // [TINIX] so với lần lưu/mở tệp gần nhất
     const confirmationMessage: string = i18n.global.t('editor.top.unsavedWarning');
     (e || window.event).returnValue = (confirmationMessage as any) // Gecko and Trident
     return confirmationMessage // Gecko and WebKit
@@ -249,6 +252,9 @@ function loadData() {
   // 初始化加载页面
   if (!optionsRef.value) return
   optionsRef.value.load(async () => {
+    markSaved() // [TINIX] mốc "đã lưu" ban đầu để so sánh thay đổi chưa lưu
+    startAutosave()
+    if (!route.query.id && !route.query.tempid) void offerDraftRestore()
     if (!zoomControlRef.value) return
     // await nextTick()
     // zoomControlRef.value.screenChange()
@@ -275,6 +281,17 @@ const fns: any = {
   },
   save: () => {
     optionsRef.value?.save(false)
+  },
+  // [TINIX] lưu sang tệp mới / mở tệp thiết kế trên máy
+  saveAs: () => {
+    optionsRef.value?.save(false, true)
+  },
+  openFile: async () => {
+    try {
+      await pickAndOpen()
+    } catch (e: any) {
+      ElMessage.error(i18n.global.t('tinix.ui.localFile.open_failed') + ': ' + String((e && e.message) || e).slice(0, 120))
+    }
   },
   download: () => {
     optionsRef.value?.download()
