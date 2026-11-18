@@ -56,7 +56,6 @@ import { ElDialog, ElButton, ElSelect, ElOption, ElCheckbox, ElImage, ElTag, ElM
 import * as adminApi from '@/api/admin'
 import i18n from '@/languages'
 import { extractAssets } from '@/common/methods/extractAssets'
-import { findContentDuplicates } from '@/common/methods/dedupeByContent'
 
 type TItem = { key: string; kind: 'image' | 'svg' | 'mask' | 'text'; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; payload: any }
 
@@ -125,21 +124,16 @@ async function onOpen() {
       // 预检：让服务端按库内已有数据判定哪些已存在（dryRun 不写库）
       const mats = list.filter((i) => i.kind !== 'text')
       const txts = list.filter((i) => i.kind === 'text')
-      // 同时做内容比对：URL 不同但图像相同的素材标为「重复」
-      const [check, duplicates] = await Promise.all([
-        adminApi.bulkImportAssets({
-          dryRun: true,
-          materials: mats.map((i) => payloadOf(i.kind, state.cates[i.kind] || 'x', i) as any),
-          texts: txts.map((i) => payloadOf('text', state.cates.text, i) as any),
-        }),
-        findContentDuplicates(mats.map((i) => ({ key: i.key, url: i.preview, kind: i.kind as 'image' | 'svg' | 'mask' }))),
-      ])
-      mats.forEach((i) => {
-        const originalKey = duplicates.get(i.key)
-        if (originalKey) Object.assign(i, { status: 'dup', checked: false, dupOf: list.find((x) => x.key === originalKey)?.title })
+      // 服务端同时按 URL 与图像内容判重：已在库 → exists；本批次内相同 → dup（dupOf 为靠前那一项的下标）
+      const check = await adminApi.bulkImportAssets({
+        dryRun: true,
+        materials: mats.map((i) => payloadOf(i.kind, state.cates[i.kind] || 'x', i) as any),
+        texts: txts.map((i) => payloadOf('text', state.cates.text, i) as any),
       })
       check?.materials?.forEach((r, idx) => {
-        if (r.status === 'exists' && mats[idx] && mats[idx].status === 'new') Object.assign(mats[idx], { status: 'exists', checked: false })
+        if (!mats[idx]) return
+        if (r.status === 'exists') Object.assign(mats[idx], { status: 'exists', checked: false })
+        else if (r.status === 'dup') Object.assign(mats[idx], { status: 'dup', checked: false, dupOf: mats[r.dupOf ?? -1]?.title })
       })
       check?.texts?.forEach((r, idx) => {
         if (r.status === 'exists' && txts[idx]) Object.assign(txts[idx], { status: 'exists', checked: false })
@@ -165,7 +159,7 @@ async function submit() {
     })
     const all = [...(res?.materials || []), ...(res?.texts || [])]
     const added = all.filter((r) => r.status === 'added').length
-    const skipped = all.filter((r) => r.status === 'exists').length
+    const skipped = all.filter((r) => r.status === 'exists' || r.status === 'dup').length
     const failed = all.length - added - skipped
     ElMessage[failed ? 'warning' : 'success'](`${t('admin.extractDialog.done', { added })}${skipped ? t('admin.extractDialog.skipped', { n: skipped }) : ''}${failed ? t('admin.extractDialog.failed', { n: failed }) : ''}`)
     emit('done')
