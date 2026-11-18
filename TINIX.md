@@ -95,7 +95,7 @@ Một mẫu như Be Yourself dùng một khung chính và một nền liên kế
 
 ## Căn ảnh và vai trò trong mẫu
 
-Chọn ảnh: **Căn ảnh** để kéo nội dung trong khung; **Di chuyển khung** để di chuyển cả khung mà không cần giữ Shift. Thanh **Phóng ảnh** tăng khoảng căn chỉnh. **Căn giữa ảnh** giữ mức phóng hiện tại, **Vừa khung** đặt phóng 1× và căn giữa.
+Kéo khung ảnh là di chuyển khung (từ 2026-11-19; trước đó mặc định là kéo ảnh bên trong). Chỉnh ảnh bên trong: xem mục "Chế độ chỉnh ảnh trong khung" bên dưới. Thanh **Phóng ảnh** tăng khoảng căn chỉnh. **Căn giữa ảnh** giữ mức phóng hiện tại, **Vừa khung** đặt phóng 1× và căn giữa.
 
 Trong chế độ **Sửa mẫu**, chọn vai trò **Ảnh chính**, **Nền liên kết**, hoặc **Ảnh trang trí**. Chọn Nền liên kết rồi chọn một khung chính để hoàn tất. App không cho đổi vai trò ảnh chính khi còn nền phụ thuộc; hãy đổi nguồn nền hoặc tách liên kết trước. Thanh trạng thái ở trên canvas hiển thị số khung nhận ảnh, nền liên kết và cảnh báo mẫu chưa có khung hoặc nguồn nền bị thiếu/ẩn.
 
@@ -385,8 +385,18 @@ Người dùng tự lưu mỗi thiết kế theo tên khách trong thư mục m�
 
 ## Phóng to / xoay ảnh trong khung ảnh (2026-11-19)
 Khung ảnh `fit: 'cover'` trước chỉ kéo ảnh (cropX/cropY) và có thanh phóng 1–3×. Nay có thêm:
-- **Lăn chuột** trên khung đang chọn (chế độ "Căn ảnh") để phóng/thu ảnh, **Shift + lăn** để xoay ảnh; Alt/Ctrl + lăn vẫn là phóng canvas. Một đợt lăn (400 ms) = một bước hoàn tác.
+- (Cách lăn chuột ban đầu đã bỏ — xem mục "Chế độ chỉnh ảnh trong khung".)
 - Panel "Căn ảnh và khung": thanh phóng tới 5×, thanh **Xoay ảnh** (−180°…180°), nút xoay trái/phải 90°, "Vừa khung" đặt lại cả xoay.
 - Dữ liệu: trường `imgRotate` (độ) trên lớp ảnh; xoay quanh **tâm khung**, áp sau phép phóng quanh điểm căn nên `imgRotate = 0` giống hệt cách cũ. Khi xoay, ảnh được vẽ ở cỡ phủ khung (`RotatedCover.vue`) để phần ảnh thừa hiện ra, và mức phóng tự nâng tới mức đủ phủ khung (`coverMinZoom` trong `src/utils/tinix/photo-frame.ts`); căn sát mép ảnh khi đang xoay vẫn có thể lộ nền — dùng "Căn giữa ảnh". Kéo ảnh khi đã xoay đi theo con trỏ (`unrotateDelta`).
 - Xuất ảnh (Chromium của service) dùng cùng thành phần nên khớp canvas. Chưa hỗ trợ: ảnh xem trước thẻ mẫu (`CollagePreviewNode`) và xuất PSD bỏ qua xoay/phóng ảnh trong khung (như vốn bỏ qua phóng).
 - Sửa file gốc (`[TINIX]`): `wImage.vue`, `ImageSurface.vue`, `wImageSetting.ts`, `store/design/widget/index.ts`.
+
+## Chế độ chỉnh ảnh trong khung (2026-11-19)
+Lăn chuột khó dùng nên thay bằng tay nắm riêng của ảnh, tách hẳn khỏi tay nắm của khung:
+- **Bình thường**: kéo khung = di chuyển khung (bỏ hai nút "Căn ảnh / Di chuyển khung"; trường `frameDragMode` còn trong dữ liệu cũ nhưng không dùng). Khung trong cụm: nhấp chọn cả cụm như trước.
+- **Nhấp đúp** vào khung (hoặc nút "Chỉnh ảnh trong khung" trên panel) → `PhotoEditOverlay.vue` (gắn trong `designBoard/index.vue`, trên mọi lớp): khung đứng yên với viền đứt, cả tấm ảnh hiện mờ 40% kể cả phần ngoài khung, viền + 4 tay nắm **màu cam ở góc tấm ảnh**. Kéo ảnh = di chuyển, kéo góc = phóng/thu (giữ góc đối diện), kéo nút tròn dưới khung = xoay quanh tâm khung (Shift: bước 15°, tự hút về 0/90/180° trong 2°). Mũi tên dịch ảnh 1 px (Shift 10 px). Thanh nhỏ trên khung hiện mức phóng/góc và nút **Xong**.
+- Thoát: nhấp trên canvas ngoài ảnh, Enter, Esc, "Xong", hoặc đổi đối tượng/trang. Khung trong cụm: thoát xong chọn lại cả cụm (kéo một khung con đang được chọn làm cụm nhảy sai chỗ — lỗi có sẵn của editor). Panel bên phải vẫn dùng được trong lúc chỉnh. Mỗi lần kéo là một bước hoàn tác.
+- Không cho lộ nền khung: không xoay → điểm căn kẹp trong 0–100%; đã xoay → kéo/thu bị chặn ở vị trí cuối còn phủ kín (`coversFrame`), còn xoay/kéo thanh phóng thì phóng thêm **quanh tâm khung** tới mức nhỏ nhất đủ phủ (`liftToCover`, tìm nhị phân). Phóng quanh điểm căn không đủ khi điểm căn ở mép ảnh (0/100%) — trước đó xoay ở trạng thái này nhảy thẳng lên 3–5×.
+- Hình học (`photo-frame.ts`): ảnh đã phóng, chưa xoay có góc trên-trái `x = cropX·(w − z·sw)` (`imageRect`), nghịch đảo là `cropForTopLeft`; con trỏ → hệ khung (bỏ xoay khung quanh tâm phần tử trên màn hình) → hệ ảnh (bỏ `imgRotate` quanh tâm khung).
+- Sửa file gốc (`[TINIX]`): `Moveable.vue` (dragStart: chỉ chặn kéo khung khi đang chỉnh ảnh), `designBoard/index.vue` (gắn overlay), `wImage.vue` (nhấp đúp; bỏ lăn chuột và kéo-để-căn).
+- Chưa làm: khung lật (`flip`) — overlay không lật theo, kéo ảnh sẽ ngược chiều.

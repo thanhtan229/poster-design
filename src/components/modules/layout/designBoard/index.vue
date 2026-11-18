@@ -61,6 +61,7 @@
               </template>
             </component>
             </div>
+            <PhotoEditOverlay v-if="needTools" /> <!-- [TINIX] chỉnh ảnh trong khung -->
             <div v-if="needTools && printSelection.active" class="print-unit-overlays" aria-hidden="true">
               <div v-for="unit in highlightedPrintUnits" :key="unit.id" class="print-unit-highlight" :style="{left:unit.bounds.x+'px',top:unit.bounds.y+'px',width:unit.bounds.width+'px',height:unit.bounds.height+'px',borderWidth:Math.max(2,200/dZoom)+'px'}"><span :style="{fontSize:Math.max(12,1300/dZoom)+'px'}">{{ unit.name }} · {{ unit.raised?'Cắt nổi':'In nền' }}</span></div>
             </div>
@@ -80,6 +81,7 @@
 import {printSelection} from '@/utils/tinix/print-selection'
 import {printUnits} from '@/utils/tinix/collage-print'
 import TemplatePhotoStatus from './comps/TemplatePhotoStatus.vue'
+import PhotoEditOverlay from '@/components/modules/widgets/wImage/PhotoEditOverlay.vue' // [TINIX]
 import { computed, onMounted, watch } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'

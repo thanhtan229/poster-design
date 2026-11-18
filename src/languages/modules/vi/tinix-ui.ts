@@ -398,7 +398,12 @@ export default {
     rotate: 'Xoay ảnh',
     turn_left: 'Xoay trái 90°',
     turn_right: 'Xoay phải 90°',
-    wheel_hint: 'Lăn chuột trên khung đang chọn để phóng/thu ảnh, Shift + lăn để xoay ảnh. Khi xoay, ảnh tự phóng thêm vừa đủ để không lộ nền.',
+    edit: 'Chỉnh ảnh trong khung',
+    editing: 'Đang chỉnh ảnh — bấm để xong',
+    done: 'Xong',
+    edit_hint: 'Nhấp đúp vào khung (hoặc bấm nút trên) để chỉnh ảnh: kéo ảnh để di chuyển, kéo góc cam để phóng/thu, kéo nút tròn để xoay (Shift: bước 15°). Nhấp ra ngoài, Enter hoặc Esc để xong. Ảnh không thu/xoay được tới mức lộ nền khung.',
+    corner_hint: 'Kéo để phóng/thu ảnh',
+    rotate_hint: 'Kéo để xoay ảnh (Shift: bước 15°)',
   },
   localFile: {
     untitled: 'thiet-ke',
