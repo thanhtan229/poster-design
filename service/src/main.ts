@@ -32,6 +32,7 @@ import collagePrintRouter from './tinix/collagePrint'
 import approvedPrintsRouter from './tinix/approvedPrints'
 import collageOrdersRouter from './tinix/collageOrders'
 import collageTemplatesRouter from './tinix/collageTemplates'
+import localDesignRouter from './tinix/localDesign' // [TINIX]
 import { filePath, servicePort } from './configs'
 import handleTimeout from './utils/timeout'
 import { initDB } from './db'
@@ -82,6 +83,7 @@ app.use(collagePrintRouter)
 app.use(approvedPrintsRouter)
 app.use(collageOrdersRouter)
 app.use(collageTemplatesRouter)
+app.use(localDesignRouter) // [TINIX] /api/tinix/local-asset(s)
 
 // [TINIX] Chế độ production một cổng (npm run tinix:prod): service tự phục vụ bản build của frontend (../dist) + SPA fallback.
 // Đặt SAU các router nên mọi route API vẫn được ưu tiên.

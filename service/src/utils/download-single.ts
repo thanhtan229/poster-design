@@ -98,7 +98,7 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     // 主动模式下注入全局方法
     await page.exposeFunction('loadFinishToInject', async (result: any) => {
       if(result && result.error){clearTimeout(regulators);browserClose();reject(Object.assign(new Error(result.error), {issues:result.issues}));return}
-      if(String(url).includes('exportJob=') || new URL(url).searchParams.get('hq')==='1') {
+      if((String(url).includes('exportJob=') || new URL(url).searchParams.get('hq')==='1') && new URL(url).searchParams.get('relaxed')!=='1') { // [TINIX] relaxed=1: xuất ảnh thường, không chặn khi chữ tràn/ảnh lỗi
         try {
           const problems = await page.evaluate(() => {
             const errors:string[]=[]

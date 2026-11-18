@@ -7,6 +7,7 @@ import { planCollagePrint, markCorners } from '../../../src/utils/tinix/collage-
 import { alphaFromRenders, buildCutSvg } from './cutPaths'
 import { filePath, drawLink } from '../configs'
 import { queueRun } from '../utils/node-queue'
+import { MAX_EXPORT_SIDE, MAX_EXPORT_PIXELS } from '../utils/export-limits'
 import { saveScreenshot } from '../utils/download-single'
 import {preflightPrint} from './printPreflight'
 import {archiveApprovedPrint} from './approvedPrints'
@@ -24,6 +25,27 @@ router.post('/api/tinix/collage-preview',(req:any,res:any)=>{
   jobs.set(id,{layouts:[plan.layouts.at(-1)],names:['thanh_pham.jpg'],dpi:plan.dpi,images:{},expires:Date.now()+30*60*1000})
   res.json({id})
  }catch(e){res.status(400).json({message:(e as Error).message})}
+})
+// Xuất một trang bất kỳ (từ dữ liệu gửi lên) thành PNG/JPG — không cần lưu thiết kế vào CSDL.
+router.post('/api/tinix/export-render',async(req:any,res:any)=>{
+ let temporary='',jobId=''
+ try{
+  const layout=req.body&&req.body.layout,format=req.body&&req.body.format==='jpg'?'jpg':'png'
+  if(!layout||!layout.global||!Array.isArray(layout.layers)||layout.layers.length>2000)throw new Error('Dữ liệu trang không hợp lệ')
+  const width=Math.round(Number(layout.global.width)),height=Math.round(Number(layout.global.height))
+  if(!(width>0&&height>0)||width>MAX_EXPORT_SIDE||height>MAX_EXPORT_SIDE||width*height>MAX_EXPORT_PIXELS)throw new Error('Kích thước trang vượt giới hạn xuất ảnh')
+  const dpi=Math.min(1200,Math.max(30,Number(layout.global.dpi)||300))
+  for(const [id,j] of jobs)if(j.expires<Date.now())dispose(id)
+  if(jobs.size>=10)throw new Error('Đang có nhiều bộ xuất. Hãy chờ rồi thử lại.')
+  jobId=crypto.randomBytes(16).toString('hex');jobs.set(jobId,{layouts:[layout],names:['trang'],dpi,images:{},expires:Date.now()+10*60*1000})
+  const directory=path.join(filePath,'print-exports');fs.mkdirSync(directory,{recursive:true})
+  const sign=crypto.randomBytes(16).toString('hex');temporary=path.join(directory,sign+'.png');req._queueSign=sign
+  await queueRun(saveScreenshot,`${drawLink}?exportJob=${jobId}&index=0&hq=1&relaxed=1`,{width,height,path:temporary,prevent:true},sign)
+  const image=sharp(temporary)
+  const buffer=format==='jpg'?await image.flatten({background:'#ffffff'}).toColourspace('srgb').jpeg({quality:100,chromaSubsampling:'4:4:4'}).withMetadata({density:dpi}).toBuffer():await image.withMetadata({density:dpi}).png().toBuffer()
+  if(!res.headersSent)res.type(format==='jpg'?'jpeg':'png').send(buffer)
+ }catch(e){if(!res.headersSent)res.status(500).json({message:(e as Error).message,issues:(e as any).issues||[]})}
+ finally{if(jobId)dispose(jobId);if(temporary)try{fs.unlinkSync(temporary)}catch(_){} }
 })
 router.post('/api/tinix/collage-print', async(req:any,res:any)=>{
  try{

@@ -22,9 +22,8 @@
       <div class="divide__line">|</div>
     </template>
     <watermark-option style="margin-right: 0.5rem" />
-    <PrintBundle v-if="(dPage as any).collage" :save-design="()=>save(true)" :title="state.title" :disabled="tempEditing" />
-    <ApprovedPrints />
-    <CustomerOrders />
+    <PrintBundle v-if="(dPage as any).collage" :save-design="()=>saveToDb(true)" :title="state.title" :disabled="tempEditing" />
+    <!-- [TINIX] Ẩn quản lý đơn/bản khách đã duyệt (ApprovedPrints, CustomerOrders): thiết kế được lưu thành tệp trên máy -->
     <el-button type="primary" :loading="jpgRunning" :disabled="tempEditing" @click="exportPrintJpg">Xuất JPG để in</el-button>
     <el-button plain @click="openBatch">{{ i18t('tinix.ui.batch.title') }}</el-button>
     <slot />
@@ -52,21 +51,20 @@
 import i18n from '@/languages'
 import api from '@/api'
 import * as adminApi from '@/api/admin' // [TINIX]
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { ElCheckbox, ElCheckboxGroup, ElOption, ElSelect } from 'element-plus' // [TINIX] điều khiển chọn trang và định dạng
 import { useRoute, useRouter } from 'vue-router'
-import _dl from '@/common/methods/download'
 import useNotification from '@/common/methods/notification'
 import SaveImage from '@/components/business/save-download/CreateCover.vue'
 import PrintBundle from '@/components/business/collage/PrintBundle.vue'
-import ApprovedPrints from '@/components/business/collage/ApprovedPrints.vue'
-import CustomerOrders from '@/components/business/collage/CustomerOrders.vue'
+import { designTitle, saveToDisk } from '@/utils/tinix/design-file' // [TINIX]
+import { renderPageOnServer } from '@/utils/tinix/server-export' // [TINIX]
 import { useFontStore } from '@/common/methods/fonts'
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import { useControlStore, useCanvasStore, useUserStore, useWidgetStore } from '@/store/index'
 import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
-import { clampDpi, DEFAULT_DPI, exportTimeoutMs } from '@/utils/tinix/units' // [TINIX]
+import { clampDpi, DEFAULT_DPI } from '@/utils/tinix/units' // [TINIX]
 import { withPngDpi } from '@/utils/tinix/png-dpi' // [TINIX]
 import { zipImages } from '@/utils/tinix/zip' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
@@ -100,20 +98,10 @@ async function exportPrintJpg() {
   if (jpgRunning.value) return
   jpgRunning.value = true
   try {
-    const id = await save(true)
-    if (!id) throw new Error('Không lưu được thiết kế')
-    const page = pageStore.dPage
-    const url = api.home.download({ id, width: page.width, height: page.height, index: pageStore.dCurrentPage, dpi: clampDpi(page.dpi || DEFAULT_DPI) }) + '&format=jpg'
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), Math.max(120000, exportTimeoutMs(page.width, page.height)))
-    try {
-      const response = await fetch(url, { signal: controller.signal })
-      if (!response.ok) throw new Error('Không tạo được JPG; kiểm tra ảnh và font rồi thử lại')
-      const blob = await response.blob()
-      const signature = new Uint8Array(await blob.slice(0, 3).arrayBuffer())
-      if (signature[0] !== 255 || signature[1] !== 216 || signature[2] !== 255) throw new Error('Máy chủ chưa trả về JPG hợp lệ. Hãy khởi động lại app sau khi cập nhật.')
-      downloadBlob(blob, `${(state.title || 'cat-dan').replace(/[<>:"/\\|?*]/g, '-')}.jpg`)
-    } finally { clearTimeout(timer) }
+    const blob = await renderPageOnServer(pageStore.dCurrentPage, 'jpg') // [TINIX] không ghi CSDL
+    const signature = new Uint8Array(await blob.slice(0, 3).arrayBuffer())
+    if (signature[0] !== 255 || signature[1] !== 216 || signature[2] !== 255) throw new Error('Máy chủ chưa trả về JPG hợp lệ. Hãy khởi động lại app sau khi cập nhật.')
+    downloadBlob(blob, `${(state.title || 'cat-dan').replace(/[<>:"/\\|?*]/g, '-')}.jpg`)
   } catch (e:any) { useNotification('Xuất JPG thất bại', e?.message || '', { type: 'error' }) }
   finally { jpgRunning.value = false }
 }
@@ -131,6 +119,9 @@ const state = reactive<TState>({
   title: '',
   loading: false,
 })
+// [TINIX] tên thiết kế dùng chung với module lưu/mở tệp
+watch(designTitle, (v) => { if (v !== state.title) state.title = v })
+watch(() => state.title, (v) => { designTitle.value = v })
 
 // [TINIX] Xuất tuần tự để tránh các lần chụp dùng chung tệp ảnh tạm trên server.
 const batch = reactive({ open: false, running: false, pages: [] as number[], failed: [] as number[], done: 0, total: 0, format: 'png', scale: 1 })
@@ -161,19 +152,11 @@ async function runBatch(retry: boolean) {
   const files: Array<{ name: string; blob: Blob }> = []
   try {
     if (tempEditing.value) throw new Error(i18t('tinix.ui.batch.design_only'))
-    const id = await save(true)
-    if (!id) throw new Error(i18t('tinix.ui.batch.save_failed'))
     for (const index of pages) {
       try {
         const page = dLayouts.value[index]?.global
         if (!page) throw new Error('Page unavailable')
-        const url = api.home.download({ id, width: page.width, height: page.height, index, dpi: clampDpi(page.dpi || DEFAULT_DPI) })
-        const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), Math.max(90000, exportTimeoutMs(page.width, page.height)))
-        let response: Response
-        try { response = await fetch(url, { signal: controller.signal }) } finally { clearTimeout(timer) }
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        let blob = await response.blob()
+        let blob = await renderPageOnServer(index, 'png') // [TINIX] không ghi CSDL
         const signature = new Uint8Array(await blob.slice(0, 8).arrayBuffer())
         if (signature[0] !== 137 || signature[1] !== 80 || signature[2] !== 78 || signature[3] !== 71) throw new Error('Invalid PNG')
         if (batch.format === 'jpg' || batch.scale !== 1) blob = await convertBatchImage(blob, batch.format, batch.scale, clampDpi(page.dpi || DEFAULT_DPI))
@@ -188,8 +171,18 @@ async function runBatch(retry: boolean) {
   } finally { batch.running = false }
 }
 
-// 保存作品，返回保存后的作品 id（新建作品时返回创建后的新 id；失败返回 undefined）
-async function save(silent: boolean = false) {
+// [TINIX] Lưu thiết kế ra tệp .tinix.zip trên máy (Ctrl+S ghi đè đúng tệp đã lưu/mở). saveAs=true: chọn tệp mới.
+async function save(_silent: boolean = false, saveAs: boolean = false) {
+  if (tempEditing.value) return saveTemp()
+  try {
+    return await saveToDisk(saveAs === true)
+  } catch (e: any) {
+    useNotification(i18t('tinix.ui.localFile.save_failed'), e?.message || '', { type: 'error' })
+  }
+}
+
+// 保存作品到数据库，返回保存后的作品 id（新建作品时返回创建后的新 id；失败返回 undefined）。[TINIX] chỉ còn dùng cho xuất bộ cắt dán (PrintBundle)
+async function saveToDb(silent: boolean = false) {
   if (tempEditing.value) {
     await saveTemp()
     return
@@ -296,38 +289,12 @@ async function download() {
     downloadBlob(await withPngDpi(blob, clampDpi(dPage.value.dpi || DEFAULT_DPI)), fileName) // [TINIX] ghi DPI vào PNG để Photoshop/tiệm in mở đúng khổ
     return
   }
-  // 服务端出图依赖作品数据，需先保存；无 id 的新作品在此静默创建，并返回新 id 供出图使用
-  const savedId = await save(true)
-  const { id, tempid } = route.query
-  // 从服务端生成图片
-  const { width, height } = dPage.value
-  // 后台模板编辑页可能保留之前作品的 id；模板编辑时必须只使用 tempid，
-  // 否则截图服务会按 id 优先加载另一条用户作品。
-  const screenshotId = route.query.edit === '1' && tempid ? undefined : (savedId || id)
+  // [TINIX] Trang có mặt nạ/SVG/hiệu ứng chữ: dựng bằng Chromium của service từ dữ liệu đang mở, không ghi CSDL
   emit('update:modelValue', true)
-  emit('change', { downloadPercent: 1, downloadText: i18n.global.t('editor.header.processing') })
-  let timerCount = 0
-  const animation = setInterval(() => {
-    if (props.modelValue && timerCount < 75) {
-      timerCount += RandomNumber(1, 10)
-      emit('change', { downloadPercent: 1 + timerCount, downloadText: i18n.global.t('editor.header.composing') })
-    } else {
-      clearInterval(animation)
-    }
-  }, 800)
-  await _dl.downloadImg(
-      api.home.download({ id: screenshotId, tempid, width, height, index: pageStore.dCurrentPage, dpi: clampDpi(dPage.value.dpi || DEFAULT_DPI) }) + '&r=' + Math.random(),
-    (progress: number, xhr: any) => {
-      if (props.modelValue) {
-        clearInterval(animation)
-        progress >= timerCount && emit('change', { downloadPercent: Number(progress.toFixed(0)), downloadText: i18n.global.t('editor.header.generating') })
-      } else {
-        xhr.abort()
-        state.loading = false
-      }
-    },
-    fileName,
-  )
+  emit('change', { downloadPercent: 30, downloadText: i18n.global.t('editor.header.composing') })
+  const blob = await renderPageOnServer(currentRecord, 'png')
+  if (!props.modelValue) return // người dùng đã bấm hủy
+  downloadBlob(blob, fileName)
   emit('change', { downloadPercent: 100, downloadText: i18n.global.t('editor.header.downloadDone'), downloadMsg: '' })
   } catch (error: any) {
     emit('update:modelValue', false)
@@ -335,9 +302,6 @@ async function download() {
   } finally {
     state.loading = false
   }
-}
-function RandomNumber(min: number, max: number) {
-  return Math.ceil(Math.random() * (max - min)) + min
 }
 
 async function load(cb: () => void) {
@@ -403,6 +367,7 @@ defineExpose({
   download,
   save,
   saveTemp,
+  saveToDb,
   saveAsTemplate, // [TINIX]
   getTitle: () => state.title, // [TINIX] tên file khi xuất PSD
   stateChange,
