@@ -30,6 +30,12 @@ export default {
     groupImage: 'Hình ảnh',
     groupSvg: 'Hình vector (SVG)',
     groupPhoto: 'Ảnh chụp / nền',
+    reason: {
+      learned: 'Dựa trên lần bạn phân loại ảnh tương tự trước đây',
+      context: 'Hình đơn sắc nằm dưới ảnh chụp trong mẫu',
+      shape: 'Đoán theo chính hình ảnh',
+    },
+    reasonShort: { learned: 'đã học', context: 'dưới ảnh chụp', shape: 'theo hình' },
     suggested: 'Gợi ý',
     moveAll: 'Chuyển cả nhóm sang...',
     groupText: 'Nhóm chữ',

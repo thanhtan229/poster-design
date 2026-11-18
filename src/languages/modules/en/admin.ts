@@ -29,6 +29,12 @@ export default {
     groupImage: 'Images',
     groupSvg: 'Vector graphics (SVG)',
     groupPhoto: 'Photos / backgrounds',
+    reason: {
+      learned: 'Based on how you classified a similar image before',
+      context: 'A plain shape sitting under a photo in the template',
+      shape: 'Guessed from the image itself',
+    },
+    reasonShort: { learned: 'learned', context: 'under a photo', shape: 'by shape' },
     suggested: 'Suggested',
     moveAll: 'Move group to...',
     groupText: 'Text groups',

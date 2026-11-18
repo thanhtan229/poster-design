@@ -163,7 +163,7 @@ export const updateAiSettings = (data: { api_key?: string; text_model?: string; 
 export const testAiConnection = () => fetch<{ content: string }>(API.aiTest, {}, 'post')
 
 export type TBulkStatus = 'added' | 'exists' | 'dup' | 'invalid' | 'failed'
-export type TBulkImportResult = { dryRun: boolean; materials: { url: string; status: TBulkStatus; by?: 'url' | 'content'; dupOf?: number; suggest?: 'photo' | 'mask' | 'image' }[]; texts: { title: string; status: TBulkStatus; id?: number }[] }
+export type TBulkImportResult = { dryRun: boolean; materials: { url: string; status: TBulkStatus; by?: 'url' | 'content'; dupOf?: number; suggest?: 'photo' | 'mask' | 'image'; suggestBy?: 'learned' | 'heuristic'; flat?: boolean }[]; texts: { title: string; status: TBulkStatus; id?: number }[] }
 /** 批量入库素材 / 文字组合，服务端去重；dryRun=true 只返回判定结果不写库 */
 export const bulkImportAssets = (data: { dryRun?: boolean; materials: { cate: string; table?: 'photos'; asset: any }[]; texts: { cate: string; title: string; widgets: any[]; width: number; height: number }[] }) => fetch<TBulkImportResult>(API.assetBulk, data, 'post')
 export type TFontNormalizationStatus={running:boolean;exitCode:number|null;log:string}
