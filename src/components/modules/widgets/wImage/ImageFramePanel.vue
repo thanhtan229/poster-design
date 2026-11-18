@@ -9,8 +9,7 @@
  <div class="mode-buttons"><button @click="turn(-90)">{{$t('tinix.ui.photoFrame.turn_left')}}</button><button @click="turn(90)">{{$t('tinix.ui.photoFrame.turn_right')}}</button></div>
  <button @click="center">Căn giữa ảnh</button><button @click="fit">Vừa khung</button>
  </template>
- <label v-if="editing">Vai trò ảnh<select aria-label="Vai trò ảnh" :value="role" @change="roleEvent"><option value="main">Ảnh chính — nhận ảnh thay thế</option><option value="linked">Nền liên kết</option><option value="decoration">Ảnh trang trí</option></select></label>
- <p v-else>Vai trò: {{role==='main'?'Ảnh chính':role==='linked'?'Nền liên kết':'Ảnh trang trí'}}</p>
+ <label>Vai trò ảnh<select aria-label="Vai trò ảnh" :value="role" @change="roleEvent"><option value="main">Ảnh chính — nhận ảnh thay thế</option><option value="linked">Nền liên kết</option><option value="decoration">Ảnh trang trí</option></select></label>
  <label v-if="role==='linked'||choosingLink">Khung chính<select aria-label="Khung ảnh liên kết" :value="image.linkedPhotoId||''" @change="link(($event.target as HTMLSelectElement).value)"><option value="" disabled>Chọn khung ảnh chính…</option><option v-for="w in sources" :key="w.uuid" :value="w.uuid">{{w.layerName||w.name||'Ảnh chính'}}</option></select></label>
  <p v-if="role==='linked'">Dùng ảnh của khung chính; giữ cách căn và hiệu ứng riêng.</p>
  <button v-if="role==='linked'" @click="detach">Tách liên kết ảnh</button>
@@ -19,12 +18,11 @@
 </template>
 <script setup lang="ts">
 import {computed,ref} from 'vue'
-import {useWidgetStore,useHistoryStore,useUserStore} from '@/store'
+import {useWidgetStore,useHistoryStore} from '@/store'
 import {createFrameHistory,setFrameZoom,setFrameRotation,MAX_FRAME_ZOOM,photoEdit,canEditPhoto,enterPhotoEdit,exitPhotoEdit} from '@/utils/tinix/photo-frame'
 import {resolveLinkedImage} from '@/utils/tinix/image-effects'
 import {photoRole} from '@/utils/tinix/template-photo'
 const props=defineProps<{image:any}>(); const ws=useWidgetStore()
-const editing=computed(()=>useUserStore().tempEditing)
 const role=computed(()=>photoRole(props.image)); const choosingLink=ref(false); const message=ref('')
 const sources=computed(()=>ws.dWidgets.filter(w=>w.type==='w-image'&&w.slot&&!w.linkedPhotoId&&!w.hidden&&w.uuid!==props.image.uuid))
 const {begin,commit}=createFrameHistory()

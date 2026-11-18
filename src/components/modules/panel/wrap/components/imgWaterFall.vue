@@ -16,9 +16,8 @@
       <!-- [TINIX] chế độ chọn nhiều (admin): ô tick ở góc trên trái -->
       <span v-if="item.photo_slots !== undefined" class="tinix-slots" :title="$t('tinix.ui.photoAuto.tip_so_anh')">{{ $t('tinix.ui.photoAuto.n_anh', { n: Math.max(1, item.photo_slots || 0) }) }}</span>
       <span v-if="selectMode" class="tinix-check">{{ selected && selected.includes(item.id) ? '✓' : '' }}</span>
-      <!-- [TINIX] admin: nút "Sửa mẫu" (mở chế độ sửa mẫu ở tab mới, lưu sẽ ghi đè mẫu và tạo lại bìa) -->
+      <!-- [TINIX] nút Nhóm · Xóa trên thẻ mẫu (bỏ nút "Sửa": bấm mẫu để mở, chỉnh rồi Tệp → Lưu đè mẫu) -->
       <div v-if="adminEdit && !selectMode" class="tinix-card-actions">
-        <button type="button" class="tinix-edit-btn" :title="$t('tinix.ui.templateCard.sua_mau_tip')" @click.stop="emit('edit', item)">{{ $t('tinix.ui.templateCard.sua_mau') }}</button>
         <button type="button" class="tinix-edit-btn grp" :title="$t('tinix.ui.templateGroups.nhom_tip')" @click.stop="emit('groups', item)">{{ $t('tinix.ui.templateCard.nhom') }}</button>
         <button type="button" class="tinix-edit-btn danger" :title="$t('tinix.ui.templateCard.xoa_mau_tip')" @click.stop="emit('remove', item)">{{ $t('tinix.ui.templateCard.xoa_mau') }}</button>
       </div>
@@ -54,7 +53,6 @@ type TState = {
 
 type TEmits = {
   (event: 'select', data: IGetTempListData): void
-  (event: 'edit', data: IGetTempListData): void // [TINIX]
   (event: 'remove', data: IGetTempListData): void // [TINIX]
   (event: 'groups', data: IGetTempListData): void // [TINIX] mở hộp chọn nhóm của mẫu
   (event: 'toggle', data: IGetTempListData): void // [TINIX] tick/bỏ tick khi đang chọn nhiều

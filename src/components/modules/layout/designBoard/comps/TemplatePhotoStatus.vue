@@ -2,8 +2,9 @@
 <script setup lang="ts">
 import {computed} from 'vue'
 import {useWidgetStore,useUserStore} from '@/store'
+import {templateSource} from '@/utils/tinix/template-save'
 import {templatePhotoStatus} from '@/utils/tinix/template-photo'
-const ws=useWidgetStore();const editing=computed(()=>useUserStore().tempEditing)
+const ws=useWidgetStore();const editing=computed(()=>useUserStore().tempEditing||!!templateSource.value) // [TINIX] hiện khi trang mở từ một mẫu
 const status=computed(()=>templatePhotoStatus(ws.dWidgets))
 function select(uuid:string){ws.selectWidget({uuid})}
 </script>

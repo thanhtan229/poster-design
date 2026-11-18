@@ -102,7 +102,7 @@ import ProgressLoading from '@/components/common/ProgressLoading/download.vue'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore, useUserStore } from '@/store' // [TINIX] useUserStore
-import { saveAsNewTemplate } from '@/utils/tinix/template-save' // [TINIX]
+import { overwriteTemplate, saveAsNewTemplate } from '@/utils/tinix/template-save' // [TINIX]
 import { useRoute } from 'vue-router' // [TINIX]
 import { ElMessage, type ButtonInstance } from 'element-plus'
 import Tour from './components/Tour.vue'
@@ -112,7 +112,7 @@ import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
 import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
 import useHistory from '@/common/hooks/history'
-import { isDirty, markSaved, openRecent, pickAndOpen, startAutosave, offerDraftRestore } from '@/utils/tinix/design-file' // [TINIX]
+import { designTitle, isDirty, markSaved, openRecent, pickAndOpen, startAutosave, offerDraftRestore } from '@/utils/tinix/design-file' // [TINIX]
 useHistory()
 
 function jump2admin() {
@@ -247,7 +247,7 @@ function loadData() {
   optionsRef.value.load(async () => {
     markSaved() // [TINIX] mốc "đã lưu" ban đầu để so sánh thay đổi chưa lưu
     startAutosave()
-    if (!route.query.id && !route.query.tempid && !route.query.ctemplate) void offerDraftRestore() // [TINIX] ctemplate = Sửa mẫu cắt dán: không đè bản nháp lên mẫu
+    if (!route.query.id && !route.query.tempid) void offerDraftRestore()
     if (!zoomControlRef.value) return
     // await nextTick()
     // zoomControlRef.value.screenChange()
@@ -302,8 +302,9 @@ const fns: any = {
     void saveAsNewTemplate()
   },
   overwriteTemplate: () => {
-    // Chỉ hiện trong chế độ Sửa mẫu: mẫu thường dùng saveTemp gốc (gồm mẫu thành phần tempType 1), mẫu cắt dán dùng template-save
-    optionsRef.value?.save()
+    // Quản trị → Sửa mẫu giữ đường lưu riêng (gồm mẫu thành phần tempType 1); còn lại lưu đè mẫu mà trang được mở từ đó
+    if (useUserStore().tempEditing) optionsRef.value?.save()
+    else void overwriteTemplate(designTitle.value)
   },
   exitTempEdit: () => {
     useUserStore().managerEdit(false)
