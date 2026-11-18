@@ -105,10 +105,10 @@ export async function saveToDisk(saveAs = false): Promise<boolean> {
 
 /**
  * Đưa các trang vào editor, thay thế thiết kế đang mở.
- * [TINIX] Trừ khi `keepTemplateEdit` (tab Sửa mẫu tự nạp mẫu cần sửa), nạp nội dung mới = thoát chế độ Sửa mẫu,
- * để "Lưu đè mẫu" không còn trỏ vào mẫu cũ khi người dùng bấm dùng mẫu khác / mở tệp / khôi phục bản nháp.
+ * [TINIX] Nạp nội dung mới = thoát chế độ Sửa mẫu (Quản trị → Sửa mẫu), để "Lưu đè mẫu" không còn trỏ vào mẫu cũ
+ * khi người dùng bấm dùng mẫu khác / mở tệp / khôi phục bản nháp.
  */
-export function applyLayouts(layouts: any[], title: string, keepTemplateEdit = false) {
+export function applyLayouts(layouts: any[], title: string) {
   const widgetStore = useWidgetStore()
   const pageStore = useCanvasStore()
   useControlStore().setShowMoveable(false)
@@ -121,17 +121,15 @@ export function applyLayouts(layouts: any[], title: string, keepTemplateEdit = f
   useHistoryStore().$patch({ dHistoryStack: { changes: [], inverseChanges: [] }, dHistoryParams: { index: -1, length: 0, maxLength: 20, stackPointer: -1 } })
   designTitle.value = title
   setTemplateSource(null) // trang mới/mở tệp: không còn gắn với mẫu nào
-  if (!keepTemplateEdit) useUserStore().managerEdit(false)
+  useUserStore().managerEdit(false)
   resetProject() // dự án mới: chưa có ảnh nào (openPackage nạp lại ảnh của tệp ngay sau đó)
   // Thiết kế này không gắn với bản ghi trong CSDL nữa: bỏ id khỏi địa chỉ để không ghi đè nhầm thiết kế cũ.
   const query = { ...router.currentRoute.value.query }
-  if (query.id || query.tempid || (!keepTemplateEdit && (query.ctemplate || query.edit))) {
+  if (query.id || query.tempid || query.ctemplate || query.edit) {
     delete query.id
     delete query.tempid
-    if (!keepTemplateEdit) {
-      delete query.ctemplate // địa chỉ ?ctemplate=…&edit=1 mở lại sẽ vào Sửa mẫu cũ
-      delete query.edit
-    }
+    delete query.ctemplate
+    delete query.edit // mở lại địa chỉ có &edit=1 sẽ vào Sửa mẫu cũ
     void router.replace({ path: router.currentRoute.value.path, query })
   }
   markSaved()

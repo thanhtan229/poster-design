@@ -40,7 +40,7 @@
     <ul ref="listRef" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
       <print-groups v-if="isCollagePage" /><!-- [TINIX] công cụ cắt dán: chỉ hiện khi trang hiện tại là trang cắt dán -->
       <template-library v-if="typeFilter !== 'normal'" :search="state.searchKeyword" :group="groupId" :photos="photosFilter" :all-groups="allGroups" @changed="onCollageChanged" /><!-- [TINIX] mẫu cắt dán xếp trước -->
-      <img-water-fall v-if="typeFilter !== 'collage'" :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @edit="editTemplate" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
+      <img-water-fall v-if="typeFilter !== 'collage'" :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
       <div v-show="state.loading && typeFilter !== 'collage'" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
       <div v-show="state.loadDone && typeFilter !== 'collage'" class="loading">Đã tải hết</div>
     </ul>
@@ -239,10 +239,6 @@ async function saveGroupDialog() {
   } finally {
     groupDialog.saving = false
   }
-}
-function editTemplate(item: IGetTempListData) {
-  const href = router.resolve({ path: '/home', query: { tempid: String(item.id), tempType: '0', edit: '1' } }).href
-  window.open(href, '_blank')
 }
 
 // onMounted(async () => {})

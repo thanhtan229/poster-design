@@ -7,8 +7,8 @@
 -->
 <template>
   <ul class="widget-list">
-    <!-- [TINIX] Chọn nhiều lớp ảnh để đánh dấu khung khi sửa mẫu -->
-    <li v-if="tempEditing" class="slot-actions">
+    <!-- [TINIX] Chọn nhiều lớp ảnh để đánh dấu khung ảnh (luôn hiện: không còn chế độ Sửa mẫu riêng) -->
+    <li class="slot-actions">
       <button type="button" :disabled="!selectedSlots.length" @click="setSlots(true)">{{ $t('tinix.ui.photoAuto.danh_dau_nhieu') }}</button>
       <button type="button" :disabled="!selectedSlots.length" @click="setSlots(false)">{{ $t('tinix.ui.photoAuto.bo_danh_dau') }}</button>
     </li>
@@ -22,7 +22,7 @@
     <draggable v-model="widgets" group="type" item-key="uuid" v-bind="dragOptions" :move="onMove" @start="drag = true" @end="onDone">
       <template #item="{ element }">
         <li :class="['widget', { active: getIsActive(element.uuid), disable: !showItem(element) }, 'item-one']" :data-uuid="element.uuid" :data-type="element.type" @click="selectLayer(element)" @dblclick="startRename(element)" @mouseover="hoverLayer(element)" @mouseout="hoverLayer('-1')">
-          <input v-if="tempEditing && element.type === 'w-image'" v-model="selectedSlots" class="slot-select" type="checkbox" :value="element.uuid" @click.stop @mousedown.stop />
+          <input v-if="element.type === 'w-image'" v-model="selectedSlots" class="slot-select" type="checkbox" :value="element.uuid" @click.stop @mousedown.stop />
           <!-- <span v-show="+element.parent !== -1" :class="['widget-type icon', `sd-xiaji`]"></span> -->
           <span v-show="+element.parent !== -1" class="second-layer"></span>
           <img v-if="element.imgUrl" class="widget-type widget-type__img" :src="element.imgUrl" />
@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import { useUserStore, useWidgetStore } from '@/store'
+import { useWidgetStore } from '@/store'
 import { TdWidgetData } from '@/store/design/widget'
 import { defineComponent, computed, reactive, ref, toRefs } from 'vue'
 
@@ -60,7 +60,6 @@ export default defineComponent({
   emits: ['change'],
   setup(props, context) {
     const widgetStore = useWidgetStore()
-    const tempEditing = computed(() => useUserStore().tempEditing)
     const selectedSlots = ref<string[]>([])
     const setSlots = (value: boolean) => {
       for (const uuid of selectedSlots.value) {
@@ -190,7 +189,7 @@ export default defineComponent({
       widgetStore.updateWidgetData({ uuid: item.uuid, key: 'layerName', value: v === original ? '' : v })
     }
 
-    return { tempEditing, selectedSlots, setSlots, toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
+    return { selectedSlots, setSlots, toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
   },
   watch: {
     data: {

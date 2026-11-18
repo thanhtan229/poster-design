@@ -387,8 +387,6 @@ export default {
     da_luu: 'Đã cập nhật nhóm',
   },
   templateCard: {
-    sua_mau: 'Sửa',
-    sua_mau_tip: 'Sửa mẫu này (mở ở tab mới, lưu sẽ ghi đè mẫu và tạo lại ảnh bìa)',
     nhom: 'Nhóm',
     xoa_mau: 'Xóa',
     xoa_mau_tip: 'Xóa vĩnh viễn mẫu này',
@@ -485,7 +483,6 @@ export default {
     no_cat: 'Chưa phân nhóm',
     empty: 'Chưa có mẫu nào khớp.',
     cancel: 'Hủy',
-    edit_tip: 'Sửa mẫu này (mở ở tab mới: đánh dấu khung ảnh, đổi tên ở thanh trên; Tệp → Lưu đè mẫu để lưu)',
   },
   // Lưu mẫu từ menu Tệp (utils/tinix/template-save.ts)
   templateSave: {
@@ -494,7 +491,13 @@ export default {
     exit_edit: 'Thoát chế độ sửa mẫu',
     auto_name: 'Mẫu {id}',
     saved_new: 'Đã lưu thành {name}',
-    saved_new_body: 'Mẫu mới nằm đầu thư viện. Đổi tên hoặc chọn nhóm ngay trên ảnh mẫu.',
+    saved_new_body: 'Mẫu mới nằm đầu thư viện. Đổi tên: sửa ô tên ở thanh trên rồi Tệp → Lưu đè mẫu.',
+    subject_label: 'Tách nền',
+    subject_label_mm: 'Tách nền · viền {mm} mm',
+    blank_photos: '{n} ảnh tải lên thành khung ảnh',
+    blank_subjects: '{n} ảnh tách nền thành khung tách nền',
+    blank_background: 'bỏ ảnh nền tải lên',
+    blank_summary: 'Mẫu chỉ lưu bố cục: {list}.',
     saved_over: 'Đã lưu đè {name}',
     failed: 'Lưu mẫu không thành công',
   },

@@ -469,3 +469,15 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 ## Sửa lỗi: dùng mẫu/mở tệp không thoát chế độ Sửa mẫu (2026-11-18)
 - `applyLayouts` (`design-file.ts`) giờ gọi `managerEdit(false)` và bỏ `ctemplate`/`edit` khỏi địa chỉ, trừ khi `keepTemplateEdit` (chỉ `HeaderOptions.load` truyền `true` khi tab Sửa mẫu tự nạp mẫu cần sửa). Lỗi cũ: ở tab đang Sửa mẫu, bấm dùng một mẫu cắt dán khác (hoặc mở tệp/dự án gần đây/khôi phục bản nháp) vẫn giữ chế độ Sửa, nên menu Tệp còn "Lưu đè mẫu" và lưu đè nhầm vào mẫu đã sửa trước đó (mẫu thường đã được `TempListWrap.selectItem` thoát chế độ Sửa từ trước).
 - Cũng sửa 2 lỗi lint của `extractAssets.ts` / `ExtractAssetsDialog.vue` (code vừa merge vào main làm `npm run lint` hết sạch lỗi) để giữ 0 lỗi.
+
+## Mẫu chỉ lưu bố cục, bỏ nút Sửa (2026-11-18)
+- `src/utils/tinix/template-sanitize.ts`: khi lưu mẫu (Lưu đè / Lưu thành mẫu mới, cả mẫu thường lẫn cắt dán), mỗi lớp ảnh dùng **ảnh tải lên** (`/static/photos`, `/static/user`, `/static/cutouts`, `blob:`; xét cả `origin.original`, `stickerBorder.baseUrl`, `cutoutBorderUrl`) giữ nguyên vị trí/kích thước/góc xoay/khung/hiệu ứng nhưng đổi ảnh thành **ảnh giữ chỗ SVG nhúng** (không tạo tệp), `fit:'cover'`, `slot:true`:
+  - ảnh thường → khung ảnh (ô xám, biểu tượng ảnh), `templateRole:'photo'`;
+  - ảnh tách nền (có `stickerBorder`/`cutoutEdit`/`cutoutBorderUrl` hoặc nằm ở `/static/cutouts`) → khung tách nền (viền nét đứt, biểu tượng người, chữ "Tách nền · viền n mm"), `templateRole:'subject'`, `templateBorderMm` = bề dày viền cũ. Viền/ảnh tách nền cũ không vào mẫu → "Xóa ảnh chưa dùng" dọn được.
+  - Bỏ `origin`, `stickerBorder`, `cutoutEdit`, `cutoutBorderUrl`, `cutInset`, `printInset`, `imgRotate`, `cropEdit`; nền liên kết (`linkedPhotoId`) cũng thành ảnh giữ chỗ nhưng không thành khung riêng; ảnh nền trang tải lên bị bỏ.
+  - Giữ nguyên ảnh thư viện: `/static/template`, `/static/collage`, `/static/materials`, `/static/favorites` (★), `/static/ai`, `data:`, URL ngoài.
+  - Chỉ đổi bản sao dữ liệu đem lưu; trang trên canvas không đổi. Thông báo sau khi lưu ghi số ảnh đã để trống.
+- Bỏ nút **Sửa** trên thẻ mẫu (thường + cắt dán) và tab `?ctemplate=…&edit=1`; thẻ còn Nhóm · Xóa. Trang mở từ một mẫu luôn có **Tệp → Lưu đè mẫu** (tên = ô tên thanh trên), không hỏi lại vì ảnh khách không thể lọt vào mẫu. Ctrl+S vẫn là Lưu dự án.
+- Công cụ đánh dấu khung ảnh luôn hiện: `layerList.vue` [TINIX] (ô chọn + "Đánh dấu khung ảnh"), `ImageFramePanel.vue` (Vai trò ảnh); `TemplatePhotoStatus.vue` hiện khi trang mở từ một mẫu.
+- Quản trị → Sửa (`Admin.vue`, `?tempid&edit=1`) vẫn giữ: mẫu thành phần (tempType 1) lưu bằng `saveTemp` gốc; mẫu thường lưu qua `overwriteTemplate` (đã làm sạch).
+- Mẫu có sẵn đang chứa ảnh `/static/photos` (21 mẫu cắt dán, 3 mẫu thường lúc triển khai) không bị đổi cho tới lần Lưu đè kế tiếp.

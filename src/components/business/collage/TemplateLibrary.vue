@@ -12,9 +12,8 @@
     <CollagePreview :layout="t.data" />
     <span class="tpl-badge">{{ $t('tinix.ui.collageTab.badge') }}</span>
     <span class="tpl-slots">{{ $t('tinix.ui.photoAuto.n_anh', { n: Math.max(1, t.photo_slots || 0) }) }}</span>
-    <!-- [TINIX] cùng bộ nút với thẻ mẫu thường (imgWaterFall.vue): Sửa (tab mới, chế độ Sửa mẫu) · Nhóm · Xóa; đổi tên = sửa ô tên rồi Lưu đè -->
+    <!-- [TINIX] cùng bộ nút với thẻ mẫu thường (imgWaterFall.vue): Nhóm · Xóa. Sửa = bấm mẫu để mở, chỉnh, Tệp → Lưu đè mẫu (tên = ô tên thanh trên) -->
     <div class="tpl-card-actions" @click.stop>
-     <button type="button" class="tpl-edit-btn" :title="$t('tinix.ui.collageTab.edit_tip')" @click.stop="editTemplate(t)">{{ $t('tinix.ui.templateCard.sua_mau') }}</button>
      <button v-if="props.allGroups" type="button" class="tpl-edit-btn grp" :title="$t('tinix.ui.templateGroups.nhom_tip')" @click.stop="grouping={open:true,id:t.id,ids:[...(t.groups||[])]}">{{ $t('tinix.ui.templateCard.nhom') }}</button>
      <button type="button" class="tpl-edit-btn danger" :title="$t('tinix.ui.templateCard.xoa_mau_tip')" @click.stop="removeTemplate(t)">{{ $t('tinix.ui.templateCard.xoa_mau') }}</button>
     </div>
@@ -33,7 +32,6 @@
 import {ref,computed,onMounted,onBeforeUnmount} from 'vue'
 import i18n from '@/languages'
 import {ElMessage,ElMessageBox,ElCheckbox,ElCheckboxGroup} from 'element-plus'
-import {useRouter} from 'vue-router'
 import {TEMPLATES_CHANGED_KEY} from '@/utils/tinix/template-save'
 import CollagePreview from './CollagePreview.vue'
 import config from '@/config'
@@ -63,9 +61,6 @@ async function removeTemplate(t:any){
 // [TINIX] Nhóm chủ đề của mẫu cắt dán (dùng chung với mẫu thường)
 const grouping=ref({open:false,id:0,ids:[] as number[]})
 async function saveGroups(){busy.value=true;try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates/${grouping.value.id}/groups`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({ids:grouping.value.ids})});if(!r.ok)throw new Error((await r.json()).message);grouping.value.open=false;ElMessage.success(tt('groups_saved'));await load();emit('changed')}catch(e:any){ElMessage.error(e.message)}finally{busy.value=false}}
-// [TINIX] Sửa mẫu: mở tab mới ở chế độ Sửa mẫu (giống thẻ mẫu thường) — hiện công cụ đánh dấu khung ảnh, ô tên ở thanh trên, Tệp → Lưu đè mẫu
-const router=useRouter()
-function editTemplate(t:any){window.open(router.resolve({path:'/home',query:{ctemplate:String(t.id),edit:'1'}}).href,'_blank')}
 // tab Sửa mẫu lưu xong thì danh sách ở tab này tải lại (sự kiện 'storage' chỉ bắn ở tab khác)
 const onStorage=(e:StorageEvent)=>{if(e.key===TEMPLATES_CHANGED_KEY)load()}
 onMounted(()=>{load();window.addEventListener('tinix:templates-changed',load);window.addEventListener('storage',onStorage)})
