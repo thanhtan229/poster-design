@@ -100,9 +100,9 @@ async function onOpen() {
   state.loading = true
   items.splice(0)
   try {
-    const [m, t]: any[] = await Promise.all([adminApi.getCategories('materials', { page: 1, pageSize: 100 }), adminApi.getTemplateCategories(1, { page: 1, pageSize: 100 })])
-    state.materialCates = m?.list || []
-    state.textCates = t?.list || []
+    const [materialRes, textRes]: any[] = await Promise.all([adminApi.getCategories('materials', { page: 1, pageSize: 100 }), adminApi.getTemplateCategories(1, { page: 1, pageSize: 100 })])
+    state.materialCates = materialRes?.list || []
+    state.textCates = textRes?.list || []
     state.cates = { image: defaultMaterialCate('image'), svg: defaultMaterialCate('svg'), mask: defaultMaterialCate('mask'), text: state.textCates[0]?.name || '' }
 
     const { materials, texts } = extractAssets(props.source, props.titlePrefix || '', { image: t('admin.extractDialog.nameImage'), svg: t('admin.extractDialog.nameSvg'), mask: t('admin.extractDialog.nameMask'), group: t('admin.extractDialog.nameGroup') })
