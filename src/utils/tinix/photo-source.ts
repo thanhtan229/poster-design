@@ -60,6 +60,9 @@ export function collectUsedUrls(layouts: Array<{ global?: any; layers?: any[] }>
       if (w.imgUrl) out.push(w.imgUrl)
       if (w.cutoutBorderUrl) out.push(w.cutoutBorderUrl)
       if (w.cutoutEdit) out.push(w.cutoutEdit.sourceUrl, w.cutoutEdit.cutoutUrl)
+      if (w.stickerBorder) {
+        out.push(w.stickerBorder.baseUrl) // [TINIX] ảnh chưa viền: cần giữ để chỉnh lại bề dày
+      }
       if (w.origin && w.origin.original) out.push(w.origin.original)
     }
   }

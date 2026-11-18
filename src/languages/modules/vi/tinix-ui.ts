@@ -448,6 +448,13 @@ export default {
     export_failed: 'Xuất ảnh thất bại',
     exporting: 'Đang dựng ảnh…',
   },
+  stickerBorder: {
+    title: 'Viền trắng hình dán',
+    hint: 'Viền trắng thật bám theo người, dùng cho in và cắt nổi. Cần ảnh đã tách nền (PNG trong suốt). Kéo về 0 để bỏ viền.',
+    mm: 'Bề dày viền',
+    busy: 'Đang dựng viền…',
+    dialog_label: 'Viền trắng hình dán',
+  },
   cutoutEngine: {
     model: 'Model tách nền',
     birefnet: 'Chất lượng cao · BiRefNet',

@@ -53,6 +53,9 @@ export type TImageSetting = {
   cropY?: number
   imgRotate?: number // [TINIX] xoay ảnh bên trong khung (độ), xem utils/tinix/photo-frame.ts
   cutoutBorderUrl?: string
+  stickerBorder?: import('@/utils/tinix/sticker-apply').StickerBorderMeta // [TINIX] viền trắng hình dán (ảnh gốc chưa viền + số đo), xem utils/tinix/sticker-apply.ts
+  cutInset?: number // [TINIX] đường cắt laser lùi vào (px trang)
+  printInset?: number // [TINIX] đệm trong suốt mỗi cạnh không tính vào hộp cắt (px trang)
   cutoutEdit?: { sourceUrl:string; cutoutUrl:string; mm:number;frame:{left:number;top:number;width:number;height:number} }
 }
 
