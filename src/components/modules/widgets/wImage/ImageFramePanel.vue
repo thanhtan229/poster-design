@@ -7,7 +7,10 @@
  </div>
  <p v-if="image.fit==='cover'">{{image.frameDragMode==='frame'?'Đang di chuyển cả khung.':'Đang căn ảnh bên trong khung; vị trí khung giữ nguyên.'}}</p>
  <template v-if="image.fit==='cover'">
- <label>Phóng ảnh {{Number(image.zoom||1).toFixed(2)}}×<input aria-label="Phóng ảnh trong khung" type="range" min="1" max="3" step="0.01" :value="image.zoom||1" @input="zoom(Number(($event.target as HTMLInputElement).value))" @change="commit" @blur="commit"></label>
+ <label>Phóng ảnh {{Number(image.zoom||1).toFixed(2)}}×<input aria-label="Phóng ảnh trong khung" type="range" min="1" :max="MAX_FRAME_ZOOM" step="0.01" :value="image.zoom||1" @input="zoom(Number(($event.target as HTMLInputElement).value))" @change="commit" @blur="commit"></label>
+ <label>{{$t('tinix.ui.photoFrame.rotate')}} {{Number(image.imgRotate||0).toFixed(1)}}°<input :aria-label="$t('tinix.ui.photoFrame.rotate')" type="range" min="-180" max="180" step="0.5" :value="image.imgRotate||0" @input="rotate(Number(($event.target as HTMLInputElement).value))" @change="commit" @blur="commit"></label>
+ <div class="mode-buttons"><button @click="turn(-90)">{{$t('tinix.ui.photoFrame.turn_left')}}</button><button @click="turn(90)">{{$t('tinix.ui.photoFrame.turn_right')}}</button></div>
+ <p>{{$t('tinix.ui.photoFrame.wheel_hint')}}</p>
  <button @click="center">Căn giữa ảnh</button><button @click="fit">Vừa khung</button>
  <p>Chỉ chiều có phần ảnh dư mới kéo được. Tăng phóng ảnh để có thêm khoảng căn chỉnh.</p>
  </template>
@@ -21,22 +24,23 @@
 </template>
 <script setup lang="ts">
 import {computed,ref} from 'vue'
-import {useCanvasStore,useWidgetStore,useHistoryStore,useUserStore} from '@/store'
+import {useWidgetStore,useHistoryStore,useUserStore} from '@/store'
+import {createFrameHistory,setFrameZoom,setFrameRotation,MAX_FRAME_ZOOM} from '@/utils/tinix/photo-frame'
 import {resolveLinkedImage} from '@/utils/tinix/image-effects'
 import {photoRole} from '@/utils/tinix/template-photo'
-const props=defineProps<{image:any}>(); const ws=useWidgetStore(); const cs=useCanvasStore()
+const props=defineProps<{image:any}>(); const ws=useWidgetStore()
 const editing=computed(()=>useUserStore().tempEditing)
 const role=computed(()=>photoRole(props.image)); const choosingLink=ref(false); const message=ref('')
 const sources=computed(()=>ws.dWidgets.filter(w=>w.type==='w-image'&&w.slot&&!w.linkedPhotoId&&!w.hidden&&w.uuid!==props.image.uuid))
-let before=''; let page=-1
-function begin(){if(!before){before=JSON.stringify(ws.dWidgets);page=cs.dCurrentPage}}
-function commit(){if(!before)return;const old=before;before='';if(page!==cs.dCurrentPage)return;ws.updateDWidgets();const after=JSON.stringify(ws.dWidgets);if(old!==after)useHistoryStore().changeHistory({patches:[{op:'replace',path:[page,'layers'],value:JSON.parse(after)}],inversePatches:[{op:'replace',path:[page,'layers'],value:JSON.parse(old)}]})}
+const {begin,commit}=createFrameHistory()
 function stopArrow(e:KeyboardEvent){if(e.key.startsWith('Arrow')||['Home','End','PageUp','PageDown'].includes(e.key))e.stopPropagation()}
 function onKey(e:KeyboardEvent){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.stopPropagation();commit();useHistoryStore().handleHistory(e.shiftKey?'redo':'undo');return}stopArrow(e)}
 function mode(value:string){begin();props.image.frameDragMode=value;commit()}
-function zoom(value:number){begin();props.image.zoom=value;props.image.transform=`scale(${value})`}
+function zoom(value:number){begin();setFrameZoom(props.image,value)}
+function rotate(value:number){begin();setFrameRotation(props.image,value)}
+function turn(step:number){begin();setFrameRotation(props.image,(Number(props.image.imgRotate)||0)+step);commit()}
 function center(){begin();props.image.cropX=50;props.image.cropY=50;commit()}
-function fit(){zoom(1);props.image.cropX=50;props.image.cropY=50;commit()}
+function fit(){begin();props.image.imgRotate=0;setFrameZoom(props.image,1);props.image.cropX=50;props.image.cropY=50;commit()}
 function freeze(){const source=resolveLinkedImage(props.image,ws.dWidgets);props.image.imgUrl=source.imgUrl;props.image.origin=source.origin?{...source.origin}:undefined;delete props.image.linkedPhotoId}
 function roleEvent(e:Event){const input=e.target as HTMLSelectElement;changeRole(input.value);input.value=role.value}
 function changeRole(value:string){message.value='';choosingLink.value=false;if(value===role.value)return

@@ -22,6 +22,7 @@
       ...imageFrameStyle(params),
     }"
     @mousedown.capture="startFramePan"
+    @wheel="onFrameWheel"
   >
     <div
       v-if="cropEdit"
@@ -34,6 +35,7 @@
     </div>
     <ImageSurface :image="params" :src="source.imgUrl">
       <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${source.imgUrl}') ${params.sliceData.left} round` }"></div>
+      <RotatedCover v-else-if="rotated" :image="params" :src="source.imgUrl" />
       <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
     </ImageSurface>
     <div v-if="isMask" class="drop__mask">
@@ -44,6 +46,8 @@
 
 <script lang="ts" setup>
 import ImageSurface from './ImageSurface.vue'
+import RotatedCover from './RotatedCover.vue' // [TINIX]
+import { frameRotation, unrotateDelta, setFrameZoom, setFrameRotation, createFrameHistory } from '@/utils/tinix/photo-frame' // [TINIX]
 import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
 
 // 图片组件
@@ -131,6 +135,24 @@ const isMask = computed(() => {
 const isDraw = computed(() => {
   return route.name === 'Draw'
 })
+const rotated = computed(() => frameRotation(props.params) !== 0) // [TINIX]
+
+// [TINIX] Lăn chuột trên khung ảnh đang chọn: phóng/thu ảnh trong khung; Shift + lăn: xoay ảnh. Alt/Ctrl giữ nguyên (phóng canvas).
+const wheelHistory = createFrameHistory()
+let wheelTimer: any = null
+function onFrameWheel(e: WheelEvent) {
+  const p = props.params
+  if (isDraw.value || e.altKey || e.ctrlKey || e.metaKey || p.fit !== 'cover' || p.lock || p.frameDragMode === 'frame') return
+  if (dActiveElement.value?.uuid !== p.uuid || widgetStore.dSelectWidgets.length > 1) return
+  e.preventDefault()
+  e.stopPropagation()
+  wheelHistory.begin()
+  const up = (e.deltaY || e.deltaX) < 0 // Shift + lăn có thể báo qua deltaX
+  if (e.shiftKey) setFrameRotation(p, (Number(p.imgRotate) || 0) + (up ? 2 : -2))
+  else setFrameZoom(p, (Number(p.zoom) || 1) * (up ? 1.06 : 1 / 1.06))
+  clearTimeout(wheelTimer)
+  wheelTimer = setTimeout(() => wheelHistory.commit(), 400)
+}
 
 watch(
   () => cropEdit.value,
@@ -226,16 +248,17 @@ function touchend() {
 
 function handlemousemove(e?: MouseEvent) {
   if (props.params.fit === 'cover') {
-    if (!e || !coverDrag || !targetRef.value) return
-    const img = targetRef.value
+    const img = (widgetRef.value?.querySelector('img.target') as HTMLImageElement | null) || targetRef.value // [TINIX] ảnh xoay nằm trong RotatedCover
+    if (!e || !coverDrag || !img) return
     const w = Number(props.params.width); const h = Number(props.params.height)
     if (!img.naturalWidth || !img.naturalHeight || !w || !h || !dZoom.value) return
     const factor = Math.max(w / img.naturalWidth, h / img.naturalHeight)
     const zoom = Math.max(1, Number(props.params.zoom) || 1)
     const excessX = Math.max(0, img.naturalWidth * factor - w + w * (1 - 1 / zoom))
     const excessY = Math.max(0, img.naturalHeight * factor - h + h * (1 - 1 / zoom))
-    const px = Math.max(0, Math.min(100, coverDrag.cropX - (e.clientX - coverDrag.x) * 10000 / (dZoom.value * zoom * (excessX || Infinity))))
-    const py = Math.max(0, Math.min(100, coverDrag.cropY - (e.clientY - coverDrag.y) * 10000 / (dZoom.value * zoom * (excessY || Infinity))))
+    const delta = unrotateDelta(e.clientX - coverDrag.x, e.clientY - coverDrag.y, frameRotation(props.params)) // [TINIX] kéo theo con trỏ khi ảnh đã xoay
+    const px = Math.max(0, Math.min(100, coverDrag.cropX - delta.x * 10000 / (dZoom.value * zoom * (excessX || Infinity))))
+    const py = Math.max(0, Math.min(100, coverDrag.cropY - delta.y * 10000 / (dZoom.value * zoom * (excessY || Infinity))))
     widgetStore.updateWidgetData({ uuid: props.params.uuid, key: 'cropX', value: px })
     widgetStore.updateWidgetData({ uuid: props.params.uuid, key: 'cropY', value: py })
     e.stopPropagation()

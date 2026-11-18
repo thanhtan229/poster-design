@@ -37,6 +37,7 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   linkedPhotoId?: string
   cropX?: number
   cropY?: number
+  imgRotate?: number // [TINIX]
   keepCover?: boolean // [TINIX] lớp ảnh phủ kín trang: kéo di chuyển nhưng luôn phủ kín trang (mẫu 1 ảnh mặc định)
   layerName?: string // [TINIX] tên lớp do người dùng đặt (ưu tiên hơn chữ/tên mặc định)
   imgUrl?: string
