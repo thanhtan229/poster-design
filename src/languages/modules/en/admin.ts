@@ -16,6 +16,7 @@ export default {
     offline: 'Unpublished',
     actions: 'Actions',
     unpublish: 'Unpublish',
+    extract: 'Extract elements',
   },
   quick: {
     title: 'Quick actions',

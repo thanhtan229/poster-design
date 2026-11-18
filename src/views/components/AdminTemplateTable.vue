@@ -20,14 +20,14 @@
     <el-table-column :label="$t('admin.templateTable.size')" width="110"><template #default="{ row }">{{ row.width }} × {{ row.height }}</template></el-table-column>
     <el-table-column :label="$t('admin.templateTable.category')" width="160" show-overflow-tooltip><template #default="{ row }"><span>{{ row.cate || $t('admin.templateTable.uncategorized') }}</span><el-button type="primary" size="small" link @click="$emit('category', row)">{{ $t('common.modify') }}</el-button></template></el-table-column>
     <el-table-column :label="$t('admin.templateTable.status')" width="80"><template #default="{ row }"><el-tag :type="row.state === 1 ? 'success' : 'info'" size="small">{{ row.state === 1 ? $t('admin.templateTable.active') : $t('admin.templateTable.offline') }}</el-tag></template></el-table-column>
-    <el-table-column :label="$t('admin.templateTable.actions')" width="170" fixed="right"><template #default="{ row }"><el-button type="primary" size="small" link @click="$emit('edit', row)">{{ $t('common.edit') }}</el-button><el-button v-if="row.state === 1" type="warning" size="small" link @click="$emit('delete', row)">{{ $t('admin.templateTable.unpublish') }}</el-button><el-button type="danger" size="small" link @click="$emit('remove', row)">{{ $t('common.delete') }}</el-button></template></el-table-column>
+    <el-table-column :label="$t('admin.templateTable.actions')" width="230" fixed="right"><template #default="{ row }"><el-button type="primary" size="small" link @click="$emit('edit', row)">{{ $t('common.edit') }}</el-button><el-button v-if="row.state === 1" type="success" size="small" link @click="$emit('extract', row)">{{ $t('admin.templateTable.extract') }}</el-button><el-button v-if="row.state === 1" type="warning" size="small" link @click="$emit('delete', row)">{{ $t('admin.templateTable.unpublish') }}</el-button><el-button type="danger" size="small" link @click="$emit('remove', row)">{{ $t('common.delete') }}</el-button></template></el-table-column>
   </el-table>
 </template>
 
 <script lang="ts" setup>
 import { ElTable, ElTableColumn, ElImage, ElTag, ElButton } from 'element-plus'
 withDefaults(defineProps<{ rows: any[]; loading?: boolean }>(), { loading: false })
-defineEmits<{ delete: [row: any]; remove: [row: any]; edit: [row: any]; category: [row: any] }>()
+defineEmits<{ delete: [row: any]; remove: [row: any]; edit: [row: any]; extract: [row: any]; category: [row: any] }>()
 </script>
 
 <style lang="less" scoped>

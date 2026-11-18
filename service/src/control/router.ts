@@ -69,6 +69,7 @@ rRouter.post(api.ADMIN_USER_IMAGE_DELETE, requireAdmin, adminService.deleteUserI
 rRouter.get(api.ADMIN_CATEGORIES, requireAdmin, adminService.getCategories)
 rRouter.get(api.ADMIN_ASSETS, requireAdmin, adminService.getAssets)
 rRouter.post(api.ADMIN_ASSET_ADD, requireAdmin, adminService.addAsset)
+rRouter.post(api.ADMIN_ASSET_BULK, requireAdmin, adminService.bulkImportAssets)
 rRouter.post(api.ADMIN_ASSET_UPDATE, requireAdmin, adminService.updateAsset)
 rRouter.post(api.ADMIN_ASSET_DELETE, requireAdmin, adminService.deleteAsset)
 rRouter.get(api.ADMIN_TEMPLATE_CATEGORIES, requireAdmin, adminService.getTemplateCategories)

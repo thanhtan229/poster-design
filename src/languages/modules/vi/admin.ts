@@ -17,6 +17,7 @@ export default {
     offline: 'Đã gỡ',
     actions: 'Thao tác',
     unpublish: 'Gỡ xuống',
+    extract: 'Tách phần tử',
   },
   quick: {
     title: 'Thao tác thường dùng',

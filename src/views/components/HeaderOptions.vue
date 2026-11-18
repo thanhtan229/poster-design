@@ -20,6 +20,7 @@
   </div>
   <div class="top-icon-wrap">
     <!-- [TINIX] "Lưu mẫu" / "Hủy" của chế độ sửa mẫu đã chuyển vào menu Tệp (Lưu đè mẫu / Thoát chế độ sửa mẫu) -->
+    <el-button v-if="isAdmin" plain style="margin-right: 0.5rem" @click="extractVisible = true">{{ $t('admin.templateTable.extract') }}</el-button>
     <watermark-option style="margin-right: 0.5rem" />
     <!-- [TINIX] Một hộp thoại Xuất duy nhất (JPG in / PNG / PSD / bộ cắt dán); bộ cắt dán mở hộp thoại PrintBundle -->
     <PrintBundle v-if="(dPage as any).collage" ref="bundleRef" :save-design="()=>saveToDb(true)" :title="state.title" :disabled="tempEditing" />
@@ -28,6 +29,8 @@
   </div>
   <!-- 生成图片组件 -->
   <SaveImage ref="canvasImage" />
+  <!-- 提取当前设计中的图片 / 矢量 / 相框 / 文字组合到素材库（仅管理员） -->
+  <ExtractAssetsDialog v-if="isAdmin" v-model="extractVisible" :source="extractSource" />
 </template>
 
 <script lang="ts" setup>
@@ -50,6 +53,7 @@ import watermarkOption from './Watermark.vue'
 import { clampDpi, DEFAULT_DPI } from '@/utils/tinix/units' // [TINIX]
 import { withPngDpi } from '@/utils/tinix/png-dpi' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
+import ExtractAssetsDialog from '@/components/business/extract-assets/ExtractAssetsDialog.vue'
 
 type TProps = {
   modelValue?: boolean
@@ -75,6 +79,19 @@ const userStore = useUserStore()
 const widgetStore = useWidgetStore()
 
 const canvasImage = ref<typeof SaveImage | null>(null)
+
+// 管理员专用：把当前设计里的元素批量入库
+const isAdmin = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
+  } catch {
+    return false
+  }
+})()
+const extractVisible = ref(false)
+// 打开弹窗时才序列化一份快照，避免响应式数据在弹窗存活期间变化
+const extractSource = computed(() => (extractVisible.value ? JSON.parse(JSON.stringify(Number(route.query.tempType) === 1 ? dWidgets.value : dLayouts.value)) : null))
+
 const exportRef = ref<InstanceType<typeof ExportDialog> | null>(null)
 const bundleRef = ref<InstanceType<typeof PrintBundle> | null>(null)
 const dirty = computed(() => isDirty()) // [TINIX]
