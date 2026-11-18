@@ -18,7 +18,7 @@
           <p>{{ item.name }}</p>
         </li>
       </ul>
-      <a href="https://github.com/palxiao/poster-design" target="_blank" class="github"><img src="https://fe-doc.palxp.cn/images/github.svg" alt="Github" title="Github" /> Mã nguồn</a><!-- [TINIX] -->
+      <!-- [TINIX] đã bỏ liên kết "Mã nguồn" ở thanh trái -->
     </div>
     <div v-show="state.active" :class="['widget-wrap', { resizing: panelDragging }]" :style="{ width: panelWidth + 'px' }"><!-- [TINIX] độ rộng kéo chỉnh được -->
       <keep-alive>
@@ -223,21 +223,5 @@ defineExpose({
 .tinix-resizer:hover,
 .tinix-resizer.on {
   background: rgba(63, 106, 247, 0.35);
-}
-
-.github {
-  cursor: pointer;
-  position: absolute;
-  bottom: 12px;
-  font-size: 12px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  img {
-    width: 21px;
-    height: 21px;
-    margin: 0 2px;
-  }
 }
 </style>
