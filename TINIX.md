@@ -430,3 +430,6 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 - Dùng gần đây: `POST /api/tinix/template-used {kind,id}` khi bấm dùng mẫu; danh sách mẫu thường `ORDER BY used_at DESC, id DESC` (`db/templates.ts` [TINIX]), mẫu cắt dán `used_at, updated_at`.
 - Thẻ mẫu cắt dán: dòng phụ hiện tên nhóm; menu ⋯ có **Nhóm…** (`PUT …/:id/groups`), **Lịch sử phiên bản…** (`GET …/:id/versions`, mở phiên bản cũ lên trang, không sửa ngược), **Đổi tên…** (chỉ tên).
 - (2026-11-18) Thẻ mẫu cắt dán trình bày giống mẫu thường: chỉ ảnh xem trước (xếp cột kiểu masonry), bấm ảnh để dùng, nhãn "Cắt dán" và "n ảnh", menu ⋯ hiện khi rê chuột; bỏ nút "Dùng mẫu này" và dòng tên/phiên bản (xem trong tooltip). `PrintGroups.vue` [TINIX] mặc định thu gọn, bấm tiêu đề (kèm số cụm) để mở; thu gọn lại thì bỏ chọn cụm và tắt "nền sạch".
+
+## Bỏ liên kết "Mã nguồn" ở thanh trái (2026-11-18)
+- Gỡ liên kết GitHub "Mã nguồn" dưới thanh trái trong `widgetPanel.vue` [TINIX] và CSS `.github` đi kèm. Các liên kết khác tới repo gốc (trong `Helper.vue`, `Moveable.vue`) giữ nguyên.
