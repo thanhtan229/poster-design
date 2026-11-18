@@ -92,7 +92,10 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
     const rectOf = (w: any): TRect => ({ page, left: Number(w.left) || 0, top: Number(w.top) || 0, width: Number(w.width) || 0, height: Number(w.height) || 0 })
     const addMaterial = (key: string, type: TExtractedMaterial['type'], url: string, label: string, w: any) => {
       const existing = materials.get(key)
-      if (existing) return void existing.rects.push(rectOf(w))
+      if (existing) {
+        existing.rects.push(rectOf(w))
+        return
+      }
       materials.set(key, { key, type, url: url.trim(), title: `${titlePrefix}${label} ${materials.size + 1}`, width: w.width, height: w.height, rects: [rectOf(w)] })
     }
 
@@ -100,7 +103,10 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
       if (!w) return
       if (w.type === 'w-image') {
         // 用户照片占位（slot / 已链接照片）属于用户内容，不入库
-        if (w.slot === true || w.linkedPhotoId) return void photoRects.push(rectOf(w))
+        if (w.slot === true || w.linkedPhotoId) {
+          photoRects.push(rectOf(w))
+          return
+        }
         // 相框：mask 非空 → 容器素材；imgUrl 是用户放进相框里的图，不能入库
         if (isRemoteUrl(w.mask)) {
           addMaterial(`mask:${normalizeUrl(w.mask)}`, 'mask', w.mask, labels.mask, w)

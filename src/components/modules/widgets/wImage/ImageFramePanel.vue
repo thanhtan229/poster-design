@@ -9,7 +9,9 @@
  <div class="mode-buttons"><button @click="turn(-90)">{{$t('tinix.ui.photoFrame.turn_left')}}</button><button @click="turn(90)">{{$t('tinix.ui.photoFrame.turn_right')}}</button></div>
  <button @click="center">Căn giữa ảnh</button><button @click="fit">Vừa khung</button>
  </template>
- <label>Vai trò ảnh<select aria-label="Vai trò ảnh" :value="role" @change="roleEvent"><option value="main">Ảnh chính — nhận ảnh thay thế</option><option value="linked">Nền liên kết</option><option value="decoration">Ảnh trang trí</option></select></label>
+ <label>Vai trò ảnh<select aria-label="Vai trò ảnh" :value="role" @change="roleEvent"><option value="main">Ảnh chính — nhận ảnh thay thế</option><option value="subject">{{$t('tinix.ui.subjectFill.role')}}</option><option value="linked">Nền liên kết</option><option value="decoration">Ảnh trang trí</option></select></label>
+ <label v-if="role==='subject'">{{$t('tinix.ui.subjectFill.border_mm')}}<input :aria-label="$t('tinix.ui.subjectFill.border_mm')" type="number" min="0" max="8" step="0.5" :value="image.templateBorderMm ?? 0" @change="setBorderMm(Number(($event.target as HTMLInputElement).value))"></label>
+ <p v-if="role==='subject'">{{$t('tinix.ui.subjectFill.role_hint')}}</p>
  <label v-if="role==='linked'||choosingLink">Khung chính<select aria-label="Khung ảnh liên kết" :value="image.linkedPhotoId||''" @change="link(($event.target as HTMLSelectElement).value)"><option value="" disabled>Chọn khung ảnh chính…</option><option v-for="w in sources" :key="w.uuid" :value="w.uuid">{{w.layerName||w.name||'Ảnh chính'}}</option></select></label>
  <p v-if="role==='linked'">Dùng ảnh của khung chính; giữ cách căn và hiệu ứng riêng.</p>
  <button v-if="role==='linked'" @click="detach">Tách liên kết ảnh</button>
@@ -40,9 +42,14 @@ function roleEvent(e:Event){const input=e.target as HTMLSelectElement;changeRole
 function changeRole(value:string){message.value='';choosingLink.value=false;if(value===role.value)return
  if(ws.dWidgets.some(w=>w.linkedPhotoId===props.image.uuid)&&value!=='main'){message.value='Ảnh này đang cấp ảnh cho nền. Hãy đổi khung chính của nền hoặc tách liên kết trước.';return}
  if(value==='linked'){choosingLink.value=true;message.value=sources.value.length?'Chọn khung chính để hoàn tất gán nền.':'Chưa có ảnh chính khác. Hãy đánh dấu một ảnh làm ảnh chính trước.';return}
- begin();freeze();props.image.slot=value==='main';if(value==='main')props.image.fit='cover';commit()
+ begin();freeze();props.image.slot=value==='main'||value==='subject';if(value==='main'){props.image.fit='cover';if(props.image.templateRole==='subject')props.image.templateRole='photo'}
+ if(value==='subject'){props.image.templateRole='subject';if(props.image.templateBorderMm===undefined)props.image.templateBorderMm=Number(props.image.stickerBorder?.mm)||Number(localStorage.getItem('tinix.stickerBorderMm'))||3}
+ if(value==='decoration'&&props.image.templateRole==='subject')props.image.templateRole='fixed'
+ commit()
 }
 function link(id:string){if(!sources.value.some(w=>w.uuid===id))return;begin();props.image.linkedPhotoId=id;props.image.slot=false;props.image.fit='cover';choosingLink.value=false;message.value='';commit()}
+// [TINIX] bề dày viền dùng khi tự tách nền ảnh đưa vào khung tách nền
+function setBorderMm(mm:number){begin();props.image.templateBorderMm=Math.max(0,Math.min(8,Number.isFinite(mm)?Math.round(mm*2)/2:0));commit()}
 function detach(){begin();freeze();props.image.slot=false;commit()}
 </script>
 <style scoped>.frame-panel{display:flex;flex-direction:column;gap:9px;padding:12px 0;font-size:12px}.frame-panel p{margin:0;color:#64748b;line-height:1.5}.frame-panel label{display:flex;flex-direction:column;gap:5px}.frame-panel button,.frame-panel select{padding:7px;border:1px solid #cbd5e1;border-radius:4px;background:white;font:inherit}.mode-buttons{display:flex;gap:5px}.frame-panel .edit-photo{background:#f97316;border-color:#ea580c;color:white;font-weight:600}.frame-panel .edit-photo[aria-pressed=true]{background:#fff7ed;color:#c2410c}.mode-buttons button[aria-pressed=true]{background:#e0f2fe;border-color:#0284c7;color:#075985}.frame-panel [role=alert]{color:#b45309}</style>
