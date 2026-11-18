@@ -4,7 +4,8 @@
 //   - ảnh thường  → "khung ảnh" (ô xám có biểu tượng ảnh), templateRole 'photo'
 //   - ảnh tách nền (có/không viền) → "khung tách nền" (viền nét đứt, biểu tượng người, ghi bề dày viền),
 //     templateRole 'subject' + templateBorderMm để sau này biết cần tách nền và thêm viền bao nhiêu mm.
-// Ảnh thư viện (Chất liệu, ảnh của mẫu/mẫu cắt dán, ảnh ★, SVG nhúng, ảnh AI) được giữ nguyên.
+// Ảnh thư viện (Chất liệu, ảnh của mẫu/mẫu cắt dán, ảnh ★, SVG nhúng, ảnh AI) được giữ nguyên — trừ hình người
+// tách nền do công cụ dòng lệnh dựng (/static/collage/…/hero-*.png), vẫn là ảnh khách.
 // Chỉ đổi BẢN SAO dữ liệu dùng để lưu mẫu; trang đang mở trên canvas không bị đụng tới.
 import i18n from '@/languages'
 
@@ -20,12 +21,25 @@ export function isUploadUrl(url: unknown): boolean {
   return /^\/static\/(photos|user|cutouts)\//.test(path)
 }
 
-function isSubject(w: any): boolean {
-  return !!(w.stickerBorder || w.cutoutEdit || w.cutoutBorderUrl || /\/static\/cutouts\//.test(String(w.imgUrl || '')))
+/**
+ * Hình người tách nền do công cụ dòng lệnh dựng mẫu cắt dán tạo (`kit.hero` trong scripts/lib/collage-kit.mjs):
+ * ảnh khách đã tách nền + viền trắng gộp sẵn, lưu cùng ảnh của mẫu ở /static/collage/<mẫu>/hero-<id>.png.
+ * Nằm trong thư mục ảnh mẫu nhưng vẫn là ảnh khách → cũng thành khung tách nền.
+ */
+export function isCliHeroUrl(url: unknown): boolean {
+  if (typeof url !== 'string' || !url) return false
+  const path = url.replace(/^https?:\/\/[^/]+/i, '').split('?')[0]
+  return /^\/static\/collage\/.+\/hero-[^/]+\.(png|webp)$/i.test(path)
 }
 
-function borderMmOf(w: any): number {
-  const mm = Number((w.stickerBorder && w.stickerBorder.mm) || (w.cutoutEdit && w.cutoutEdit.mm) || 0)
+function isSubject(w: any): boolean {
+  return !!(w.stickerBorder || w.cutoutEdit || w.cutoutBorderUrl || /\/static\/cutouts\//.test(String(w.imgUrl || '')) || isCliHeroUrl(w.imgUrl))
+}
+
+/** Bề dày viền trắng (mm): số đo của app nếu có; hình người dựng bằng dòng lệnh thì suy từ cutInset (= nửa viền, px trang). */
+function borderMmOf(w: any, dpi: number): number {
+  let mm = Number((w.stickerBorder && w.stickerBorder.mm) || (w.cutoutEdit && w.cutoutEdit.mm) || 0)
+  if (!(mm > 0) && Number(w.cutInset) > 0) mm = (Number(w.cutInset) * 2 * 25.4) / (dpi > 0 ? dpi : 300)
   return Number.isFinite(mm) && mm > 0 ? Math.round(mm * 10) / 10 : 0
 }
 
@@ -85,12 +99,12 @@ export function subjectPlaceholder(w: any, mm: number): string {
 const DROP = ['origin', 'stickerBorder', 'cutoutEdit', 'cutoutBorderUrl', 'cutInset', 'printInset', 'imgRotate', 'cropEdit']
 
 /** Đổi một lớp ảnh dùng ảnh tải lên thành khung trống (sửa trực tiếp trên bản sao). Trả về loại khung hoặc null. */
-function blankImage(w: any): 'photo' | 'subject' | null {
+function blankImage(w: any, dpi: number): 'photo' | 'subject' | null {
   if (!w || w.type !== 'w-image') return null
   const urls = [w.imgUrl, w.origin && w.origin.original, w.stickerBorder && w.stickerBorder.baseUrl, w.cutoutBorderUrl]
-  if (!urls.some(isUploadUrl)) return null
+  if (!urls.some(isUploadUrl) && !isCliHeroUrl(w.imgUrl)) return null
   const subject = isSubject(w)
-  const mm = subject ? borderMmOf(w) : 0
+  const mm = subject ? borderMmOf(w, dpi) : 0
   for (const k of DROP) delete w[k]
   w.imgUrl = subject ? subjectPlaceholder(w, mm) : photoPlaceholder(w)
   w.fit = 'cover'
@@ -111,8 +125,9 @@ function sanitizePage(page: any, report: SanitizeReport) {
     page.global.backgroundImage = ''
     report.background++
   }
+  const dpi = Number(page && page.global && page.global.dpi) || 300
   for (const w of (page && page.layers) || []) {
-    const kind = blankImage(w)
+    const kind = blankImage(w, dpi)
     if (kind === 'photo') report.photos++
     else if (kind === 'subject') report.subjects++
   }
