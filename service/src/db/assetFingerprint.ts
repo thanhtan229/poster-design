@@ -110,6 +110,32 @@ export function similar(a: TFingerprint, b: TFingerprint): boolean {
   return diff / a.pixels.length <= PIXEL_THRESHOLD
 }
 
+/**
+ * 依据 16×16 缩略图给出「素材类型」建议（仅是建议，最终由管理员在弹窗里确认）：
+ * - photo：整幅不透明且细节多（照片 / 背景图），或颜色丰富（抠图人像等）
+ * - mask：颜色单一、偏浅、带透明边缘的纯色形状（圆、圆角矩形、云朵等，适合作容器 / 相框）
+ * - image：其余（贴纸 / 装饰元素）
+ */
+export function suggestKind(fp: TFingerprint | null): 'photo' | 'mask' | 'image' {
+  if (!fp || !fp.pixels) return 'image'
+  const px = fp.pixels
+  let opaque = 0
+  let transparent = 0
+  let lum = 0
+  const bins = new Set<number>()
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 16) { transparent++; continue }
+    opaque++
+    bins.add(((px[i] >> 4) << 8) | ((px[i + 1] >> 4) << 4) | (px[i + 2] >> 4))
+    lum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
+  }
+  if (!opaque) return 'image'
+  const transparentRatio = transparent / (px.length / 4)
+  if (bins.size >= 40 || (transparentRatio < 0.03 && bins.size >= 20)) return 'photo'
+  if (bins.size <= 8 && lum / opaque >= 205 && transparentRatio >= 0.08) return 'mask'
+  return 'image'
+}
+
 /** 并发取指纹（库内旧素材首次比对时较慢，之后命中缓存） */
 export async function fingerprintMany<T extends { url: string; kind: string }>(items: T[], concurrency = 8): Promise<(TFingerprint | null)[]> {
   const result: (TFingerprint | null)[] = new Array(items.length).fill(null)
@@ -125,20 +151,22 @@ export async function fingerprintMany<T extends { url: string; kind: string }>(i
   return result
 }
 
-/** 库内全部素材（url + 类型），用于内容比对 */
-export function listLibraryAssets(): { url: string; kind: 'image' | 'svg' | 'mask' }[] {
-  const rows: { list: string }[] = getDB().prepare('SELECT list FROM materials').all()
-  const out: { url: string; kind: 'image' | 'svg' | 'mask' }[] = []
-  rows.forEach((row) => {
-    try {
-      const list = JSON.parse(row.list)
-      if (!Array.isArray(list)) return
-      list.forEach((item) => {
-        if (!item?.url) return
-        const kind = item.type === 'svg' ? 'svg' : item.type === 'mask' ? 'mask' : 'image'
-        out.push({ url: item.url, kind })
-      })
-    } catch (e) {}
+/** 库内全部素材 / 照片（url + 类型），用于内容比对 */
+export function listLibraryAssets(): { url: string; kind: 'image' | 'svg' | 'mask' | 'photo' }[] {
+  const out: { url: string; kind: 'image' | 'svg' | 'mask' | 'photo' }[] = []
+  ;(['materials', 'photos'] as const).forEach((table) => {
+    const rows: { list: string }[] = getDB().prepare(`SELECT list FROM ${table}`).all()
+    rows.forEach((row) => {
+      try {
+        const list = JSON.parse(row.list)
+        if (!Array.isArray(list)) return
+        list.forEach((item) => {
+          if (!item?.url) return
+          const kind = table === 'photos' ? 'photo' : item.type === 'svg' ? 'svg' : item.type === 'mask' ? 'mask' : 'image'
+          out.push({ url: item.url, kind })
+        })
+      } catch (e) {}
+    })
   })
   return out
 }

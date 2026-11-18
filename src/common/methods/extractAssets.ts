@@ -85,6 +85,8 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
     widgets.forEach((w) => {
       if (!w) return
       if (w.type === 'w-image') {
+        // 用户照片占位（slot / 已链接照片）属于用户内容，不入库
+        if (w.slot === true || w.linkedPhotoId) return
         // 相框：mask 非空 → 容器素材；imgUrl 是用户放进相框里的图，不能入库
         if (isRemoteUrl(w.mask)) {
           const key = `mask:${normalizeUrl(w.mask)}`

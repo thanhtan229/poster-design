@@ -20,10 +20,16 @@
             {{ group.label }} ({{ group.items.length }})
           </el-checkbox>
           <span class="spacer"></span>
+          <el-select v-if="RASTER.includes(group.kind)" :model-value="undefined" size="small" style="width: 130px" :placeholder="t('admin.extractDialog.moveAll')" @change="moveGroup(group.items, $event)">
+            <el-option v-for="k in RASTER.filter((x) => x !== group.kind)" :key="k" :label="KIND_LABEL(k)" :value="k" />
+          </el-select>
           <span class="hint">{{ t('admin.extractDialog.saveTo') }}</span>
           <el-select v-model="state.cates[group.kind]" size="small" style="width: 160px" :placeholder="t('admin.extractDialog.selectCategory')">
             <template v-if="group.kind === 'text'">
               <el-option v-for="c in state.textCates" :key="c.id" :label="c.name" :value="c.name" />
+            </template>
+            <template v-else-if="group.kind === 'photo'">
+              <el-option v-for="c in state.photoCates" :key="c.cate" :label="c.name" :value="c.cate" />
             </template>
             <template v-else>
               <el-option v-for="c in state.materialCates" :key="c.cate" :label="c.name" :value="c.cate" />
@@ -38,6 +44,10 @@
             <el-tag v-if="item.status === 'exists'" size="small" type="info">{{ t('admin.extractDialog.exists') }}</el-tag>
             <el-tag v-else-if="item.status === 'dup'" size="small" type="warning" class="dup-tag" :title="item.dupOf">{{ t('admin.extractDialog.duplicate', { name: item.dupOf }) }}</el-tag>
             <span v-else class="name">{{ item.title }}</span>
+            <el-select v-if="item.status === 'new' && RASTER.includes(item.kind)" v-model="item.kind" size="small" class="kind-select" @click.stop>
+              <el-option v-for="k in RASTER" :key="k" :label="KIND_LABEL(k)" :value="k" />
+            </el-select>
+            <el-tag v-if="item.suggested && item.status === 'new'" size="small" type="success" class="suggest-tag">{{ t('admin.extractDialog.suggested') }}</el-tag>
           </label>
         </div>
       </section>
@@ -57,7 +67,10 @@ import * as adminApi from '@/api/admin'
 import i18n from '@/languages'
 import { extractAssets } from '@/common/methods/extractAssets'
 
-type TItem = { key: string; kind: 'image' | 'svg' | 'mask' | 'text'; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; payload: any }
+type TKind = 'image' | 'svg' | 'mask' | 'photo' | 'text'
+type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; payload: any }
+/** 位图类可以在这几类之间互相调整 */
+const RASTER: TKind[] = ['mask', 'image', 'photo']
 
 const t = (key: string, params?: Record<string, any>): string => i18n.global.t(key, params ?? {}) as string
 
@@ -69,12 +82,13 @@ const state = reactive({
   submitting: false,
   materialCates: [] as any[],
   textCates: [] as any[],
-  cates: { image: '', svg: '', mask: '', text: '' } as Record<string, string>,
+  photoCates: [] as any[],
+  cates: { image: '', svg: '', mask: '', photo: '', text: '' } as Record<string, string>,
 })
 const items = reactive<TItem[]>([])
 
 const KIND_LABEL = (kind: string) => t(`admin.extractDialog.group${kind.charAt(0).toUpperCase()}${kind.slice(1)}`)
-const groups = computed(() => (['mask', 'image', 'svg', 'text'] as const).map((kind) => ({ kind, label: KIND_LABEL(kind), items: items.filter((i) => i.kind === kind) })))
+const groups = computed(() => (['mask', 'image', 'svg', 'photo', 'text'] as const).map((kind) => ({ kind, label: KIND_LABEL(kind), items: items.filter((i) => i.kind === kind) })))
 const selectedCount = computed(() => items.filter((i) => i.status === 'new' && i.checked).length)
 const existsCount = computed(() => items.filter((i) => i.status === 'exists').length)
 const dupCount = computed(() => items.filter((i) => i.status === 'dup').length)
@@ -94,16 +108,34 @@ function defaultMaterialCate(kind: string) {
   return state.materialCates.find((c) => want.includes(c.cate))?.cate || state.materialCates[0]?.cate || ''
 }
 
-const payloadOf = (kind: TItem['kind'], cate: string, item: TItem) => (kind === 'text' ? { cate, ...item.payload } : { cate, asset: item.payload })
+/** 位图类在组间移动：移到「照片」时默认不勾选 */
+function moveGroup(list: TItem[], kind: TKind) {
+  list.filter((i) => i.status === 'new').forEach((i) => {
+    i.kind = kind
+    i.checked = kind !== 'photo'
+    i.suggested = false
+  })
+}
+
+function payloadOf(kind: TKind, cate: string, item: TItem) {
+  if (kind === 'text') return { cate, ...item.payload }
+  if (kind === 'photo') return { cate, table: 'photos', asset: { title: item.payload.title, url: item.payload.url, thumb: item.payload.thumb } }
+  return { cate, asset: { ...item.payload, type: kind } }
+}
 
 async function onOpen() {
   state.loading = true
   items.splice(0)
   try {
-    const [materialRes, textRes]: any[] = await Promise.all([adminApi.getCategories('materials', { page: 1, pageSize: 100 }), adminApi.getTemplateCategories(1, { page: 1, pageSize: 100 })])
+    const [materialRes, textRes, photoRes]: any[] = await Promise.all([
+      adminApi.getCategories('materials', { page: 1, pageSize: 100 }),
+      adminApi.getTemplateCategories(1, { page: 1, pageSize: 100 }),
+      adminApi.getCategories('photos', { page: 1, pageSize: 100 }),
+    ])
     state.materialCates = materialRes?.list || []
     state.textCates = textRes?.list || []
-    state.cates = { image: defaultMaterialCate('image'), svg: defaultMaterialCate('svg'), mask: defaultMaterialCate('mask'), text: state.textCates[0]?.name || '' }
+    state.photoCates = photoRes?.list || []
+    state.cates = { image: defaultMaterialCate('image'), svg: defaultMaterialCate('svg'), mask: defaultMaterialCate('mask'), photo: state.photoCates[0]?.cate || '', text: state.textCates[0]?.name || '' }
 
     const { materials, texts } = extractAssets(props.source, props.titlePrefix || '', { image: t('admin.extractDialog.nameImage'), svg: t('admin.extractDialog.nameSvg'), mask: t('admin.extractDialog.nameMask'), group: t('admin.extractDialog.nameGroup') })
     const list: TItem[] = [
@@ -134,6 +166,9 @@ async function onOpen() {
         if (!mats[idx]) return
         if (r.status === 'exists') Object.assign(mats[idx], { status: 'exists', checked: false })
         else if (r.status === 'dup') Object.assign(mats[idx], { status: 'dup', checked: false, dupOf: mats[r.dupOf ?? -1]?.title })
+        // 服务端按图像内容给出类型建议：照片 / 背景默认不勾选；纯色浅色形状建议作为相框（mask）
+        else if (r.suggest === 'photo' && mats[idx].kind === 'image') Object.assign(mats[idx], { kind: 'photo', checked: false, suggested: true })
+        else if (r.suggest === 'mask' && mats[idx].kind === 'image') Object.assign(mats[idx], { kind: 'mask', suggested: true })
       })
       check?.texts?.forEach((r, idx) => {
         if (r.status === 'exists' && txts[idx]) Object.assign(txts[idx], { status: 'exists', checked: false })
@@ -244,6 +279,12 @@ async function submit() {
   overflow: hidden;
   text-overflow: ellipsis;
   justify-content: flex-start;
+}
+.kind-select {
+  width: 100%;
+}
+.suggest-tag {
+  align-self: flex-start;
 }
 .name {
   font-size: 12px;
