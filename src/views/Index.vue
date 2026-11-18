@@ -37,8 +37,7 @@
           <el-divider direction="vertical" />
         </div>
         <HeaderOptions ref="optionsRef" v-model="state.isContinue" @change="optionsChange">
-          <!-- [TINIX] chỉ còn hai nút: Lưu (ra tệp trên máy) và Xuất (hộp thoại JPG in / PNG / PSD / bộ cắt dán) -->
-          <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('tinix.ui.export.save_short') }}</el-button>
+          <!-- [TINIX] chỉ còn nút Xuất (hộp thoại JPG in / PNG / PSD / bộ cắt dán); Lưu, Mở, Lưu mẫu nằm trong menu Tệp (Ctrl+S vẫn lưu dự án) -->
           <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('export')">{{ $t('tinix.ui.export.button') }}</el-button>
           <div class="operation-item" @click="jump2admin"><span class="text">{{ $t('tinix.menu.admin') }}</span></div>
         </HeaderOptions>
@@ -102,7 +101,8 @@ import Helper from './components/Helper.vue'
 import ProgressLoading from '@/components/common/ProgressLoading/download.vue'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
-import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore } from '@/store'
+import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore, useUserStore } from '@/store' // [TINIX] useUserStore
+import { overwriteTemplate, saveAsNewTemplate } from '@/utils/tinix/template-save' // [TINIX]
 import { useRoute } from 'vue-router' // [TINIX]
 import { ElMessage, type ButtonInstance } from 'element-plus'
 import Tour from './components/Tour.vue'
@@ -297,9 +297,17 @@ const fns: any = {
   export: () => {
     optionsRef.value?.openExport()
   },
-  // [TINIX] Lưu thiết kế thành mẫu công khai (admin)
+  // [TINIX] Lưu mẫu từ menu Tệp: mẫu mới (tên tự đặt) hoặc lưu đè mẫu đang mở
   saveAsTemplate: () => {
-    optionsRef.value?.saveAsTemplate()
+    void saveAsNewTemplate()
+  },
+  overwriteTemplate: () => {
+    // Chế độ sửa mẫu (Quản trị → Sửa mẫu) giữ cách lưu gốc, gồm cả mẫu thành phần (tempType 1)
+    if (useUserStore().tempEditing) optionsRef.value?.saveTemp()
+    else void overwriteTemplate()
+  },
+  exitTempEdit: () => {
+    useUserStore().managerEdit(false)
   },
   newDesign: () => {
     createDesignRef.value?.open()

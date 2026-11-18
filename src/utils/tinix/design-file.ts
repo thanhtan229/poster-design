@@ -12,6 +12,7 @@ import { unzip } from './unzip'
 import * as photosApi from '@/api/tinix-photos'
 import { photoState, reloadPhotos } from './photo-strip'
 import { adoptUsedPhotos, project, projectPhotos, resetProject, setProjectPaths, staticOf } from './project'
+import { setTemplateSource, type TemplateSource } from './template-save'
 
 const t = (key: string, params?: any) => i18n.global.t(key, params) as string
 const FORMAT = 'tinix-design'
@@ -115,6 +116,7 @@ export function applyLayouts(layouts: any[], title: string) {
   // Lịch sử hoàn tác cũ không còn khớp với thiết kế mới.
   useHistoryStore().$patch({ dHistoryStack: { changes: [], inverseChanges: [] }, dHistoryParams: { index: -1, length: 0, maxLength: 20, stackPointer: -1 } })
   designTitle.value = title
+  setTemplateSource(null) // trang mới/mở tệp: không còn gắn với mẫu nào
   resetProject() // dự án mới: chưa có ảnh nào (openPackage nạp lại ảnh của tệp ngay sau đó)
   // Thiết kế này không gắn với bản ghi trong CSDL nữa: bỏ id khỏi địa chỉ để không ghi đè nhầm thiết kế cũ.
   const query = { ...router.currentRoute.value.query }
@@ -144,10 +146,11 @@ export async function confirmReplace(): Promise<boolean> {
 }
 
 /** Mở một mẫu (bố cục {global, layers}) lên canvas để chỉnh trực tiếp. */
-export async function openTemplateOnCanvas(layout: any, name: string): Promise<boolean> {
+export async function openTemplateOnCanvas(layout: any, name: string, source: TemplateSource | null = null): Promise<boolean> {
   if (!(await confirmReplace())) return false
   fileHandle = null
   applyLayouts([JSON.parse(JSON.stringify(layout))], name)
+  setTemplateSource(source) // nhớ mẫu gốc để Tệp → "Lưu đè mẫu" ghi đúng chỗ
   return true
 }
 

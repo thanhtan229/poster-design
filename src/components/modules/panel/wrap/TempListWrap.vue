@@ -93,6 +93,7 @@ import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
 import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
 import PrintGroups from '@/components/business/collage/PrintGroups.vue' // [TINIX]
 import TemplateLibrary from '@/components/business/collage/TemplateLibrary.vue' // [TINIX]
+import { setTemplateSource } from '@/utils/tinix/template-save' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
 import config from '@/config' // [TINIX]
 
@@ -332,6 +333,7 @@ async function selectItem(item: IGetTempListData) {
     pageStore.setDPage(page)
     widgetStore.setTemplate(widgets)
   }
+  setTemplateSource({ kind: 'normal', id: Number(item.id), name: item.title || '#' + item.id }) // [TINIX] Tệp → "Lưu đè mẫu"
   setTimeout(() => {
     forceStore.setZoomScreenChange()
   }, 300)

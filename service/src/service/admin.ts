@@ -83,6 +83,11 @@ export default {
     }
 
     const savedId = isAdd ? templatesRepo.createTemplate(params) : tid
+    // [TINIX] mẫu mới không có tên (Tệp → "Lưu thành mẫu mới") → tự đặt "Mẫu <id>"
+    if (isAdd && !params.title.trim()) {
+      params.title = 'Mẫu ' + savedId
+      templatesRepo.updateTemplate(savedId, params)
+    }
     if (!isAdd && !templatesRepo.updateTemplate(tid, params)) {
       return send.error(res, 'Mẫu không tồn tại')
     }
