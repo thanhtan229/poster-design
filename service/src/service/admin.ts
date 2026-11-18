@@ -24,7 +24,7 @@ import { cleanCategory, cleanTags } from '../tinix/fontMeta' // [TINIX]
 import * as templatesRepo from '../db/templates'
 import * as templateCategoriesRepo from '../db/templateCategories'
 import * as designsRepo from '../db/designs'
-import { fingerprintMany, listLibraryAssets, similar as similarFp, TFingerprint } from '../db/assetFingerprint'
+import { fingerprintMany, listLibraryAssets, suggestKind, similar as similarFp, TFingerprint } from '../db/assetFingerprint'
 import { assetKey, normalizeAssetType, existingMaterialKeys, existingTextSignatures, textSignature } from '../db/assetDedupe'
 import * as groups from '../tinix/templateGroups' // [TINIX] nhóm mẫu (nhiều nhóm / mẫu)
 import { setPhotoSlots } from '../tinix/templateSlots' // [TINIX]
@@ -183,32 +183,35 @@ export default {
     const texts: any[] = Array.isArray(req.body?.texts) ? req.body.texts.slice(0, 200) : []
     const materialKeys = existingMaterialKeys()
     const textSignatures = existingTextSignatures()
-    const materialResults: { url: string; status: 'added' | 'exists' | 'dup' | 'invalid' | 'failed'; by?: 'url' | 'content'; dupOf?: number }[] = []
+    const materialResults: { url: string; status: 'added' | 'exists' | 'dup' | 'invalid' | 'failed'; by?: 'url' | 'content'; dupOf?: number; suggest?: 'photo' | 'mask' | 'image' }[] = []
     const textResults: { title: string; status: 'added' | 'exists' | 'invalid' | 'failed'; id?: number }[] = []
 
     // 第一遍：校验 + 按 URL 判重；通过的进入候选队列
-    type TCandidate = { index: number; cate: string; type: 'image' | 'svg' | 'mask'; url: string; asset: any }
+    type TCandidate = { index: number; cate: string; type: 'image' | 'svg' | 'mask' | 'photo'; table: 'materials' | 'photos'; url: string; asset: any }
     const candidates: TCandidate[] = []
     materials.forEach((item, index) => {
       const asset = item?.asset
       const cate = typeof item?.cate === 'string' ? item.cate.trim() : ''
-      const type = normalizeAssetType(String(asset?.type || ''))
+      const table = item?.table === 'photos' ? 'photos' : 'materials'
+      const type = table === 'photos' ? 'photo' : normalizeAssetType(String(asset?.type || ''))
       const url = typeof asset?.url === 'string' ? asset.url.trim() : ''
-      if (!cate || !url || !['image', 'svg', 'mask'].includes(type)) return void (materialResults[index] = { url, status: 'invalid' })
+      if (!cate || !url || !['image', 'svg', 'mask', 'photo'].includes(type)) return void (materialResults[index] = { url, status: 'invalid' })
       const key = assetKey(type, url)
       if (materialKeys.has(key)) return void (materialResults[index] = { url, status: 'exists', by: 'url' })
       materialKeys.add(key)
-      candidates.push({ index, cate, type: type as TCandidate['type'], url, asset })
+      candidates.push({ index, cate, type: type as TCandidate['type'], table, url, asset })
     })
 
     // 第二遍：按图像内容判重——先与库内已有素材比，再与本批次中靠前的候选比
     const kinds = new Set(candidates.map((c) => c.type))
     const library = candidates.length ? listLibraryAssets().filter((x) => kinds.has(x.kind)) : []
     const [candidateFps, libraryFps] = await Promise.all([fingerprintMany(candidates.map((c) => ({ url: c.url, kind: c.type }))), fingerprintMany(library)])
+    const materialSuggest: Record<number, 'photo' | 'mask' | 'image'> = {}
     const accepted: { index: number; type: string; fp: TFingerprint }[] = []
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i]
       const fp = candidateFps[i]
+      if (c.type === 'image' && fp) materialSuggest[c.index] = suggestKind(fp)
       if (fp) {
         if (library.some((x, li) => x.kind === c.type && libraryFps[li] && similarFp(libraryFps[li] as TFingerprint, fp))) { materialResults[c.index] = { url: c.url, status: 'exists', by: 'content' }; continue }
         const same = accepted.find((x) => x.type === c.type && similarFp(x.fp, fp))
@@ -216,9 +219,16 @@ export default {
         accepted.push({ index: c.index, type: c.type, fp })
       }
       if (dryRun) { materialResults[c.index] = { url: c.url, status: 'added' }; continue }
+      if (c.table === 'photos') {
+        const savedPhoto = addAssetRow('photos', c.cate, { title: c.asset.title, url: c.url, thumb: c.asset.thumb || c.url })
+        materialResults[c.index] = { url: c.url, status: savedPhoto ? 'added' : 'failed' }
+        continue
+      }
       const saved = addAssetRow('materials', c.cate, { ...c.asset, type: c.type, url: c.url, thumb: c.asset.thumb || c.url, ...(c.type === 'mask' ? { isContainer: true } : {}), ...(c.type === 'svg' && !c.asset.model ? { model: '{}' } : {}) })
       materialResults[c.index] = { url: c.url, status: saved ? 'added' : 'failed' }
     }
+
+    materialResults.forEach((r, i) => { if (materialSuggest[i] && r) r.suggest = materialSuggest[i] })
 
     for (const item of texts) {
       const title = String(item?.title || '').slice(0, 100)

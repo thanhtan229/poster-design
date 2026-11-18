@@ -45,6 +45,13 @@ export function existingMaterialKeys(): Set<string> {
       if (Array.isArray(list)) list.forEach((item) => item?.url && keys.add(assetKey(item.type, item.url)))
     } catch (e) {}
   })
+  const photoRows: { list: string }[] = getDB().prepare('SELECT list FROM photos').all()
+  photoRows.forEach((row) => {
+    try {
+      const list = JSON.parse(row.list)
+      if (Array.isArray(list)) list.forEach((item) => item?.url && keys.add(assetKey('photo', item.url)))
+    } catch (e) {}
+  })
   return keys
 }
 
