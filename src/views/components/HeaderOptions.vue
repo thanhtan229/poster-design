@@ -33,13 +33,13 @@
 <script lang="ts" setup>
 import i18n from '@/languages'
 import api from '@/api'
-import { setTemplateSource } from '@/utils/tinix/template-save' // [TINIX]
+import { setTemplateSource, templateSource, overwriteCollageTemplate, fetchCollageTemplate } from '@/utils/tinix/template-save' // [TINIX]
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useNotification from '@/common/methods/notification'
 import SaveImage from '@/components/business/save-download/CreateCover.vue'
 import PrintBundle from '@/components/business/collage/PrintBundle.vue'
-import { designTitle, isDirty, saveToDisk } from '@/utils/tinix/design-file' // [TINIX]
+import { applyLayouts, designTitle, isDirty, markSaved, saveToDisk } from '@/utils/tinix/design-file' // [TINIX]
 import ExportDialog from './ExportDialog.vue' // [TINIX]
 import { renderPageOnServer } from '@/utils/tinix/server-export' // [TINIX]
 import { useFontStore } from '@/common/methods/fonts'
@@ -97,7 +97,7 @@ watch(() => state.title, (v) => { designTitle.value = v })
 
 // [TINIX] Lưu thiết kế ra tệp .tinix.zip trên máy (Ctrl+S ghi đè đúng tệp đã lưu/mở). saveAs=true: chọn tệp mới.
 async function save(_silent: boolean = false, saveAs: boolean = false) {
-  if (tempEditing.value) return saveTemp()
+  if (tempEditing.value) return saveEditedTemplate() // [TINIX] đang Sửa mẫu: Ctrl+S / Tệp → Lưu đè ghi vào chính mẫu
   try {
     return await saveToDisk(saveAs === true)
   } catch (e: any) {
@@ -129,6 +129,22 @@ async function saveToDb(silent: boolean = false) {
   } else {
     useNotification(i18n.global.t('editor.header.saveFailed'), res?.msg || i18n.global.t('editor.header.designSaveFailed'), { type: 'error' })
   }
+}
+
+// [TINIX] Lưu đè mẫu đang sửa: mẫu cắt dán qua template-save (tên lấy từ ô tên thanh trên), mẫu thường qua saveTemp gốc
+async function saveEditedTemplate() {
+  const src = templateSource.value
+  if (src && src.kind === 'collage') {
+    if (state.loading) return
+    state.loading = true
+    try {
+      if (await overwriteCollageTemplate(state.title.trim())) markSaved()
+    } finally {
+      state.loading = false
+    }
+    return
+  }
+  return saveTemp()
 }
 
 // 保存模板
@@ -208,9 +224,23 @@ async function download() {
 }
 
 async function load(cb: () => void) {
-  const { id, tempid: tempId, tempType: type, w_h, dpi } = route.query
+  const { id, tempid: tempId, tempType: type, w_h, dpi, ctemplate } = route.query
   if (route.name !== 'Draw') {
     await useFontStore.init() // 初始化加载字体
+  }
+  // [TINIX] Sửa mẫu cắt dán: tab mới mở bằng ?ctemplate=<id>&edit=1 (mẫu nằm ở bảng riêng nên không đi qua getTempDetail)
+  if (ctemplate && !id && !tempId) {
+    try {
+      const tpl = await fetchCollageTemplate(Number(ctemplate))
+      applyLayouts([tpl.data], tpl.name)
+      state.title = tpl.name
+      setTemplateSource({ kind: 'collage', id: tpl.id, name: tpl.name, version: tpl.version })
+      markSaved()
+      cb()
+      return
+    } catch (e: any) {
+      useNotification(i18t('tinix.ui.templateSave.failed'), e?.message || '', { type: 'error' })
+    }
   }
   const apiName = tempId && !id ? 'getTempDetail' : 'getWorks'
   if (w_h && !id && !tempId) {
