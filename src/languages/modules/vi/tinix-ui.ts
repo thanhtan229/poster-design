@@ -444,8 +444,14 @@ export default {
     export_failed: 'Xuất ảnh thất bại',
     exporting: 'Đang dựng ảnh…',
   },
+  templateTypes: {
+    all: 'Tất cả',
+    collage: 'Cắt dán',
+    normal: 'Thiết kế thường',
+  },
   collageTab: {
     title: 'Cắt dán ảnh thật',
+    tools_title: 'Công cụ cắt dán',
     tab_templates: 'Mẫu cắt dán',
     tab_classic: 'Cách cũ (một ảnh chính)',
     how_title: 'Cách dùng',

@@ -20,6 +20,11 @@
 
     <tinix-photo-count-bar v-model="photosFilter" :cate="groupId === 0 ? '' : groupId" @change="onPhotosChange" /><!-- [TINIX] lọc mẫu theo số ảnh -->
 
+    <!-- [TINIX] gộp tab Cắt dán: lọc loại mẫu -->
+    <div class="tinix-type-bar">
+      <button v-for="o in typeOptions" :key="o.v" :class="{ on: typeFilter === o.v }" @click="onTypeChange(o.v)">{{ o.label }}</button>
+    </div>
+
     <!-- [TINIX] chế độ chọn nhiều: thanh thao tác -->
     <div v-if="selectMode" class="tinix-select-bar">
       <span>{{ $t('tinix.ui.templateGroups.da_chon', { n: selected.length }) }}</span>
@@ -33,9 +38,11 @@
     </el-divider>
 
     <ul ref="listRef" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
-      <img-water-fall :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @edit="editTemplate" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
-      <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
-      <div v-show="state.loadDone" class="loading">Đã tải hết</div>
+      <collage-panel v-if="isCollagePage" /><!-- [TINIX] công cụ cắt dán: chỉ hiện khi trang hiện tại là trang cắt dán -->
+      <template-library v-if="showCollage" :search="state.searchKeyword" /><!-- [TINIX] mẫu cắt dán xếp trước -->
+      <img-water-fall v-if="typeFilter !== 'collage'" :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @edit="editTemplate" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
+      <div v-show="state.loading && typeFilter !== 'collage'" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
+      <div v-show="state.loadDone && typeFilter !== 'collage'" class="loading">Đã tải hết</div>
     </ul>
 
     <!-- [TINIX] Hộp chọn nhóm: một mẫu (hộp tick) hoặc nhiều mẫu (thêm vào / gỡ khỏi) -->
@@ -84,6 +91,8 @@ import { ElMessage, ElMessageBox, ElDialog, ElCheckbox, ElCheckboxGroup, ElButto
 import * as adminApi from '@/api/admin' // [TINIX]
 import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
 import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
+import CollagePanel from '@/components/business/collage/CollagePanel.vue' // [TINIX]
+import TemplateLibrary from '@/components/business/collage/TemplateLibrary.vue' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
 
 type TState = {
@@ -156,6 +165,20 @@ async function removeTemplate(item: IGetTempListData) {
 const groupBarRef = ref<any>(null)
 const groupId = ref<number | 'none'>(0)
 const photosFilter = ref('') // '' | '1'..'4' | '5+'
+// [TINIX] Gộp hai kho mẫu (templates + collage_templates) thành một lưới: mẫu cắt dán xếp trước
+const typeFilter = ref<'all' | 'collage' | 'normal'>('all')
+const typeOptions = computed(() => [
+  { v: 'all', label: i18n.global.t('tinix.ui.templateTypes.all') },
+  { v: 'collage', label: i18n.global.t('tinix.ui.templateTypes.collage') },
+  { v: 'normal', label: i18n.global.t('tinix.ui.templateTypes.normal') },
+])
+const isCollagePage = computed(() => !!(pageStore.dPage as any).collage)
+// mẫu cắt dán không có nhóm/số ảnh: ẩn khi đang lọc theo nhóm hoặc số ảnh (trừ khi chọn riêng loại Cắt dán)
+const showCollage = computed(() => typeFilter.value === 'collage' || (typeFilter.value === 'all' && groupId.value === 0 && !photosFilter.value))
+function onTypeChange(v: any) {
+  typeFilter.value = v
+  if (v !== 'collage') load(true, pageOptions.state)
+}
 const selectMode = ref(false)
 const selected = ref<number[]>([])
 const allGroups = computed<Array<{ id: number; name: string }>>(() => (groupBarRef.value && groupBarRef.value.groups) || [])
@@ -236,7 +259,7 @@ const load = async (init: boolean = false, stat?: string) => {
     pageOptions.page = 0
     state.loadDone = false
   }
-  if (state.loadDone || state.loading) {
+  if (state.loadDone || state.loading || typeFilter.value === 'collage') {
     return
   }
 
@@ -341,6 +364,25 @@ defineExpose({
   color: #3f6af7;
   background: #eef2ff;
   border-radius: 6px;
+}
+.tinix-type-bar {
+  display: flex;
+  gap: 6px;
+  margin: 10px 1rem 0 14px;
+  button {
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    border-radius: 14px;
+    padding: 2px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #666;
+    &.on {
+      background: #3f6af7;
+      border-color: #3f6af7;
+      color: #fff;
+    }
+  }
 }
 .tinix-sub {
   margin: 8px 0 4px;

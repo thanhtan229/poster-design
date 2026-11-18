@@ -1,7 +1,7 @@
 <template>
  <section class="custom-templates">
   <div class="tpl-toolbar">
-   <el-input v-model="search" :placeholder="$t('tinix.ui.collageTab.search')" clearable class="tpl-search" />
+   <el-input v-if="props.search === undefined" v-model="localSearch" :placeholder="$t('tinix.ui.collageTab.search')" clearable class="tpl-search" />
    <el-button @click="load">{{ $t('tinix.ui.collageTab.refresh') }}</el-button>
    <el-button @click="() => editCurrent()">{{ $t('tinix.ui.collageTab.save_current') }}</el-button>
   </div>
@@ -48,12 +48,13 @@ import CollagePreview from './CollagePreview.vue'
 import {useWidgetStore,useCanvasStore} from '@/store'
 import config from '@/config'
 import {openTemplateOnCanvas,pickAndOpen,saveToDisk} from '@/utils/tinix/design-file'
+const props = defineProps<{ search?: string }>() // [TINIX] gộp tab Mẫu: ô tìm kiếm của tab Mẫu truyền xuống
 const store=useWidgetStore(); const canvas=useCanvasStore(); const templates=ref<any[]>([]); const message=ref(''); const editing=ref(false); const busy=ref(false); const name=ref(''); const category=ref('')
 const roles=ref<Record<string,string>>({}); const anchors=ref<Record<string,string>>({}); const current=ref<any>(null)
 const tt=(k:string,p?:any)=>i18n.global.t('tinix.ui.collageTab.'+k,p) as string
-const ALL='__all'; const search=ref(''); const cat=ref(ALL)
+const ALL='__all'; const localSearch=ref(''); const cat=ref(ALL)
 const cats=computed(()=>[ALL,...Array.from(new Set(templates.value.map(t=>t.category||tt('no_cat'))))])
-const shown=computed(()=>templates.value.filter(t=>(cat.value===ALL||(t.category||tt('no_cat'))===cat.value)&&String(t.name).toLowerCase().includes(search.value.trim().toLowerCase())))
+const shown=computed(()=>templates.value.filter(t=>(cat.value===ALL||(t.category||tt('no_cat'))===cat.value)&&String(t.name).toLowerCase().includes((props.search ?? localSearch.value).trim().toLowerCase())))
 const candidateLayers=computed(()=>(store.dWidgets as any[]).filter(w=>!w.hidden&&(w.type==='w-image'||w.type==='w-text')))
 async function load(){try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates`);if(!r.ok)throw new Error('Không tải được mẫu');templates.value=(await r.json()).list}catch(e:any){message.value=e.message}}
 async function useTemplate(t:any){

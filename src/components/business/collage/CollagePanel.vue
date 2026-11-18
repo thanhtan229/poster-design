@@ -1,13 +1,9 @@
 <template>
   <section class="collage-panel" :aria-busy="busy">
-    <h2>{{ $t('tinix.ui.collageTab.title') }}</h2>
+    <h2>{{ $t('tinix.ui.collageTab.tools_title') }}</h2>
     <PrintGroups v-if="(useCanvasStore().dPage as any).collage" />
-    <el-tabs v-model="tab" class="collage-tabs">
-     <el-tab-pane :label="$t('tinix.ui.collageTab.tab_templates')" name="templates">
-      <ol class="how"><li>{{ $t('tinix.ui.collageTab.step1') }}</li><li>{{ $t('tinix.ui.collageTab.step2') }}</li><li>{{ $t('tinix.ui.collageTab.step3') }}</li></ol>
-      <TemplateLibrary />
-     </el-tab-pane>
-     <el-tab-pane :label="$t('tinix.ui.collageTab.tab_classic')" name="classic" lazy>
+    <el-collapse v-model="tab" class="collage-tabs">
+     <el-collapse-item :title="$t('tinix.ui.collageTab.tab_classic')" name="classic">
     <label>Mẫu <select v-model="templateId"><option v-for="t in collageTemplates" :key="t.id" :value="t.id">{{ t.name }}</option></select></label>
     <img class="preview" :src="template.background" alt="Mẫu Kỷ niệm: nền kem, dây cờ và dải phim" />
     <h3>{{ template.name }} · {{ (template.width*2.54/template.dpi).toFixed(0) }} × {{ (template.height*2.54/template.dpi).toFixed(0) }} cm</h3>
@@ -42,22 +38,21 @@
     <p>Thiết kế mới được lưu riêng. Bấm Mở thiết kế của khách để chỉnh sửa và xuất JPG; trang đang mở được giữ nguyên. Có thể chỉnh từng ảnh và chữ trên canvas; dùng Trợ lý AI nếu cần gợi ý lời nhắn.</p>
     <p><b>In thủ công:</b> chọn Xuất bộ JPG cắt dán phía trên. In nền sạch và các tờ chi tiết cắt; dùng ảnh hoàn thiện để gửi khách duyệt và đối chiếu lắp ráp.</p>
     <p>BiRefNet chạy local trên GPU, không gửi ảnh ra ngoài. Có thể chọn U²-Net khi cần nhanh. Kiểm tra mép tóc và quần áo trước khi in.</p>
-     </el-tab-pane>
-    </el-tabs>
+     </el-collapse-item>
+    </el-collapse>
   </section>
 </template>
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount, watch } from 'vue'
 import CutoutReview from './CutoutReview.vue'
-import TemplateLibrary from './TemplateLibrary.vue'
 import PrintGroups from './PrintGroups.vue'
 import { useWidgetStore, useCanvasStore } from '@/store'
-import { ElMessage, ElTabs, ElTabPane } from 'element-plus'
+import { ElMessage, ElCollapse, ElCollapseItem } from 'element-plus'
 import { collageTemplates, getCollageTemplate, getSubjectBox, extractCollageSubject, prepareEditedSubject, uploadCollagePhoto, saveCustomerDesign, type CutoutEngine } from '@/utils/tinix/collage'
 import { reloadPhotos, photoState, toStripItems, type StripItem } from '@/utils/tinix/photo-strip'
 
 
-const tab=ref('templates')
+const tab=ref<string[]>([]) // [TINIX] mục thu gọn: mặc định đóng
 const engine=ref<CutoutEngine>('birefnet')
 const main=ref<File|null>(null); const extras=ref<File[]>([]); const mainPreview=ref(''); const transparent=ref(false); const busy=ref(false); const status=ref('')
 const templateId=ref(collageTemplates[0].id); const template=computed(()=>getCollageTemplate(templateId.value))
@@ -122,4 +117,5 @@ onBeforeUnmount(()=>{if(mainPreview.value)URL.revokeObjectURL(mainPreview.value)
 </script>
 <style scoped>
 .collage-panel{padding:20px;overflow:auto;height:100%;box-sizing:border-box;font-weight:400;color:#483d38}.collage-panel h2{font-size:20px;margin:0 0 8px}.how{margin:0 0 12px;padding:10px 12px 10px 14px;list-style:none;background:#f6efe6;border-radius:8px;font-size:12px;line-height:1.8;color:#6b5c52}.preview{width:100%;border-radius:8px}.collage-panel p{font-size:13px;line-height:1.6}.collage-panel fieldset{border:0;padding:0;margin:0}.collage-panel label{display:block;margin:16px 0;font-size:13px}.collage-panel input:not([type=checkbox]),textarea{display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:9px;border:1px solid #cbbba8;border-radius:6px}.check{display:flex!important;gap:6px;align-items:center}.primary{width:100%;padding:12px;background:#733e43;color:white;border:0;border-radius:6px;cursor:pointer}.primary:disabled{opacity:.5;cursor:default}.subject-preview{max-height:130px;max-width:100%}.library-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-height:480px;overflow:auto}.library-grid button{min-width:0;background:white;border:1px solid #ddd;padding:6px;cursor:pointer}.library-grid img{width:100%;height:120px;object-fit:contain}.library-grid span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.selected-photo{display:flex;gap:8px;align-items:center;margin:8px 0}.selected-photo img{width:40px;height:50px;object-fit:cover}.selected-photo span{flex:1;overflow:hidden;text-overflow:ellipsis}.created-result{padding:12px;background:#e9f4e7;margin:12px 0}.created-result a{display:block;font-weight:bold;margin-top:10px;color:#246b36}
+.collage-panel{padding:8px 0 12px;height:auto;overflow:visible;border-bottom:1px solid #e6dccf;margin-bottom:12px}.collage-panel h2{font-size:15px}
 </style>
