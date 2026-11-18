@@ -56,6 +56,11 @@ export function normalizePages(data: any): any[][] {
   return []
 }
 
+/** 文字内容转纯文本：<br> 视为空格，去掉其余标签 */
+function plainText(html: any): string {
+  return String(html || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+}
+
 function isRemoteUrl(url: any): url is string {
   return typeof url === 'string' && url.trim() !== '' && !/^(data|blob):/i.test(url.trim())
 }
@@ -113,7 +118,7 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
           group.record.width = 0
           group.record.height = 0
         }
-        const textPreview = copies.filter((c: any) => c.type === 'w-text').map((c: any) => String(c.text || '').replace(/<[^>]+>/g, '')).join(' ').slice(0, 30)
+        const textPreview = copies.filter((c: any) => c.type === 'w-text').map((c: any) => plainText(c.text)).join(' ').slice(0, 30)
         texts.set(signature, {
           key: signature,
           title: `${titlePrefix}${textPreview || labels.group}`,
@@ -123,6 +128,25 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
           textPreview,
         })
       }
+    })
+
+    // 独立文字（不在任何组合里）：自动包一层组合，才能作为「文字」tab 的组件
+    widgets.forEach((w) => {
+      if (w?.type !== 'w-text') return
+      const parentExists = w.parent && String(w.parent) !== '-1' && widgets.some((g) => g && String(g.uuid) === String(w.parent))
+      if (parentExists) return
+      const width = Math.round(Number(w.width) || Number(w.record?.width) || (Number(w.fontSize) || 24) * 4)
+      const height = Math.round(Number(w.height) || Number(w.record?.height) || (Number(w.fontSize) || 24) * (Number(w.lineHeight) || 1.5))
+      const groupUuid = `grp-${w.uuid}`
+      const group = { name: '组合', type: 'w-group', uuid: groupUuid, width, height, left: 0, top: 0, transform: '', opacity: 1, parent: '-1', isContainer: true, record: { width: 0, height: 0, minWidth: 0, minHeight: 0, dir: 'none' } }
+      const child = JSON.parse(JSON.stringify(w))
+      child.left = 0
+      child.top = 0
+      child.parent = groupUuid
+      const signature = textSignature(group, [child])
+      if (texts.has(signature)) return
+      const textPreview = plainText(child.text).slice(0, 30)
+      texts.set(signature, { key: signature, title: `${titlePrefix}${textPreview || labels.group}`, widgets: [child, group], width, height, textPreview })
     })
   })
 
