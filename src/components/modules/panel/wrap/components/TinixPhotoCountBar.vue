@@ -14,7 +14,7 @@
 import { onBeforeUnmount, onMounted, reactive, watch } from 'vue'
 import api from '@/api'
 
-const props = defineProps<{ modelValue: string; cate: number | string }>()
+const props = defineProps<{ modelValue: string; cate: number | string; kind?: string }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', v: string): void
   (e: 'change', v: string): void
@@ -25,7 +25,7 @@ const counts = reactive<Record<string, number>>({ '1': 0, '2': 0, '3': 0, '4': 0
 
 async function reload() {
   try {
-    const res: any = await api.home.getTemplatePhotoCounts(props.cate)
+    const res: any = await api.home.getTemplatePhotoCounts(props.cate, props.kind || 'normal')
     Object.assign(counts, res && res.counts ? res.counts : {})
   } catch {
     // không tải được: giữ số cũ
@@ -37,7 +37,7 @@ function pick(v: string) {
   emit('change', next)
 }
 
-watch(() => props.cate, reload)
+watch(() => [props.cate, props.kind], reload)
 const onChanged = () => reload() // mẫu được lưu/xóa/gán nhóm → cập nhật số đếm
 onMounted(() => {
   reload()

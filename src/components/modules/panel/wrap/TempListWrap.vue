@@ -16,9 +16,9 @@
 <template>
   <div class="wrap">
     <search-header v-model="state.searchKeyword" type="none" @change="cateChange" /><!-- [TINIX] type="none": bỏ menu nhóm ẩn, dùng thanh nhóm bên dưới -->
-    <tinix-group-bar ref="groupBarRef" v-model="groupId" :is-admin="isAdmin" :select-mode="selectMode" @change="onGroupChange" @changed="load(true, pageOptions.state)" @toggle-select="toggleSelect" />
+    <tinix-group-bar ref="groupBarRef" v-model="groupId" :kind="typeFilter" :is-admin="isAdmin" :select-mode="selectMode" @change="onGroupChange" @changed="load(true, pageOptions.state)" @toggle-select="toggleSelect" />
 
-    <tinix-photo-count-bar v-model="photosFilter" :cate="groupId === 0 ? '' : groupId" @change="onPhotosChange" /><!-- [TINIX] lọc mẫu theo số ảnh -->
+    <tinix-photo-count-bar v-model="photosFilter" :kind="typeFilter" :cate="groupId === 0 ? '' : groupId" @change="onPhotosChange" /><!-- [TINIX] lọc mẫu theo số ảnh -->
 
     <!-- [TINIX] gộp tab Cắt dán: lọc loại mẫu -->
     <div class="tinix-type-bar">
@@ -39,7 +39,7 @@
 
     <ul ref="listRef" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
       <print-groups v-if="isCollagePage" /><!-- [TINIX] công cụ cắt dán: chỉ hiện khi trang hiện tại là trang cắt dán -->
-      <template-library v-if="showCollage" :search="state.searchKeyword" /><!-- [TINIX] mẫu cắt dán xếp trước -->
+      <template-library v-if="typeFilter !== 'normal'" :search="state.searchKeyword" :group="groupId" :photos="photosFilter" :all-groups="allGroups" @changed="onCollageChanged" /><!-- [TINIX] mẫu cắt dán xếp trước -->
       <img-water-fall v-if="typeFilter !== 'collage'" :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @edit="editTemplate" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
       <div v-show="state.loading && typeFilter !== 'collage'" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
       <div v-show="state.loadDone && typeFilter !== 'collage'" class="loading">Đã tải hết</div>
@@ -94,6 +94,7 @@ import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
 import PrintGroups from '@/components/business/collage/PrintGroups.vue' // [TINIX]
 import TemplateLibrary from '@/components/business/collage/TemplateLibrary.vue' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
+import config from '@/config' // [TINIX]
 
 type TState = {
   loading: boolean
@@ -166,17 +167,18 @@ const groupBarRef = ref<any>(null)
 const groupId = ref<number | 'none'>(0)
 const photosFilter = ref('') // '' | '1'..'4' | '5+'
 // [TINIX] Gộp hai kho mẫu (templates + collage_templates) thành một lưới: mẫu cắt dán xếp trước
-const typeFilter = ref<'all' | 'collage' | 'normal'>('all')
+const TYPE_KEY = 'tinix.templateType' // nhớ loại mẫu đã chọn lần trước
+const savedType = localStorage.getItem(TYPE_KEY)
+const typeFilter = ref<'all' | 'collage' | 'normal'>(savedType === 'collage' || savedType === 'normal' ? savedType : 'all')
 const typeOptions = computed(() => [
   { v: 'all', label: i18n.global.t('tinix.ui.templateTypes.all') },
   { v: 'collage', label: i18n.global.t('tinix.ui.templateTypes.collage') },
   { v: 'normal', label: i18n.global.t('tinix.ui.templateTypes.normal') },
 ])
 const isCollagePage = computed(() => !!(pageStore.dPage as any).collage)
-// mẫu cắt dán không có nhóm/số ảnh: ẩn khi đang lọc theo nhóm hoặc số ảnh (trừ khi chọn riêng loại Cắt dán)
-const showCollage = computed(() => typeFilter.value === 'collage' || (typeFilter.value === 'all' && groupId.value === 0 && !photosFilter.value))
 function onTypeChange(v: any) {
   typeFilter.value = v
+  localStorage.setItem(TYPE_KEY, v)
   if (v !== 'collage') load(true, pageOptions.state)
 }
 const selectMode = ref(false)
@@ -195,6 +197,11 @@ function onPhotosChange(v: string) {
   pageOptions.photos = v || undefined
   selected.value = []
   load(true, pageOptions.state)
+}
+// mẫu cắt dán đổi nhóm/xóa → số đếm trên thanh nhóm, số ảnh cũng đổi
+function onCollageChanged() {
+  groupBarRef.value && groupBarRef.value.reload()
+  window.dispatchEvent(new Event('tinix:templates-changed'))
 }
 function toggleSelect() {
   selectMode.value = !selectMode.value
@@ -305,6 +312,7 @@ async function selectItem(item: IGetTempListData) {
     }
   }
   userStore.managerEdit(false)
+  fetch(`${config.SCREEN_URL}/api/tinix/template-used`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'normal', id: item.id }) }).catch(() => undefined) // [TINIX] xếp dùng gần đây
   widgetStore.setDWidgets([])
   setTempId(item.id)
 
