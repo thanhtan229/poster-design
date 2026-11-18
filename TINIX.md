@@ -433,3 +433,7 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 
 ## Bỏ liên kết "Mã nguồn" ở thanh trái (2026-11-18)
 - Gỡ liên kết GitHub "Mã nguồn" dưới thanh trái trong `widgetPanel.vue` [TINIX] và CSS `.github` đi kèm. Các liên kết khác tới repo gốc (trong `Helper.vue`, `Moveable.vue`) giữ nguyên.
+
+## Bỏ tab "Của tôi" (2026-11-18)
+- Đã gỡ mục `Của tôi` (`user-wrap`) khỏi `WidgetClassifyList.ts` [TINIX]; thanh trái còn Mẫu, Chất liệu, Chữ, Ảnh, Công cụ. Lý do: tab con "Tài nguyên" chỉ là lời nhắc về dải ảnh; "Thiết kế của tôi" là chỗ lưu thứ ba (DB) trong khi thiết kế lưu bằng tệp `.tinix.zip` + danh sách dự án gần đây.
+- Giữ nguyên `UserWrap.vue`, API thiết kế và bảng `designs` (dữ liệu cũ, công cụ dòng lệnh còn dùng). Muốn mở lại: thêm lại mục vào `WidgetClassifyList.ts`.
