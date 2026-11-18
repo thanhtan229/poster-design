@@ -484,6 +484,20 @@ export default {
     empty: 'Chưa có mẫu nào khớp.',
     cancel: 'Hủy',
   },
+  // Khung tách nền: đưa ảnh vào → tự tách nền + viền (utils/tinix/subject-fill.ts)
+  subjectFill: {
+    role: 'Khung tách nền — tự tách nền + thêm viền',
+    role_hint: 'Đưa ảnh vào khung (kéo thả, Thay ảnh, Tự áp dụng mẫu): app tự tách nền, đặt người chân chạm đáy khung và thêm viền trắng.',
+    border_mm: 'Viền trắng khi tự tách nền (mm)',
+    working: 'Đang tách nền ảnh cho khung tách nền…',
+    done: 'Đã tách nền ảnh vào khung',
+    done_mm: 'Đã tách nền và thêm viền {mm} mm',
+    failed: 'Không tự tách nền được: {msg}',
+    load_failed: 'Không tải được ảnh',
+    cut_failed: 'Tách nền không thành công',
+    empty: 'Không tìm thấy người/chủ thể trong ảnh',
+    upload_failed: 'Không lưu được ảnh tách nền',
+  },
   // Lưu mẫu từ menu Tệp (utils/tinix/template-save.ts)
   templateSave: {
     overwrite: 'Lưu đè mẫu “{name}”',

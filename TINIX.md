@@ -482,3 +482,10 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 - Quản trị → Sửa (`Admin.vue`, `?tempid&edit=1`) vẫn giữ: mẫu thành phần (tempType 1) lưu bằng `saveTemp` gốc; mẫu thường lưu qua `overwriteTemplate` (đã làm sạch).
 - Mẫu có sẵn đang chứa ảnh `/static/photos` (21 mẫu cắt dán, 3 mẫu thường lúc triển khai) không bị đổi cho tới lần Lưu đè kế tiếp.
 - (2026-11-19) Sửa: hình người tách nền do công cụ dòng lệnh dựng (`kit.hero`, tệp `/static/collage/<mẫu>/hero-*.png`, viền trắng gộp sẵn, có `cutInset`) nằm trong thư mục ảnh mẫu nên trước đây bị coi là ảnh thư viện và không thành khung tách nền. Nay `isCliHeroUrl` nhận theo tên tệp `hero-` (không dựa vào `cutInset` vì vài script đặt `cutInset` cho ruy băng/nhãn trang trí); bề dày viền suy từ `cutInset × 2` theo DPI trang. Lúc sửa có 52 lớp như vậy ở 19 mẫu cắt dán; chúng thành khung tách nền ở lần Lưu đè kế tiếp.
+
+## Khung tách nền tự tách nền + thêm viền (2026-11-19)
+- `src/utils/tinix/subject-fill.ts`: lớp ảnh có `templateRole:'subject'` (khung tách nền) nhận ảnh → tách nền (model đang chọn ở cửa sổ Xóa nền; BiRefNet lỗi thì U²-Net trong trình duyệt), cắt sát vùng có người (alpha), tải lên, đặt vừa hộp khung trừ phần viền — chân chạm đáy khung, giữa theo chiều ngang, tính cả góc xoay — rồi `applyStickerBorder` với `templateBorderMm`. Hộp khung gốc nhớ ở `subjectFrame` để lần thay ảnh sau đặt đúng chỗ. Lỗi thì giữ ảnh vừa thả và báo.
+- Nối vào: thả một ảnh lên khung (`designBoard/index.vue` [TINIX]), **Thay ảnh** (`wImageStyle.vue` [TINIX] `selectDone`), Tự áp dụng mẫu / áp mẫu nhiều ảnh (`photo-place.ts` `applyTemplateToPage`, chạy lần lượt từng khung sau khi dựng trang). Chưa nối: "Đổi bố cục" (`changePagePhotos`) vì đường này lấy khung của mẫu khác.
+- Mục **Vai trò ảnh** (`ImageFramePanel.vue`) có thêm "Khung tách nền — tự tách nền + thêm viền" và ô "Viền trắng khi tự tách nền (mm)"; `photoRole` (`template-photo.ts`) trả `'subject'`. Biến ảnh thư viện thành khung tách nền bằng cách này.
+- Đo thử (BiRefNet GPU, ảnh 3 người 850×1250): lần đầu ~33 giây (nạp model), lần sau ~4 giây.
+- Kèm: sửa 2 lỗi lint `no-void` trong `extractAssets.ts` (code mới vào main).

@@ -86,6 +86,7 @@ import { computed, onMounted, watch } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
 import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
+import { fillSubjectFrame, isSubjectFrame, subjectFrameOf } from '@/utils/tinix/subject-fill' // [TINIX] khung tách nền
 import { placePhotos } from '@/utils/tinix/photo-place' // [TINIX]
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
 import { moveInit } from '@/mixins/move'
@@ -258,10 +259,14 @@ async function drop(e: MouseEvent) {
     })
     if (slot) {
       const photo = item.value.group?.[0] || item.value
+      // [TINIX] khung tách nền: hiện ảnh vừa thả phủ khung gốc trong lúc tự tách nền + thêm viền (subject-fill.ts)
+      const subject = isSubjectFrame(slot)
+      if (subject) Object.assign(slot, subjectFrameOf(slot), { stickerBorder: undefined, cutInset: undefined, printInset: undefined })
       applyImageSource(slot, photo)
       Object.assign(slot, { fit: 'cover', cropX: 50, cropY: 50, zoom: 1, transform: '', isNinePatch: false })
       widgetStore.updateDWidgets()
       widgetStore.selectWidget({ uuid: slot.uuid })
+      if (subject) void fillSubjectFrame(slot.uuid, photo)
       return
     }
   }

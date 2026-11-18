@@ -1,4 +1,5 @@
-export function photoRole(w:any):'main'|'linked'|'decoration' { return w.linkedPhotoId?'linked':w.slot?'main':'decoration' }
+// [TINIX] 'subject' = khung tách nền (đưa ảnh vào → tự tách nền + thêm viền, xem subject-fill.ts)
+export function photoRole(w:any):'main'|'subject'|'linked'|'decoration' { return w.linkedPhotoId?'linked':w.slot?(w.templateRole==='subject'?'subject':'main'):'decoration' }
 export function templatePhotoStatus(layers:any[]) {
  const images=layers.filter(w=>w.type==='w-image')
  const frames=images.filter(w=>w.slot&&!w.linkedPhotoId&&!w.hidden)

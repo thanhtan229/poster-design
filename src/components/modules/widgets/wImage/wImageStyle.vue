@@ -87,6 +87,7 @@ import wImageSetting, { TImageSetting } from './wImageSetting'
 import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
+import { fillSubjectFrame, isSubjectFrame, subjectFrameOf } from '@/utils/tinix/subject-fill' // [TINIX] khung tách nền
  // [TINIX]
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
@@ -296,6 +297,12 @@ async function changeContainer(setting: any) {
 // }
 
 async function selectDone(img: TGetImageListResult) {
+  // [TINIX] khung tách nền: đặt ảnh vào khung gốc rồi tự tách nền + thêm viền (subject-fill.ts)
+  if (isSubjectFrame(state.innerElement)) {
+    Object.assign(state.innerElement, subjectFrameOf(state.innerElement), { imgUrl: img.url, fit: 'cover', stickerBorder: undefined, cutInset: undefined, printInset: undefined })
+    void fillSubjectFrame(String(state.innerElement.uuid), { url: img.url })
+    return
+  }
   state.innerElement.imgUrl = img.url
   // [TINIX] khung ảnh (fit=cover): giữ kích thước khung, không đổi theo kích thước gốc của ảnh mới
   if (state.innerElement.fit === 'cover') return

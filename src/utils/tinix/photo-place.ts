@@ -17,6 +17,7 @@ import wImageSetting from '@/components/modules/widgets/wImage/wImageSetting'
 import setImageData from '@/common/methods/DesignFeatures/setImage'
 import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
 import { applyImageSource, staticPathOf } from './photo-source'
+import { fillSubjectFrames, isSubjectFrame } from './subject-fill'
 import { photoState, toStripItems, placeValue } from './photo-strip'
 
 const nanoid = customAlphabet('1234567890abcdef', 12)
@@ -228,6 +229,7 @@ async function applyTemplateToPage(pageIndex: number, tpl: { id: number; title: 
   const ph = Number(page.height)
 
   const slotIdx: number[] = []
+  const subjectJobs: Array<{ uuid: string; photo: { url: string; hq?: string } }> = []
   list.forEach((w, i) => w.type === 'w-image' && w.slot === true && !w.linkedPhotoId && !w.hidden && slotIdx.push(i))
   if (slotIdx.length === n && n >= 1) {
     // mẫu có khung ảnh: ghép theo hướng ảnh gần nhất, ảnh phủ kín khung (không méo)
@@ -238,6 +240,7 @@ async function applyTemplateToPage(pageIndex: number, tpl: { id: number; title: 
       const p = photos[pairing[k]]
       applyImageSource(list[li], { url: p.url, hq: p.hq })
       list[li].fit = 'cover'
+      if (isSubjectFrame(list[li])) subjectJobs.push({ uuid: list[li].uuid, photo: { url: p.url, hq: p.hq } }) // [TINIX] khung tách nền
     })
   } else if (n === 1 && slotIdx.length === 0) {
     // mẫu chưa đánh dấu khung = mẫu 1 ảnh: ảnh phủ kín trang, dưới lớp chữ, trên lớp ảnh nền phủ kín trang
@@ -260,6 +263,7 @@ async function applyTemplateToPage(pageIndex: number, tpl: { id: number; title: 
   widgetStore.selectWidget({ uuid: '-1' })
   canvasStore.reChangeCanvas()
   setTimeout(() => useForceStore().setZoomScreenChange(), 300)
+  if (subjectJobs.length) void fillSubjectFrames(subjectJobs) // tự tách nền + thêm viền cho các khung tách nền (chạy nền, lần lượt)
   return true
 }
 
