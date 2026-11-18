@@ -80,7 +80,9 @@ const isIndeterminate = (list: TItem[]) => {
   const fresh = list.filter((i) => i.status === 'new')
   return fresh.some((i) => i.checked) && !fresh.every((i) => i.checked)
 }
-const toggleAll = (list: TItem[], v: boolean) => list.forEach((i) => i.status === 'new' && (i.checked = v))
+const toggleAll = (list: TItem[], v: boolean) => list.forEach((i) => {
+    if (i.status === 'new') i.checked = v
+  })
 
 /** 素材库默认分类的 cate 与元素类型同名（png 对应 image），找不到则取第一个 */
 function defaultMaterialCate(kind: string) {

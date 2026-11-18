@@ -465,3 +465,7 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 
 ## Mẫu cắt dán chỉ giữ 1 phiên bản (2026-11-18)
 - `KEEP_VERSIONS = 1` (`service/src/tinix/collageTemplates.ts`): mỗi lần lưu mẫu cắt dán vẫn ghi `collage_template_versions` nhưng xóa mọi bản cũ hơn, chỉ còn bản mới nhất (cũng là bản trong `collage_templates`). Bỏ route `GET /api/tinix/collage-templates/:id/versions` (giao diện lịch sử đã bỏ từ trước). Mẫu cũ còn nhiều phiên bản sẽ được dọn ở lần lưu kế tiếp. Bản sao lưu hằng ngày (`tinix:backup`) là chỗ khôi phục duy nhất khi lỡ ghi đè.
+
+## Sửa lỗi: dùng mẫu/mở tệp không thoát chế độ Sửa mẫu (2026-11-18)
+- `applyLayouts` (`design-file.ts`) giờ gọi `managerEdit(false)` và bỏ `ctemplate`/`edit` khỏi địa chỉ, trừ khi `keepTemplateEdit` (chỉ `HeaderOptions.load` truyền `true` khi tab Sửa mẫu tự nạp mẫu cần sửa). Lỗi cũ: ở tab đang Sửa mẫu, bấm dùng một mẫu cắt dán khác (hoặc mở tệp/dự án gần đây/khôi phục bản nháp) vẫn giữ chế độ Sửa, nên menu Tệp còn "Lưu đè mẫu" và lưu đè nhầm vào mẫu đã sửa trước đó (mẫu thường đã được `TempListWrap.selectItem` thoát chế độ Sửa từ trước).
+- Cũng sửa 2 lỗi lint của `extractAssets.ts` / `ExtractAssetsDialog.vue` (code vừa merge vào main làm `npm run lint` hết sạch lỗi) để giữ 0 lỗi.
