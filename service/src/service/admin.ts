@@ -22,11 +22,27 @@ import * as templatesRepo from '../db/templates'
 import * as usersRepo from '../db/users'
 import * as templateCategoriesRepo from '../db/templateCategories'
 import * as designsRepo from '../db/designs'
+import { assetKey, normalizeAssetType, existingMaterialKeys, existingTextSignatures, textSignature } from '../db/assetDedupe'
 
 function pageResult<T>(list: T[], pageValue: any, pageSizeValue: any) {
   const page = Math.max(1, Math.floor(Number(pageValue) || 1))
   const pageSize = Math.min(100, Math.max(1, Math.floor(Number(pageSizeValue) || 20)))
   return { list: list.slice((page - 1) * pageSize, page * pageSize), total: list.length, page, pageSize }
+}
+
+/** 调用截图服务生成封面并回填 cover；失败不阻塞主流程 */
+async function generateCover(savedId: number, w: number, h: number, type: 0 | 1) {
+  try {
+    const size = w > h ? 640 : 320
+    await axios.get(
+      `${serviceLink}/api/screenshots?tempid=${savedId}&tempType=${type}&width=${w}&height=${h}&type=cover&size=${size}&quality=75`,
+      { responseType: 'arraybuffer' }
+    )
+    const cover = type === 1 ? `${staticLink}${savedId}-screenshot.png` : `${staticLink}${savedId}-cover.jpg`
+    templatesRepo.setCover(savedId, cover)
+  } catch (error) {
+    console.warn('[admin] 封面生成失败:', error)
+  }
 }
 
 export default {
@@ -76,18 +92,7 @@ export default {
       return send.error(res, '模板不存在')
     }
 
-    // 生成封面：调用截图服务，成功后回填 cover（失败不阻塞主流程）
-    try {
-      const size = w > h ? 640 : 320
-      await axios.get(
-        `${serviceLink}/api/screenshots?tempid=${savedId}&tempType=${params.type}&width=${w}&height=${h}&type=cover&size=${size}&quality=75`,
-        { responseType: 'arraybuffer' }
-      )
-      const cover = params.type === 1 ? `${staticLink}${savedId}-screenshot.png` : `${staticLink}${savedId}-cover.jpg`
-      templatesRepo.setCover(savedId, cover)
-    } catch (error) {
-      console.warn('[admin] 封面生成失败:', error)
-    }
+    await generateCover(savedId, w, h, params.type)
 
     send.success(res, { id: savedId })
   },
@@ -159,6 +164,54 @@ export default {
     const asset = req.body?.asset && { ...req.body.asset, type: req.body.asset.type === 'png' ? 'image' : req.body.asset.type, ...(req.body.asset.type === 'mask' ? { isContainer: true } : {}) }
     if (!cate || !asset || typeof asset.url !== 'string' || !asset.url.trim() || (table === 'materials' && !['image', 'svg', 'mask'].includes(asset.type))) return send.error(res, '参数错误')
     addAssetRow(table, cate, asset) ? send.success(res, undefined) : send.error(res, '分类不存在')
+  },
+
+  // 批量入库：素材（image/svg/mask）→ materials；文字组合 → type=1 组件模板。服务端与已有数据去重，dryRun 只返回判定结果。
+  async bulkImportAssets(req: any, res: Response) {
+    const dryRun = !!req.body?.dryRun
+    const materials: any[] = Array.isArray(req.body?.materials) ? req.body.materials.slice(0, 500) : []
+    const texts: any[] = Array.isArray(req.body?.texts) ? req.body.texts.slice(0, 200) : []
+    const materialKeys = existingMaterialKeys()
+    const textSignatures = existingTextSignatures()
+    const materialResults: { url: string; status: 'added' | 'exists' | 'invalid' | 'failed' }[] = []
+    const textResults: { title: string; status: 'added' | 'exists' | 'invalid' | 'failed'; id?: number }[] = []
+
+    for (const item of materials) {
+      const asset = item?.asset
+      const cate = typeof item?.cate === 'string' ? item.cate.trim() : ''
+      const type = normalizeAssetType(String(asset?.type || ''))
+      const url = typeof asset?.url === 'string' ? asset.url.trim() : ''
+      if (!cate || !url || !['image', 'svg', 'mask'].includes(type)) { materialResults.push({ url, status: 'invalid' }); continue }
+      const key = assetKey(type, url)
+      if (materialKeys.has(key)) { materialResults.push({ url, status: 'exists' }); continue }
+      if (dryRun) { materialKeys.add(key); materialResults.push({ url, status: 'added' }); continue }
+      const saved = addAssetRow('materials', cate, { ...asset, type, url, thumb: asset.thumb || url, ...(type === 'mask' ? { isContainer: true } : {}), ...(type === 'svg' && !asset.model ? { model: '{}' } : {}) })
+      if (saved) materialKeys.add(key)
+      materialResults.push({ url, status: saved ? 'added' : 'failed' })
+    }
+
+    for (const item of texts) {
+      const title = String(item?.title || '').slice(0, 100)
+      const cate = typeof item?.cate === 'string' ? item.cate.trim() : ''
+      const w = Number(item?.width)
+      const h = Number(item?.height)
+      const widgets = item?.widgets
+      const group = Array.isArray(widgets) ? [...widgets].reverse().find((x: any) => x?.type === 'w-group') : null
+      if (!group || !(w > 0) || !(h > 0)) { textResults.push({ title, status: 'invalid' }); continue }
+      if (cate && !templateCategoriesRepo.listCategories(1).some((c) => c.name === cate)) { textResults.push({ title, status: 'invalid' }); continue }
+      const signature = textSignature(group, widgets.filter((x: any) => x !== group))
+      if (textSignatures.has(signature)) { textResults.push({ title, status: 'exists' }); continue }
+      if (dryRun) { textSignatures.add(signature); textResults.push({ title, status: 'added' }); continue }
+      try {
+        const id = templatesRepo.createTemplate({ title: title || '文字组合', data: JSON.stringify(widgets), width: w, height: h, type: 1, cate })
+        await generateCover(id, w, h, 1)
+        textSignatures.add(signature)
+        textResults.push({ title, status: 'added', id })
+      } catch (error) {
+        textResults.push({ title, status: 'failed' })
+      }
+    }
+    send.success(res, { dryRun, materials: materialResults, texts: textResults })
   },
 
   async updateAsset(req: any, res: Response) {

@@ -20,14 +20,14 @@
     <el-table-column label="尺寸" width="110"><template #default="{ row }">{{ row.width }} × {{ row.height }}</template></el-table-column>
     <el-table-column label="分类" width="160" show-overflow-tooltip><template #default="{ row }"><span>{{ row.cate || '未分类' }}</span><el-button type="primary" size="small" link @click="$emit('category', row)">修改</el-button></template></el-table-column>
     <el-table-column label="状态" width="80"><template #default="{ row }"><el-tag :type="row.state === 1 ? 'success' : 'info'" size="small">{{ row.state === 1 ? '正常' : '已下架' }}</el-tag></template></el-table-column>
-    <el-table-column label="操作" width="170" fixed="right"><template #default="{ row }"><el-button type="primary" size="small" link @click="$emit('edit', row)">编辑</el-button><el-button v-if="row.state === 1" type="warning" size="small" link @click="$emit('delete', row)">下架</el-button><el-button type="danger" size="small" link @click="$emit('remove', row)">删除</el-button></template></el-table-column>
+    <el-table-column label="操作" width="230" fixed="right"><template #default="{ row }"><el-button type="primary" size="small" link @click="$emit('edit', row)">编辑</el-button><el-button v-if="row.state === 1" type="success" size="small" link @click="$emit('extract', row)">提取元素</el-button><el-button v-if="row.state === 1" type="warning" size="small" link @click="$emit('delete', row)">下架</el-button><el-button type="danger" size="small" link @click="$emit('remove', row)">删除</el-button></template></el-table-column>
   </el-table>
 </template>
 
 <script lang="ts" setup>
 import { ElTable, ElTableColumn, ElImage, ElTag, ElButton } from 'element-plus'
 withDefaults(defineProps<{ rows: any[]; loading?: boolean }>(), { loading: false })
-defineEmits<{ delete: [row: any]; remove: [row: any]; edit: [row: any]; category: [row: any] }>()
+defineEmits<{ delete: [row: any]; remove: [row: any]; edit: [row: any]; extract: [row: any]; category: [row: any] }>()
 </script>
 
 <style lang="less" scoped>

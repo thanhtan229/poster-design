@@ -61,6 +61,7 @@ export default {
   ADMIN_CATEGORIES: path + '/admin/categories',
   ADMIN_ASSETS: path + '/admin/assets',
   ADMIN_ASSET_ADD: path + '/admin/asset/add',
+  ADMIN_ASSET_BULK: path + '/admin/asset/bulk',
   ADMIN_ASSET_UPDATE: path + '/admin/asset/update',
   ADMIN_ASSET_DELETE: path + '/admin/asset/delete',
   ADMIN_TEMPLATE_CATEGORIES: path + '/admin/template/categories',

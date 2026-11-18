@@ -21,16 +21,19 @@
       <el-button @click="userStore.managerEdit(false)">取消</el-button>
       <div class="divide__line">|</div>
     </template>
+    <el-button v-if="isAdmin" plain style="margin-right: 0.5rem" @click="extractVisible = true">提取元素入库</el-button>
     <watermark-option style="margin-right: 0.5rem" />
     <slot />
   </div>
   <!-- 生成图片组件 -->
   <SaveImage ref="canvasImage" />
+  <!-- 提取当前设计中的图片 / 矢量 / 相框 / 文字组合到素材库（仅管理员） -->
+  <ExtractAssetsDialog v-if="isAdmin" v-model="extractVisible" :source="extractSource" />
 </template>
 
 <script lang="ts" setup>
 import api from '@/api'
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import _dl from '@/common/methods/download'
 import useNotification from '@/common/methods/notification'
@@ -40,6 +43,7 @@ import downloadBlob from '@/common/methods/download/downloadBlob'
 import { useControlStore, useCanvasStore, useUserStore, useWidgetStore } from '@/store/index'
 import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
+import ExtractAssetsDialog from '@/components/business/extract-assets/ExtractAssetsDialog.vue'
 
 type TProps = {
   modelValue?: boolean
@@ -65,6 +69,18 @@ const userStore = useUserStore()
 const widgetStore = useWidgetStore()
 
 const canvasImage = ref<typeof SaveImage | null>(null)
+
+// 管理员专用：把当前设计里的元素批量入库
+const isAdmin = (() => {
+  try {
+    return JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
+  } catch {
+    return false
+  }
+})()
+const extractVisible = ref(false)
+// 打开弹窗时才序列化一份快照，避免响应式数据在弹窗存活期间变化
+const extractSource = computed(() => (extractVisible.value ? JSON.parse(JSON.stringify(Number(route.query.tempType) === 1 ? dWidgets.value : dLayouts.value)) : null))
 
 const pageStore = useCanvasStore()
 const controlStore = useControlStore()

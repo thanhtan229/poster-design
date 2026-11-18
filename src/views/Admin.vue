@@ -63,6 +63,7 @@
             @delete="onDelTemplate"
             @remove="onRemoveTemplate"
             @edit="onEditTemplate"
+            @extract="onExtractTemplate"
             @category="openCategoryEditor"
           />
         </section>
@@ -425,6 +426,9 @@
       </template>
     </el-dialog>
 
+    <!-- 从模板批量提取元素入库 -->
+    <ExtractAssetsDialog v-model="extractDialog.visible" :source="extractDialog.source" :title-prefix="extractDialog.prefix" @done="loadTab" />
+
     <!-- 新增 / 编辑字体对话框 -->
     <el-dialog v-model="fontDialog.visible" :title="fontDialog.title" width="560px" @closed="resetFontForm">
       <el-form ref="fontFormRef" :model="fontDialog.form" :rules="fontRules" label-width="92px" size="small">
@@ -511,6 +515,8 @@ import { LocalStorageKey } from '@/config'
 import * as adminApi from '@/api/admin'
 import * as materialApi from '@/api/material'
 import AdminTemplateTable from '@/views/components/AdminTemplateTable.vue'
+import ExtractAssetsDialog from '@/components/business/extract-assets/ExtractAssetsDialog.vue'
+import { getTempDetail } from '@/api/home'
 import AdminSidebar from './admin/comps/AdminSidebar.vue'
 import AdminTopbar from './admin/comps/AdminTopbar.vue'
 import StatCard from './admin/comps/StatCard.vue'
@@ -838,6 +844,21 @@ function jump2home() {
 function openPSDImport(type?: number) {
   const path = type === 1 ? '/psd?type=1' : '/psd'
   window.open(router.resolve(path).href, '_blank')
+}
+
+const extractDialog = reactive({ visible: false, source: null as any, prefix: '' })
+
+/** 读取模板详情后，打开「提取元素」弹窗（预览、去重、选分类后入库） */
+async function onExtractTemplate(row: any) {
+  try {
+    const detail: any = await getTempDetail({ id: row.id, type: Number(row.type) === 1 ? 1 : 0 })
+    if (!detail?.data) return ElMessage.error('读取模板数据失败')
+    extractDialog.source = detail.data
+    extractDialog.prefix = row.title ? `${row.title} · ` : ''
+    extractDialog.visible = true
+  } catch (error: any) {
+    ElMessage.error(error?.msg || error?.message || '读取模板数据失败')
+  }
 }
 
 function onEditTemplate(row: any) {
