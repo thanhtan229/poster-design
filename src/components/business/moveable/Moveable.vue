@@ -18,6 +18,7 @@ import useSelecto from './Selecto'
 import useCtrlMarquee from './CtrlMarquee'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useWidgetStore, useForceStore } from '@/store'
+import { photoEdit } from '@/utils/tinix/photo-frame' // [TINIX]
 
 const widgetStore = useWidgetStore()
 const controlStore = useControlStore()
@@ -317,7 +318,7 @@ onMounted(() => {
   .on('dragStart', ({ inputEvent, stop }) => {
     if (!dActiveElement.value) return
     const image = dActiveElement.value as any
-    if (image.type === 'w-image' && image.fit === 'cover' && image.frameDragMode !== 'frame' && !inputEvent.shiftKey) { stop(); return }
+    if (image.type === 'w-image' && image.fit === 'cover' && photoEdit.uuid === image.uuid) { stop(); return } // [TINIX] đang chỉnh ảnh trong khung thì không kéo khung
     if (moveable && moveable.snappable) {
       moveable.elementGuidelines = dWidgets.value
         .filter((w) => !w.hidden && w.uuid !== dActiveElement.value?.uuid && w.parent === '-1')

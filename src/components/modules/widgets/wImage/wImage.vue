@@ -21,8 +21,7 @@
       opacity: params.opacity,
       ...imageFrameStyle(params),
     }"
-    @mousedown.capture="startFramePan"
-    @wheel="onFrameWheel"
+    @dblclick="onFrameDblclick"
   >
     <div
       v-if="cropEdit"
@@ -47,7 +46,7 @@
 <script lang="ts" setup>
 import ImageSurface from './ImageSurface.vue'
 import RotatedCover from './RotatedCover.vue' // [TINIX]
-import { frameRotation, unrotateDelta, setFrameZoom, setFrameRotation, createFrameHistory } from '@/utils/tinix/photo-frame' // [TINIX]
+import { frameRotation, unrotateDelta, canEditPhoto, enterPhotoEdit } from '@/utils/tinix/photo-frame' // [TINIX]
 import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
 
 // 图片组件
@@ -137,21 +136,21 @@ const isDraw = computed(() => {
 })
 const rotated = computed(() => frameRotation(props.params) !== 0) // [TINIX]
 
-// [TINIX] Lăn chuột trên khung ảnh đang chọn: phóng/thu ảnh trong khung; Shift + lăn: xoay ảnh. Alt/Ctrl giữ nguyên (phóng canvas).
-const wheelHistory = createFrameHistory()
-let wheelTimer: any = null
-function onFrameWheel(e: WheelEvent) {
-  const p = props.params
-  if (isDraw.value || e.altKey || e.ctrlKey || e.metaKey || p.fit !== 'cover' || p.lock || p.frameDragMode === 'frame') return
-  if (dActiveElement.value?.uuid !== p.uuid || widgetStore.dSelectWidgets.length > 1) return
-  e.preventDefault()
+// [TINIX] Nhấp đúp vào khung ảnh (fit: cover) để vào chế độ "Chỉnh ảnh trong khung" (PhotoEditOverlay.vue).
+// Kéo bình thường di chuyển khung như mọi đối tượng khác. Khung nằm trong cụm (w-group): nhấp chuột chọn cả cụm,
+// nhấp đúp chọn riêng khung rồi vào chế độ chỉnh ảnh.
+async function onFrameDblclick(e: MouseEvent) {
+  if (isDraw.value || cropEdit.value || widgetStore.dSelectWidgets.length > 1 || !canEditPhoto(props.params)) return
   e.stopPropagation()
-  wheelHistory.begin()
-  const up = (e.deltaY || e.deltaX) < 0 // Shift + lăn có thể báo qua deltaX
-  if (e.shiftKey) setFrameRotation(p, (Number(p.imgRotate) || 0) + (up ? 2 : -2))
-  else setFrameZoom(p, (Number(p.zoom) || 1) * (up ? 1.06 : 1 / 1.06))
-  clearTimeout(wheelTimer)
-  wheelTimer = setTimeout(() => wheelHistory.commit(), 400)
+  const wait = (ms: number) => new Promise((r) => { setTimeout(r, ms) })
+  // Lần nhấp trước của cú nhấp đúp có thể vẫn đang chọn (selectWidget đặt dActiveElement trong setTimeout): chờ xong rồi mới chọn khung.
+  await wait(30)
+  if (dActiveElement.value?.uuid !== props.params.uuid) {
+    widgetStore.selectWidget({ uuid: props.params.uuid })
+    for (let i = 0; i < 20 && dActiveElement.value?.uuid !== props.params.uuid; i++) await wait(10)
+    if (dActiveElement.value?.uuid !== props.params.uuid) return
+  }
+  enterPhotoEdit(props.params.uuid)
 }
 
 watch(
@@ -221,19 +220,6 @@ function touchstart(e: MouseEvent) {
   }
   // 绑定鼠标移动事件
   document.addEventListener('mousemove', handlemousemove, true)
-}
-
-// Marked photo frames pan their contents by default; Shift moves the frame itself.
-function startFramePan(e: MouseEvent) {
-  if (e.button !== 0 || e.ctrlKey || e.metaKey || e.altKey || widgetStore.dSelectWidgets.length > 1 || props.params.lock || props.params.fit !== 'cover' || (props.params.frameDragMode === 'frame' && !cropEdit.value) || controlStore.dDraging || controlStore.dSpaceDown || isDraw.value) return
-  if (e.shiftKey) {
-    // Shift normally selects multiple layers; inside one photo frame it moves the frame.
-    controlStore.updateAltDown(false)
-    return
-  }
-  e.preventDefault()
-  // Keep mousedown bubbling so the normal selection and undo transaction run.
-  touchstart(e)
 }
 
 /** 取消鼠标移动事件 */
