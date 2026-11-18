@@ -7,6 +7,11 @@
 -->
 <template>
   <ul class="widget-list">
+    <!-- [TINIX] Chọn nhiều lớp ảnh để đánh dấu khung khi sửa mẫu -->
+    <li v-if="tempEditing" class="slot-actions">
+      <button type="button" :disabled="!selectedSlots.length" @click="setSlots(true)">{{ $t('tinix.ui.photoAuto.danh_dau_nhieu') }}</button>
+      <button type="button" :disabled="!selectedSlots.length" @click="setSlots(false)">{{ $t('tinix.ui.photoAuto.bo_danh_dau') }}</button>
+    </li>
     <!-- <li v-for="widget in getWidgets" :key="widget.uuid" :class="['widget', { active: getIsActive(widget.uuid) }, 'item-one']" @click="selectLayer(widget)" @mouseover="hoverLayer(widget.uuid)" @mouseout="hoverLayer('-1')">
       <span v-show="widget.parent !== '-1'" :class="['widget-type icon', `sd-xiaji`]"></span>
       <img v-if="widget.imgUrl" class="widget-type widget-type__img" :src="widget.imgUrl" />
@@ -16,15 +21,19 @@
     </li> -->
     <draggable v-model="widgets" group="type" item-key="uuid" v-bind="dragOptions" :move="onMove" @start="drag = true" @end="onDone">
       <template #item="{ element }">
-        <li :class="['widget', { active: getIsActive(element.uuid), disable: !showItem(element) }, 'item-one']" @click="selectLayer(element)" @mouseover="hoverLayer(element)" @mouseout="hoverLayer('-1')">
+        <li :class="['widget', { active: getIsActive(element.uuid), disable: !showItem(element) }, 'item-one']" :data-uuid="element.uuid" :data-type="element.type" @click="selectLayer(element)" @dblclick="startRename(element)" @mouseover="hoverLayer(element)" @mouseout="hoverLayer('-1')">
+          <input v-if="tempEditing && element.type === 'w-image'" v-model="selectedSlots" class="slot-select" type="checkbox" :value="element.uuid" @click.stop @mousedown.stop />
           <!-- <span v-show="+element.parent !== -1" :class="['widget-type icon', `sd-xiaji`]"></span> -->
           <span v-show="+element.parent !== -1" class="second-layer"></span>
           <img v-if="element.imgUrl" class="widget-type widget-type__img" :src="element.imgUrl" />
           <img v-else-if="element.svgUrl" class="widget-type widget-type__img" :src="element.svgUrl" />
           <span v-else :class="['widget-type icon', `sd-${element.type}`, element.type]"></span>
-          <span :class="['widget-name', 'line-clamp-1', `${element.type}`]">{{ element.text || element.name }} {{ element.mask ? '(容器)' : '' }}</span>
+          <!-- [TINIX] bấm đúp tên lớp để đổi tên; Enter lưu, Esc hủy; để trống = quay về tên mặc định -->
+          <input v-if="renamingUuid === element.uuid" v-model="renameValue" class="widget-rename" @click.stop @mousedown.stop @keydown.enter.stop="commitRename(element)" @keydown.esc.stop="renamingUuid = ''" @blur="commitRename(element)" />
+          <span v-else :class="['widget-name', 'line-clamp-1', `${element.type}`, { 'layer-hidden': element.hidden }]">{{ element.layerName || element.text || element.name }} {{ element.mask ? $t('editor.panel.container') : '' }}</span>
           <div class="widget-out" :data-type="element.type" :data-uuid="element.uuid">
             <i :class="['icon', element.lock ? 'sd-suoding' : 'sd-jiesuo']" @click.stop="lockLayer(element)" />
+            <i :class="['layer-eye', { 'is-hidden': element.hidden }]" :title="element.hidden ? $t('tinix.ui.layer.hien') : $t('tinix.ui.layer.an')" @click.stop="toggleHidden(element)">{{ element.hidden ? '○' : '●' }}</i>
           </div>
         </li>
       </template>
@@ -39,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import { useWidgetStore } from '@/store'
+import { useUserStore, useWidgetStore } from '@/store'
 import { TdWidgetData } from '@/store/design/widget'
 import { defineComponent, computed, reactive, ref, toRefs } from 'vue'
 
@@ -51,6 +60,16 @@ export default defineComponent({
   emits: ['change'],
   setup(props, context) {
     const widgetStore = useWidgetStore()
+    const tempEditing = computed(() => useUserStore().tempEditing)
+    const selectedSlots = ref<string[]>([])
+    const setSlots = (value: boolean) => {
+      for (const uuid of selectedSlots.value) {
+        if (widgetStore.dWidgets.some((w) => w.uuid === uuid && w.type === 'w-image')) {
+          widgetStore.updateWidgetData({ uuid, key: 'slot', value })
+        }
+      }
+      selectedSlots.value = []
+    }
     let widgets = ref<TdWidgetData[]>([])
     const state = reactive<{drag: boolean}>({
       drag: false,
@@ -118,7 +137,7 @@ export default defineComponent({
       widgetStore.selectWidget({ uuid: widget.uuid })
       // store.dispatch('selectWidget', { uuid: widget.uuid })
     }
-    const hoverLayer = ({ uuid, parent }: any) => {
+    const hoverLayer = ({ uuid }: any) => {
       widgetStore.updateHoverUuid(uuid)
       // store.dispatch('updateHoverUuid', uuid)
     }
@@ -152,11 +171,30 @@ export default defineComponent({
       // item.lock = typeof item.lock === 'undefined' ? true : !item.lock
     }
 
-    return { lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
+    // [TINIX] ẩn/hiện lớp (lưu trong dữ liệu thiết kế, không xuất ảnh khi ẩn)
+    const toggleHidden = (item: any) => {
+      widgetStore.updateWidgetData({ uuid: item.uuid, key: 'hidden', value: !item.hidden })
+    }
+    // [TINIX] đổi tên lớp
+    const renamingUuid = ref('')
+    const renameValue = ref('')
+    const startRename = (item: any) => {
+      renamingUuid.value = item.uuid
+      renameValue.value = item.layerName || item.text || item.name || ''
+    }
+    const commitRename = (item: any) => {
+      if (renamingUuid.value !== item.uuid) return // đã hủy bằng Esc
+      renamingUuid.value = ''
+      const v = renameValue.value.trim()
+      const original = item.text || item.name || ''
+      widgetStore.updateWidgetData({ uuid: item.uuid, key: 'layerName', value: v === original ? '' : v })
+    }
+
+    return { tempEditing, selectedSlots, setSlots, toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
   },
   watch: {
     data: {
-      async handler(nval) {
+      async handler(_nval) {
         this.widgets = this.getWidgets()
       },
       immediate: true,
@@ -230,6 +268,8 @@ export default defineComponent({
   //   padding-left: 40px;
   // }
 }
+.slot-actions { display: flex; gap: 6px; padding: 8px; }
+.slot-select { position: relative; z-index: 2; margin-right: 6px; }
 
 .w-group {
   font-weight: 600;
@@ -245,6 +285,34 @@ export default defineComponent({
 }
 .sd-jiesuo {
   opacity: 0;
+}
+// [TINIX] nút ẩn/hiện + ô đổi tên
+.layer-eye {
+  position: absolute;
+  right: 38px;
+  font-style: normal;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  color: #444444;
+  &.is-hidden {
+    color: #bbbbbb;
+  }
+}
+.widget.active .layer-eye {
+  color: #ffffff;
+}
+.layer-hidden {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.widget-rename {
+  flex: 1;
+  font-size: 14px;
+  margin-right: 60px;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
 }
 .sd-xiaji {
   margin: 0 -4px 0 32px !important;

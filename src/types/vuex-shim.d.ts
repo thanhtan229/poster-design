@@ -1,4 +1,4 @@
-import { ComponentCustomProperties } from 'vue'
+export {}
 
 declare module '@vue/runtime-core' {
   // Declare your own store states.

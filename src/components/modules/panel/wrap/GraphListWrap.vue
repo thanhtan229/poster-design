@@ -40,14 +40,15 @@
           <el-image class="list__img" :src="item.thumb" fit="contain" lazy loading="lazy" />
         </div>
       </el-space>
-      <div v-show="state.loading" class="loading"><i class="el-icon-loading" /> 拼命加载中</div>
-      <div v-show="state.loadDone" :style="state.list.length <= 0 ? 'padding-top: 4rem' : ''" class="loading">全部加载完毕</div>
+      <div v-show="state.loading" class="loading"><i class="el-icon-loading" /> {{ $t('common.loadingMore') }}</div>
+      <div v-show="state.loadDone" :style="state.list.length <= 0 ? 'padding-top: 4rem' : ''" class="loading">Đã tải hết</div>
     </ul>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, toRefs, onMounted } from 'vue'
+import i18n from '@/languages'
+import { reactive, onMounted } from 'vue'
 import api from '@/api'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'
@@ -88,7 +89,7 @@ let isDrag = false
 let startPoint = { x: 99999, y: 99999 }
 const dragHelper = new DragHelper()
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 
 const colors = ['#f8704b', '#5b89ff', '#2cc4cc', '#a8ba73', '#f8704b']
 
@@ -170,7 +171,7 @@ const load = async (init: boolean = false) => {
 }
 
 const searchChange = (_: Event) => {
-  state.currentCategory = { name: '搜索结果' }
+  state.currentCategory = { name: i18n.global.t('editor.panel.searchResults') }
   load(true)
 }
 

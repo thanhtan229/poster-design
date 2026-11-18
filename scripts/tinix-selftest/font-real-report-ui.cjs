@@ -1,0 +1,7 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{pathToFileURL}=require('node:url'),puppeteer=require('../../service/node_modules/puppeteer');
+// Reads the offline benchmark fixture; no app mutation, no provider calls.
+(async()=>{const root=path.resolve('.runtime/selftest-real-font-quality'),out=path.resolve('.runtime/font-real-report-ui');fs.mkdirSync(out,{recursive:true});const browser=await puppeteer.launch({headless:true});try{
+ const page=await browser.newPage(),client=await page.createCDPSession();await client.send('Page.setDownloadBehavior',{behavior:'allow',downloadPath:out});
+ const target=path.join(out,'real-font-reviews.json');if(fs.existsSync(target))fs.unlinkSync(target);
+ await page.goto(pathToFileURL(path.join(root,'review.html')).href);await page.click('section[data-case=unknown] input[value="5"]');await page.select('section[data-case=unknown] .rating','acceptable');await page.$eval('section[data-case=unknown] textarea',e=>e.value='Offline report UI QA');await page.click('#export');for(let i=0;i<30&&!fs.existsSync(target);i++)await new Promise(r=>setTimeout(r,100));const data=JSON.parse(fs.readFileSync(target));assert(data.reviews.some(r=>r.caseName==='unknown'&&r.fontId===5&&r.rating==='acceptable'));assert(data.reviews.every(r=>r.signature&&r.reviewedAt));console.log('PASS static real-image report selection and signed JSON review download');
+}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});

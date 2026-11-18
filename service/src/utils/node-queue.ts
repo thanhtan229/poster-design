@@ -15,26 +15,27 @@ const queueList: any = [] // 任务队列
 let curNum = 0 // 当前执行的任务数
 
 function queueRun(business: Function, ...arg: any) {
-  return new Promise(async (resolve) => {
-    const Fn = async () => resolve(await business(...arg))
+  return new Promise((resolve, reject) => {
+    const Fn = async () => {
+      try { resolve(await business(...arg)) } catch (error) { reject(error) }
+    }
     const sign = { ...arg }[2]
     if (curNum >= maxNum) {
       queueList.push({ sign, Fn })
     } else {
-      await run(Fn)
+      run(Fn)
     }
   })
 }
 
 function run(Fn: Function) {
   curNum++
-  Fn().then((res: any) => {
+  Promise.resolve().then(() => Fn()).finally(() => {
     curNum--
     if (queueList.length > 0) {
       const Task: Queue = queueList.shift()
       run(Task.Fn)
     }
-    return res
   })
 }
 

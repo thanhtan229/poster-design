@@ -1,5 +1,7 @@
 ## Node截图服务
 
+TinixPoster hiện cần Node.js 22.12 trở lên theo phiên bản Puppeteer và better-sqlite3 đang dùng (đã kiểm tra với Node 24). Thông tin Node 16 bên dưới chỉ mô tả bản cũ. Sau khi cập nhật phụ thuộc, khởi động lại service để nạp phiên bản thư viện mới.
+
 项目中所使用到的图片生成接口为：`api/screenshots`，在真实生产项目中可以把该服务单独部署，于内网调用，这样利于做一些鉴权之类的处理。
 
 注：另外的 `api/printscreen` 本项目中并未使用，这个接口的作用是实现普通网页截图，可以传入一个 URL 生成该网址的预览图片，用于合成长图分享海报等场景。

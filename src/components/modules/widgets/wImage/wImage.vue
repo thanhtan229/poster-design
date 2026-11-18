@@ -19,7 +19,9 @@
       width: params.width + 'px',
       height: params.height + 'px',
       opacity: params.opacity,
+      ...imageFrameStyle(params),
     }"
+    @dblclick="onFrameDblclick"
   >
     <div
       v-if="cropEdit"
@@ -28,22 +30,28 @@
       :style="state.editBoxStyle"
       class="svg__edit__wrap"
     >
-      <img class="edit__model" :src="params.imgUrl" />
+      <img class="edit__model" :src="source.imgUrl" />
     </div>
-    <div :style="{ transform: params.flip ? `rotate${params.flip}(180deg)` : undefined, borderRadius: params.radius + 'px', '-webkit-mask-image': `${params.mask ? `url('${params.mask}')` : 'initial'}` }" :class="['img__box', { mask: params.mask }]">
-      <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${params.imgUrl}') ${params.sliceData.left} round` }"></div>
-      <img v-else ref="targetRef" class="target" style="transform-origin: center" :src="params.imgUrl" />
-    </div>
+    <ImageSurface :image="params" :src="source.imgUrl">
+      <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${source.imgUrl}') ${params.sliceData.left} round` }"></div>
+      <RotatedCover v-else-if="rotated" :image="params" :src="source.imgUrl" />
+      <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
+    </ImageSurface>
     <div v-if="isMask" class="drop__mask">
-      <div putIn="true" :style="{ fontSize: params.width / 12 + 'px' }" class="drop__btn">拖入</div>
+      <div putIn="true" :style="{ fontSize: params.width / 12 + 'px' }" class="drop__btn">{{ $t('editor.image.dropHere') }}</div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import ImageSurface from './ImageSurface.vue'
+import RotatedCover from './RotatedCover.vue' // [TINIX]
+import { frameRotation, unrotateDelta, canEditPhoto, enterPhotoEdit } from '@/utils/tinix/photo-frame' // [TINIX]
+import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
+
 // 图片组件
 // const NAME = 'w-image'
-import { CSSProperties, StyleValue, computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
+import { CSSProperties, computed, nextTick, onBeforeUnmount, onMounted, onUpdated, reactive, ref, watch } from 'vue'
 
 // import { getMatrix } from '@/common/methods/handleTransform'
 import setting from "./wImageSetting"
@@ -74,6 +82,7 @@ type TState = {
 }
 
 const props = defineProps<TProps>()
+const source = computed(() => resolveLinkedImage(props.params, useWidgetStore().dWidgets))
 const state = reactive<TState>({
   position: 'absolute', // 'absolute'relative
   editBoxStyle: {
@@ -101,6 +110,7 @@ const targetRef = ref<HTMLImageElement | null>(null)
 
 let rotateTemp: number | null = null
 let flipTemp: string | null = null
+let coverDrag: { x: number; y: number; cropX: number; cropY: number } | null = null
 
 // const {
 //   dActiveElement, dWidgets, dMouseXY, dDropOverUuid, dCropUuid
@@ -124,6 +134,24 @@ const isMask = computed(() => {
 const isDraw = computed(() => {
   return route.name === 'Draw'
 })
+const rotated = computed(() => frameRotation(props.params) !== 0) // [TINIX]
+
+// [TINIX] Nhấp đúp vào khung ảnh (fit: cover) để vào chế độ "Chỉnh ảnh trong khung" (PhotoEditOverlay.vue).
+// Kéo bình thường di chuyển khung như mọi đối tượng khác. Khung nằm trong cụm (w-group): nhấp chuột chọn cả cụm,
+// nhấp đúp chọn riêng khung rồi vào chế độ chỉnh ảnh.
+async function onFrameDblclick(e: MouseEvent) {
+  if (isDraw.value || cropEdit.value || widgetStore.dSelectWidgets.length > 1 || !canEditPhoto(props.params)) return
+  e.stopPropagation()
+  const wait = (ms: number) => new Promise((r) => { setTimeout(r, ms) })
+  // Lần nhấp trước của cú nhấp đúp có thể vẫn đang chọn (selectWidget đặt dActiveElement trong setTimeout): chờ xong rồi mới chọn khung.
+  await wait(30)
+  if (dActiveElement.value?.uuid !== props.params.uuid) {
+    widgetStore.selectWidget({ uuid: props.params.uuid })
+    for (let i = 0; i < 20 && dActiveElement.value?.uuid !== props.params.uuid; i++) await wait(10)
+    if (dActiveElement.value?.uuid !== props.params.uuid) return
+  }
+  enterPhotoEdit(props.params.uuid)
+}
 
 watch(
   () => cropEdit.value,
@@ -176,10 +204,14 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('mouseup', touchend, false)
+  document.removeEventListener('mousemove', handlemousemove, true)
 })
 
 // ...mapActions(['updateWidgetData']),
 function touchstart(e: MouseEvent) {
+  if (props.params.fit === 'cover') {
+    coverDrag = { x: e.clientX, y: e.clientY, cropX: props.params.cropX ?? 50, cropY: props.params.cropY ?? 50 }
+  }
   // const editBox = this.$refs[props.params.uuid + '_ebox']
   const editBox = document.getElementById(props.params.uuid + '_ebox')
   state.cropWidgetXY = {
@@ -192,6 +224,7 @@ function touchstart(e: MouseEvent) {
 
 /** 取消鼠标移动事件 */
 function touchend() {
+  coverDrag = null
   document.removeEventListener('mousemove', handlemousemove, true)
   // const left = Number(this.editBoxStyle.left.replace('px', ''))
   // const flow = (this.params.width * (1 - this.tZoom)) / 2
@@ -200,6 +233,24 @@ function touchend() {
 }
 
 function handlemousemove(e?: MouseEvent) {
+  if (props.params.fit === 'cover') {
+    const img = (widgetRef.value?.querySelector('img.target') as HTMLImageElement | null) || targetRef.value // [TINIX] ảnh xoay nằm trong RotatedCover
+    if (!e || !coverDrag || !img) return
+    const w = Number(props.params.width); const h = Number(props.params.height)
+    if (!img.naturalWidth || !img.naturalHeight || !w || !h || !dZoom.value) return
+    const factor = Math.max(w / img.naturalWidth, h / img.naturalHeight)
+    const zoom = Math.max(1, Number(props.params.zoom) || 1)
+    const excessX = Math.max(0, img.naturalWidth * factor - w + w * (1 - 1 / zoom))
+    const excessY = Math.max(0, img.naturalHeight * factor - h + h * (1 - 1 / zoom))
+    const delta = unrotateDelta(e.clientX - coverDrag.x, e.clientY - coverDrag.y, frameRotation(props.params)) // [TINIX] kéo theo con trỏ khi ảnh đã xoay
+    const px = Math.max(0, Math.min(100, coverDrag.cropX - delta.x * 10000 / (dZoom.value * zoom * (excessX || Infinity))))
+    const py = Math.max(0, Math.min(100, coverDrag.cropY - delta.y * 10000 / (dZoom.value * zoom * (excessY || Infinity))))
+    widgetStore.updateWidgetData({ uuid: props.params.uuid, key: 'cropX', value: px })
+    widgetStore.updateWidgetData({ uuid: props.params.uuid, key: 'cropY', value: py })
+    e.stopPropagation()
+    e.preventDefault()
+    return
+  }
   if (!move(e)) {
     return
   }
@@ -332,7 +383,7 @@ function fixRotate() {
   }, 100)
 }
 
-function lockOthers(isCrop) {
+function lockOthers(isCrop: boolean) {
   // 裁剪时锁定其他图层
   widgetStore.lockWidgets()
   if (!isCrop) return
@@ -366,6 +417,7 @@ function lockOthers(isCrop) {
 }
 
 .img__box {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;

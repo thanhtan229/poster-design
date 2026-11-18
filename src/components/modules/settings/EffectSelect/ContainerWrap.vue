@@ -13,19 +13,19 @@
           <component :is="state.effectSelect" class="demo" />
         </template>
         <!-- <div v-show="!state.effectSelect">无</div> -->
-        <span class="title">图片蒙版</span>
+        <span class="title">{{ $t('editor.effect.imageMask') }}</span>
         <el-popover :visible="state.visiable" placement="bottom-end" :width="260" trigger="click">
           <div class="box__header">
             <el-radio-group v-model="state.type" size="small">
-              <el-radio-button label="图形" value="tuxing"></el-radio-button>
+              <el-radio-button :label="$t('editor.effect.shape')" value="tuxing"></el-radio-button>
             </el-radio-group>
           </div>
           <div class="select__box">
-            <div class="select__box__select-item" @click="select()"> 无 </div>
+            <div class="select__box__select-item" @click="() => select()"> {{ $t('editor.effect.none') }} </div>
             <el-image v-for="(item, i) in state.list" :key="i + 'l'" class="select__box__select-item" :src="item.thumb" fit="contain" @click="select(item.url)"></el-image>
           </div>
           <template #reference>
-            <el-button class="button" link @click="state.visiable = !state.visiable">{{ state.visiable ? '取消' : '选择' }}</el-button>
+            <el-button class="button" link @click="state.visiable = !state.visiable">{{ state.visiable ? $t('common.cancel') : $t('editor.effect.choose') }}</el-button>
           </template>
         </el-popover>
       </div>
@@ -35,11 +35,10 @@
 
 <script lang="ts" setup>
 import api from '@/api'
-import { toRefs, reactive, watch, onMounted, nextTick } from 'vue'
+import { reactive, watch, onMounted, nextTick } from 'vue'
 import { ElRadioGroup, ElRadioButton } from 'element-plus'
 // import wSvg from '@/components/modules/widgets/wSvg/wSvg.vue'
 import {wSvgSetting} from '@/components/modules/widgets/wSvg/wSvgSetting'
-import { TGetListResult } from '@/api/material';
 
 type TProps = {
   modelValue?: string
@@ -94,7 +93,7 @@ async function getList() {
 
 watch(
   () => state.type,
-  (value) => {
+  (_value) => {
     getList()
   },
 )

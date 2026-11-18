@@ -9,10 +9,8 @@ import keyCodeOptions from './methods/keyCodeOptions'
 import dealWithCtrl from './methods/dealWithCtrl'
 import { TControlStore } from '@/store/design/control'
 import { useControlStore, useWidgetStore } from '@/store'
+import { isTextInput } from '@/common/methods/selectionShortcuts'
 
-const ignoreNode = ['INPUT', 'TEXTAREA']
-
-let hadDown = false
 const appContainer: any = document.querySelector('#app')
 const controlStore = useControlStore()
 const widgetStore = useWidgetStore()
@@ -20,9 +18,9 @@ const widgetStore = useWidgetStore()
 const shortcuts = {
   methods: {
     handleKeydowm(store: TControlStore, checkCtrl: number | undefined, instance: any, dealCtrl: (e: any, instance: any) => void) {
+      let timer = checkCtrl
       return (e: any) => {
-        const nodeName = e.target.nodeName
-        if (ignoreNode.indexOf(nodeName) !== -1 || (nodeName === 'DIV' && e.target.contentEditable === 'true')) {
+        if (e.defaultPrevented || isTextInput(e.target)) {
           return
         }
         // if (hadDown || this.showMenuBg) {
@@ -38,12 +36,11 @@ const shortcuts = {
         if (shift || ctrl) {
           store.updateAltDown(true)
           // store.dispatch('updateAltDown', true)
-          clearInterval(checkCtrl)
-          checkCtrl = setInterval(() => {
+          clearInterval(timer)
+          timer = setInterval(() => {
             // TODO: 防止组合键导致页面失焦无法操作
             if (!document.hasFocus()) {
-              clearInterval(checkCtrl)
-              hadDown = false
+              clearInterval(timer)
               store.updateAltDown(false)
               // store.dispatch('updateAltDown', false)
             }
@@ -67,7 +64,6 @@ const shortcuts = {
     handleKeyup(store: TControlStore, checkCtrl: number | undefined) {
       return (e: any) => {
         clearInterval(checkCtrl)
-        hadDown = false
         if (e.key === 'Alt' || e.key === 'Shift' || e.key === 'Control' || e.key === 'Meta') {
           store.updateAltDown(false)
         }

@@ -15,13 +15,14 @@ import Moveable, { EVENTS } from 'moveable' // PROPERTIES, METHODS,
 import MoveableHelper from 'moveable-helper'
 // import { setTransformAttribute } from '@/common/methods/handleTransform'
 import useSelecto from './Selecto'
+import useCtrlMarquee from './CtrlMarquee'
 import { storeToRefs } from 'pinia'
-import { useCanvasStore, useControlStore, useWidgetStore, useForceStore, useHistoryStore } from '@/store'
+import { useCanvasStore, useControlStore, useWidgetStore, useForceStore } from '@/store'
+import { photoEdit } from '@/utils/tinix/photo-frame' // [TINIX]
 
 const widgetStore = useWidgetStore()
 const controlStore = useControlStore()
 const forceStore = useForceStore()
-const historyStore = useHistoryStore()
 const { guidelines } = storeToRefs(useCanvasStore())
 const { showMoveable, showRotatable, dAltDown } = storeToRefs(controlStore)
 const { dSelectWidgets, dActiveElement, activeMouseEvent, dWidgets } = storeToRefs(widgetStore)
@@ -40,6 +41,8 @@ watch(
       return
     }
     if (!moveable) return
+    // A marquee owns the group target; selecting the page must not replace it.
+    if (dSelectWidgets.value.length > 1) return
     // 选中非面板 并且不是组合内的元素
     if (Number(val.uuid) != -1) {
       await nextTick()
@@ -78,7 +81,7 @@ watch(
       moveable.target = `[id="empty"]`
       if (moveable.target !== `[id="empty"]`) {
         setTimeout(() => {
-          if (!moveable) return
+          if (!moveable || dSelectWidgets.value.length || dActiveElement.value?.uuid !== '-1') return
           moveable.target = `[id="empty"]`
         }, 210)
       }
@@ -125,11 +128,13 @@ watch(
 watch(
   () => updateSelect.value,
   () => {
-    const items = widgetStore.dSelectWidgets
     setTimeout(async () => {
       if (!moveable) return
+      const items = widgetStore.dSelectWidgets
+      if (!items.length) return
       moveable.updateRect()
       await nextTick()
+      document.querySelectorAll('.widget-selected').forEach(el => el.classList.remove('widget-selected'))
       for (let i = 0; i < items.length; i++) {
         console.log(items[i].uuid)
         document.getElementById(items[i].uuid)?.classList.add('widget-selected')
@@ -152,11 +157,17 @@ watch(
   () => dSelectWidgets.value,
   (items) => {
     if (!moveable) return
+    // Locking the selection must also remove the group overlay and its drag target.
+    if (!items.length && dActiveElement.value?.uuid === '-1') {
+      moveable.target = document.getElementById('empty')
+      return
+    }
     const alt = dAltDown.value
     // if (items.length > 1) {
     //   console.log('打开组合面板')
     // }
-    if (alt) {
+    if (alt || items.length > 1) {
+      document.querySelectorAll('.widget-selected').forEach(el => el.classList.remove('widget-selected'))
       for (let i = 0; i < items.length; i++) {
         document.getElementById(items[i].uuid)?.classList.add('widget-selected')
       }
@@ -178,7 +189,7 @@ watch(
   () => guidelines.value,
   (lines) => {
     if (!moveable) return
-    console.log(lines)
+    moveable.snappable = lines.verticalGuidelines.length > 0 || lines.horizontalGuidelines.length > 0
     moveable.verticalGuidelines = lines.verticalGuidelines
     moveable.horizontalGuidelines = lines.horizontalGuidelines
   }
@@ -278,6 +289,11 @@ onMounted(() => {
   // moveable = new Moveable(document.body, moveableOptions)
   const containerEl = document.querySelector('#main') as HTMLElement | SVGElement;
   moveable = new Moveable(containerEl, moveableOptions)
+  moveable.snapContainer = document.querySelector('.design-canvas') as HTMLElement
+  moveable.snapCenter = true
+  moveable.snapThreshold = 6
+  moveable.verticalGuidelines = guidelines.value.verticalGuidelines
+  moveable.horizontalGuidelines = guidelines.value.horizontalGuidelines
 
   const helper = new MoveableHelper()
 
@@ -299,20 +315,39 @@ onMounted(() => {
   let resizeStartWidth = 0
 
   moveable
-  .on('dragStart', ({ inputEvent, target, stop }) => {
+  .on('dragStart', ({ inputEvent, stop }) => {
     if (!dActiveElement.value) return
+    const image = dActiveElement.value as any
+    if (image.type === 'w-image' && image.fit === 'cover' && photoEdit.uuid === image.uuid) { stop(); return } // [TINIX] đang chỉnh ảnh trong khung thì không kéo khung
+    if (moveable && moveable.snappable) {
+      moveable.elementGuidelines = dWidgets.value
+        .filter((w) => !w.hidden && w.uuid !== dActiveElement.value?.uuid && w.parent === '-1')
+        .map((w) => document.getElementById(w.uuid))
+        .filter((el): el is HTMLElement => !!el) as any
+    }
     if (inputEvent.target.nodeName === 'PRE') {
       dActiveElement.value.editable && stop()
     }
     dActiveElement.value.lock && stop()
   })
-  .on('drag', ({ target, transform, left, top, inputEvent }) => {
+  .on('drag', ({ target, left: dragLeft, top: dragTop }) => {
+    let left = dragLeft
+    let top = dragTop
+    // [TINIX] ảnh phủ kín trang (mẫu 1 ảnh mặc định): kéo di chuyển nhưng tới mép thì dừng, không để lộ khoảng trống
+    const cover = dActiveElement.value as any
+    if (cover && cover.keepCover) {
+      const { width: pw, height: ph } = useCanvasStore().dPage
+      const w = Number(cover.width)
+      const h = Number(cover.height)
+      if (w >= pw) left = Math.min(0, Math.max(pw - w, left))
+      if (h >= ph) top = Math.min(0, Math.max(ph - h, top))
+    }
     // target!.style.transform = transform]
     target!.style.left = `${left}px`
     target!.style.top = `${top}px`
     holdPosition = { left, top }
   })
-  .on('dragEnd', ({ target, isDrag, inputEvent }) => {
+  .on('dragEnd', ({ inputEvent }) => {
     // console.log('onDragEnd', inputEvent)
     // TODO 清理mouseevent
     widgetStore.setMouseEvent(null)
@@ -350,7 +385,7 @@ onMounted(() => {
   // .on('keyUp', (e) => {
   //   moveable.updateRect()
   // })
-  .on('rotate', ({ target, beforeDist, dist, transform }: any) => {
+  .on('rotate', ({ target, transform }: any) => {
     // console.log('onRotate', Number(this.dActiveElement.rotate) + Number(beforeDist + dist))
     target.style.transform = transform
     target.style.height = dActiveElement.value?.height + 'px' // 修正文字高度变化
@@ -400,7 +435,7 @@ onMounted(() => {
     }
   })
   .on('resize', (args: any) => {
-    const { target, width, height, dist, delta, clientX, clientY, direction } = args
+    const { target, width, height, direction } = args
     if (dActiveElement.value?.type === 'w-text') {
       if (String(direction) === '1,1') {
         resetRatio = width / resizeStartWidth
@@ -436,7 +471,7 @@ onMounted(() => {
     if (!moveable) return
     moveable.resizable = true
     // moveable.scalable = true
-    moveable.snappable = true
+    moveable.snappable = guidelines.value.verticalGuidelines.length > 0 || guidelines.value.horizontalGuidelines.length > 0
     if (e.lastEvent) {
       // setTimeout(() => {
       // if (this.dActiveElement.type === 'w-group') {
@@ -512,7 +547,7 @@ onMounted(() => {
         const d = e.direction || e.lastEvent.direction
         String(d) === '1,1' && (dActiveElement.value.fontSize = Number(dActiveElement.value?.fontSize) * resetRatio)
       }
-    } catch (err) {}
+    } catch {}
     moveable.keepRatio = true
   })
   .on('scaleStart', (e) => {
@@ -544,7 +579,15 @@ onMounted(() => {
         const d = e.direction || e.lastEvent.direction
         String(d) === '1,1' && (dActiveElement.value.fontSize = Number(dActiveElement.value.fontSize) * resetRatio)
       }
-    } catch (err) {}
+    } catch {}
+  })
+  .on('dragGroupStart', (e) => {
+    if (!moveable || !moveable.snappable) return
+    const selected = new Set(e.targets.map((target: any) => target.getAttribute('data-uuid')))
+    moveable.elementGuidelines = dWidgets.value
+      .filter((w) => !w.hidden && !selected.has(w.uuid) && w.parent === '-1')
+      .map((w) => document.getElementById(w.uuid))
+      .filter((el): el is HTMLElement => !!el) as any
   })
   .on('dragGroup', (e) => {
     e.inputEvent.stopPropagation()
@@ -566,7 +609,7 @@ onMounted(() => {
       holdGroupPosition[`${ev.target.getAttribute('data-uuid')}`] = { left, top }
     }
   })
-  .on('dragGroupEnd', (e) => {
+  .on('dragGroupEnd', (_e) => {
     for (const key in holdGroupPosition) {
       if (Object.prototype.hasOwnProperty.call(holdGroupPosition, key)) {
         const item = holdGroupPosition[key]
@@ -608,7 +651,7 @@ onMounted(() => {
     //     ev.dragStart && ev.dragStart.set(frame.translate);
     // });
   })
-  .on('resizeGroup', (e: any) => {
+  .on('resizeGroup', (_e: any) => {
     // events.forEach(({ target, width, height, drag }, i) => {
     //     const frame = this.frames[i];
     //     target.style.width = `${width}px`;
@@ -625,6 +668,7 @@ onMounted(() => {
 
   // -- 选择功能 Start --
   useSelecto(moveable)
+  useCtrlMarquee(moveable)
   // -- 选择功能 END --
 
 })

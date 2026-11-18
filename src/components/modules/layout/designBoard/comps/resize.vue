@@ -7,10 +7,10 @@
 -->
 <template>
   <div v-show="show" class="page-resize" :style="{ width: Math.floor(pw) + 'px', height: Math.floor(ph) + 'px' }">
-    <div @mousedown="handlemousedown($event, 'ns', true)" class="resize__bar resize__bar-top"></div>
-    <div @mousedown="handlemousedown($event, 'ew')" class="resize__bar resize__bar-right"></div>
-    <div @mousedown="handlemousedown($event, 'ns')" class="resize__bar resize__bar-bottom"></div>
-    <div @mousedown="handlemousedown($event, 'ew', true)" class="resize__bar resize__bar-left"></div>
+    <div class="resize__bar resize__bar-top" @mousedown="handlemousedown($event, 'ns', true)"></div>
+    <div class="resize__bar resize__bar-right" @mousedown="handlemousedown($event, 'ew')"></div>
+    <div class="resize__bar resize__bar-bottom" @mousedown="handlemousedown($event, 'ns')"></div>
+    <div class="resize__bar resize__bar-left" @mousedown="handlemousedown($event, 'ew', true)"></div>
   </div>
 </template>
 
@@ -33,7 +33,7 @@ const show = computed(() => dActiveElement.value?.uuid === '-1')
 
 let initData = { x: 0, y: 0, w: 0, h: 0 }
 let moveDir = ''
-let moveRev: any = undefined
+let moveRev: any
 
 const handlemousedown = (e: any, dir: Direction, isReverse?: boolean) => {
   moveDir = dir
@@ -56,12 +56,12 @@ function handlemousemove(e: any) {
     const dx = e.pageX - x
     const moveX = Math.floor((dx * 100) / canvasStore.dZoom)
     const result = moveRev ? w - moveX * 2 : w + moveX * 2
-    result <= 5000 && result > 0 && (canvasStore.dPage.width = result)
+    result <= 10000 && result > 0 && (canvasStore.dPage.width = result)
   } else {
     const dy = e.pageY - y
     const moveY = Math.floor((dy * 100) / canvasStore.dZoom)
     const result = moveRev ? h - moveY * 2 : h + moveY * 2
-    result <= 5000 && result > 0 && (canvasStore.dPage.height = result)
+    result <= 10000 && result > 0 && (canvasStore.dPage.height = result)
   }
 }
 

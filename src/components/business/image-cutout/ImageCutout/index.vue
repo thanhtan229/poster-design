@@ -14,14 +14,23 @@
  * (at your option) any later version.
 -->
 <template>
-  <el-dialog v-model="state.show" title="AI 抠图" align-center width="650" @close="handleClose">
+  <el-dialog v-model="state.show" :title="$t('business.cutout.title')" align-center width="650" @close="handleClose">
+    <!-- [TINIX] chọn model tách nền; đổi model khi đã có ảnh thì tách lại bằng model mới -->
+    <div class="tinix-engine">
+      <span>{{ $t('tinix.ui.cutoutEngine.model') }}</span>
+      <el-radio-group v-model="engine" size="small" @change="onEngineChange">
+        <el-radio-button value="birefnet">{{ $t('tinix.ui.cutoutEngine.birefnet') }}</el-radio-button>
+        <el-radio-button value="u2net">{{ $t('tinix.ui.cutoutEngine.u2net') }}</el-radio-button>
+      </el-radio-group>
+      <small>{{ engine === 'birefnet' ? $t('tinix.ui.cutoutEngine.birefnet_hint') : $t('tinix.ui.cutoutEngine.u2net_hint') }}</small>
+    </div>
     <uploader v-if="!state.rawImage" :hold="true" :drag="true" :multiple="true" class="uploader" @load="handleUploaderLoad">
       <div class="uploader__box">
         <upload-filled style="width: 64px; height: 64px" />
         <!-- <div class="el-upload__text">在此拖入或选择<em>上传图片</em></div> -->
-        <div class="el-upload__text">自动抠图在浏览器本地完成，无需后端服务</div>
+        <div class="el-upload__text">{{ $t('business.cutout.local') }}</div>
       </div>
-      <div class="el-upload__tip el-upload__text"><em>首次使用需下载约 4.4MB 本地模型，之后浏览器会缓存复用</em></div>
+      <div class="el-upload__tip el-upload__text"><em>{{ $t('business.cutout.firstUse') }}</em></div>
     </uploader>
     <el-progress v-if="!state.cutImage && state.progressText" :percentage="state.progress">
       <el-button text>
@@ -31,17 +40,22 @@
     <div class="content">
       <div v-show="state.rawImage" v-loading="!state.cutImage" :style="{ width: state.offsetWidth ? state.offsetWidth + 'px' : '100%' }" class="scan-effect transparent-bg">
         <img ref="raw" :style="{ 'clip-path': 'inset(0 0 0 ' + state.percent + '%)' }" :src="state.rawImage" alt="" />
-        <img v-show="state.cutImage" :src="state.cutImage" alt="结果图像" @mousemove="mousemove" />
+        <img v-show="state.cutImage" :src="state.cutImage" :alt="$t('business.cutout.resultAlt')" @mousemove="mousemove" />
         <div v-show="state.cutImage" :style="{ left: state.percent + '%' }" class="scan-line"></div>
       </div>
     </div>
 
     <template #footer>
       <span class="dialog-footer">
-        <el-button v-show="state.cutImage && state.toolModel" @click="clear">清除重选</el-button>
-        <el-button v-show="state.cutImage" type="primary" plain @click="edit">进入编辑模式</el-button>
-        <el-button v-show="state.cutImage && state.toolModel" type="primary" @click="download"> 下载 </el-button>
-        <el-button v-show="state.cutImage && !state.toolModel" v-loading="state.loading" type="primary" @click="cutDone"> {{ state.loading ? '上传中..' : '完成抠图' }} </el-button>
+        <!-- [TINIX] chỉ khi tách nền ảnh trên canvas: áp luôn viền trắng hình dán (mm); 0 = không viền -->
+        <span v-show="state.cutImage && !state.toolModel" class="tinix-sticker">
+          {{ $t('tinix.ui.stickerBorder.dialog_label') }}
+          <el-input-number v-model="borderMm" :min="0" :max="8" :step="0.5" size="small" controls-position="right" @change="onBorderChange" /> mm
+        </span>
+        <el-button v-show="state.cutImage && state.toolModel" @click="clear">{{ $t('business.cutout.reselect') }}</el-button>
+        <el-button v-show="state.cutImage" type="primary" plain @click="edit">{{ $t('business.cutout.edit') }}</el-button>
+        <el-button v-show="state.cutImage && state.toolModel" type="primary" @click="download"> {{ $t('business.cutout.download') }} </el-button>
+        <el-button v-show="state.cutImage && !state.toolModel" v-loading="state.loading" type="primary" @click="cutDone"> {{ state.loading ? $t('business.cutout.uploading') : $t('business.cutout.done') }} </el-button>
       </span>
     </template>
     <ImageExtraction ref="matting" />
@@ -50,7 +64,8 @@
 
 <script lang="ts" setup>
 import { reactive, nextTick, ref } from 'vue'
-import { ElProgress } from 'element-plus'
+import { getCutoutEngine, setCutoutEngine, type CutoutEngine } from '@/utils/tinix/cutout-engine' // [TINIX]
+import { ElProgress, ElRadioGroup, ElRadioButton, ElInputNumber } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import uploader from '@/components/common/Uploader/index.vue'
 import _dl from '@/common/methods/download'
@@ -84,10 +99,16 @@ const state = reactive<TImageCutoutState>({
 })
 
 let fileName: string = 'unknow'
+const engine = ref<CutoutEngine>(getCutoutEngine()) // [TINIX]
+const borderMm = ref<number>(Number(localStorage.getItem('tinix.stickerBorderMm')) || 0) // [TINIX]
+function onBorderChange(v: any) {
+  localStorage.setItem('tinix.stickerBorderMm', String(v || 0))
+}
+let currentFile: File | null = null // [TINIX] ảnh đang tách, để tách lại khi đổi model
 let isRuning: boolean = false
 
 const emits = defineEmits<{
-  (event: "done", data: string): void
+  (event: "done", data: string, borderMm?: number): void
 }>()
 
 const raw = ref(null)
@@ -111,11 +132,20 @@ defineExpose({
 })
 
 const handleUploaderLoad = (file: File) => {
+  currentFile = file
   selectImageFile(state as TImageCutoutState, raw, file, (result, name) => {
     fileName = name
     state.rawImage && (state.cutImage = result)
     requestAnimationFrame(run)
-  })
+  }, engine.value)
+}
+
+// [TINIX] đổi model: nhớ lựa chọn; đã có ảnh thì tách lại
+function onEngineChange(v: any) {
+  setCutoutEngine(v)
+  if (!currentFile || !state.rawImage) return
+  state.cutImage = ''
+  handleUploaderLoad(currentFile)
 }
 
 const handleClose = () => {
@@ -147,7 +177,7 @@ const run = () => {
 const cutDone = async () => {
   state.loading = true
   const url = await uploadCutPhotoToCloud(state.cutImage)
-  emits('done', url)
+  emits('done', url, borderMm.value)
   state.show = false
   handleClose()
 }
@@ -164,6 +194,18 @@ const edit = () => {
 </script>
 
 <style lang="less" scoped>
+.tinix-engine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  small {
+    flex-basis: 100%;
+    color: #8a8f99;
+  }
+}
 .uploader {
   &__box {
     color: #333333;

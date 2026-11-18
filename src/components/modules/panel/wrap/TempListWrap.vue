@@ -15,22 +15,66 @@
 -->
 <template>
   <div class="wrap">
-    <search-header v-model="state.searchKeyword" @change="cateChange" />
+    <search-header v-model="state.searchKeyword" type="none" @change="cateChange" /><!-- [TINIX] type="none": bỏ menu nhóm ẩn, dùng thanh nhóm bên dưới -->
+    <tinix-group-bar ref="groupBarRef" v-model="groupId" :kind="typeFilter" :is-admin="isAdmin" :select-mode="selectMode" @change="onGroupChange" @changed="load(true, pageOptions.state)" @toggle-select="toggleSelect" />
+
+    <tinix-photo-count-bar v-model="photosFilter" :kind="typeFilter" :cate="groupId === 0 ? '' : groupId" @change="onPhotosChange" /><!-- [TINIX] lọc mẫu theo số ảnh -->
+
+    <!-- [TINIX] gộp tab Cắt dán: lọc loại mẫu -->
+    <div class="tinix-type-bar">
+      <button v-for="o in typeOptions" :key="o.v" :class="{ on: typeFilter === o.v }" @click="onTypeChange(o.v)">{{ o.label }}</button>
+    </div>
+
+    <!-- [TINIX] chế độ chọn nhiều: thanh thao tác -->
+    <div v-if="selectMode" class="tinix-select-bar">
+      <span>{{ $t('tinix.ui.templateGroups.da_chon', { n: selected.length }) }}</span>
+      <el-button size="small" link @click="selectAllVisible">{{ $t('tinix.ui.templateGroups.chon_het') }}</el-button>
+      <el-button size="small" link :disabled="!selected.length" @click="selected = []">{{ $t('tinix.ui.templateGroups.bo_chon') }}</el-button>
+      <el-button size="small" type="primary" :disabled="!selected.length" @click="openBulkDialog">{{ $t('tinix.ui.templateGroups.gan_nhom') }}</el-button>
+    </div>
 
     <el-divider v-show="state.title" style="margin-top: 1.7rem" content-position="left">
       <span style="font-weight: 600">{{ state.title }}</span>
     </el-divider>
 
     <ul ref="listRef" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
-      <img-water-fall :listData="state.list" @select="selectItem" />
-      <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> 拼命加载中</div>
-      <div v-show="state.loadDone" class="loading">全部加载完毕</div>
+      <print-groups v-if="isCollagePage" /><!-- [TINIX] công cụ cắt dán: chỉ hiện khi trang hiện tại là trang cắt dán -->
+      <template-library v-if="typeFilter !== 'normal'" :search="state.searchKeyword" :group="groupId" :photos="photosFilter" :all-groups="allGroups" @changed="onCollageChanged" /><!-- [TINIX] mẫu cắt dán xếp trước -->
+      <img-water-fall v-if="typeFilter !== 'collage'" :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @edit="editTemplate" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
+      <div v-show="state.loading && typeFilter !== 'collage'" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
+      <div v-show="state.loadDone && typeFilter !== 'collage'" class="loading">Đã tải hết</div>
     </ul>
+
+    <!-- [TINIX] Hộp chọn nhóm: một mẫu (hộp tick) hoặc nhiều mẫu (thêm vào / gỡ khỏi) -->
+    <el-dialog v-model="groupDialog.visible" :title="groupDialog.mode === 'bulk' ? $t('tinix.ui.templateGroups.gan_nhom_nhieu', { n: selected.length }) : $t('tinix.ui.templateGroups.nhom_tieu_de')" width="340px" append-to-body>
+      <div v-if="!allGroups.length" class="tinix-empty">{{ $t('tinix.ui.templateGroups.chua_co_nhom') }}</div>
+      <template v-else-if="groupDialog.mode === 'single'">
+        <el-checkbox-group v-model="groupDialog.ids" class="tinix-check-list">
+          <el-checkbox v-for="g in allGroups" :key="g.id" :value="g.id">{{ g.name }}</el-checkbox>
+        </el-checkbox-group>
+      </template>
+      <template v-else>
+        <div class="tinix-sub">{{ $t('tinix.ui.templateGroups.them_vao_nhom') }}</div>
+        <el-checkbox-group v-model="groupDialog.add" class="tinix-check-list">
+          <el-checkbox v-for="g in allGroups" :key="'a' + g.id" :value="g.id">{{ g.name }}</el-checkbox>
+        </el-checkbox-group>
+        <div class="tinix-sub">{{ $t('tinix.ui.templateGroups.go_khoi_nhom') }}</div>
+        <el-checkbox-group v-model="groupDialog.remove" class="tinix-check-list">
+          <el-checkbox v-for="g in allGroups" :key="'r' + g.id" :value="g.id">{{ g.name }}</el-checkbox>
+        </el-checkbox-group>
+      </template>
+      <template #footer>
+        <el-button @click="groupDialog.visible = false">{{ $t('tinix.ui.templateGroups.huy') }}</el-button>
+        <el-button type="primary" :loading="groupDialog.saving" :disabled="!allGroups.length" @click="saveGroupDialog">{{ $t('tinix.ui.templateGroups.luu') }}</el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, ref } from 'vue'
+import i18n from '@/languages'
+import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import api from '@/api'
 
 import { LocationQueryValue, useRoute, useRouter } from 'vue-router'
@@ -43,6 +87,15 @@ import imgWaterFall from './components/imgWaterFall.vue'
 import { IGetTempListData } from '@/api/home'
 import { useControlStore, useCanvasStore, useUserStore, useHistoryStore, useWidgetStore, useForceStore } from '@/store'
 import { storeToRefs } from 'pinia'
+import { ElMessage, ElMessageBox, ElDialog, ElCheckbox, ElCheckboxGroup, ElButton } from 'element-plus' // [TINIX]
+import * as adminApi from '@/api/admin' // [TINIX]
+import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
+import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
+import PrintGroups from '@/components/business/collage/PrintGroups.vue' // [TINIX]
+import TemplateLibrary from '@/components/business/collage/TemplateLibrary.vue' // [TINIX]
+import { setTemplateSource, TEMPLATES_CHANGED_KEY } from '@/utils/tinix/template-save' // [TINIX]
+import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
+import config from '@/config' // [TINIX]
 
 type TState = {
   loading: boolean
@@ -57,6 +110,7 @@ type TPageOptions = {
   pageSize: number
   cate: number | string
   state?: string
+  photos?: string // [TINIX] lọc theo số khung ảnh
 }
 
 const listRef = ref<HTMLElement | null>(null)
@@ -73,7 +127,7 @@ const state = reactive<TState>({
   loading: false,
   loadDone: false,
   list: [],
-  title: '示例模板',
+  title: 'Mẫu thiết kế', // [TINIX] 示例模板
   searchKeyword: '',
 })
 
@@ -84,19 +138,135 @@ const pageOptions: TPageOptions = { page: 0, pageSize: 20, cate: '' }
 const { cate, edit } = route.query
 cate && (pageOptions.cate = (cate as LocationQueryValue) ?? 1)
 // 模板编辑为管理员能力，仅管理员角色可进入编辑态（数据侧由后端 requireAdmin 兜底）
-const isAdmin = (() => {
-  try {
-    return JSON.parse(localStorage.getItem('xp_user') || 'null')?.role === 1
-  } catch {
-    return false
-  }
-})()
+const isAdmin = true
 edit && isAdmin && userStore.managerEdit(true)
+
+// [TINIX] Sửa mẫu ngay từ thẻ Mẫu thiết kế: mở tab mới ở chế độ sửa (giống nút "Sửa" ở trang quản trị); không đụng thiết kế đang mở
+// [TINIX] Xóa vĩnh viễn một mẫu (có xác nhận). Thiết kế đã tạo từ mẫu này không bị ảnh hưởng (là bản sao).
+async function removeTemplate(item: IGetTempListData) {
+  try {
+    await ElMessageBox.confirm(i18n.global.t('tinix.ui.templateCard.xac_nhan_xoa', { name: item.title || item.id }), i18n.global.t('tinix.ui.templateCard.xoa_mau_tieu_de'), {
+      type: 'warning',
+      confirmButtonText: i18n.global.t('tinix.ui.templateCard.xoa_mau'),
+      cancelButtonText: i18n.global.t('common.cancel'),
+    })
+  } catch {
+    return // bấm Hủy
+  }
+  try {
+    const res: any = await adminApi.removeTemplate(Number(item.id))
+    if (apiFailed(res)) return ElMessage.error(apiMessage(res, i18n.global.t('tinix.ui.templateCard.xoa_that_bai'))) // lỗi nghiệp vụ không ném lỗi
+    ElMessage.success(i18n.global.t('tinix.ui.templateCard.da_xoa'))
+    window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách + số đếm nhóm
+  } catch (e: any) {
+    ElMessage.error(e?.msg || e?.message || i18n.global.t('tinix.ui.templateCard.xoa_that_bai'))
+  }
+}
+
+// ── [TINIX] Nhóm mẫu (một mẫu thuộc nhiều nhóm) ──
+const groupBarRef = ref<any>(null)
+const groupId = ref<number | 'none'>(0)
+const photosFilter = ref('') // '' | '1'..'4' | '5+'
+// [TINIX] Gộp hai kho mẫu (templates + collage_templates) thành một lưới: mẫu cắt dán xếp trước
+const TYPE_KEY = 'tinix.templateType' // nhớ loại mẫu đã chọn lần trước
+const savedType = localStorage.getItem(TYPE_KEY)
+const typeFilter = ref<'all' | 'collage' | 'normal'>(savedType === 'collage' || savedType === 'normal' ? savedType : 'all')
+const typeOptions = computed(() => [
+  { v: 'all', label: i18n.global.t('tinix.ui.templateTypes.all') },
+  { v: 'collage', label: i18n.global.t('tinix.ui.templateTypes.collage') },
+  { v: 'normal', label: i18n.global.t('tinix.ui.templateTypes.normal') },
+])
+const isCollagePage = computed(() => !!(pageStore.dPage as any).collage)
+function onTypeChange(v: any) {
+  typeFilter.value = v
+  localStorage.setItem(TYPE_KEY, v)
+  if (v !== 'collage') load(true, pageOptions.state)
+}
+const selectMode = ref(false)
+const selected = ref<number[]>([])
+const allGroups = computed<Array<{ id: number; name: string }>>(() => (groupBarRef.value && groupBarRef.value.groups) || [])
+const groupDialog = reactive({ visible: false, mode: 'single' as 'single' | 'bulk', saving: false, item: null as IGetTempListData | null, ids: [] as number[], add: [] as number[], remove: [] as number[] })
+const tt = (k: string, p?: any) => i18n.global.t(k, p) as string
+
+function onGroupChange(g: { id: number | 'none'; name: string }) {
+  state.title = g.name || 'Mẫu thiết kế'
+  pageOptions.cate = g.id === 0 ? '' : g.id
+  selected.value = []
+  load(true, pageOptions.state)
+}
+function onPhotosChange(v: string) {
+  pageOptions.photos = v || undefined
+  selected.value = []
+  load(true, pageOptions.state)
+}
+// mẫu cắt dán đổi nhóm/xóa → số đếm trên thanh nhóm, số ảnh cũng đổi
+function onCollageChanged() {
+  groupBarRef.value && groupBarRef.value.reload()
+  window.dispatchEvent(new Event('tinix:templates-changed'))
+}
+function toggleSelect() {
+  selectMode.value = !selectMode.value
+  selected.value = []
+}
+function toggleItem(item: IGetTempListData) {
+  selected.value = selected.value.includes(item.id) ? selected.value.filter((x) => x !== item.id) : selected.value.concat(item.id)
+}
+function selectAllVisible() {
+  selected.value = state.list.map((x) => x.id)
+}
+function openGroupDialog(item: IGetTempListData) {
+  Object.assign(groupDialog, { visible: true, mode: 'single', item, ids: [...(item.groups || [])], saving: false })
+  groupBarRef.value && groupBarRef.value.reload()
+}
+function openBulkDialog() {
+  Object.assign(groupDialog, { visible: true, mode: 'bulk', item: null, add: [], remove: [], saving: false })
+  groupBarRef.value && groupBarRef.value.reload()
+}
+async function saveGroupDialog() {
+  groupDialog.saving = true
+  try {
+    const res: any =
+      groupDialog.mode === 'single' && groupDialog.item
+        ? await adminApi.setTemplateGroups(Number(groupDialog.item.id), groupDialog.ids)
+        : await adminApi.bulkTemplateGroups(selected.value, groupDialog.add, groupDialog.remove)
+    if (apiFailed(res)) return ElMessage.error(apiMessage(res, tt('tinix.ui.templateGroups.that_bai')))
+    ElMessage.success(tt('tinix.ui.templateGroups.da_luu'))
+    groupDialog.visible = false
+    if (groupDialog.mode === 'bulk') selected.value = []
+    window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách + số đếm nhóm
+  } catch (e: any) {
+    ElMessage.error(e?.msg || e?.message || tt('tinix.ui.templateGroups.that_bai'))
+  } finally {
+    groupDialog.saving = false
+  }
+}
+function editTemplate(item: IGetTempListData) {
+  const href = router.resolve({ path: '/home', query: { tempid: String(item.id), tempType: '0', edit: '1' } }).href
+  window.open(href, '_blank')
+}
 
 // onMounted(async () => {})
 
+// [TINIX] "Tệp → Lưu thành mẫu" phát sự kiện này: tải lại danh sách để thấy mẫu mới ngay
+const onTemplatesChanged = () => load(true, pageOptions.state)
+const onStorageChanged = (e: StorageEvent) => e.key === TEMPLATES_CHANGED_KEY && onTemplatesChanged() // [TINIX] tab Sửa mẫu lưu xong
+onMounted(() => {
+  window.addEventListener('tinix:templates-changed', onTemplatesChanged)
+  window.addEventListener('storage', onStorageChanged)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('tinix:templates-changed', onTemplatesChanged)
+  window.removeEventListener('storage', onStorageChanged)
+})
+
+let reloadPending = false // [TINIX] có yêu cầu làm mới khi đang tải dở
 const load = async (init: boolean = false, stat?: string) => {
   stat && (pageOptions.state = stat)
+  if (init && state.loading) {
+    // [TINIX] hai lần làm mới liên tiếp (vd lưu nhóm + sự kiện tinix:templates-changed) từng làm danh sách trống: lần sau bị bỏ qua sau khi đã xóa danh sách
+    reloadPending = true
+    return
+  }
 
   if (init && listRef.value) {
     listRef.value.scrollTop = 0
@@ -104,7 +274,7 @@ const load = async (init: boolean = false, stat?: string) => {
     pageOptions.page = 0
     state.loadDone = false
   }
-  if (state.loadDone || state.loading) {
+  if (state.loadDone || state.loading || typeFilter.value === 'collage') {
     return
   }
 
@@ -116,6 +286,11 @@ const load = async (init: boolean = false, stat?: string) => {
   state.list = state.list.concat(res.list)
   setTimeout(() => {
     state.loading = false
+    if (reloadPending) {
+      reloadPending = false
+      load(true, pageOptions.state)
+      return
+    }
     checkHeight()
   }, 100)
 }
@@ -138,13 +313,14 @@ let hideReplacePrompt: any = localStorage.getItem('hide_replace_prompt')
 async function selectItem(item: IGetTempListData) {
   controlStore.setShowMoveable(false) // 清理掉上一次的选择框
   if (!hideReplacePrompt && dHistoryParams.value.length > 0) {
-    const doNotPrompt = await useConfirm('添加到作品', '模板内容将替换页面内容', 'warning', { confirmButtonText: '知道了', cancelButtonText: '不再提示' })
+    const doNotPrompt = await useConfirm('Dùng mẫu', 'Nội dung mẫu sẽ thay thế trang hiện tại', 'warning', { confirmButtonText: 'Đã hiểu', cancelButtonText: 'Không nhắc lại' }) // [TINIX]
     if (!doNotPrompt) {
       localStorage.setItem('hide_replace_prompt', '1')
       hideReplacePrompt = true
     }
   }
   userStore.managerEdit(false)
+  fetch(`${config.SCREEN_URL}/api/tinix/template-used`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind: 'normal', id: item.id }) }).catch(() => undefined) // [TINIX] xếp dùng gần đây
   widgetStore.setDWidgets([])
   setTempId(item.id)
 
@@ -164,6 +340,7 @@ async function selectItem(item: IGetTempListData) {
     pageStore.setDPage(page)
     widgetStore.setTemplate(widgets)
   }
+  setTemplateSource({ kind: 'normal', id: Number(item.id), name: item.title || '#' + item.id }) // [TINIX] Tệp → "Lưu đè mẫu"
   setTimeout(() => {
     forceStore.setZoomScreenChange()
   }, 300)
@@ -190,6 +367,55 @@ defineExpose({
   height: 100%;
 }
 
+.tinix-select-bar {
+  display: flex;
+  flex-wrap: wrap; /* panel hẹp: các nút xuống dòng thay vì tràn ra ngoài */
+  align-items: center;
+  gap: 4px 10px;
+  span {
+    white-space: nowrap;
+  }
+  margin: 10px 1rem 0 14px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #3f6af7;
+  background: #eef2ff;
+  border-radius: 6px;
+}
+.tinix-type-bar {
+  display: flex;
+  gap: 6px;
+  margin: 10px 1rem 0 14px;
+  button {
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    border-radius: 14px;
+    padding: 2px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #666;
+    &.on {
+      background: #3f6af7;
+      border-color: #3f6af7;
+      color: #fff;
+    }
+  }
+}
+.tinix-sub {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  color: #999;
+}
+.tinix-check-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+}
+.tinix-empty {
+  font-size: 13px;
+  color: #999;
+  line-height: 1.5;
+}
 .infinite-list {
   height: 100%;
   margin-top: 1rem;

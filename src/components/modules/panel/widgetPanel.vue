@@ -10,24 +10,26 @@
  * @Description: 组件面板
 -->
 <template>
-  <div id="widget-panel">
+  <div id="widget-panel" :class="{ 'tinix-resizing': panelDragging }">
     <div class="widget-classify">
       <ul class="classify-wrap">
         <li v-for="(item, index) in state.widgetClassifyList" :key="index" :class="['classify-item', { 'active-classify-item': state.activeWidgetClassify === index && state.active }]" @click="clickClassify(index)">
-          <div class="icon-box"><i :class="['iconfont', 'icon', item.icon]" :style="item.style" /></div>
+          <div class="icon-box"><i :class="['iconfont', 'icon', item.icon]" :style="widgetClassifyListData[index].style" /></div>
           <p>{{ item.name }}</p>
         </li>
       </ul>
-      <a href="https://github.com/palxiao/poster-design" target="_blank" class="github"><img src="https://fe-doc.palxp.cn/images/github.svg" alt="Github" title="Github" /> 源码</a>
+      <!-- [TINIX] đã bỏ liên kết "Mã nguồn" ở thanh trái -->
     </div>
-    <div v-show="state.active" class="widget-wrap">
+    <div v-show="state.active" :class="['widget-wrap', { resizing: panelDragging }]" :style="{ width: panelWidth + 'px' }"><!-- [TINIX] độ rộng kéo chỉnh được -->
       <keep-alive>
         <component :is="state.widgetClassifyList[state.activeWidgetClassify].component" />
       </keep-alive>
     </div>
     <!-- <div v-show="active" class="side-wrap"><div class="pack__up" @click="active = false">&lt;</div></div> -->
-    <div v-show="state.active" class="side-wrap">
-      <el-tooltip :show-after="300" :hide-after="0" effect="dark" content="关闭侧边栏" placement="right">
+    <!-- [TINIX] thanh kéo độ rộng ở mép phải panel; nhấp đúp về mặc định -->
+    <div v-show="state.active" :class="['tinix-resizer', { on: panelDragging }]" :style="{ left: CLASSIFY_WIDTH + panelWidth - 3 + 'px' }" :title="$t('tinix.ui.panelResize.keo_chinh')" @mousedown="onPanelDown" @dblclick="resetPanel" />
+    <div v-show="state.active" class="side-wrap" :style="{ left: CLASSIFY_WIDTH + panelWidth + 'px' }">
+      <el-tooltip :show-after="300" :hide-after="0" effect="dark" :content="$t('editor.panel.closeSidebar')" placement="right">
         <div class="pack__up" @click="state.active = false"></div>
       </el-tooltip>
     </div>
@@ -38,10 +40,11 @@
 // 组件面板
 // const NAME = 'widget-panel'
 import widgetClassifyListData from '@/assets/data/WidgetClassifyList'
-import { reactive, onMounted, watch, nextTick, } from 'vue'
-import { useRoute } from 'vue-router'
+import { reactive, watch } from 'vue'
+import { usePanelResize } from '@/utils/tinix/panel-resize' // [TINIX]
 
-const route = useRoute()
+const CLASSIFY_WIDTH = 66 // cột biểu tượng bên trái (khớp CSS .widget-classify)
+const { width: panelWidth, dragging: panelDragging, onDown: onPanelDown, reset: resetPanel } = usePanelResize({ key: 'left', def: 328, min: 260, max: 720, side: 'left' }) // [TINIX]
 const state = reactive({
   widgetClassifyList: widgetClassifyListData,
   activeWidgetClassify: 0,
@@ -52,11 +55,7 @@ const clickClassify = (index: number) => {
   state.active = true
 }
 
-onMounted(async () => {
-  await nextTick()
-  const { koutu } = route.query
-  koutu && (state.activeWidgetClassify = 4)
-})
+// [TINIX] bỏ nhảy tới tab Công cụ khi có ?koutu (tab đã gỡ)
 
 watch(
   () => state.activeWidgetClassify,
@@ -149,6 +148,10 @@ defineExpose({
       }
     }
   }
+  &.tinix-resizing,
+  &.tinix-resizing .widget-wrap {
+    transition: none; /* kéo thì đi theo chuột ngay, không trôi */
+  }
   .widget-wrap {
     width: 328px;
     transition: all .3s;
@@ -200,19 +203,19 @@ defineExpose({
   }
 }
 
-.github {
-  cursor: pointer;
+// [TINIX] thanh kéo độ rộng panel
+.tinix-resizer {
   position: absolute;
-  bottom: 12px;
-  font-size: 12px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  width: 100%;
-  img {
-    width: 21px;
-    height: 21px;
-    margin: 0 2px;
-  }
+  top: 0;
+  width: 6px;
+  height: 100%;
+  z-index: 98;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+.tinix-resizer:hover,
+.tinix-resizer.on {
+  background: rgba(63, 106, 247, 0.35);
 }
 </style>

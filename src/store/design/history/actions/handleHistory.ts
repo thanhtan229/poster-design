@@ -6,14 +6,12 @@
  * @LastEditTime: 2024-04-18 18:35:16
  */
 
-import { useControlStore, useCanvasStore, useWidgetStore } from '@/store'
+import { useWidgetStore } from '@/store'
 import { THistoryStore } from '..'
 import { enablePatches, applyPatches } from 'immer'
 enablePatches()
 
 export default function handleHistory(store: THistoryStore, action: 'undo' | 'redo') {
-  const pageStore = useCanvasStore()
-  const controlStore = useControlStore()
   const widgetStore = useWidgetStore()
   // controlStore.setShowMoveable(false) // 清理掉上一次的选择框
   // // store.commit('setShowMoveable', false) // 清理掉上一次的选择框

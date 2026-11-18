@@ -1,0 +1,383 @@
+import { supportsText, actualFontStyle } from '../../../../shared/font-profile'
+/**
+ * [TINIX] AI features: suggest text, rewrite text, find font, tag fonts.
+ * Coordinates returned to the editor are ratios 0..1 (CLAUDE.md); the frontend converts to px.
+ */
+import { callVisionJSON, prepareImage, imageSize } from './vision'
+import * as P from './prompts'
+import { obj, arr, str, num01, oneOf, color, bool } from './validate'
+import { libraryFonts, fontListForPrompt, resolveFont, rankFonts, LibFont } from './fonts'
+import { getTinixAiSettings } from './settings'
+import { getDB } from '../../db'
+import { cleanSvg } from './svg'
+import fs from 'fs'
+import path from 'path'
+import { filePath } from '../../configs'
+
+const CATEGORIES = ['serif', 'sans', 'script', 'display', 'handwriting'] as const
+const PART_KEYS = ['title', 'subtitle', 'body', 'hashtag', 'signature'] as const
+type PartKey = typeof PART_KEYS[number]
+
+/** Fallback font per role when the model picks a name that is not in the library. */
+const ROLE_FALLBACK: Record<PartKey, string[]> = {
+  title: ['Playfair Display', 'Great Vibes', 'Montserrat'],
+  subtitle: ['Cormorant Garamond', 'Josefin Sans', 'Montserrat'],
+  body: ['Be Vietnam Pro', 'Lora', 'Montserrat'],
+  hashtag: ['Josefin Sans', 'Montserrat'],
+  signature: ['Allura', 'Great Vibes', 'Corinthia'],
+}
+
+const fontClass = (f: LibFont) => ({ id: f.id, alias: f.alias, value: f.value, url: f.profile?.local_url || f.woff, technical: JSON.stringify({...f.profile,coverage:[]}) })
+
+// [TINIX] font có chữ Hán (font Trung Quốc có sẵn trong kho: tên font viết bằng chữ Hán)
+const CJK_CHAR = /[぀-ヿ㐀-鿿가-힯]/
+const isCjkFont = (f: LibFont) => CJK_CHAR.test(f.alias) && !f.supports_vietnamese
+
+function pickFont(name: string, role: PartKey, fonts: LibFont[]): LibFont | null {
+  return resolveFont(name, fonts) || ROLE_FALLBACK[role].map((n) => resolveFont(n, fonts)).find(Boolean) || fonts[0] || null
+}
+
+// ───────────────────────── Gợi ý chữ ─────────────────────────
+export async function suggestText(input: { image: string; width: number; height: number; lang?: string }) {
+  const lang = input.lang === 'en' ? 'en' : 'vi'
+  const fonts = libraryFonts(lang === 'vi')
+  if (!fonts.length) throw new Error('Kho font chưa có hồ sơ hợp lệ — chạy "npm run tinix:normalize-fonts" trước.')
+  const image = await prepareImage(input.image)
+  const studio = getTinixAiSettings().studio_name
+
+  const { data, jobId, model } = await callVisionJSON({
+    kind: 'suggest_text',
+    system: P.SUGGEST_TEXT_SYSTEM,
+    text: P.suggestTextUser({ lang, studio, width: input.width, height: input.height, fonts: fontListForPrompt(fonts) }),
+    images: [image],
+    inputSummary: { lang, width: input.width, height: input.height, studio },
+    validate: (v) => {
+      const o = obj(v, 'root')
+      const regions = arr(o.emptyRegions || [], 'emptyRegions', 0, 6).map((r: any, i: number) => {
+        const x = num01(r.x, `emptyRegions[${i}].x`), y = num01(r.y, `emptyRegions[${i}].y`)
+        return { x, y, w: Math.min(1 - x, num01(r.w, `emptyRegions[${i}].w`)), h: Math.min(1 - y, num01(r.h, `emptyRegions[${i}].h`)), tone: oneOf(r.tone, ['dark', 'light'] as const, 'dark') }
+      })
+      if (!regions.length) regions.push({ x: 0.08, y: 0.06, w: 0.84, h: 0.28, tone: 'dark' })
+      const options = arr(o.options, 'options', 1, 3).map((opt: any, i: number) => {
+        const p = obj(opt.parts, `options[${i}].parts`)
+        obj(p.title, `options[${i}].parts.title`)
+        const parts: Record<string, any> = {}
+        for (const key of PART_KEYS) {
+          const part = p[key]
+          if (!part || !part.text) continue
+          parts[key] = {
+            text: str(part.text, `options[${i}].parts.${key}.text`, { max: 400 }),
+            fontFamily: str(part.fontFamily, `options[${i}].parts.${key}.fontFamily`, { optional: true, max: 80 }),
+            weight: Math.min(900, Math.max(100, Math.round((Number(part.weight) || 400) / 100) * 100)),
+            italic: bool(part.italic),
+            uppercase: bool(part.uppercase),
+          }
+        }
+        return {
+          styleName: str(opt.styleName, `options[${i}].styleName`, { optional: true, max: 80 }) || `Phương án ${i + 1}`,
+          regionIndex: Math.min(regions.length - 1, Math.max(0, Math.floor(Number(opt.regionIndex) || 0))),
+          align: oneOf(opt.align, ['left', 'center', 'right'] as const, 'center'),
+          palette: { primary: color(opt.palette && opt.palette.primary, '#ffffff'), secondary: color(opt.palette && opt.palette.secondary, '#f2e6d0') },
+          parts,
+          translationVi: str(opt.translationVi, `options[${i}].translationVi`, { optional: true, max: 1200 }),
+        }
+      })
+      return { scene: str(o.scene, 'scene', { optional: true, max: 500 }), emptyRegions: regions, options }
+    },
+  })
+
+  // resolve fonts to library entries (the editor needs id/value/url)
+  for (const opt of data.options) {
+    for (const key of PART_KEYS) {
+      const part = opt.parts[key]
+      if (!part) continue
+      part.text=String(part.text||'').normalize('NFC')
+      const pool=fonts.filter(f=>supportsText(f.profile||null,part.text))
+      const requested=part.fontFamily
+      const f = pickFont(requested, key, pool)
+      if(!f)throw new Error('Không có font đã xác minh hiển thị đủ nội dung. Hãy chuẩn hóa kho font hoặc đổi nội dung.')
+      const actual=actualFontStyle(f.profile||null,part.weight||400,!!part.italic)
+      part.weight=actual.weight;part.italic=actual.italic
+      part.fontMatch={requested,selected:f.value,fallback:!resolveFont(requested,pool)}
+      part.fontClass = f ? fontClass(f) : null
+      part.fontFamily = f ? f.value : part.fontFamily
+    }
+  }
+  return { ...data, jobId, model }
+}
+
+// ───────────────────────── Sửa chữ ─────────────────────────
+export async function rewriteText(input: { image: string; layers: Array<{ uuid: string; text: string }>; lang?: string }) {
+  const layers = (input.layers || [])
+    .filter((l) => l && l.uuid && typeof l.text === 'string' && l.text.trim())
+    .slice(0, 30)
+    .map((l) => ({ uuid: String(l.uuid), text: l.text, lines: l.text.split(/\r\n|\r|\n/).length, chars: l.text.length }))
+  if (!layers.length) throw new Error('Thiết kế chưa có lớp chữ nào để sửa.')
+  const lang = ['vi', 'en'].includes(String(input.lang)) ? String(input.lang) : 'keep'
+  const image = await prepareImage(input.image)
+  const ids = new Set(layers.map((l) => l.uuid))
+
+  const { data, jobId, model } = await callVisionJSON({
+    kind: 'rewrite_text',
+    system: P.REWRITE_TEXT_SYSTEM,
+    text: P.rewriteTextUser({ lang, layers }),
+    images: [image],
+    inputSummary: { lang, layers },
+    validate: (v) => {
+      const o = obj(v, 'root')
+      const options = arr(o.options, 'options', 1, 3).map((opt: any, i: number) => {
+        const reps = arr(opt.replacements, `options[${i}].replacements`, 1, 40)
+          .filter((r: any) => r && ids.has(String(r.uuid)))
+          .map((r: any) => ({ uuid: String(r.uuid), text: str(r.text, `options[${i}].replacements.text`, { max: 2000 }) }))
+        if (!reps.length) throw new Error(`options[${i}].replacements: không có uuid hợp lệ`)
+        return { styleName: str(opt.styleName, 'styleName', { optional: true, max: 80 }) || `Phương án ${i + 1}`, replacements: reps, translationVi: str(opt.translationVi, 'translationVi', { optional: true, max: 1500 }) }
+      })
+      return { options }
+    },
+  })
+  return { ...data, jobId, model }
+}
+
+// ───────────────────────── Tìm font ─────────────────────────
+export async function findFont(input: { image: string }) {
+  const image = await prepareImage(input.image, 1280)
+  const fonts = libraryFonts(false)
+  const { data, jobId, model } = await callVisionJSON({
+    kind: 'find_font',
+    system: P.FIND_FONT_SYSTEM,
+    text: P.findFontUser({ categories: CATEGORIES.join(', ') }),
+    images: [image],
+    temperature: 0.2,
+    inputSummary: {},
+    validate: (v) => {
+      const o = obj(v, 'root')
+      const items = arr(o.items, 'items', 1, 5).map((it: any, i: number) => ({
+        text: str(it.text, `items[${i}].text`, { optional: true, max: 120 }),
+        bbox: it.bbox ? { x: num01(it.bbox.x, 'bbox.x', 0), y: num01(it.bbox.y, 'bbox.y', 0), w: num01(it.bbox.w, 'bbox.w', 1), h: num01(it.bbox.h, 'bbox.h', 1) } : null,
+        category: oneOf(it.category, CATEGORIES, 'sans'),
+        traits: arr(it.traits || [], 'traits', 0, 12).map((t: any) => String(t).slice(0, 60)),
+        suspected: arr(it.suspected || [], 'suspected', 0, 6).map((t: any) => String(t).slice(0, 60)),
+      }))
+      return { items }
+    },
+  })
+  const items = data.items.map((it) => {
+    const candidates = rankFonts(it, fonts.filter(f=>supportsText(f.profile||null,it.text||'')), 5).map((f) => ({ ...fontClass(f), category: f.category, tags: f.tags, score: f.score, supports_vietnamese: f.supports_vietnamese }))
+    const libNames = new Set(fonts.map((f) => f.value.toLowerCase()))
+    const notInLibrary = it.suspected.filter((s) => !libNames.has(s.toLowerCase()) && !resolveFont(s, fonts))
+    return { ...it, candidates, notInLibrary }
+  })
+  return { items, jobId, model }
+}
+
+// ───────────────────────── Dựng theo mẫu ─────────────────────────
+const ROLES = ['title', 'subtitle', 'body', 'date', 'hashtag', 'signature', 'other'] as const
+const ROLE_TO_PART: Record<string, PartKey> = { title: 'title', subtitle: 'subtitle', body: 'body', date: 'subtitle', hashtag: 'hashtag', signature: 'signature', other: 'body' }
+
+// [TINIX] mode 'faithful' (mặc định): chép đúng chữ/ngôn ngữ/font/nét của mẫu. mode 'creative': học bố cục rồi viết nội dung mới.
+export async function rebuildFromReference(input: { reference: string; photo?: string; lang?: string; mode?: string }) {
+  const faithful = input.mode !== 'creative'
+  const lang = input.lang === 'en' ? 'en' : 'vi'
+  // Giống mẫu: lấy cả font chữ Hán (mẫu có thể là tiếng Trung/Nhật/Hàn); sau đó ép đúng loại font theo chữ thực tế
+  const fonts = libraryFonts(faithful ? false : lang === 'vi')
+  if (!fonts.length) throw new Error('Kho font chưa có hồ sơ hợp lệ — chạy "npm run tinix:normalize-fonts" trước.')
+  const reference = await prepareImage(input.reference, faithful ? 1600 : 1280)
+  const photo = !faithful && input.photo ? await prepareImage(input.photo, 768) : ''
+  const images = photo ? [reference, photo] : [reference]
+  const studio = getTinixAiSettings().studio_name
+
+  const refSize = await imageSize(reference)
+  const bbox = (b: any, path: string) => {
+    let o = obj(b, path)
+    // [TINIX] đôi khi AI trả toạ độ pixel (vd x=239, w=724) thay vì tỉ lệ 0..1: đổi theo kích thước ảnh nó đã nhìn thấy
+    if (refSize && [o.x, o.y, o.w, o.h].some((v) => Number(v) > 1.5)) {
+      o = { x: Number(o.x) / refSize.w, y: Number(o.y) / refSize.h, w: Number(o.w) / refSize.w, h: Number(o.h) / refSize.h }
+    }
+    const x = num01(o.x, `${path}.x`), y = num01(o.y, `${path}.y`)
+    return { x, y, w: Math.max(0.005, Math.min(1 - x, num01(o.w, `${path}.w`))), h: Math.max(0.005, Math.min(1 - y, num01(o.h, `${path}.h`))) }
+  }
+
+  const { data, jobId, model } = await callVisionJSON({
+    kind: 'rebuild',
+    system: faithful ? P.REBUILD_FAITHFUL_SYSTEM : P.REBUILD_SYSTEM,
+    text: faithful ? P.rebuildFaithfulUser({ fonts: fonts.map((f) => fontListForPrompt([f]) + (isCjkFont(f) ? ' | CHỈ DÙNG CHO CHỮ HÁN/NHẬT/HÀN' : ' | chữ Latin/Việt')).join('\n') }) : P.rebuildUser({ lang, hasPhoto: !!photo, studio, fonts: fontListForPrompt(fonts) }),
+    images,
+    temperature: faithful ? 0.2 : 0.6,
+    timeoutMs: 150000,
+    inputSummary: { lang, hasPhoto: !!photo, mode: faithful ? 'faithful' : 'creative' },
+    validate: (v) => {
+      const o = obj(v, 'root')
+      let droppedSvg = 0
+      const regions = arr(o.regions, 'regions', 1, 30).map((r: any, i: number) => {
+        const p = `regions[${i}]`
+        const type = oneOf(r.type, ['text', 'photo', 'shape', 'svg'] as const, 'shape')
+        const base = { type, bbox: bbox(r.bbox, `${p}.bbox`), z: Number.isFinite(Number(r.z)) ? Number(r.z) : i }
+        if (type === 'text') {
+          // [TINIX] AI đôi khi trả bbox suy biến (vd x=1,y=1,w=0.005): ném lỗi để gọi lại một lần thay vì dựng chữ vô hình
+          if (base.bbox.w < 0.02 || base.bbox.h < 0.008) throw new Error(`${p}.bbox quá nhỏ (${base.bbox.w} × ${base.bbox.h})`)
+          return {
+            ...base,
+            role: oneOf(r.role, ROLES, 'other'),
+            text: str(r.text, `${p}.text`, { max: 600 }),
+            fontFamily: str(r.fontFamily, `${p}.fontFamily`, { optional: true, max: 80 }),
+            fontSize: Math.min(0.4, Math.max(0.006, Number(r.fontSize) || 0.03)),
+            weight: Math.min(900, Math.max(100, Math.round((Number(r.weight) || 400) / 100) * 100)),
+            italic: bool(r.italic),
+            uppercase: faithful ? false : bool(r.uppercase),
+            letterSpacing: Math.min(200, Math.max(-20, Number(r.letterSpacing) || 0)),
+            lineHeight: Math.min(3, Math.max(0.8, Number(r.lineHeight) || 1.2)),
+            align: oneOf(r.align, ['left', 'center', 'right'] as const, 'center'),
+            color: color(r.color, '#222222'),
+          }
+        }
+        if (type === 'shape') return { ...base, shape: oneOf(r.shape, ['rect', 'rounded', 'ellipse', 'line'] as const, 'rect'), color: color(r.color, '#dddddd'), opacity: Math.min(1, Math.max(0.05, Number(r.opacity) || 1)) }
+        if (type === 'svg') {
+          // [TINIX] svg phủ gần hết trang = AI gộp mọi nét vào một hình: ném lỗi để gọi lại một lần (kèm lời nhắc của validator)
+          if (base.bbox.w > 0.6 && base.bbox.h > 0.6) throw new Error(`${p}: svg phủ cả trang — mỗi hình phải là một vùng svg riêng, bbox ôm sát hình`)
+          const clean = cleanSvg(r.svg, r.viewBox)
+          if (!clean) droppedSvg++
+          return clean ? { ...base, svg: clean.svg, viewW: clean.viewW, viewH: clean.viewH } : null
+        }
+        return base
+      }).filter((r: any) => !!r)
+      if (!regions.some((r: any) => r.type === 'text')) throw new Error('regions: không có khối chữ nào')
+      // [TINIX] kiểm tra hợp lý (chế độ Giống mẫu): lỗi thì ném ra để callVisionJSON gọi lại một lần kèm lời nhắc
+      if (faithful) {
+        const texts = regions.filter((r: any) => r.type === 'text')
+        // AI tách chữ thành từng ký tự (vd "早","安","乐"…) thay vì mỗi DÒNG một vùng
+        const single = texts.filter((r: any) => String(r.text).replace(/\s/g, '').length <= 1)
+        if (texts.length >= 4 && single.length >= 3 && single.length / texts.length >= 0.6) {
+          throw new Error('chữ bị tách thành từng ký tự: mỗi DÒNG chữ phải là MỘT vùng text, không tách từng chữ')
+        }
+        // bỏ vùng chữ trùng lặp (cùng nội dung, hộp gần như chồng khít)
+        const iou = (a: any, b: any) => {
+          const x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y)
+          const x2 = Math.min(a.x + a.w, b.x + b.w), y2 = Math.min(a.y + a.h, b.y + b.h)
+          const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1)
+          const uni = a.w * a.h + b.w * b.h - inter
+          return uni > 0 ? inter / uni : 0
+        }
+        const keep: any[] = []
+        for (const r of regions as any[]) {
+          if (r.type === 'text' && keep.some((k) => k.type === 'text' && String(k.text).trim() === String(r.text).trim() && iou(k.bbox, r.bbox) > 0.6)) continue
+          keep.push(r)
+        }
+        regions.length = 0
+        keep.forEach((r) => regions.push(r))
+      }
+      let notes = str(o.notes, 'notes', { optional: true, max: 400 })
+      if (droppedSvg) notes = (notes ? notes + ' ' : '') + `(${droppedSvg} nét trang trí bị bỏ vì SVG của AI không hợp lệ — thử phân tích lại để có đủ.)`
+      return { background: color(o.background, '#ffffff'), regions, notes, photoPrompt: str(o.photoPrompt, 'photoPrompt', { optional: true, max: 1200 }) }
+    },
+  })
+
+  const fontWarnings:string[]=[]
+  for (const r of data.regions as any[]) {
+    if (r.type !== 'text') continue
+    // chữ Hán/Nhật/Hàn → chỉ font CJK; chữ Latin/Việt → loại font CJK (chữ Hán sẽ rỗng/vỡ nếu sai loại)
+    const cjkText = CJK_CHAR.test(String(r.text))
+    r.text=String(r.text||'').normalize('NFC')
+    const pool = fonts.filter(f=>supportsText(f.profile||null,r.text))
+    const cjkDefault = pool.find((x) => x.category === 'display') || pool[0]
+    const f = (cjkText && faithful ? resolveFont(r.fontFamily, pool) || cjkDefault : null) || pickFont(r.fontFamily, ROLE_TO_PART[r.role] || 'body', pool)
+    if(!f)throw new Error('Không có font đã xác minh hiển thị đủ đoạn chữ: '+String(r.text).slice(0,60))
+    const requested=r.fontFamily,actual=actualFontStyle(f.profile||null,r.weight||400,!!r.italic)
+    const fallback=!resolveFont(requested,pool)
+    r.fontMatch={requested,selected:f.value,fallback}
+    if(fallback)fontWarnings.push(`Dùng ${f.alias} thay ${requested||'font chưa xác định'}: font yêu cầu không có hoặc không đủ ký tự.`)
+    if(actual.weight!==r.weight||actual.italic!==!!r.italic)fontWarnings.push(`${f.alias}: dùng biến thể thực có sẵn (${actual.weight}, ${actual.italic?'nghiêng':'thẳng'}).`)
+    r.weight=actual.weight;r.italic=actual.italic
+    r.fontClass = f ? fontClass(f) : null
+    r.fontFamily = f ? f.value : r.fontFamily
+  }
+  if(fontWarnings.length)data.notes=[data.notes,...Array.from(new Set(fontWarnings))].filter(Boolean).join(' ')
+  data.regions.sort((a: any, b: any) => a.z - b.z)
+  return { ...data, jobId, model }
+}
+
+// ───────────────────────── AI gắn tag font ─────────────────────────
+export async function tagFonts(input: { all?: boolean }) {
+  const fonts = libraryFonts(false).filter((f) => input.all || !f.tags.length || !f.category)
+  if (!fonts.length) return { updated: 0, fonts: [] }
+  const names = fonts.slice(0, 60).map((f) => f.value)
+  const { data, jobId, model } = await callVisionJSON({
+    kind: 'tag_fonts',
+    system: P.TAG_FONTS_SYSTEM,
+    text: P.tagFontsUser(names),
+    useTextModel: true,
+    temperature: 0.3,
+    inputSummary: { names },
+    validate: (v) => {
+      const o = obj(v, 'root')
+      return arr(o.fonts, 'fonts', 1, 60).map((f: any, i: number) => ({
+        family: str(f.family, `fonts[${i}].family`, { max: 80 }),
+        category: oneOf(f.category, CATEGORIES, 'sans'),
+        tags: arr(f.tags || [], `fonts[${i}].tags`, 0, 8).map((t: any) => String(t).slice(0, 30)),
+      }))
+    },
+  })
+  const update = getDB().prepare("UPDATE fonts SET category = @category, tags = @tags, tag_source = 'name' WHERE value = @value AND tag_source != 'manual'")
+  let updated = 0
+  for (const f of data) {
+    const target = resolveFont(f.family, fonts)
+    if (!target) continue
+    updated += update.run({ category: f.category, tags: JSON.stringify(f.tags), value: target.value }).changes
+  }
+  return { updated, fonts: data, jobId, model }
+}
+
+/**
+ * [TINIX] Gắn nhóm + tag cho font bằng cách NHÌN ảnh xem trước (static/font-previews/<id>.png), thay cho đoán theo tên.
+ * - Mặc định xử lý font chưa được nhìn ảnh: tag_source = 'name', hoặc '' mà thiếu nhóm/tag. Font sửa tay ('manual') không bao giờ bị ghi đè.
+ * - `ids`: làm lại đúng các font này (trừ 'manual'). Mỗi lần gọi tối đa `limit` font (mặc định 24, lô 8 ảnh/lượt); `remaining` cho biết còn bao nhiêu.
+ * - Giá trị cũ của từng font được ghi vào ai_jobs.input_summary.previous để có thể khôi phục.
+ */
+export async function tagFontsFromPreview(input: { limit?: number; ids?: number[] }) {
+  const db = getDB()
+  const limit = Math.min(48, Math.max(1, Math.floor(Number(input.limit) || 24)))
+  const ids = Array.isArray(input.ids) ? input.ids.map((n) => Math.floor(Number(n))).filter((n) => n > 0) : []
+  const rows: any[] = ids.length
+    ? db.prepare(`SELECT id, alias, category, tags FROM fonts WHERE tag_source != 'manual' AND id IN (${ids.map(() => '?').join(',')}) ORDER BY id`).all(...ids)
+    : db.prepare("SELECT id, alias, category, tags FROM fonts WHERE tag_source != 'manual' AND (tag_source = 'name' OR (tag_source = '' AND (category = '' OR tags = '[]'))) ORDER BY id").all()
+  const previewFile = (id: number) => path.join(filePath, 'font-previews', `${id}.png`)
+  const withPreview = rows.filter((r) => fs.existsSync(previewFile(r.id)))
+  const skippedNoPreview = rows.length - withPreview.length
+  const todo = withPreview.slice(0, limit)
+  const remaining = withPreview.length - todo.length
+  const update = db.prepare("UPDATE fonts SET category = @category, tags = @tags, tag_source = 'vision' WHERE id = @id AND tag_source != 'manual'")
+  const changes: Array<{ id: number; alias: string; before: { category: string; tags: string }; after: { category: string; tags: string[] } }> = []
+  let updated = 0
+  for (let i = 0; i < todo.length; i += 8) {
+    const chunk = todo.slice(i, i + 8)
+    const images: string[] = []
+    for (const r of chunk) images.push(await prepareImage('data:image/png;base64,' + fs.readFileSync(previewFile(r.id)).toString('base64'), 700))
+    const names = chunk.map((r) => r.alias as string)
+    const previous: Record<string, { category: string; tags: string }> = {}
+    for (const r of chunk) previous[r.alias] = { category: r.category, tags: r.tags }
+    const { data } = await callVisionJSON({
+      kind: 'tag_fonts',
+      system: P.TAG_FONTS_VISION_SYSTEM,
+      text: P.tagFontsVisionUser(names),
+      images,
+      temperature: 0.3,
+      inputSummary: { mode: 'vision', names, previous },
+      validate: (v) => {
+        const o = obj(v, 'root')
+        return arr(o.fonts, 'fonts', 1, 8).map((f: any, k: number) => ({
+          family: str(f.family, `fonts[${k}].family`, { max: 80 }),
+          category: oneOf(f.category, CATEGORIES, 'sans'),
+          tags: arr(f.tags || [], `fonts[${k}].tags`, 0, 8).map((t: any) => String(t).slice(0, 30)),
+        }))
+      },
+    })
+    const byName = new Map<string, any>()
+    for (const d of data) byName.set(d.family.trim().toLowerCase(), d)
+    for (const r of chunk) {
+      const d = byName.get(String(r.alias).trim().toLowerCase())
+      if (!d || !d.tags.length) continue
+      updated += update.run({ id: r.id, category: d.category, tags: JSON.stringify(d.tags) }).changes
+      changes.push({ id: r.id, alias: r.alias, before: { category: r.category, tags: r.tags }, after: { category: d.category, tags: d.tags } })
+    }
+  }
+  return { updated, remaining, skippedNoPreview, changes }
+}

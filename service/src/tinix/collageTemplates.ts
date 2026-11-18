@@ -1,0 +1,27 @@
+import express from 'express'
+import {getDB} from '../db'
+import {ensureCollageSchema,collageSlots,collageGroupsByTemplate,attachCollageByName,setCollageGroups,removeCollageLinks,markUsed,setGroupHidden} from './collageGroups'
+const router=express.Router()
+function db(){const d=getDB();ensureCollageSchema(d);return d}
+const fail=(res:any,e:any,code=400)=>res.status(code).json({message:(e as Error).message})
+// [TINIX] Danh sách mẫu cắt dán: kèm nhóm chủ đề (groups) và số khung ảnh; dùng gần đây trước
+router.get('/api/tinix/collage-templates',(req:any,res:any)=>{try{const groups=collageGroupsByTemplate();res.json({list:db().prepare('SELECT * FROM collage_templates ORDER BY used_at DESC,updated_at DESC,id DESC').all().map((r:any)=>({...r,data:JSON.parse(r.data),groups:groups[r.id]||[]}))})}catch(e){fail(res,e,500)}})
+// [TINIX] Lưu mẫu cắt dán: không có id → mẫu mới (tên trống thì tự đặt "Mẫu <id>"); có id → lưu đè (tên trống giữ tên cũ).
+// Mỗi lần lưu vẫn ghi một phiên bản, nhưng chỉ giữ ngầm KEEP_VERSIONS bản gần nhất để khôi phục khi lỡ tay (giao diện không còn lịch sử).
+const KEEP_VERSIONS=5
+router.post('/api/tinix/collage-templates',(req:any,res:any)=>{try{const {name,category,layout,id,version}=req.body;if(!layout?.global||!Array.isArray(layout.layers))throw new Error('Thiếu dữ liệu mẫu');if(layout.layers.length>1000)throw new Error('Mẫu quá nhiều lớp');const nm=String(name||'').trim();if(nm.length>100)throw new Error('Tên quá dài');const d=db(),now=new Date().toISOString(),data=JSON.stringify(layout),slots=collageSlots(layout);let result:any;d.transaction(()=>{let next=1,tid=Number(id)||0,finalName=nm;if(tid){const old=d.prepare('SELECT version,category,name FROM collage_templates WHERE id=?').get(tid);if(!old)throw new Error('Không tìm thấy mẫu');if(version!==undefined&&version!==null&&old.version!==Number(version))throw new Error('Mẫu đã thay đổi. Hãy tải lại trước khi lưu.');next=old.version+1;finalName=nm||old.name;d.prepare('UPDATE collage_templates SET name=?,category=?,version=?,data=?,updated_at=?,photo_slots=? WHERE id=?').run(finalName,category===undefined?old.category:String(category||'').trim(),next,data,now,slots,tid)}else{tid=Number(d.prepare('INSERT INTO collage_templates(name,category,version,data,updated_at,photo_slots) VALUES(?,?,?,?,?,?)').run(nm||'Mẫu',String(category||'').trim(),next,data,now,slots).lastInsertRowid);if(!nm){finalName='Mẫu '+tid;d.prepare('UPDATE collage_templates SET name=? WHERE id=?').run(finalName,tid)}if(String(category||'').trim())attachCollageByName(tid,String(category))}d.prepare('INSERT INTO collage_template_versions VALUES(?,?,?,?)').run(tid,next,data,now);d.prepare('DELETE FROM collage_template_versions WHERE template_id=? AND version<=?').run(tid,next-KEEP_VERSIONS);result={id:tid,version:next,name:finalName}})();res.json(result)}catch(e){fail(res,e)}})
+// [TINIX] Đổi tên (chỉ thông tin, không tạo phiên bản mới)
+router.patch('/api/tinix/collage-templates/:id',(req:any,res:any)=>{try{const id=Number(req.params.id);const name=String((req.body&&req.body.name)||'').trim();if(!name)throw new Error('Thiếu tên mẫu');if(name.length>100)throw new Error('Tên quá dài');const r=db().prepare('UPDATE collage_templates SET name=? WHERE id=?').run(name,id);if(!r.changes)return res.status(404).json({message:'Không tìm thấy mẫu'});res.json({id})}catch(e){fail(res,e)}})
+// [TINIX] Xóa mẫu cùng mọi phiên bản và liên kết nhóm
+router.delete('/api/tinix/collage-templates/:id',(req:any,res:any)=>{try{const id=Number(req.params.id);const d=db();let changes=0;d.transaction(()=>{d.prepare('DELETE FROM collage_template_versions WHERE template_id=?').run(id);removeCollageLinks(id);changes=d.prepare('DELETE FROM collage_templates WHERE id=?').run(id).changes})();if(!changes)return res.status(404).json({message:'Không tìm thấy mẫu'});res.json({id})}catch(e){fail(res,e)}})
+// [TINIX] Đặt nhóm chủ đề (dùng chung template_categories type 0)
+router.put('/api/tinix/collage-templates/:id/groups',(req:any,res:any)=>{try{const ids=setCollageGroups(Number(req.params.id),req.body&&req.body.ids);if(!ids)return res.status(404).json({message:'Không tìm thấy mẫu'});res.json({ids})}catch(e){fail(res,e)}})
+// [TINIX] Lịch sử phiên bản (mới nhất trước)
+// [TINIX] Một mẫu cắt dán (chế độ Sửa mẫu mở ở tab mới bằng ?ctemplate=<id>)
+router.get('/api/tinix/collage-templates/:id',(req:any,res:any)=>{try{const r=db().prepare('SELECT * FROM collage_templates WHERE id=?').get(Number(req.params.id));if(!r)return res.status(404).json({message:'Không tìm thấy mẫu'});res.json({...r,data:JSON.parse(r.data)})}catch(e){fail(res,e,500)}})
+router.get('/api/tinix/collage-templates/:id/versions',(req:any,res:any)=>{try{res.json({list:db().prepare('SELECT version,created_at,data FROM collage_template_versions WHERE template_id=? ORDER BY version DESC').all(Number(req.params.id)).map((r:any)=>({...r,data:JSON.parse(r.data)}))})}catch(e){fail(res,e,500)}})
+// [TINIX] Ghi nhận vừa dùng mẫu (để xếp "dùng gần đây"): kind = collage | normal
+router.post('/api/tinix/template-used',(req:any,res:any)=>{try{const b=req.body||{};res.json({ok:markUsed(b.kind==='collage'?'collage':'normal',Number(b.id))})}catch(e){fail(res,e)}})
+// [TINIX] Ẩn/hiện nhóm chủ đề: mẫu chỉ thuộc nhóm ẩn không hiện ở "Tất cả"
+router.post('/api/tinix/template-categories/:id/hidden',(req:any,res:any)=>{try{if(!setGroupHidden(Number(req.params.id),!!(req.body&&req.body.hidden)))return res.status(404).json({message:'Không tìm thấy nhóm'});res.json({ok:true})}catch(e){fail(res,e)}})
+export default router

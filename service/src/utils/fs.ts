@@ -7,7 +7,7 @@
  */
 import fs from 'fs'
 import path from 'path'
-import imageSize from 'image-size'
+import { imageSizeFile } from './image-size-file'
 import { filePath as StaticPath } from '../configs'
 const FileUrl = 'http://localhost:7001/static/'
 
@@ -41,7 +41,7 @@ export function filesReader(directoryPath: string) {
       files.forEach((file) => {
         const filePath = path.join(directoryPath, file)
         // const stats = fs.statSync(filePath);
-        const { width, height } = imageSize(StaticPath + filePath)
+        const { width, height } = imageSizeFile(StaticPath + filePath)
         if (file !== '.DS_Store') {
           const fileInfo = {
             width,

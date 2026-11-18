@@ -6,14 +6,14 @@
  * @LastEditTime: 2023-06-29 17:58:00
 -->
 <template>
-  <el-dialog v-model="dialogVisible" title="裁剪图片" width="80%" :before-close="handleClose" @close="cancel">
+  <el-dialog v-model="dialogVisible" :title="$t('business.crop.title')" width="80%" :before-close="handleClose" @close="cancel">
     <div id="wrap" v-loading="loading" style="height: 50vh">
       <img v-show="url" ref="imgBox" style="visibility: hidden" alt="imgBox" :src="url" />
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="cancel">取消</el-button>
-        <el-button :loading="loading" plain type="primary" @click="ok">确认</el-button>
+        <el-button @click="cancel">{{ $t('common.cancel') }}</el-button>
+        <el-button :loading="loading" plain type="primary" @click="ok">{{ $t('business.crop.ok') }}</el-button>
       </span>
     </template>
   </el-dialog>
@@ -68,9 +68,10 @@ export default defineComponent({
         //   console.log(event);
         // },
       })
-      imgBox.value.addEventListener('ready', function() {
+      const imgEl: any = imgBox.value
+      imgEl.addEventListener('ready', () => {
         state.loading = false
-        if (this.cropper === cropper) {
+        if (imgEl.cropper === cropper) {
           cropData && cropper.setData(cropData)
         }
       })
@@ -80,7 +81,7 @@ export default defineComponent({
       setTimeout(async () => {
         const newImg = cropper.getCroppedCanvas({ maxWidth: 4096, minWidth: 4096 }).toDataURL('image/jpeg', 0.8)
         const { width, height } = cropper.getCropBoxData()
-        const { preview_url } = await api.material.uploadBase64({ file: newImg })
+        const { preview_url } = await (api.material as any).uploadBase64({ file: newImg })
         context.emit('done', { newImg: preview_url, data: cropper.getData(), width, height })
         cancel()
       }, 100)

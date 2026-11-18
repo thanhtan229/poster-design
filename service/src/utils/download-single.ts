@@ -18,11 +18,11 @@ const isDev = process.env.NODE_ENV === 'development'
 const puppeteer = require('puppeteer')
 const sharp = require('sharp')
 const { executablePath } = require('../configs.ts')
-const forceTimeOut = 60 // 强制超时时间，单位：秒
+import { MAX_EXPORT_SIDE, MAX_EXPORT_PIXELS, exportTimeoutSec } from './export-limits'
 // 4K规格，总计约830万像素 3840 * 2160 2K规格，总计约830万像素 2048 * 1080
 // const maxPXs = 8294400 
-const maxPXs = 4211840 // 超出此规格会触发限制器降低dpr，节省服务器资源
-const maximum = 5000 // 最大宽高限制，超过截断以防止服务崩溃
+const maxPXs = MAX_EXPORT_PIXELS // exported canvas keeps its original pixels up to the supported limit
+const maximum = MAX_EXPORT_SIDE // [TINIX] was 5000 → 10000 → 12000: trang PSD 8268×11220 bị cắt mất ~11% phía dưới ở mức 10000 (larger is clipped)
 
 export const saveScreenshot = async (url: string, { path, width, height, thumbPath, size = 0, quality = 0, prevent, ua, devices, scale, wait }: any) => {
   return new Promise(async (resolve: Function, reject: Function) => {
@@ -31,17 +31,22 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     // 格式化浏览器宽高
     width = Number(width).toFixed(0)
     height = Number(height).toFixed(0)
+    if (Number(width) < 1 || Number(height) < 1 || Number(width) > maximum || Number(height) > maximum || Number(width) * Number(height) > maxPXs) {
+      reject(new Error('Kích thước xuất vượt giới hạn 12000 px mỗi cạnh hoặc 100 triệu pixel'))
+      return
+    }
 
     const puppeteerArgs = {
-      old: ['–no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}`, '–single-process', '–disable-gpu', '–no-zygote', '–disable-dev-shm-usage'],
-      new: [ '–no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}` ]
+      // [TINIX] trước đây dùng dấu gạch ngang dài (–) nên Chrome mới coi tham số là địa chỉ web ('Multiple targets are not supported in headless mode'); dùng '--' chuẩn
+      old: ['--no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}`, '--disable-gpu', '--disable-dev-shm-usage'],
+      new: [ '--no-first-run', '--no-sandbox', '--disable-setuid-sandbox', `--window-size=${width},${height}` ]
     }
     // 启动浏览器
     try {
       browser = await puppeteer.launch({
         headless: true, // !isDev,
         executablePath,
-        ignoreHTTPSErrors: true, // 忽略https安全提示
+        acceptInsecureCerts: true, // [TINIX] Puppeteer mới: thay cho ignoreHTTPSErrors
         args: puppeteerArgs.old, // 如puppeteer版本v20+报错请尝试使用新参数
         defaultViewport: null,
       })
@@ -56,8 +61,8 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
       browser && browser.close()
       browser = null
       console.log('超时强制释放浏览器')
-      reject(new Error('截图超时，页面未完成渲染'))
-    }, forceTimeOut * 1000)
+      reject(new Error('Chụp ảnh quá thời gian, trang chưa render xong'))
+    }, exportTimeoutSec(width, height) * 1000) // [TINIX] tỉ lệ theo số điểm ảnh (tối thiểu 60 giây)
 
     // 打开页面
     const page = await browser.newPage()
@@ -65,9 +70,9 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
     function limiter(w: number, h: number) {
       return w*h < maxPXs ? 1 : +(1/(w*h) * maxPXs).toFixed(2)
     }
-    page.setViewport({
-      width: Number(width) > maximum ? 5000 : Number(width),
-      height: Number(height) > maximum ? 5000 : Number(height),
+    await page.setViewport({
+      width: Number(width) > maximum ? maximum : Number(width),
+      height: Number(height) > maximum ? maximum : Number(height),
       deviceScaleFactor: !isNaN(scale) ? (+scale > 4 ? 4 : +scale) : limiter(Number(width), Number(height)),
     })
     ua && page.setUserAgent(ua)
@@ -91,7 +96,19 @@ export const saveScreenshot = async (url: string, { path, width, height, thumbPa
       })
     }
     // 主动模式下注入全局方法
-    await page.exposeFunction('loadFinishToInject', async () => {
+    await page.exposeFunction('loadFinishToInject', async (result: any) => {
+      if(result && result.error){clearTimeout(regulators);browserClose();reject(Object.assign(new Error(result.error), {issues:result.issues}));return}
+      if((String(url).includes('exportJob=') || new URL(url).searchParams.get('hq')==='1') && new URL(url).searchParams.get('relaxed')!=='1') { // [TINIX] relaxed=1: xuất ảnh thường, không chặn khi chữ tràn/ảnh lỗi
+        try {
+          const problems = await page.evaluate(() => {
+            const errors:string[]=[]
+            for(const image of Array.from(document.querySelectorAll('#page-design img')) as HTMLImageElement[])if(image.getClientRects().length&&(!image.complete||!image.naturalWidth))errors.push('Ảnh không tải được')
+            for(const text of Array.from(document.querySelectorAll('#page-design .w-text')) as HTMLElement[])if(text.getClientRects().length&&(text.scrollWidth>text.clientWidth+3||text.scrollHeight>text.clientHeight+3))errors.push(JSON.stringify({code:'TEXT_OVERFLOW',layerId:text.id,overflowX:Math.max(0,text.scrollWidth-text.clientWidth),overflowY:Math.max(0,text.scrollHeight-text.clientHeight),message:'Chữ tràn khung'}))
+            return errors
+          })
+          if(problems.length){clearTimeout(regulators);browserClose();reject(Object.assign(new Error(problems.join('; ')), {issues:problems.flatMap((p:string)=>{try{return [JSON.parse(p)]}catch(_){return []}})}));return}
+        } catch(error) {clearTimeout(regulators);browserClose();reject(error);return}
+      }
       // console.log('-> 开始截图')
       // await page.evaluate(() => document.body.style.background = 'transparent');
       await page.screenshot({ path, omitBackground: true })

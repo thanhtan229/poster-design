@@ -8,10 +8,10 @@
 <template>
   <div :style="{ position, bottom: -1 * st + 'px', left: sl + 'px' }" :class="['artboards', isFold ? 'fold' : 'unfold']">
     <div ref="listRef" class="wrap">
-      <div v-if="isFold" v-show="dLayouts.length > 0" class="btn" @click="isFold = !isFold">画板 {{ index + 1 }}/{{ dLayouts.length }} <i class="icon sd-zhankai" /></div>
-      <div class="list" v-else>
-        <span @click="isFold = !isFold" class="icon-btn"><i class="icon sd-zhankai" /></span>
-        <div v-for="(l, li) in dLayouts" :key="'l' + li" :style="{ width: getPW(l.global) + 'px' }" @click="selectPoster(li)" :class="['item-box', index == li ? 'item-select' : 'item-default']">
+      <div v-if="isFold" v-show="dLayouts.length > 0" class="btn" @click="isFold = !isFold">{{ $t('editor.panel.artboard') }} {{ index + 1 }}/{{ dLayouts.length }} <i class="icon sd-zhankai" /></div>
+      <div v-else class="list">
+        <span class="icon-btn" @click="isFold = !isFold"><i class="icon sd-zhankai" /></span>
+        <div v-for="(l, li) in dLayouts" :key="'l' + li" :style="{ width: getPW(l.global) + 'px' }" :class="['item-box', index === li ? 'item-select' : 'item-default']" @click="selectPoster(li)">
           <div
             class="mini-poster"
             :style="{
@@ -32,15 +32,16 @@
             </component>
           </div>
           <div class="item-idx">{{ li + 1 }}</div>
-          <i @click.stop="removePoster(li)" class="icon sd-quxiao" />
+          <i class="icon sd-quxiao" @click.stop="removePoster(li)" />
         </div>
-        <div v-show="dLayouts.length < 9" @click="addLayer" class="item-add"><i class="iconfont icon-add" /></div>
+        <div class="item-add" @click="addLayer"><i class="iconfont icon-add" /></div><!-- [TINIX] bỏ giới hạn 9 trang (album nhiều trang); thanh trang cuộn ngang -->
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import i18n from '@/languages'
 import { ref, Ref, onMounted, nextTick, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useWidgetStore, useForceStore, useControlStore } from '@/store'
@@ -56,11 +57,11 @@ const sl = ref(0)
 const listRef: Ref<HTMLElement | null> = ref(null)
 const index = computed(() => canvasStore.dCurrentPage)
 const { dZoom, dPage } = storeToRefs(canvasStore)
-const { dWidgets, dLayouts } = storeToRefs(widgetStore)
+const { dLayouts } = storeToRefs(widgetStore)
 
 watch(
   () => dZoom.value,
-  (val) => {
+  (_val) => {
     // 在画布缩放时bottom复位
     mainEl.scrollTop = 0
   },
@@ -81,7 +82,7 @@ let mainEl: any = null
 onMounted(async () => {
   await nextTick()
   mainEl = document.getElementById('main')
-  mainEl.addEventListener('scroll', function (e: any) {
+  mainEl.addEventListener('scroll', (_e: any) => {
     st.value = mainEl.scrollTop
     sl.value = mainEl.scrollLeft
   })
@@ -89,7 +90,7 @@ onMounted(async () => {
   listRef.value?.addEventListener('wheel', (event) => {
     event.preventDefault()
     // 使用滚轮横向滚动
-    listRef.value.scrollLeft += event.deltaY
+    listRef.value!.scrollLeft += event.deltaY
   })
 })
 
@@ -134,6 +135,11 @@ function addLayer() {
   canvasStore.setDPage(getInitPage())
   canvasStore.updateDPage()
   widgetStore.selectWidget({ uuid: '-1' })
+  // [TINIX] cuộn thanh trang tới trang vừa thêm
+  nextTick(() => {
+    const el = listRef.value
+    el && (el.scrollLeft = el.scrollWidth)
+  })
 }
 
 function selectPoster(i: number) {
@@ -147,7 +153,7 @@ function removePoster(removeIndex: number) {
   if (index.value === removeIndex) {
     // 当前画布下，清空画布内容而非删除
     widgetStore.dLayouts[removeIndex].layers.length = 0
-    ElMessage('画布已清空')
+    ElMessage(i18n.global.t('editor.panel.canvasCleared'))
     widgetStore.setDWidgets([]) // 清除画布图层
     // widgetStore.updateDWidgets()
     // widgetStore.dLayouts[removeIndex].global = getInitPage()
@@ -174,9 +180,11 @@ function removePoster(removeIndex: number) {
   .list {
     display: flex;
     align-items: center;
+    flex: none; /* [TINIX] giữ đủ chiều rộng nội dung để thanh bên ngoài cuộn ngang khi nhiều trang */
   }
   .item-box,
   .item-add {
+    flex: none; /* [TINIX] không co lại khi có nhiều trang */
     position: relative;
     width: 72px;
     height: 72px;
@@ -299,6 +307,7 @@ function removePoster(removeIndex: number) {
     margin-left: 4px;
   }
   .btn {
+    white-space: nowrap;
     padding: 0 20px;
     display: flex;
     width: 100%;

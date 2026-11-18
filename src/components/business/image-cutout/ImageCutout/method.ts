@@ -14,13 +14,16 @@
  * (at your option) any later version.
  */
 
+import i18n from '@/languages'
 import { TImageCutoutState } from './index.vue'
 import api from '@/api'
 import { Ref } from 'vue'
 import { cutoutImage } from './helper/useCutout'
+import { birefnetCutout, type CutoutEngine } from '@/utils/tinix/cutout-engine' // [TINIX]
+import { ElMessage } from 'element-plus' // [TINIX]
 
 /** 选择图片 */
-export const selectImageFile = async (state: TImageCutoutState, raw: Ref<HTMLElement | null>, file: File, successCb?: (result: string, fileName: string) => void) => {
+export const selectImageFile = async (state: TImageCutoutState, raw: Ref<HTMLElement | null>, file: File, successCb?: (result: string, fileName: string) => void, engine: CutoutEngine = 'u2net') => {
   // if (file.size > 1024 * 1024 * 2) {
   //   alert('上传图片超出限制')
   //   return false
@@ -32,16 +35,29 @@ export const selectImageFile = async (state: TImageCutoutState, raw: Ref<HTMLEle
   })
   state.rawImage = URL.createObjectURL(file)
 
-  // 浏览器端自动抠图（rembg-web + u2netp，无需后端服务）
-  const blob = await cutoutImage(file, ({ text, progress }) => {
-    state.progressText = progress >= 100 ? '' : text
-    state.progress = progress
-  })
+  // [TINIX] BiRefNet (GPU local) hoặc U²-Net (rembg-web trong trình duyệt); BiRefNet lỗi thì tự dùng U²-Net
+  let blob: Blob | null = null
+  if (engine === 'birefnet') {
+    state.progressText = i18n.global.t('tinix.ui.cutoutEngine.dang_tach_birefnet')
+    state.progress = 0
+    try {
+      blob = await birefnetCutout(file)
+    } catch (e: any) {
+      ElMessage.warning(i18n.global.t('tinix.ui.cutoutEngine.birefnet_loi_dung_u2net', { msg: e?.message || '' }))
+    }
+  }
+  if (!blob) {
+    blob = await cutoutImage(file, ({ text, progress }) => {
+      state.progressText = progress >= 100 ? '' : text
+      state.progress = progress
+    })
+  }
+  state.progressText = ''
   if (blob) {
-    successCb(URL.createObjectURL(blob), file.name)
+    successCb?.(URL.createObjectURL(blob), file.name)
   } else {
     state.progressText = ''
-    alert('自动抠图失败，请稍候重新尝试~')
+    alert(i18n.global.t('business.cutout.failed'))
   }
 }
 

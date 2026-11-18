@@ -16,7 +16,9 @@
  */
 // import store from '@/store'
 // import { getImage } from '../getImgDetail'
+import i18n from '@/languages'
 import setImageData from '@/common/methods/DesignFeatures/setImage'
+import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
 // import wText from '@/components/modules/widgets/wText/wText.vue'
 import { wTextSetting } from '@/components/modules/widgets/wText/wTextSetting'
 // import wImage from '@/components/modules/widgets/wImage/wImage.vue'
@@ -27,7 +29,7 @@ export default async function(type: string, item: TCommonItemData, data: Record<
   let setting = data
   if (type === 'text') {
     !item.fontFamily && !item.color ? (setting = JSON.parse(JSON.stringify(wTextSetting))) : (setting = item)
-    !setting.text ? (setting.text = '双击编辑文字') : (setting.text = decodeURIComponent(setting.text)) // item.text
+    !setting.text ? (setting.text = i18n.global.t('editor.panel.defaultText')) : (setting.text = decodeURIComponent(setting.text)) // item.text
     setting.fontSize = item.fontSize
     setting.width = item.width || item.fontSize * setting.text.length
     setting.fontWeight = item.fontWeight
@@ -37,7 +39,7 @@ export default async function(type: string, item: TCommonItemData, data: Record<
     const img = await setImageData(item.value)
     setting.width = img.width
     setting.height = img.height // parseInt(100 / item.value.ratio, 10)
-    setting.imgUrl = item.value.url
+    applyImageSource(setting, item.value) // [TINIX] imgUrl = bản nhẹ (nếu có), nhớ bản gốc (item.value.hq) cho lúc xuất
   }
   if (type === 'mask') {
     setting.mask = item.value.url

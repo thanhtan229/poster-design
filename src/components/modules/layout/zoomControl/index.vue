@@ -131,7 +131,7 @@ onMounted(async () => {
     mousewheelZoom(isDown)
   })
   // 添加窗口大小监听
-  window.addEventListener('resize', (event) => {
+  window.addEventListener('resize', (_event) => {
     changeScreen()
   })
 })
@@ -209,7 +209,7 @@ function sub() {
     return
   }
   if (activezoomIndex.value === zoomList.value.length - 1) {
-    if (bestZoom) {
+    if (bestZoom.value) {
       nearZoom()
     } else {
       activezoomIndex.value = zoomList.value.length - 2
@@ -288,9 +288,9 @@ defineExpose({
 @z-border-color: #e6e6e6;
 
 #zoom-control {
-  bottom: 10px;
+  bottom: calc(10px + var(--tinix-dock-h, 0px)); /* [TINIX] trên dải ảnh phía dưới */
   position: absolute;
-  right: 292px;
+  right: calc(var(--tinix-panel-right, 280px) + 12px); /* [TINIX] panel phải kéo rộng được (mặc định 280px → 292px như cũ) */
   z-index: 1000;
   .zoom-control-wrap {
     display: flex;
@@ -333,6 +333,7 @@ defineExpose({
       }
     }
     .zoom-text {
+      white-space: nowrap;
       user-select: none;
       align-items: center;
       background-color: @color2;

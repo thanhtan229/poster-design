@@ -1,3 +1,13 @@
+## TinixPoster — chế độ cá nhân
+
+Ứng dụng chỉ phục vụ trên máy này (`127.0.0.1`), mở là dùng ngay; không có đăng nhập, đăng ký hay quản lý tài khoản. `HOST` không mở ứng dụng ra mạng.
+
+Dữ liệu cũ được giữ nguyên: không xóa tài khoản nội bộ, không đổi ID chủ sở hữu, không di chuyển ảnh. Thiết kế, ảnh và mục yêu thích thuộc các tài khoản cũ đều hiển thị trong một không gian cá nhân. Bỏ yêu thích một kích thước sẽ bỏ đánh dấu đó trong không gian chung.
+
+Chạy `npm run tinix:prod` để mở bản ứng dụng cá nhân. Trang `/admin` vẫn quản lý mẫu, ảnh, font và cài đặt AI, truy cập trực tiếp không cần đăng nhập.
+
+---
+
 <p align="center">
 <img style="height: 90px" src="https://github.com/user-attachments/assets/e2b8c788-aded-4b1a-83ee-9bde124f5808" alt="迅排设计 Poster Design 2.0">
 </p>
@@ -52,7 +62,7 @@ npm run serve
 
 输入网址 http://127.0.0.1:5173/ 访问站点（如中途失败请拆开命令运行），更多详情[参阅文档(旧)](https://xp.palxp.cn/#/articles/1689319644311)。
 
-管理后台：http://127.0.0.1:5173/admin（管理员默认账号 `admin / 123456`）
+管理后台：http://127.0.0.1:5173/admin（本机个人模式，无需登录）
 
 ### 后端 & 图片生成
 

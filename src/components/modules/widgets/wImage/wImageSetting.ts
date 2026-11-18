@@ -1,3 +1,5 @@
+import type { ImageEffects } from '@/utils/tinix/image-effects'
+import i18n from '@/languages'
 /*
  * SPDX-License-Identifier: AGPL-3.0-or-later
  * Copyright (C) 2026 palxiao https://xpai.design
@@ -39,11 +41,26 @@ export type TImageSetting = {
     ratio: number
     left: number
   }
+  frameDragMode?: 'pan' | 'frame'
+  effects?: Partial<ImageEffects>
+  linkedPhotoId?: string
   cropEdit?: boolean
+  origin?: { proxy: string; original: string } // [TINIX] ảnh gốc dùng khi xuất (imgUrl đang là bản nhẹ)
+  slot?: boolean // [TINIX] khung ảnh của mẫu
+  keepCover?: boolean // [TINIX] giữ ảnh phủ kín trang khi kéo
+  fit?: string // [TINIX] 'cover' cho khung ảnh của Dựng theo mẫu: giữ kích thước khung, ảnh phủ kín (object-fit)
+  cropX?: number
+  cropY?: number
+  imgRotate?: number // [TINIX] xoay ảnh bên trong khung (độ), xem utils/tinix/photo-frame.ts
+  cutoutBorderUrl?: string
+  stickerBorder?: import('@/utils/tinix/sticker-apply').StickerBorderMeta // [TINIX] viền trắng hình dán (ảnh gốc chưa viền + số đo), xem utils/tinix/sticker-apply.ts
+  cutInset?: number // [TINIX] đường cắt laser lùi vào (px trang)
+  printInset?: number // [TINIX] đệm trong suốt mỗi cạnh không tính vào hộp cắt (px trang)
+  cutoutEdit?: { sourceUrl:string; cutoutUrl:string; mm:number;frame:{left:number;top:number;width:number;height:number} }
 }
 
 const setting: TImageSetting = {
-  name: '图片',
+  name: i18n.global.t('editor.widget.image'),
   type: 'w-image',
   uuid: '-1',
   width: 300,

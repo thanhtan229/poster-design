@@ -21,6 +21,8 @@ import { send, checkCreateFolder, randomCode } from '../utils/tools'
 import { getRequestUser } from '../utils/auth'
 import { getAiSettings, saveAiSettingsInput, AiSettings, AiImageSizeMode } from '../db/settings'
 import { addUserImage } from '../db/userImages'
+import { postWithRetry, modelErrorHint } from '../tinix/ai/vision' // [TINIX] tự thử lại khi quá tải + gợi ý khi model bị ngừng
+import { logJob, assertWithinMonthlyLimit } from '../tinix/ai/cost-log' // [TINIX] lịch sử + giới hạn chi phí cho cả lần tạo ảnh
 
 /**
  * 各尺寸模式下「宽高比 → 供应商 size 参数」的映射。
@@ -36,10 +38,10 @@ const IMAGE_SIZE_MAPS: Record<AiImageSizeMode, Record<string, string>> = {
 function requireAiEnabled(): AiSettings {
   const config = getAiSettings()
   if (!config.enabled) {
-    throw new Error('AI 功能未启用，请联系管理员在后台开启')
+    throw new Error('Tính năng AI chưa được bật, vui lòng liên hệ quản trị viên để bật trong trang quản trị')
   }
   if (!config.api_key) {
-    throw new Error('AI 服务未配置密钥，请联系管理员')
+    throw new Error('Dịch vụ AI chưa được cấu hình API Key, vui lòng liên hệ quản trị viên')
   }
   return config
 }
@@ -48,7 +50,31 @@ function requireAiEnabled(): AiSettings {
 function resolveImageSize(ratio: string, mode: AiImageSizeMode): string {
   const map = IMAGE_SIZE_MAPS[mode]
   if (!map) return '1024x1024'
-  return map[ratio] || map['1:1'] || '1024x1024'
+  if (map[ratio]) return map[ratio]
+  // [TINIX] tỉ lệ tùy ý "W:H" (vd "1280:1920" của Dựng theo mẫu) → kích thước hợp lệ cho từng chế độ
+  const m = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(String(ratio || ''))
+  if (m && Number(m[1]) > 0 && Number(m[2]) > 0) {
+    const r = Math.min(3, Math.max(1 / 3, Number(m[1]) / Number(m[2])))
+    if (mode === 'openai') {
+      // GPT Image nhận cạnh bội số của 16, tỉ lệ 1:3..3:1: cạnh dài 1536px
+      if (r > 0.97 && r < 1.03) return '1024x1024'
+      const snap = (v: number) => Math.max(16, Math.round(v / 16) * 16)
+      return r >= 1 ? `1536x${snap(1536 / r)}` : `${snap(1536 * r)}x1536`
+    }
+    // chế độ khác: chọn tỉ lệ có sẵn gần nhất
+    let best = '1:1'
+    let diff = Infinity
+    for (const key of Object.keys(map)) {
+      const [a, b] = key.split(':').map(Number)
+      const d = Math.abs(Math.log(a / b / r))
+      if (d < diff) {
+        diff = d
+        best = key
+      }
+    }
+    return map[best]
+  }
+  return map['1:1'] || '1024x1024'
 }
 
 /** 密钥脱敏：短密钥只保留前 2 位，长密钥保留前 6 位与后 4 位 */
@@ -65,7 +91,7 @@ function extractApiErrorMessage(e: any): string {
     const message = data.error && typeof data.error.message === 'string' ? data.error.message : typeof data.message === 'string' ? data.message : typeof data.msg === 'string' ? data.msg : ''
     if (message) return message
   }
-  return (e && e.message) || '未知错误'
+  return (e && e.message) || 'Lỗi không xác định'
 }
 
 /** 调用 OpenAI 兼容的对话接口，返回首个候选文本 */
@@ -165,7 +191,8 @@ async function resolveImageBuffer(body: any): Promise<Buffer> {
 function saveGeneratedImage(buffer: Buffer): { url: string; width: number; height: number } | null {
   const folder = 'ai'
   const folderPath = `${filePath}${folder}/`
-  checkCreateFolder(folderPath)
+  // [TINIX] checkCreateFolder không tạo được đường dẫn Windows (ghép "/D:/..." và nuốt lỗi) → tạo đệ quy trực tiếp
+  fs.mkdirSync(folderPath, { recursive: true })
   const name = `${Date.now()}-${randomCode(8)}.png`
   const targetPath = `${folderPath}${name}`
   fs.writeFileSync(targetPath, buffer)
@@ -173,7 +200,7 @@ function saveGeneratedImage(buffer: Buffer): { url: string; width: number; heigh
   let width = 0
   let height = 0
   try {
-    const sizeInfo = imageSize(targetPath)
+    const sizeInfo = imageSize(buffer)
     width = Number(sizeInfo.width)
     height = Number(sizeInfo.height)
   } catch (err) {
@@ -192,82 +219,106 @@ export default {
   // AI 文案生成：POST /api/ai/text
   async textGenerate(req: any, res: Response) {
     const user = getRequestUser(req)
-    if (!user) return send.error(res, '请先登录')
+    if (!user) return send.error(res, 'Vui lòng đăng nhập')
     let config: AiSettings
     try {
       config = requireAiEnabled()
     } catch (e) {
-      return send.error(res, e?.message || 'AI 服务未配置')
+      return send.error(res, e?.message || 'Dịch vụ AI chưa được cấu hình')
     }
     const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : ''
-    const style = typeof req.body?.style === 'string' && req.body.style.trim() ? req.body.style.trim() : '营销'
-    if (!prompt) return send.error(res, '请输入主题')
+    const style = typeof req.body?.style === 'string' && req.body.style.trim() ? req.body.style.trim() : 'Quảng cáo'
+    if (!prompt) return send.error(res, 'Vui lòng nhập chủ đề')
     try {
-      const system = `你是一个专业的海报文案策划。请围绕用户给出的主题，生成 4 条不同风格的海报文案，整体符合【${style}】风格。要求：每条文案语言简洁有感染力，不出现占位符。仅输出 JSON 字符串数组，如 ["文案一", "文案二", "文案三", "文案四"]，数组元素必须是纯字符串，不要输出其他任何内容。`
+      const system = `Bạn là chuyên gia viết nội dung poster. Hãy viết 4 mẫu nội dung poster với các phong cách khác nhau xoay quanh chủ đề người dùng đưa ra, tổng thể theo phong cách "${style}". Yêu cầu: mỗi nội dung ngắn gọn, truyền cảm hứng, không chứa placeholder, viết bằng tiếng Việt. Chỉ xuất ra một mảng JSON các chuỗi, ví dụ ["Nội dung một", "Nội dung hai", "Nội dung ba", "Nội dung bốn"], các phần tử phải là chuỗi thuần, không xuất thêm bất cứ nội dung nào khác.`
       const content = await chatCompletion(config.api_key, config.base_url, config.text_model, system, prompt)
       const list = parseTextList(content)
-      if (!list.length) return send.error(res, 'AI 暂未生成有效文案，请稍后重试')
+      if (!list.length) return send.error(res, 'AI chưa tạo được nội dung hợp lệ, vui lòng thử lại sau')
       send.success(res, { list })
     } catch (e) {
       console.error('[ai] 文案生成失败:', e?.message)
-      send.error(res, 'AI 文案生成失败，请稍后重试')
+      send.error(res, 'Tạo nội dung bằng AI thất bại, vui lòng thử lại sau')
     }
   },
 
   // AI 文生图：POST /api/ai/image
   async imageGenerate(req: any, res: Response) {
     const user = getRequestUser(req)
-    if (!user) return send.error(res, '请先登录')
+    if (!user) return send.error(res, 'Vui lòng đăng nhập')
     let config: AiSettings
     try {
       config = requireAiEnabled()
     } catch (e) {
-      return send.error(res, e?.message || 'AI 服务未配置')
+      return send.error(res, e?.message || 'Dịch vụ AI chưa được cấu hình')
     }
     const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : ''
     const ratio = typeof req.body?.ratio === 'string' ? req.body.ratio.trim() : '1:1'
-    if (!prompt) return send.error(res, '请输入图片描述')
+    if (!prompt) return send.error(res, 'Vui lòng nhập mô tả ảnh')
     const size = resolveImageSize(ratio, config.image_size_mode)
+    // [TINIX] chạm giới hạn chi phí tháng thì không tạo ảnh nữa
+    try {
+      assertWithinMonthlyLimit()
+    } catch (e) {
+      return send.error(res, e?.message || 'Đã chạm giới hạn chi phí AI tháng này')
+    }
+    const jobInput = { prompt: prompt.slice(0, 300), ratio, size }
     try {
       // 注意：utils/http 的 axios 拦截器已将响应解包为 body，类型断言绕开 AxiosResponse 类型
-      const body: any = await axios.post(
-        `${config.base_url}/images/generations`,
-        { model: config.image_model, prompt, size },
-        { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 60000 }
+      const body: any = await postWithRetry(() =>
+        axios.post(
+          `${config.base_url}/images/generations`,
+          { model: config.image_model, prompt, size },
+          { headers: { Authorization: `Bearer ${config.api_key}` }, timeout: 120000 } // [TINIX] ảnh lớn có thể >60s
+        )
       )
       const buffer = await resolveImageBuffer(body)
-      if (!buffer || !buffer.length) return send.error(res, 'AI 图片生成失败，请稍后重试')
+      // [TINIX] token dùng (nếu nhà cung cấp trả về `usage`) để ghi lịch sử/chi phí
+      const usage = body && body.usage ? body.usage : {}
+      const tokensIn = Number(usage.input_tokens ?? usage.prompt_tokens) || 0
+      const tokensOut = Number(usage.output_tokens ?? usage.completion_tokens) || 0
+      if (!buffer || !buffer.length) {
+        logJob({ kind: 'image', input: jobInput, model: config.image_model, tokensIn, tokensOut, status: 'error', error: 'Nhà cung cấp không trả về ảnh' })
+        return send.error(res, 'Tạo ảnh bằng AI thất bại, vui lòng thử lại sau')
+      }
       const saved = saveGeneratedImage(buffer)
-      if (!saved) return send.error(res, 'AI 生成图片无效，请重试')
+      if (!saved) {
+        logJob({ kind: 'image', input: jobInput, model: config.image_model, tokensIn, tokensOut, status: 'error', error: 'Ảnh không hợp lệ' })
+        return send.error(res, 'Ảnh do AI tạo không hợp lệ, vui lòng thử lại')
+      }
       addUserImage(user.id, saved.url, saved.width, saved.height)
+      logJob({ kind: 'image', input: jobInput, output: saved, model: config.image_model, tokensIn, tokensOut, status: 'ok' })
       send.success(res, saved)
     } catch (e) {
       console.error('[ai] 文生图失败:', e?.message)
-      send.error(res, 'AI 图片生成失败，请稍后重试')
+      const retried = e && e.__retries ? ` (đã tự thử lại ${e.__retries} lần)` : ''
+      const detail = extractApiErrorMessage(e).slice(0, 300) + retried + modelErrorHint(extractApiErrorMessage(e), config.image_model, 'Model tạo ảnh (Quản trị → Thiết lập AI)')
+      logJob({ kind: 'image', input: jobInput, model: config.image_model, status: 'error', error: detail })
+      // [TINIX] trả lỗi thật của nhà cung cấp (key đã được che) để biết vì sao thất bại
+      send.error(res, `Tạo ảnh bằng AI thất bại: ${detail}`)
     }
   },
 
   // AI 智能配色：POST /api/ai/color
   async colorSuggest(req: any, res: Response) {
     const user = getRequestUser(req)
-    if (!user) return send.error(res, '请先登录')
+    if (!user) return send.error(res, 'Vui lòng đăng nhập')
     let config: AiSettings
     try {
       config = requireAiEnabled()
     } catch (e) {
-      return send.error(res, e?.message || 'AI 服务未配置')
+      return send.error(res, e?.message || 'Dịch vụ AI chưa được cấu hình')
     }
     const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : ''
-    if (!prompt) return send.error(res, '请输入配色主题')
+    if (!prompt) return send.error(res, 'Vui lòng nhập chủ đề phối màu')
     try {
-      const system = `你是专业的配色设计师。请根据用户给出的主题，输出 5 个搭配和谐的颜色，包含一个主色。仅输出 JSON 数组，每个元素格式 {"name":"颜色名","value":"#RRGGBB"}，不要输出其他内容。`
+      const system = `Bạn là nhà thiết kế phối màu chuyên nghiệp. Dựa trên chủ đề người dùng đưa ra, hãy xuất 5 màu hài hòa với nhau, trong đó có một màu chính. Chỉ xuất ra mảng JSON, mỗi phần tử có dạng {"name":"tên màu bằng tiếng Việt","value":"#RRGGBB"}, không xuất thêm nội dung nào khác.`
       const content = await chatCompletion(config.api_key, config.base_url, config.text_model, system, prompt, 0.7)
       const colors = parseColorList(content)
-      if (!colors.length) return send.error(res, 'AI 暂未生成有效配色，请稍后重试')
+      if (!colors.length) return send.error(res, 'AI chưa tạo được bảng màu hợp lệ, vui lòng thử lại sau')
       send.success(res, { colors })
     } catch (e) {
       console.error('[ai] 配色失败:', e?.message)
-      send.error(res, 'AI 配色生成失败，请稍后重试')
+      send.error(res, 'Tạo bảng màu bằng AI thất bại, vui lòng thử lại sau')
     }
   },
 
@@ -303,14 +354,14 @@ export default {
   // 鉴权失败 / 模型不存在 / 网络不通都会在请求层抛错，能拿到响应即视为连接成功
   async testConnection(req: any, res: Response) {
     const config = getAiSettings()
-    if (!config.enabled) return send.error(res, 'AI 功能未启用')
-    if (!config.api_key) return send.error(res, '未配置密钥')
+    if (!config.enabled) return send.error(res, 'Tính năng AI chưa được bật')
+    if (!config.api_key) return send.error(res, 'Chưa cấu hình API Key')
     try {
-      const content = await chatCompletion(config.api_key, config.base_url, config.text_model, '你是一个连通性测试助手，请直接回复两个字：ok', 'ping', 0.2)
+      const content = await chatCompletion(config.api_key, config.base_url, config.text_model, 'You are a connectivity test assistant. Reply with just the word: ok', 'ping', 0.2)
       send.success(res, { content: String(content || '').slice(0, 100) })
     } catch (e) {
       console.error('[ai] 测试连接失败:', e?.message)
-      send.error(res, `连接失败：${extractApiErrorMessage(e)}`)
+      send.error(res, `Kết nối thất bại: ${extractApiErrorMessage(e)}`)
     }
   },
 }

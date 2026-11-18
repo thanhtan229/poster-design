@@ -1,0 +1,1450 @@
+{
+  "_comment": "[TINIX] Danh mục font có hỗ trợ tiếng Việt (đã kiểm tra subsets 'vietnamese' trong METADATA.pb của google/fonts, giấy phép OFL). Nhập bằng: npm run tinix:fonts [TINIX] Thêm 13 font tiếng Hàn (vietnamese=false, lang=ko), OFL.",
+  "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/",
+  "fonts": [
+    {
+      "family": "Playfair Display",
+      "dir": "playfairdisplay",
+      "file": "PlayfairDisplay[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "tạp chí",
+        "tiêu đề",
+        "cổ điển"
+      ]
+    },
+    {
+      "family": "Cormorant Garamond",
+      "dir": "cormorantgaramond",
+      "file": "CormorantGaramond[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "lãng mạn",
+        "cổ điển",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Cormorant",
+      "dir": "cormorant",
+      "file": "Cormorant[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "tinh tế",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "EB Garamond",
+      "dir": "ebgaramond",
+      "file": "EBGaramond[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "nội dung",
+        "trang nhã"
+      ]
+    },
+    {
+      "family": "Lora",
+      "dir": "lora",
+      "file": "Lora[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "ấm áp",
+        "nội dung",
+        "dễ đọc"
+      ]
+    },
+    {
+      "family": "Prata",
+      "dir": "prata",
+      "file": "Prata-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "tạp chí",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Noto Serif Display",
+      "dir": "notoserifdisplay",
+      "file": "NotoSerifDisplay[wdth,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "tạp chí",
+        "điện ảnh",
+        "tiêu đề",
+        "sang trọng"
+      ]
+    },
+    {
+      "family": "Yeseva One",
+      "dir": "yesevaone",
+      "file": "YesevaOne-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "nữ tính",
+        "nổi bật",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Petrona",
+      "dir": "petrona",
+      "file": "Petrona[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "hiện đại",
+        "nội dung",
+        "tinh tế"
+      ]
+    },
+    {
+      "family": "Great Vibes",
+      "dir": "greatvibes",
+      "file": "GreatVibes-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "thư pháp",
+        "tiêu đề",
+        "cổ điển"
+      ]
+    },
+    {
+      "family": "Dancing Script",
+      "dir": "dancingscript",
+      "file": "DancingScript[wght].ttf",
+      "category": "script",
+      "tags": [
+        "vui tươi",
+        "mềm mại",
+        "dễ đọc"
+      ]
+    },
+    {
+      "family": "Allura",
+      "dir": "allura",
+      "file": "Allura-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "thanh lịch",
+        "chữ ký"
+      ]
+    },
+    {
+      "family": "Pinyon Script",
+      "dir": "pinyonscript",
+      "file": "PinyonScript-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "trang trọng",
+        "thư pháp"
+      ]
+    },
+    {
+      "family": "Alex Brush",
+      "dir": "alexbrush",
+      "file": "AlexBrush-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "lãng mạn",
+        "mềm mại",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Corinthia",
+      "dir": "corinthia",
+      "file": "Corinthia-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "mảnh",
+        "chữ ký"
+      ]
+    },
+    {
+      "family": "Ephesis",
+      "dir": "ephesis",
+      "file": "Ephesis-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "mềm mại",
+        "nữ tính",
+        "chữ ký"
+      ]
+    },
+    {
+      "family": "Ballet",
+      "dir": "ballet",
+      "file": "Ballet[opsz].ttf",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "uốn lượn",
+        "tiêu đề",
+        "cổ điển"
+      ]
+    },
+    {
+      "family": "Mea Culpa",
+      "dir": "meaculpa",
+      "file": "MeaCulpa-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "cổ điển",
+        "trang trí"
+      ]
+    },
+    {
+      "family": "Charm",
+      "dir": "charm",
+      "file": "Charm-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "mềm mại",
+        "dễ đọc",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Pacifico",
+      "dir": "pacifico",
+      "file": "Pacifico-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "vui tươi",
+        "trẻ trung",
+        "đậm"
+      ]
+    },
+    {
+      "family": "Italianno",
+      "dir": "italianno",
+      "file": "Italianno-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "mảnh",
+        "lãng mạn"
+      ]
+    },
+    {
+      "family": "Bonheur Royale",
+      "dir": "bonheurroyale",
+      "file": "BonheurRoyale-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "uốn lượn",
+        "trang trọng"
+      ]
+    },
+    {
+      "family": "Lavishly Yours",
+      "dir": "lavishlyyours",
+      "file": "LavishlyYours-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "lãng mạn",
+        "trang trí"
+      ]
+    },
+    {
+      "family": "Imperial Script",
+      "dir": "imperialscript",
+      "file": "ImperialScript-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "trang trọng",
+        "cổ điển",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "WindSong",
+      "dir": "windsong",
+      "file": "WindSong-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "phóng khoáng",
+        "mảnh",
+        "chữ ký"
+      ]
+    },
+    {
+      "family": "Birthstone",
+      "dir": "birthstone",
+      "file": "Birthstone-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "mềm mại",
+        "hiện đại",
+        "dễ đọc"
+      ]
+    },
+    {
+      "family": "Moon Dance",
+      "dir": "moondance",
+      "file": "MoonDance-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "phóng khoáng",
+        "nghệ thuật",
+        "chữ ký"
+      ]
+    },
+    {
+      "family": "Water Brush",
+      "dir": "waterbrush",
+      "file": "WaterBrush-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "bút lông",
+        "nghệ thuật",
+        "phóng khoáng"
+      ]
+    },
+    {
+      "family": "Ms Madi",
+      "dir": "msmadi",
+      "file": "MsMadi-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "mảnh",
+        "tự nhiên"
+      ]
+    },
+    {
+      "family": "Licorice",
+      "dir": "licorice",
+      "file": "Licorice-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "hiện đại",
+        "cọ vẽ",
+        "trẻ trung"
+      ]
+    },
+    {
+      "family": "Grey Qo",
+      "dir": "greyqo",
+      "file": "GreyQo-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "trang trí",
+        "cổ điển",
+        "uốn lượn"
+      ]
+    },
+    {
+      "family": "Patrick Hand",
+      "dir": "patrickhand",
+      "file": "PatrickHand-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "thân thiện",
+        "vui tươi",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Itim",
+      "dir": "itim",
+      "file": "Itim-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "dễ thương",
+        "tròn",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Montserrat",
+      "dir": "montserrat",
+      "file": "Montserrat[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "tối giản",
+        "tiêu đề",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Josefin Sans",
+      "dir": "josefinsans",
+      "file": "JosefinSans[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "thanh lịch",
+        "hình học",
+        "tạp chí",
+        "hashtag"
+      ]
+    },
+    {
+      "family": "Raleway",
+      "dir": "raleway",
+      "file": "Raleway[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "thanh lịch",
+        "hiện đại",
+        "tiêu đề phụ"
+      ]
+    },
+    {
+      "family": "Be Vietnam Pro",
+      "dir": "bevietnampro",
+      "file": "BeVietnamPro-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "dễ đọc",
+        "nội dung",
+        "tiếng Việt chuẩn"
+      ]
+    },
+    {
+      "family": "Inter",
+      "dir": "inter",
+      "file": "Inter[opsz,wght].ttf",
+      "category": "sans",
+      "tags": [
+        "tối giản",
+        "dễ đọc",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Quicksand",
+      "dir": "quicksand",
+      "file": "Quicksand[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "mềm mại",
+        "tròn",
+        "thân thiện"
+      ]
+    },
+    {
+      "family": "Nunito",
+      "dir": "nunito",
+      "file": "Nunito[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "tròn",
+        "thân thiện",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Lexend",
+      "dir": "lexend",
+      "file": "Lexend[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "dễ đọc",
+        "rộng"
+      ]
+    },
+    {
+      "family": "Mulish",
+      "dir": "mulish",
+      "file": "Mulish[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "tối giản",
+        "nội dung",
+        "nhẹ nhàng"
+      ]
+    },
+    {
+      "family": "Bai Jamjuree",
+      "dir": "baijamjuree",
+      "file": "BaiJamjuree-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "kỹ thuật",
+        "phá cách"
+      ]
+    },
+    {
+      "family": "Oswald",
+      "dir": "oswald",
+      "file": "Oswald[wght].ttf",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "hẹp",
+        "tiêu đề",
+        "phá cách"
+      ]
+    },
+    {
+      "family": "Anton",
+      "dir": "anton",
+      "file": "Anton-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "đậm",
+        "poster"
+      ]
+    },
+    {
+      "family": "Big Shoulders Display",
+      "dir": "bigshouldersdisplay",
+      "file": "BigShouldersDisplay[wght].ttf",
+      "category": "display",
+      "tags": [
+        "phá cách",
+        "hẹp",
+        "poster",
+        "hiện đại"
+      ]
+    },
+    {
+      "family": "Black Han Sans",
+      "dir": "blackhansans",
+      "file": "BlackHanSans-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "đậm",
+        "tiêu đề",
+        "poster"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Do Hyeon",
+      "dir": "dohyeon",
+      "file": "DoHyeon-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "gọn",
+        "tiêu đề"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Jua",
+      "dir": "jua",
+      "file": "Jua-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "vui tươi",
+        "tròn",
+        "dễ thương"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Gaegu",
+      "dir": "gaegu",
+      "file": "Gaegu-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "ấm áp",
+        "tự nhiên"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Nanum Pen Script",
+      "dir": "nanumpenscript",
+      "file": "NanumPenScript-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "bút",
+        "nhẹ nhàng"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Gowun Batang",
+      "dir": "gowunbatang",
+      "file": "GowunBatang-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "cổ điển",
+        "tạp chí"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Gowun Dodum",
+      "dir": "gowundodum",
+      "file": "GowunDodum-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "thanh lịch",
+        "hiện đại"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Nanum Myeongjo",
+      "dir": "nanummyeongjo",
+      "file": "NanumMyeongjo-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "truyền thống",
+        "cổ điển"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Dongle",
+      "dir": "dongle",
+      "file": "Dongle-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "mềm mại",
+        "nhẹ",
+        "chữ tay"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "East Sea Dokdo",
+      "dir": "eastseadokdo",
+      "file": "EastSeaDokdo-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "đậm",
+        "cá tính",
+        "khắc"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Noto Sans KR",
+      "dir": "notosanskr",
+      "file": "NotoSansKR[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "nội dung",
+        "dễ đọc",
+        "đầy đủ ký tự"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Noto Serif KR",
+      "dir": "notoserifkr",
+      "file": "NotoSerifKR[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "trang trọng",
+        "nội dung",
+        "đầy đủ ký tự"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "HiMelody",
+      "dir": "himelody",
+      "file": "HiMelody-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "mềm mại",
+        "thiệp",
+        "cưới"
+      ],
+      "vietnamese": false,
+      "lang": "ko"
+    },
+    {
+      "family": "Playball",
+      "dir": "playball",
+      "file": "Playball-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "wedding",
+        "viết tay",
+        "thiệp",
+        "lãng mạn"
+      ]
+    },
+    {
+      "family": "Lobster",
+      "dir": "lobster",
+      "file": "Lobster-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "đậm",
+        "tiêu đề",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Pattaya",
+      "dir": "pattaya",
+      "file": "Pattaya-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "baby",
+        "vui tươi",
+        "dễ thương"
+      ]
+    },
+    {
+      "family": "Sriracha",
+      "dir": "sriracha",
+      "file": "Sriracha-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "baby",
+        "bút",
+        "viết tay",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Petemoss",
+      "dir": "petemoss",
+      "file": "Petemoss-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "ghi chú",
+        "nhẹ nhàng"
+      ]
+    },
+    {
+      "family": "Mali",
+      "dir": "mali",
+      "file": "Mali-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "baby",
+        "tròn",
+        "dễ thương"
+      ]
+    },
+    {
+      "family": "Baloo 2",
+      "dir": "baloo2",
+      "file": "Baloo2[wght].ttf",
+      "category": "display",
+      "tags": [
+        "baby",
+        "poster",
+        "vui tươi"
+      ]
+    },
+    {
+      "family": "Bungee",
+      "dir": "bungee",
+      "file": "Bungee-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "đậm",
+        "phá cách"
+      ]
+    },
+    {
+      "family": "Kanit",
+      "dir": "kanit",
+      "file": "Kanit-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "poster",
+        "hiện đại",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Oi",
+      "dir": "oi",
+      "file": "Oi-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "đậm",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Philosopher",
+      "dir": "philosopher",
+      "file": "Philosopher-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "wedding",
+        "thanh lịch",
+        "cổ điển"
+      ]
+    },
+    {
+      "family": "Barlow",
+      "dir": "barlow",
+      "file": "Barlow-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "nội dung",
+        "hiện đại",
+        "dễ đọc"
+      ]
+    },
+    {
+      "family": "Montserrat Alternates",
+      "dir": "montserratalternates",
+      "file": "MontserratAlternates-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "cách điệu",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Fraunces",
+      "dir": "fraunces",
+      "file": "Fraunces[SOFT,WONK,opsz,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "sang trọng",
+        "tương phản cao",
+        "album",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Lato",
+      "dir": "lato",
+      "file": "Lato-Regular.ttf",
+      "category": "sans",
+      "tags": [
+        "nhẹ nhàng",
+        "nội dung",
+        "sạch"
+      ]
+    },
+    {
+      "family": "Cinzel",
+      "dir": "cinzel",
+      "file": "Cinzel[wght].ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "tiêu đề",
+        "viết hoa"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Abril Fatface",
+      "dir": "abrilfatface",
+      "file": "AbrilFatface-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "tạp chí",
+        "đậm",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Bebas Neue",
+      "dir": "bebasneue",
+      "file": "BebasNeue-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "poster",
+        "sự kiện",
+        "chữ hoa"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Teko",
+      "dir": "teko",
+      "file": "Teko[wght].ttf",
+      "category": "display",
+      "tags": [
+        "mạnh mẽ",
+        "hẹp",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Archivo",
+      "dir": "archivo",
+      "file": "Archivo[wdth,wght].ttf",
+      "category": "sans",
+      "tags": [
+        "hiện đại",
+        "nội dung"
+      ]
+    },
+    {
+      "family": "Sacramento",
+      "dir": "sacramento",
+      "file": "Sacramento-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "chữ ký",
+        "mảnh",
+        "thanh lịch"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Bodoni Moda",
+      "dir": "bodonimoda",
+      "file": "BodoniModa[opsz,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "tạp chí",
+        "sang trọng"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Marcellus",
+      "dir": "marcellus",
+      "file": "Marcellus-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "viết hoa"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "DM Serif Display",
+      "dir": "dmserifdisplay",
+      "file": "DMSerifDisplay-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "tiêu đề",
+        "tương phản cao"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Viaoda Libre",
+      "dir": "viaodalibre",
+      "file": "ViaodaLibre-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "thanh lịch",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Instrument Serif",
+      "dir": "instrumentserif",
+      "file": "InstrumentSerif-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "tiêu đề",
+        "tương phản cao",
+        "poster"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Funnel Display",
+      "dir": "funneldisplay",
+      "file": "FunnelDisplay[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "poster",
+        "âm nhạc",
+        "thể thao"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "BioRhyme",
+      "dir": "biorhyme",
+      "file": "BioRhyme[wdth,wght].ttf",
+      "category": "serif",
+      "tags": [
+        "biểu cảm",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Parisienne",
+      "dir": "parisienne",
+      "file": "Parisienne-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "thanh lịch",
+        "thiệp cưới"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Jost",
+      "dir": "jost",
+      "file": "Jost[wght].ttf",
+      "category": "sans",
+      "tags": [
+        "hình học",
+        "hiện đại",
+        "nội dung"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Monoton",
+      "dir": "monoton",
+      "file": "Monoton-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "retro",
+        "nightclub",
+        "điện tử"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Caprasimo",
+      "dir": "caprasimo",
+      "file": "Caprasimo-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "retro",
+        "bo tròn",
+        "vui tươi"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Shrikhand",
+      "dir": "shrikhand",
+      "file": "Shrikhand-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "retro",
+        "vintage",
+        "script đậm"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Limelight",
+      "dir": "limelight",
+      "file": "Limelight-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "art deco",
+        "retro",
+        "sang trọng"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Righteous",
+      "dir": "righteous",
+      "file": "Righteous-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "đậm",
+        "tiêu đề",
+        "mạnh mẽ"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Metal Mania",
+      "dir": "metalmania",
+      "file": "MetalMania-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "grunge",
+        "rock",
+        "gồ ghề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Permanent Marker",
+      "dir": "permanentmarker",
+      "file": "PermanentMarker-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "marker",
+        "tiêu đề",
+        "poster"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Rock Salt",
+      "dir": "rocksalt",
+      "file": "RockSalt-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "khô",
+        "chữ lớn"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Yellowtail",
+      "dir": "yellowtail",
+      "file": "Yellowtail-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "retro",
+        "biển hiệu",
+        "vintage"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Satisfy",
+      "dir": "satisfy",
+      "file": "Satisfy-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "mềm",
+        "thiệp cưới"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    },
+    {
+      "family": "Nanum Brush Script",
+      "dir": "nanumbrushscript",
+      "file": "NanumBrushScript-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "nghệ thuật"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Caveat Brush",
+      "dir": "caveatbrush",
+      "file": "CaveatBrush-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "nhẹ nhàng"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Merienda",
+      "dir": "merienda",
+      "file": "Merienda[wght].ttf",
+      "category": "handwriting",
+      "tags": [
+        "brush",
+        "gọn"
+      ],
+      "vietnamese": true
+    },
+    {
+      "family": "Caveat",
+      "dir": "caveat",
+      "file": "Caveat[wght].ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "hiện đại"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Kalam",
+      "dir": "kalam",
+      "file": "Kalam-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "nhẹ"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Indie Flower",
+      "dir": "indieflower",
+      "file": "IndieFlower-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "thân thiện",
+        "vui tươi"
+      ],
+      "vietnamese": true
+    },
+    {
+      "family": "Kaushan Script",
+      "dir": "kaushanscript",
+      "file": "KaushanScript-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "brush",
+        "surf"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "League Script",
+      "dir": "leaguescript",
+      "file": "LeagueScript-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "trang trí",
+        "cổ điển",
+        "thiệp cưới"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Mr Dafoe",
+      "dir": "mrdafoe",
+      "file": "MrDafoe-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "sang trọng",
+        "nghệ thuật",
+        "album"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Cookie",
+      "dir": "cookie",
+      "file": "Cookie-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "vintage",
+        "quảng cáo",
+        "poster"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Leckerli One",
+      "dir": "leckerlione",
+      "file": "LeckerliOne-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "brush",
+        "đậm",
+        "tiêu đề"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Amatic SC",
+      "dir": "amaticsc",
+      "file": "AmaticSC-Regular.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "tiêu đề nhỏ",
+        "chữ phụ"
+      ],
+      "vietnamese": true
+    },
+    {
+      "family": "Tangerine",
+      "dir": "tangerine",
+      "file": "Tangerine-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thanh lịch",
+        "thiệp cưới",
+        "tên cô dâu chú rể"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Cardo",
+      "dir": "cardo",
+      "file": "Cardo-Regular.ttf",
+      "category": "serif",
+      "tags": [
+        "cổ điển",
+        "dễ đọc",
+        "nội dung"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Ma Shan Zheng",
+      "dir": "mashanzheng",
+      "file": "MaShanZheng-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thư pháp",
+        "brush",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "ZCOOL QingKe HuangYou",
+      "dir": "zcoolqingkehuangyou",
+      "file": "ZCOOLQingKeHuangYou-Regular.ttf",
+      "category": "display",
+      "tags": [
+        "brush",
+        "tiêu đề",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "Zhi Mang Xing",
+      "dir": "zhimangxing",
+      "file": "ZhiMangXing-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "thảo thư",
+        "nét bay",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "Long Cang",
+      "dir": "longcang",
+      "file": "LongCang-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "brush",
+        "chữ phụ",
+        "chữ Hán"
+      ],
+      "vietnamese": false,
+      "lang": "zh"
+    },
+    {
+      "family": "Oooh Baby",
+      "dir": "ooohbaby",
+      "file": "OoohBaby-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "viết tay",
+        "bút lông",
+        "mềm mại"
+      ]
+    },
+    {
+      "family": "Hurricane",
+      "dir": "hurricane",
+      "file": "Hurricane-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "nét cọ",
+        "mạnh mẽ",
+        "tiêu đề"
+      ]
+    },
+    {
+      "family": "Kristi",
+      "dir": "kristi",
+      "file": "Kristi-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "viết tay",
+        "thiệp cưới",
+        "mềm mại"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Niconne",
+      "dir": "niconne",
+      "file": "Niconne-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "cổ điển",
+        "thiệp cưới",
+        "nét mảnh"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Grand Hotel",
+      "dir": "grandhotel",
+      "file": "GrandHotel-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "retro",
+        "poster",
+        "nghệ thuật"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Meddon",
+      "dir": "meddon",
+      "file": "Meddon.ttf",
+      "category": "handwriting",
+      "tags": [
+        "viết tay",
+        "tự nhiên",
+        "album"
+      ],
+      "vietnamese": false
+    },
+    {
+      "family": "Rochester",
+      "dir": "rochester",
+      "file": "Rochester-Regular.ttf",
+      "category": "script",
+      "tags": [
+        "viết tay",
+        "cổ điển",
+        "thiệp cưới"
+      ],
+      "vietnamese": false,
+      "source": "https://raw.githubusercontent.com/google/fonts/main/apache/"
+    }
+  ]
+}

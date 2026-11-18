@@ -16,12 +16,14 @@ import fs from 'fs'
 import path from 'path'
 const Database = require('better-sqlite3')
 import bootstrapDatabase from './bootstrap'
+import { migrateTinix } from '../tinix/db/migrate' // [TINIX]
+import { migrateCanvasSizes } from '../tinix/canvasSizes'
 
 let instance: any = null
 
 export function getDB(): any {
   if (!instance) {
-    throw new Error('数据库尚未初始化，请先调用 initDB()')
+    throw new Error('Cơ sở dữ liệu chưa được khởi tạo, hãy gọi initDB() trước')
   }
   return instance
 }
@@ -37,6 +39,8 @@ export function initDB(): void {
   instance.pragma('journal_mode = WAL')
   createTables(instance)
   bootstrapDatabase(instance)
+  migrateTinix(instance) // [TINIX] font metadata columns + ai_jobs table
+  migrateCanvasSizes(instance)
 }
 
 function createTables(db: any): void {

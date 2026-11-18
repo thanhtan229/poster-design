@@ -9,6 +9,7 @@
 import { useCanvasStore, useControlStore } from '@/store'
 import { TWidgetStore } from '..'
 import { updateGroupSize } from '.'
+import { resizeLayoutToFit } from '@/utils/tinix/resize-layout'
 
 export type TInitResize = {
   startX: number
@@ -75,7 +76,7 @@ export function dResize(store: TWidgetStore, { x, y, dirs }: TdResizePayload) {
     const dir = dirs[i]
 
     switch (dir) {
-      case 'top':
+      case 'top': {
         const t = widgetXY.y + Math.floor((dy * 100) / canvasStore.dZoom)
         top = Math.max(t, 0)
         top = Math.min(widgetXY.y + resizeWH.height - target.record.minHeight, top)
@@ -83,13 +84,14 @@ export function dResize(store: TWidgetStore, { x, y, dirs }: TdResizePayload) {
         target.height = Math.max(target.height, target.record.minHeight)
         target.top = top
         break
+      }
       case 'bottom':
         top = Math.floor((dy * 100) / canvasStore.dZoom)
         target.height = resizeWH.height + top
         target.height = Math.max(target.height, target.record.minHeight)
         target.height = Math.min(target.height, page.height - target.top)
         break
-      case 'left':
+      case 'left': {
         const tLeft = widgetXY.x + Math.floor((dx * 100) / canvasStore.dZoom)
         left = Math.max(tLeft, 0)
         target.width += target.left - left
@@ -97,6 +99,7 @@ export function dResize(store: TWidgetStore, { x, y, dirs }: TdResizePayload) {
         left = Math.min(widgetXY.x + resizeWH.width - target.record.minWidth, left)
         target.left = left
         break
+      }
       case 'right':
         left = Math.floor((dx * 100) / canvasStore.dZoom)
         target.width = resizeWH.width + left
@@ -123,25 +126,6 @@ export function resize(store: TWidgetStore, size: TSize) {
 export function autoResizeAll(store: TWidgetStore, lastPageSize: TSize) {
   if (!lastPageSize) return
   const canvasStore = useCanvasStore()
-  const { width: lastWidth, height: lastHeight } = lastPageSize
-  const { width: pageWidth, height: pageHeight } = canvasStore.dPage
-  const originWHRatio = lastWidth / lastHeight // 原始比例
-  const WHRatio = pageWidth / pageHeight // 当前比例
-  const changeFn = originWHRatio > WHRatio ? 'max' : 'min'
-  const degree = [pageWidth / lastWidth, pageHeight / lastHeight]
-  const ratio = Math[changeFn](...degree)
-  const pageDiff = (pageWidth - lastWidth) / 2
-  for (const widget of store.dWidgets) {
-    const originWidth = widget.width
-    let diff = 0
-    if (widget.type === 'w-text') {
-      widget.fontSize && (widget.fontSize *= ratio)
-    } else if (widget.type !== 'w-group') {
-      widget.width *= ratio
-      widget.height *= ratio
-    } else widget.height *= ratio
-    diff = (originWidth - widget.width) / 2
-    widget.left = widget.left + diff + pageDiff
-    widget.top *= degree[1]
-  }
+  resizeLayoutToFit(store.dWidgets, lastPageSize, canvasStore.dPage)
+  canvasStore.reChangeCanvas()
 }

@@ -30,7 +30,7 @@
     </el-dropdown>
     <span v-else style="width: 1rem"></span>
 
-    <el-input v-model="state.searchValue" size="large" placeholder="输入关键词搜索" class="input-with-select">
+    <el-input v-model="state.searchValue" size="large" :placeholder="$t('editor.panel.searchPlaceholder')" class="input-with-select">
       <template #append>
         <el-button><i class="iconfont icon-search"></i></el-button>
       </template>
@@ -38,9 +38,9 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { reactive, toRefs, watch } from 'vue'
+import i18n from '@/languages'
+import { reactive, watch } from 'vue'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
-import { useRoute } from 'vue-router'
 import api from '@/api'
 
 type TProps = {
@@ -65,7 +65,6 @@ const props = defineProps<TProps>()
 
 const emit = defineEmits<TEmits>()
 
-const route = useRoute()
 const state = reactive<TState>({
   searchValue: '',
   materialCates: [],
@@ -73,7 +72,7 @@ const state = reactive<TState>({
 })
 
 if (props.type != 'none') {
-  state.materialCates = [{ id: 0, name: '全部模板' }]
+  state.materialCates = [{ id: 0, name: i18n.global.t('editor.panel.allTemplates') }]
   api.home.getTemplateCategories(0).then((res: any) => {
     const list = Array.isArray(res?.list) ? res.list : []
     state.materialCates = state.materialCates.concat(list)

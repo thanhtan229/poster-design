@@ -6,7 +6,11 @@
  * @LastEditTime: 2024-12-28 14:12:33
 -->
 <template>
-  <div id="main">
+  <div class="board-shell">
+    <TemplatePhotoStatus v-if="needTools" />
+    <div v-if="needTools && printSelection.active && printSelection.clean" class="print-preview-banner">Xem nền sạch · các cụm cắt nổi tạm ẩn <button @click="printSelection.clean=false">Xem thành phẩm</button></div>
+    <div v-if="needTools" id="tinix-ruler-toolbar" />
+    <div id="main">
     <div id="page-design" ref="page_design" :style="{ paddingTop: dPaddingTop + 'px', minWidth:  (dPage.width * dZoom) / 100 + (padding ?? dPresetPadding) * 2 + 'px' }">
       <div
         id="out-page"
@@ -42,8 +46,10 @@
             @drop="drop($event)"
             @mouseup="drop($event)"
           >
+            <CanvasRuler v-if="needTools" :page="dPage" :zoom="dZoom" />
+            <div class="canvas-content-clip">
             <!-- <grid-size /> -->
-            <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools }, { 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid">
+            <component :is="layer.type" v-for="layer in getlayers()" :id="layer.uuid" :key="layer.uuid" :class="[{ 'layer':needTools, 'layer-hover': layer.uuid === dHoverUuid || dActiveElement?.parent === layer.uuid, 'layer-no-hover': dActiveElement?.uuid === layer.uuid }]" :data-title="layer.type" :params="layer" :parent="dPage" :data-type="layer.type" :data-uuid="layer.uuid" :style="layer.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(layer.uuid))) ? { display: 'none' } : undefined"> <!-- [TINIX] lớp ẩn -->
               <template v-if="layer.isContainer">
                 <!-- :class="{
                   layer: true,
@@ -51,9 +57,14 @@
                   'layer-no-hover': dActiveElement.uuid !== widget.parent && dActiveElement.parent !== widget.parent,
                   'layer-hover': widget.uuid === dHoverUuid,
                 }" -->
-                <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools }, { 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" />
+                <component :is="widget.type" v-for="widget in getChilds(layer.uuid)" :key="widget.uuid" child :class="[{ 'layer':needTools, 'layer-no-hover': dActiveElement?.uuid !== widget.parent && dActiveElement?.parent !== widget.parent }]" :data-title="widget.type" :params="widget" :parent="layer" :data-type="widget.type" :data-uuid="widget.uuid" :style="widget.hidden || (needTools && printSelection.active && printSelection.clean && raisedPrintIds.has(String(widget.uuid))) ? { display: 'none' } : undefined" />
               </template>
             </component>
+            </div>
+            <PhotoEditOverlay v-if="needTools" /> <!-- [TINIX] chỉnh ảnh trong khung -->
+            <div v-if="needTools && printSelection.active" class="print-unit-overlays" aria-hidden="true">
+              <div v-for="unit in highlightedPrintUnits" :key="unit.id" class="print-unit-highlight" :style="{left:unit.bounds.x+'px',top:unit.bounds.y+'px',width:unit.bounds.width+'px',height:unit.bounds.height+'px',borderWidth:Math.max(2,200/dZoom)+'px'}"><span :style="{fontSize:Math.max(12,1300/dZoom)+'px'}">{{ unit.name }} · {{ unit.raised?'Cắt nổi':'In nền' }}</span></div>
+            </div>
 
             <!-- <ref-line v-if="dSelectWidgets.length === 0" /> -->
             <!-- <size-control v-if="dSelectWidgets.length === 0" /> -->
@@ -62,22 +73,28 @@
       </div>
     </div>
     <slot name="bottom" />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue'
+import {printSelection} from '@/utils/tinix/print-selection'
+import {printUnits} from '@/utils/tinix/collage-print'
+import TemplatePhotoStatus from './comps/TemplatePhotoStatus.vue'
+import PhotoEditOverlay from '@/components/modules/widgets/wImage/PhotoEditOverlay.vue' // [TINIX]
+import { computed, onMounted, watch } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
-import PointImg from '@/utils/plugins/pointImg'
+import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
+import { placePhotos } from '@/utils/tinix/photo-place' // [TINIX]
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
-import { debounce } from 'throttle-debounce'
-import { move, moveInit } from '@/mixins/move'
+import { moveInit } from '@/mixins/move'
 import { useCanvasStore, useControlStore, useWidgetStore } from '@/store'
 import { storeToRefs } from 'pinia'
 import { TPageState } from '@/store/design/canvas/d'
 import resizePage from './comps/resize.vue'
 import watermark from './comps/pageWatermark.vue'
+import CanvasRuler from './comps/CanvasRuler.vue'
 import { TdWidgetData } from '@/store/design/widget'
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -108,14 +125,18 @@ const props = defineProps<TProps>()
 
 const needTools = computed(() => route.name !== 'Draw' && route.name !== 'Html')
 const { dPage: curDPage } = storeToRefs(useCanvasStore())
-const { dZoom: curZoom, dPresetPadding, dPaddingTop, dScreen } = storeToRefs(canvasStore)
+const { dZoom: curZoom, dPresetPadding, dPaddingTop } = storeToRefs(canvasStore)
 const { dDraging, showRotatable, dAltDown, dSpaceDown } = storeToRefs(controlStore)
-const { dWidgets: curWidgets, dActiveElement, dSelectWidgets, dHoverUuid } = storeToRefs(widgetStore)
+const { dWidgets: curWidgets, dActiveElement, dHoverUuid } = storeToRefs(widgetStore)
 
 const dPage = computed(() => props.renderDPage ?? curDPage.value)
 const dWidgets = computed(() => props.renderDWdigets ?? curWidgets.value)
 const dZoom = computed(() => props.zoom ?? curZoom.value)
 
+const printUnitList=computed(()=>printUnits(dWidgets.value))
+const raisedPrintIds=computed(()=>new Set(printUnitList.value.filter(u=>u.raised).flatMap(u=>u.ids)))
+const highlightedPrintUnits=computed(()=>printUnitList.value.filter(u=>printSelection.selected.includes(u.id)))
+watch(()=>dActiveElement.value?.uuid,id=>{if(!printSelection.active||!id||id==='-1')return;const unit=printUnitList.value.find(u=>u.ids.includes(String(id)));if(unit)printSelection.selected=[unit.id]})
 let _dropIn: string | null = ''
 let _srcCache: string | null = ''
 
@@ -124,7 +145,6 @@ onMounted(() => {
   const pageDesignEl = document.getElementById('page-design')
   if (!pageDesignEl) return
   pageDesignEl.addEventListener('mousedown', handleSelection, false)
-  // pageDesignEl.addEventListener('mousemove', debounce(100, false, handleMouseMove), false)
   // 绑定空格事件
   const scrollContainer: any = document.querySelector('#main')
   const dragContainer: any = pageDesignEl
@@ -146,7 +166,7 @@ onMounted(() => {
       scrollContainer.scrollLeft = mouseDownScrollPosition.scrollLeft + dragMoveDiff.x
       scrollContainer.scrollTop = mouseDownScrollPosition.scrollTop + dragMoveDiff.y
     }
-    document.onmouseup = (e) => {
+    document.onmouseup = (_e) => {
       dragContainer.onmousemove = null
       document.onmouseup = null
     }
@@ -226,6 +246,30 @@ async function drop(e: MouseEvent) {
   if (!type) {
     return
   }
+  // A single photo dropped on a marked slot replaces that slot before auto-layout handling.
+  if (type === 'image' && item?.value && (!Array.isArray(item.value.group) || item.value.group.length === 1)) {
+    const canvas = document.getElementById(props.pageDesignCanvasId)
+    const bounds = canvas?.getBoundingClientRect()
+    const inCanvas = bounds && e.clientX >= bounds.left && e.clientX <= bounds.right && e.clientY >= bounds.top && e.clientY <= bounds.bottom
+    const slot = inCanvas && [...dWidgets.value].reverse().find((w: any) => {
+      if (w.type !== 'w-image' || !w.slot || w.linkedPhotoId || w.hidden || w.lock) return false
+      const r = document.getElementById(w.uuid)?.getBoundingClientRect()
+      return r && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+    })
+    if (slot) {
+      const photo = item.value.group?.[0] || item.value
+      applyImageSource(slot, photo)
+      Object.assign(slot, { fit: 'cover', cropX: 50, cropY: 50, zoom: 1, transform: '', isNinePatch: false })
+      widgetStore.updateDWidgets()
+      widgetStore.selectWidget({ uuid: slot.uuid })
+      return
+    }
+  }
+  // [TINIX] kéo nhiều ảnh (hoặc bật "Tự áp dụng mẫu") từ dải ảnh: đặt cả lượt ảnh (xếp lưới / áp dụng mẫu), không đặt theo vị trí thả
+  if (type === 'image' && item && item.value && Array.isArray(item.value.group) && item.value.group.length) {
+    await placePhotos(item.value.group, !!item.value.auto)
+    return
+  }
   // 处理数据
   setting = await setWidgetData(type, item, setting)
   // 绝对坐标
@@ -277,7 +321,7 @@ async function drop(e: MouseEvent) {
 
       const widget = dWidgets.value.find((item: { uuid: string }) => item.uuid === uuid)
       if (!widget) return
-      widget.imgUrl = item.value.url
+      applyImageSource(widget, item.value) // [TINIX] thả ảnh vào khung/mask: giữ bản gốc cho lúc xuất
       // if (e.target.className.baseVal) {
       //   !widget.imgs && (widget.imgs = {})
       //   widget.imgs[`${e.target.className.baseVal}`] = item.value.url
@@ -286,7 +330,7 @@ async function drop(e: MouseEvent) {
       if (dropIn) {
         const widget = dWidgets.value.find((item: { uuid: string }) => item.uuid == dropIn)
         if (!widget) return
-        widget.imgUrl = item.value.url
+        applyImageSource(widget, item.value) // [TINIX]
         // store.commit('setShowMoveable', true) // 恢复选择
         controlStore.setShowMoveable(true) // 恢复选择
       } else {
@@ -315,23 +359,6 @@ function getScreen() {
   //   width: pageDesignEl.offsetWidth,
   //   height: pageDesignEl.offsetHeight,
   // })
-}
-
-async function handleMouseMove(e: MouseEvent) {
-  if (!e || !e.target) return
-  const imageTarget = e.target as HTMLImageElement
-  const pImg = new PointImg(imageTarget)
-  const { rgba } = pImg.getColorXY(e.offsetX, e.offsetY)
-  if (rgba && rgba === 'rgba(0,0,0,0)') {
-    console.log('解析点位颜色: ', rgba)
-    let target = await getTarget(imageTarget)
-    if (!target) return
-    target.style.pointerEvents = 'none'
-    setTimeout(() => {
-      if (!target) return
-      target.style.pointerEvents = 'auto'
-    }, 300)
-  }
 }
 
 async function handleSelection(e: MouseEvent) {
@@ -399,7 +426,13 @@ function getChilds(uuid: string) {
 </script>
 
 <style lang="less" scoped>
+.print-preview-banner{padding:8px;background:#fff1c7;color:#654500;font-size:13px}.print-unit-overlays{position:absolute;inset:0;pointer-events:none;z-index:10000}.print-unit-highlight{position:absolute;border:3px dashed #0879f5;box-sizing:border-box;background:rgba(20,120,255,.05)}.print-unit-highlight span{position:absolute;bottom:100%;left:0;color:white;background:#086dcc;padding:3px 8px;white-space:nowrap}
+
+.board-shell { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+#tinix-ruler-toolbar { flex: none; min-height: 42px; background: #fff; border-bottom: 1px solid #ddd; }
 #main {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   position: relative;
 }
@@ -414,6 +447,7 @@ function getChilds(uuid: string) {
     // padding: 60px;
     position: relative;
     .design-canvas {
+      z-index: 11;
       // 解决拖拽残影问题
       outline: 1px solid transparent;
       // transition: all 0.3s;
@@ -431,5 +465,10 @@ function getChilds(uuid: string) {
     //   display: none; /* Chrome Safari */
     // }
   }
+}
+.canvas-content-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 </style>

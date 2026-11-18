@@ -25,7 +25,7 @@ export const change2Hex = (color: string) => {
   let _a = color.substring(7, 9)
   if (reVal.indexOf('#') === -1) {
     a = Number(reVal.split(',')[3])
-    hex = RGB2Hex(...reVal.split(','))
+    hex = (RGB2Hex as any)(...reVal.split(','))
     _a = Math.round((a as number) * 255).toString(16)
     if (_a.length === 1) _a = '0' + _a
   }
@@ -33,10 +33,10 @@ export const change2Hex = (color: string) => {
   return hex + (_a === 'ff' ? '' : _a)
 }
 
-export const RGB2HSL = (r: number, g: number, b: number) => {
-  r /= 255
-  g /= 255
-  b /= 255
+export const RGB2HSL = (red: number, green: number, blue: number) => {
+  const r = red / 255
+  const g = green / 255
+  const b = blue / 255
 
   const minVal = Math.min(r, g, b)
   const maxVal = Math.max(r, g, b)
@@ -73,10 +73,10 @@ export const RGB2HSL = (r: number, g: number, b: number) => {
 
 export const RGBA2HSLA = (r: number, g: number, b: number, a = 1) => [...RGB2HSL(r, g, b), a]
 
-export function HSL2RGB(h: number, s: number, l: number) {
-  h = (h / 360) * 6
-  s /= 100
-  l /= 100
+export function HSL2RGB(hue: number, sat: number, light: number) {
+  const h = (hue / 360) * 6
+  const s = sat / 100
+  const l = light / 100
 
   const i = Math.floor(h)
 
@@ -105,8 +105,8 @@ export const HSLA2HexA = (h: number, s: number, l: number, a = 1) => {
   return `${hex}${a === 0 ? '00' : Math.round(a * 255).toString(16)}`
 }
 
-export const hex2RGB = (hex: string) => {
-  hex = hex.slice(0, 7)
+export const hex2RGB = (hexColor: string) => {
+  const hex = hexColor.slice(0, 7)
 
   let r = 0
   let g = 0

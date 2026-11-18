@@ -77,7 +77,6 @@ const emit = defineEmits<TEmits>()
 
 const inputBorder = ref<boolean>(false)
 const tagText = ref<string | number>('')
-const showEdit = ref<boolean>(false)
 
 watch(
   () => props.modelValue,
@@ -114,10 +113,10 @@ function updateValue(value: string | number) {
 }
 
 function up() {
-  updateValue(parseInt(`${props.modelValue}` ?? '0', 10) + props.step)
+  updateValue(parseInt(`${props.modelValue ?? '0'}`, 10) + props.step)
 }
 function down() {
-  let value = parseInt(`${props.modelValue}` ?? '0', 10) - props.step
+  let value = parseInt(`${props.modelValue ?? '0'}`, 10) - props.step
   updateValue(value)
 }
 

@@ -14,15 +14,16 @@
  * @LastEditTime: 2026-09-01 20:18:48
 -->
 <template>
-  <el-button v-show="isDone" type="primary" plain @click="prepare"><b>上传模板</b></el-button>
+  <el-button v-show="isDone" type="primary" plain @click="prepare"><b>{{ $t('editor.upload.uploadTemplate') }}</b></el-button>
   <!-- 生成图片组件 -->
   <SaveImage ref="canvasImage" />
 </template>
 
 <script lang="ts" setup>
+import i18n from '@/languages'
 import api from '@/api'
 import * as adminApi from '@/api/admin'
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useNotification from '@/common/methods/notification'
 import SaveImage from '@/components/business/save-download/CreateCover.vue'
@@ -49,16 +50,10 @@ type TEmits = {
   (event: 'update:modelValue', data: string): void
 }
 
-type TState = {
-  stateBollean: false
-  title: ''
-  loading: false
-}
-
 // const { dWidgets } = useSetupMapGetters(['dWidgets'])
 const { dPage } = storeToRefs(useCanvasStore())
 
-const props = defineProps<TProps>()
+defineProps<TProps>()
 const emit = defineEmits<TEmits>()
 
 const route = useRoute()
@@ -69,11 +64,6 @@ const controlStore = useControlStore()
 const { dWidgets } = storeToRefs(widgetStore)
 
 const canvasImage = ref<typeof SaveImage | null>(null)
-const state = reactive<TState>({
-  stateBollean: false,
-  title: '',
-  loading: false,
-})
 
 useFontStore.init() // 初始化加载字体
 
@@ -100,7 +90,7 @@ async function prepare() {
     }
     // TIP：上传组件必须将所有图层组合成组
     if (!dWidgets.value.some((x: Record<string, any>) => x.type === 'w-group')) {
-      alert('请将所有图层组合成组再提交上传')
+      alert(i18n.global.t('editor.upload.groupAllLayers'))
       return
     }
   }
@@ -111,7 +101,7 @@ async function prepare() {
   page = dPage.value
 
   if (page.backgroundImage) {
-    emit('change', { downloadPercent: 1, downloadText: '正在准备上传', downloadMsg: '请等待..' })
+    emit('change', { downloadPercent: 1, downloadText: i18n.global.t('editor.upload.preparing'), downloadMsg: i18n.global.t('editor.upload.pleaseWait') })
     page.backgroundImage = await uploadTemplateImage(page.backgroundImage)
   }
 
@@ -133,7 +123,7 @@ async function uploadImgs() {
     addition += item.imgUrl?.length || 0
     let downloadPercent: number | null = (addition / lenCount) * 100
     downloadPercent >= 100 && (downloadPercent = null)
-    emit('change', { downloadPercent, downloadText: '上传资源中', downloadMsg: `已完成：${lens - queue.length} / ${lens}` })
+    emit('change', { downloadPercent, downloadText: i18n.global.t('editor.upload.uploadingAssets'), downloadMsg: `${i18n.global.t('editor.upload.completed')}: ${lens - queue.length} / ${lens}` })
     item.imgUrl = url
     uploadImgs()
   } else {
@@ -150,26 +140,39 @@ async function uploadTemplateImage(source: string): Promise<string> {
   const file = new File([blob], `template-${Date.now()}.${extension}`, { type: blob.type || 'image/png' })
   const result: any = await api.material.upload({ file, folder: 'template' }, () => {})
   const url = result?.url || result?.result?.url
-  if (!url) throw new Error('本地图片上传失败：响应缺少地址')
+  if (!url) throw new Error(i18n.global.t('editor.upload.localUploadFailed'))
   return url
 }
 
 const uploadTemplate = async () => {
-  emit('change', { downloadPercent: 95, downloadText: '正在处理封面', downloadMsg: '即将完成，请稍等...' })
+  emit('change', { downloadPercent: 95, downloadText: i18n.global.t('editor.upload.processingCover'), downloadMsg: i18n.global.t('editor.upload.almostDone') })
   // const cover = await draw()
   const data = Number(type) == 1 ? JSON.stringify(widgets) : JSON.stringify({ page, widgets })
   try {
-    const { id } = await adminApi.saveTemplate({ title: '自设计模板', type, data, width: page.width, height: page.height })
-    useNotification('保存成功', '')
+    const { id } = await adminApi.saveTemplate({ title: i18n.global.t('editor.upload.ownTemplate'), type: type as string, data, width: page.width, height: page.height })
+    useNotification(i18n.global.t('editor.header.saveSuccess'), '')
     router.push({ path: '/psd', query: { id }, replace: true })
   } catch (err: any) {
-    useNotification('保存失败', err?.msg || err?.message || '请稍后再试', { type: 'error' })
+    useNotification(i18n.global.t('editor.header.saveFailed'), err?.msg || err?.message || i18n.global.t('editor.upload.tryLater'), { type: 'error' })
   }
-  emit('change', { downloadPercent: 99.99, downloadText: '上传完成', cancelText: '' }) // 关闭弹窗
+  emit('change', { downloadPercent: 99.99, downloadText: i18n.global.t('editor.upload.uploadDone'), cancelText: '' }) // 关闭弹窗
+}
+
+// [TINIX] Lưu trang hiện tại thành mẫu (loại 0) mà không điều hướng/hiện thông báo: dùng cho nhập nhiều PSD cùng lúc (Psd.vue).
+// Tải ảnh nền + ảnh trong các lớp lên server rồi gọi saveTemplate; trả về id mẫu. Không sửa dữ liệu trong store.
+async function saveAsTemplate(title: string, cate = ''): Promise<number> {
+  controlStore.setShowMoveable(false)
+  const pg: Record<string, any> = JSON.parse(JSON.stringify(dPage.value))
+  const ws: any[] = JSON.parse(JSON.stringify(dWidgets.value))
+  if (pg.backgroundImage) pg.backgroundImage = await uploadTemplateImage(pg.backgroundImage)
+  for (const w of ws) if (w.type === 'w-image' && w.imgUrl) w.imgUrl = await uploadTemplateImage(w.imgUrl)
+  const { id } = await adminApi.saveTemplate({ title, type: 0, data: JSON.stringify({ page: pg, widgets: ws }), width: pg.width, height: pg.height, cate })
+  return id
 }
 
 defineExpose({
   prepare,
+  saveAsTemplate,
 })
 </script>
 

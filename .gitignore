@@ -4,8 +4,7 @@ node_modules
 config.json
 /.vite
 yarn.lock
-AGENTS.md
-CLAUDE.md
+# [TINIX] CLAUDE.md is tracked in this fork
 /docs
 .playwright-mcp
 
@@ -27,3 +26,12 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
+
+# [TINIX] local run logs
+.runtime/
+
+# [TINIX] backups from npm run tinix:backup
+/backups/
+
+# [TINIX] PSD files for local import testing
+/psd-test/

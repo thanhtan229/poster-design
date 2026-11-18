@@ -53,16 +53,15 @@ export default defineConfig({
       },
     },
   },
-  define: {
-    'process.env': process.env,
-  },
   server: {
+    // [TINIX] không theo dõi thư mục PSD thử nghiệm: file bị khóa khi chép làm Vite watcher dừng server (EBUSY)
+    watch: { ignored: ['**/psd-test/**', '**/service/**', '**/backups/**'] },
     hmr: { overlay: false },
     host: '127.0.0.1',
     // 上传/生成文件 URL 以相对路径 /static 返回，开发环境下转发到后端服务
     proxy: {
       '/static': {
-        target: 'http://127.0.0.1:7001',
+        target: process.env.VITE_API_URL || 'http://127.0.0.1:7001',
         changeOrigin: true,
       },
     },

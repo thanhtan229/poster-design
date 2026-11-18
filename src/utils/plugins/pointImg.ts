@@ -52,7 +52,7 @@ export default class PointImg {
         color['rgba'] = 'rgba(' + arr.join(',') + ',' + last + ')'
         color['#'] = '#' + first + second + third
       }
-    } catch (error) {
+    } catch {
       // console.log('此为解析图片点位异常')
     }
 

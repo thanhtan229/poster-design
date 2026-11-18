@@ -1,12 +1,13 @@
 <template>
-  <div id="style-panel">
+  <div id="style-panel" :class="{ 'tinix-resizing': panelDragging }" :style="{ width: panelWidth + 'px' }"><!-- [TINIX] độ rộng kéo chỉnh được -->
+    <div :class="['tinix-resizer', { on: panelDragging }]" :title="$t('tinix.ui.panelResize.keo_chinh')" @mousedown="onPanelDown" @dblclick="resetPanel" />
     <div class="style-tab">
-      <span :class="['tab', { 'active-tab': activeTab === 0 }]" @click="activeTab = 0">设置</span>
-      <span :class="['tab', { 'active-tab': activeTab === 1 }]" @click="activeTab = 1">图层</span>
+      <span :class="['tab', { 'active-tab': activeTab === 0 }]" @click="activeTab = 0">{{ $t('editor.panel.settings') }}</span>
+      <span :class="['tab', { 'active-tab': activeTab === 1 }]" @click="activeTab = 1">{{ $t('editor.panel.layers') }}</span>
     </div>
     <div v-show="activeTab === 0" class="style-wrap">
       <div v-show="showGroupCombined" style="padding: 2rem 0">
-        <el-button plain type="primary" class="gounp__btn" @click="handleCombine">成组</el-button>
+        <el-button plain type="primary" class="gounp__btn" @click="handleCombine">{{ $t('editor.panel.group') }}</el-button>
         <icon-item-select label="" :data="iconList" @finish="alignAction" />
       </div>
       <component :is="dActiveElement?.type + '-style'" v-show="!showGroupCombined" v-if="dActiveElement?.type" />
@@ -23,16 +24,17 @@
 import alignIconList, { AlignListData } from '@/assets/data/AlignListData'
 import iconItemSelect, { TIconItemSelectData } from '../settings/iconItemSelect.vue'
 import { ref, watch } from 'vue';
+import { usePanelResize } from '@/utils/tinix/panel-resize' // [TINIX]
 // import { useSetupMapGetters } from '@/common/hooks/mapGetters';
-import { useControlStore, useGroupStore, useHistoryStore, useWidgetStore } from '@/store';
+import { useControlStore, useGroupStore, useWidgetStore } from '@/store';
 import { storeToRefs } from 'pinia';
 import { TdWidgetData } from '@/store/design/widget';
 import type { TUpdateAlignData } from '@/store/design/widget/actions/align'
 
 const widgetStore = useWidgetStore()
+const { width: panelWidth, dragging: panelDragging, onDown: onPanelDown, reset: resetPanel } = usePanelResize({ key: 'right', def: 280, min: 240, max: 520, side: 'right' }) // [TINIX]
 const controlStore = useControlStore()
 const groupStore = useGroupStore()
-const historyStore = useHistoryStore()
 
 const activeTab = ref(0)
 const iconList = ref<AlignListData[]>(alignIconList)
@@ -94,6 +96,9 @@ function layerChange(newLayer: TdWidgetData[]) {
   height: 100%;
   position: relative;
   width: 280px;
+  &.tinix-resizing {
+    transition: none;
+  }
   .style-tab {
     box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 0.1);
     display: flex;
@@ -128,6 +133,23 @@ function layerChange(newLayer: TdWidgetData[]) {
     overflow: auto;
     width: 100%;
   }
+}
+
+// [TINIX] thanh kéo độ rộng panel
+.tinix-resizer {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 6px;
+  height: 100%;
+  z-index: 98;
+  cursor: ew-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+.tinix-resizer:hover,
+.tinix-resizer.on {
+  background: rgba(63, 106, 247, 0.35);
 }
 
 .gounp {

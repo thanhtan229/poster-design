@@ -15,17 +15,12 @@ import fetch from '@/utils/axios'
 import _config from '@/config'
 const prefix = _config.API_URL + '/'
 const API = {
-  register: prefix + 'api/user/register',
-  login: prefix + 'api/user/login',
-  changePassword: prefix + 'api/user/changePassword',
   templates: prefix + 'api/admin/templates',
   deleteTemplate: prefix + 'api/admin/template/delete',
   removeTemplate: prefix + 'api/admin/template/remove',
   saveTemplate: prefix + 'api/admin/template/save',
   updateTemplateCategory: prefix + 'api/admin/template/category/update',
   userImages: prefix + 'api/admin/user/images',
-  users: prefix + 'api/admin/users',
-  deleteUser: prefix + 'api/admin/user/delete',
   deleteUserImage: prefix + 'api/admin/user/image/delete',
   designs: prefix + 'api/admin/designs',
   deleteDesign: prefix + 'api/admin/design/delete',
@@ -42,20 +37,20 @@ const API = {
   addTemplateCategory: prefix + 'api/admin/template/category/add',
   deleteTemplateCategory: prefix + 'api/admin/template/category/delete',
   renameTemplateCategory: prefix + 'api/admin/template/category/rename',
+  reorderTemplateCategories: prefix + 'api/admin/template/category/reorder', // [TINIX] nhóm mẫu
+  setTemplateGroups: prefix + 'api/admin/template/groups/set',
+  bulkTemplateGroups: prefix + 'api/admin/template/groups/bulk',
   fonts: prefix + 'api/admin/fonts',
   addFont: prefix + 'api/admin/font/add',
   updateFont: prefix + 'api/admin/font/update',
   deleteFont: prefix + 'api/admin/font/delete',
+  fontPreviews: prefix + 'api/admin/fonts/previews', // [TINIX]
   aiSettings: prefix + 'api/admin/ai/settings',
   aiTest: prefix + 'api/admin/ai/test',
 }
 
-export const register = (data: { account: string; password: string }) => fetch<{ token: string }>(API.register, data, 'post')
 
-export const login = (data: { account: string; password: string }) => fetch<{ token: string }>(API.login, data, 'post')
 
-/** 修改密码：需登录，校验原密码后更新 */
-export const changePassword = (data: { oldPassword: string; newPassword: string }) => fetch(API.changePassword, data, 'post')
 
 export const getTemplates = (params: Type.Object = {}) => fetch<{ list: any[]; total: number }>(API.templates, params)
 
@@ -78,16 +73,8 @@ export const getUserImages = (params: Type.Object = {}) => fetch<{ list: any[]; 
 
 export const deleteUserImage = (id: number) => fetch(API.deleteUserImage, { id }, 'post')
 
-export type TAdminUserItem = {
-  id: number
-  account: string
-  role: number
-  created_at: string
-}
 
-export const getUsers = (params: Type.Object = {}) => fetch<{ list: TAdminUserItem[]; total: number }>(API.users, params)
 
-export const deleteUser = (id: number) => fetch(API.deleteUser, { id }, 'post')
 export type TAdminDesignItem = { id: number; user_id: number; account: string; title: string; cover: string; width: number; height: number; created_at: string; updated_at: string }
 export const getDesigns = (params: Type.Object = {}) => fetch<{ list: TAdminDesignItem[]; total: number }>(API.designs, params)
 export const deleteDesign = (id: number) => fetch(API.deleteDesign, { id }, 'post')
@@ -103,8 +90,13 @@ export const addCategory = (type: 'materials' | 'photos', name: string) => fetch
 export const renameCategory = (type: 'materials' | 'photos', cate: string, name: string) => fetch(API.renameCategory, { type, cate, name }, 'post')
 export const getTemplateCategories = (type: 0 | 1 = 0, params: Type.Object = {}) => fetch<{ list: any[]; total: number }>(API.templateCategories, { type, ...params })
 export const addTemplateCategory = (data: { name: string; type: 0 | 1 }) => fetch(API.addTemplateCategory, data, 'post')
-export const deleteTemplateCategory = (id: number) => fetch(API.deleteTemplateCategory, { id }, 'post')
+export const deleteTemplateCategory = (id: number, force = false) => fetch(API.deleteTemplateCategory, { id, force }, 'post') // [TINIX] force: gỡ nhóm khỏi các mẫu rồi xóa
 export const renameTemplateCategory = (data: { id: number; name: string }) => fetch(API.renameTemplateCategory, data, 'post')
+
+// [TINIX] Nhóm mẫu thiết kế (một mẫu thuộc nhiều nhóm)
+export const reorderTemplateCategories = (ids: number[], type: 0 | 1 = 0) => fetch(API.reorderTemplateCategories, { type, ids }, 'post')
+export const setTemplateGroups = (id: number, groupIds: number[]) => fetch(API.setTemplateGroups, { id, groupIds }, 'post')
+export const bulkTemplateGroups = (ids: number[], add: number[], remove: number[]) => fetch(API.bulkTemplateGroups, { ids, add, remove }, 'post')
 
 /** 后台字体项：包含完整管理字段（lang/font_family/size/woff_size 等） */
 export type TAdminFontItem = {
@@ -118,6 +110,10 @@ export type TAdminFontItem = {
   font_family: string
   size: number
   woff_size: number
+  supports_vietnamese?: number // [TINIX]
+  category?: string // [TINIX]
+  tags?: string // [TINIX] JSON mảng
+  license?: string // [TINIX]
   created_at: string
 }
 
@@ -129,18 +125,24 @@ export type TFontForm = {
   preview?: string
   woff: string
   ttf?: string
-  lang: 'zh' | 'en'
+  lang: 'zh' | 'en' | 'ko' // [TINIX]
   font_family?: string
   size?: number
   woff_size?: number
+  supports_vietnamese?: boolean // [TINIX]
+  category?: string // [TINIX]
+  tags?: string[] // [TINIX]
 }
 
-export const getFonts = (params: { page?: number; pageSize?: number; search?: string } = {}) => fetch<{ list: TAdminFontItem[]; total: number }>(API.fonts, params)
+export const getFonts = (params: { page?: number; pageSize?: number; search?: string; lang?: string; vn?: string; category?: string } = {}) => fetch<{ list: TAdminFontItem[]; total: number }>(API.fonts, params)
 
 export const addFont = (data: Omit<TFontForm, 'id'>) => fetch<{ id: number }>(API.addFont, data, 'post')
 export const updateFont = (data: TFontForm & { id: number }) => fetch(API.updateFont, data, 'post')
 
 export const deleteFont = (id: number) => fetch(API.deleteFont, { id }, 'post')
+// [TINIX] tạo ảnh xem trước còn thiếu; status trả về running/log
+export const startFontPreviews = () => fetch<{ running: boolean; log: string; exitCode: number | null }>(API.fontPreviews, {}, 'post')
+export const getFontPreviewStatus = () => fetch<{ running: boolean; log: string; exitCode: number | null }>(API.fontPreviews, {})
 
 /** 后台 AI 配置：兼容任意 OpenAI 格式端点 */
 export type TAiSettings = {
@@ -164,3 +166,6 @@ export type TBulkStatus = 'added' | 'exists' | 'invalid' | 'failed'
 export type TBulkImportResult = { dryRun: boolean; materials: { url: string; status: TBulkStatus }[]; texts: { title: string; status: TBulkStatus; id?: number }[] }
 /** 批量入库素材 / 文字组合，服务端去重；dryRun=true 只返回判定结果不写库 */
 export const bulkImportAssets = (data: { dryRun?: boolean; materials: { cate: string; asset: any }[]; texts: { cate: string; title: string; widgets: any[]; width: number; height: number }[] }) => fetch<TBulkImportResult>(API.assetBulk, data, 'post')
+export type TFontNormalizationStatus={running:boolean;exitCode:number|null;log:string}
+export const startFontNormalization=()=>fetch<TFontNormalizationStatus>(prefix+'api/admin/fonts/normalize',{},'post')
+export const getFontNormalizationStatus=()=>fetch<TFontNormalizationStatus>(prefix+'api/admin/fonts/normalize',{})

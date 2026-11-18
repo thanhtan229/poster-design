@@ -14,19 +14,25 @@
  * @LastEditTime: 2026-08-31 13:19:45
 -->
 <template>
-  <el-dropdown trigger="click" size="large" placement="bottom-start">
+  <el-dropdown trigger="click" size="large" placement="bottom-start" @visible-change="onVisible">
     <span class="el-dropdown-link">
       <slot />
     </span>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item><div @click="$emit('select', 'newDesign')" class="item">创建设计</div></el-dropdown-item>
-        <!-- <el-dropdown-item @click="openPSD">导入文件</el-dropdown-item> -->
-        <el-dropdown-item @click="$emit('select', 'save')" divided>保存</el-dropdown-item>
-        <el-dropdown-item @click="$emit('select', 'download')">下载图片</el-dropdown-item>
-        <!-- <el-dropdown-item disabled>版本记录</el-dropdown-item> -->
-        <!-- <el-dropdown-item disabled>批量套模板</el-dropdown-item> -->
-        <el-dropdown-item @click="$emit('select', 'changeLineGuides')" divided>标尺与参考线</el-dropdown-item>
+        <!-- [TINIX] Tệp = dự án: một tệp .tinix.zip chứa thiết kế + ảnh của khách -->
+        <el-dropdown-item><div class="item" @click="$emit('select', 'newDesign')">{{ $t('tinix.ui.project.new_project') }}</div></el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'openFile')">{{ $t('tinix.ui.project.open') }}</el-dropdown-item>
+        <el-dropdown-item divided disabled class="recent-head">{{ $t('tinix.ui.project.recent') }}</el-dropdown-item>
+        <el-dropdown-item v-for="r in recent" :key="r.id" class="recent-item" @click="$emit('select', 'openRecent', r)">{{ r.name.replace(/\.tinix\.zip$|\.zip$/i, '') }}</el-dropdown-item>
+        <el-dropdown-item v-if="!recent.length" disabled>{{ $t('tinix.ui.project.no_recent') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.project.save') }}</el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.project.save_as') }}</el-dropdown-item>
+        <!-- [TINIX] Lưu mẫu: "Lưu đè" chỉ có khi đang Sửa mẫu (nút Sửa trên thẻ mẫu) để khỏi ghi đè nhầm bằng ảnh khách; còn lại chỉ "Lưu thành mẫu mới" (tên tự đặt theo mã số) -->
+        <el-dropdown-item v-if="tempEditing" divided @click="$emit('select', 'overwriteTemplate')">{{ $t('tinix.ui.templateSave.overwrite', { name: templateSource?.name || '' }) }}</el-dropdown-item>
+        <el-dropdown-item :divided="!tempEditing" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.ui.templateSave.save_new') }}</el-dropdown-item>
+        <el-dropdown-item v-if="tempEditing" @click="$emit('select', 'exitTempEdit')">{{ $t('tinix.ui.templateSave.exit_edit') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'export')">{{ $t('tinix.ui.export.menu') }}<!-- [TINIX] --></el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -34,18 +40,35 @@
 
 <script setup lang="ts">
 // import { ref, Ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
+import { listRecent, type RecentFile } from '@/utils/tinix/design-file' // [TINIX]
+import { templateSource } from '@/utils/tinix/template-save' // [TINIX]
+import { storeToRefs } from 'pinia' // [TINIX]
+import { useUserStore } from '@/store' // [TINIX]
 
-const router = useRouter()
+defineEmits<{ select: [action: string, payload?: any] }>()
 
-const openPSD = () => {
-  window.open(router.resolve('/psd').href, '_blank')
+// [TINIX] danh sách dự án mở gần đây: nạp mỗi lần mở menu
+const recent = ref<RecentFile[]>([])
+async function onVisible(visible: boolean) {
+  if (visible) recent.value = await listRecent()
 }
+
+const { tempEditing } = storeToRefs(useUserStore()) // [TINIX] chế độ sửa mẫu (Quản trị → Sửa mẫu)
+
 </script>
 
 <style lang="less" scoped>
 .item {
   width: 224px;
+}
+.recent-head {
+  font-size: 12px;
+  color: #94a3b8 !important;
+  line-height: 22px;
+}
+.recent-item {
+  padding-left: 28px;
 }
 </style>

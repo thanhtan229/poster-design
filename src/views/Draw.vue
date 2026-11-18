@@ -9,9 +9,12 @@
 </template>
 
 <script lang="ts" setup>
-import { StyleValue, onMounted, reactive, nextTick } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import api from '@/api'
+import config from '@/config'
+import {loadLibraryFont} from '@/utils/tinix/font-loader'
 import Preload from '@/utils/plugins/preload'
+import { swapToOriginalInData } from '@/utils/tinix/photo-source' // [TINIX]
 import FontFaceObserver from 'fontfaceobserver'
 import { fontMinWithDraw, font2style } from '@/utils/widgets/loadFontRule'
 import designBoard from '@/components/modules/layout/designBoard/index.vue'
@@ -21,37 +24,33 @@ import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useWidgetStore } from '@/store'
 
-type TState = {
-  style: StyleValue
-}
-
 const route = useRoute()
-const state = reactive<TState>({
-  style: {
-    left: '0px',
-  },
-})
 const pageStore = useCanvasStore()
 const widgetStore = useWidgetStore()
 const { dPage } = storeToRefs(pageStore)
 
 onMounted(() => {
   nextTick(() => {
-    load()
+    load().catch((error) => {
+      const callback = (window as any).loadFinishToInject
+      if (callback) callback({ error: 'Không thể render: ' + String(error?.message || error), issues: error?.issues })
+    })
   })
 })
 
 async function load() {
   let backgroundImage = ''
   let loadFlag = false
-  const { id, tempid, tempType: type = 0, index = 0  }: any = route.query 
-  if (id || tempid) {
+  const { id, tempid, exportJob, tempType: type = 0, index = 0  }: any = route.query
+  if (id || tempid || exportJob) {
     const postData = {
       id: id || tempid,
       type: Number(type)
     }
     const renderToken = typeof route.query.token === 'string' ? route.query.token : undefined
-    const { data, width, height } = id
+    const { data, width, height } = exportJob
+      ? await fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${encodeURIComponent(exportJob)}/data`).then(r=>{if(!r.ok)throw new Error('Bộ xuất không hợp lệ');return r.json()})
+      : id
       ? await api.home.getWorks(postData, renderToken)
       : await api.home.getTempDetail(postData)
     let content = JSON.parse(data)
@@ -62,6 +61,8 @@ async function load() {
       content = {page: global, widgets: layers}
     }
     const widgets = isGroupTemplate ? content : content.widgets
+    // [TINIX] xuất thành phẩm (hq=1): lớp ảnh dùng ảnh gốc thay cho ảnh nhẹ; bìa/xem trước thì giữ ảnh nhẹ cho nhanh
+    if (route.query.hq === '1') swapToOriginalInData(widgets)
     
     if (isGroupTemplate) {
       dPage.value.width = width
@@ -74,13 +75,17 @@ async function load() {
       backgroundImage = content.page?.backgroundImage
       backgroundImage && delete content.page.backgroundImage
       pageStore.setDPage(content.page)
-      if (id) {
+      if (id || exportJob) {
         widgetStore.setDWidgets(widgets)
       } else {
         widgetStore.setTemplate(widgets)
       }
     }
 
+    await Promise.all(widgets.filter((w:any)=>w.type==='w-text'&&w.fontClass?.url).map(async(w:any)=>{
+      try { await loadLibraryFont(w.fontClass) }
+      catch(error){ throw Object.assign(new Error('Không tải được font yêu cầu: '+String(error)), {issues:[{code:'FONT_LOAD_FAILED',layerId:String(w.uuid),url:w.fontClass.url}]}) }
+    }))
     await nextTick()
 
     const imgsData: HTMLImageElement[] = []
@@ -92,7 +97,9 @@ async function load() {
       if (item.fontClass && item.fontClass.value) {
         const loader = new FontFaceObserver(item.fontClass.value)
         fontData.push(item.fontClass)
-        fontLoaders.push(loader.load(null, 30000)) // 延长超时让检测不会丢失字体
+        // Library faces have explicit loading above; system faces are already
+        // available and may have identical metrics to FontFaceObserver fallbacks.
+        if (item.fontClass.url) fontLoaders.push(loader.load(null, 30000))
         // 按字体来收集所有文字
         if (fontContent[item.fontClass.value]) {
           fontContent[item.fontClass.value] += item.text
@@ -102,6 +109,7 @@ async function load() {
       }
       // 收集图片元素、svg元素
       try {
+        if(item.cutoutBorderUrl){const border=document.getElementById(item.uuid)?.querySelector('img');if(border)imgsData.push(border)}
         if (item.svgUrl && item.type === 'w-svg') {
           const cNodes: any = (window as any).document.getElementById(item.uuid).childNodes
           svgsData.push(cNodes)
@@ -109,43 +117,60 @@ async function load() {
           const cNodes: any = (window as any).document.getElementById(item.uuid).childNodes
           for (const el of cNodes) {
             if (el.className && el.className.includes('img__box')) {
-              imgsData.push(el.firstChild)
+              const image = (el as Element).querySelector('img')
+              if (image) imgsData.push(image)
             }
           }
         }
-      } catch (e) {}
+      } catch {}
     })
     // 背景图无法检测是否加载完毕，所以单独做判断
     if (backgroundImage) {
-      const preloadBg = new Preload([backgroundImage])
-      await preloadBg.imgs()
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve()
+        img.onerror = () => reject(Object.assign(new Error('Không tải được ảnh nền: ' + backgroundImage), {issues:[{code:'BACKGROUND_LOAD_FAILED',layerId:'-1',url:backgroundImage}]}))
+        img.src = backgroundImage
+      })
       pageStore.setDPage({...content.page, ...{backgroundImage}})
       // store.commit('setDPage', {...content.page, ...{backgroundImage}})
     }
-    try {
-      fontMinWithDraw && (await font2style(fontContent, fontData))
-      // console.log('1. base64 yes')
-      const preload = new Preload(imgsData)
-      await preload.doms()
-      // console.log('2. image yes')
-      const preload2 = new Preload(svgsData)
-      await preload2.svgs()
-      // console.log('3. svg yes')
-    } catch (e) {
-      console.log(e)
-    }
+    fontMinWithDraw && (await font2style(fontContent, fontData))
+    // console.log('1. base64 yes')
+    const preload = new Preload(imgsData)
+    await preload.doms()
+    const failedImage = imgsData.find((image) => image.getClientRects().length && !image.naturalWidth)
+    if (failedImage) throw Object.assign(new Error('Không tải được ảnh: ' + (failedImage.closest('.w-image')?.id || failedImage.currentSrc || failedImage.src)), {issues:[{code:'IMAGE_LOAD_FAILED',layerId:failedImage.closest('.w-image')?.id,url:failedImage.currentSrc||failedImage.src}]})
+    // console.log('2. image yes')
+    const preload2 = new Preload(svgsData)
+    await preload2.svgs()
+    // console.log('3. svg yes')
     try {
       await Promise.all(fontLoaders)
       // console.log('4. font yes')
-    } catch (e) {
+    } catch {
       // console.log(e)
+    }
+    // [TINIX] 'load' chỉ báo ảnh đã tải, chưa chắc đã giải mã/vẽ: ảnh rất lớn (vd 8268×11220) giải mã mất vài giây nên ảnh chụp ra trong suốt
+    // (bìa mẫu thành màu đen). Chờ giải mã xong cả ảnh các lớp lẫn ảnh nền (nền là CSS nên nạp trước một bản để dùng chung cache) rồi chờ 2 khung vẽ.
+    try {
+      const decodes: Promise<unknown>[] = imgsData.map((el: any) => (el && el.decode ? el.decode() : Promise.resolve()))
+      if (backgroundImage) {
+        const bg = new Image()
+        bg.src = backgroundImage
+        decodes.push(bg.decode())
+      }
+      await Promise.all(decodes.map((p) => p.catch(() => undefined)))
+      await new Promise((r) => { requestAnimationFrame(() => requestAnimationFrame(r)) })
+    } catch {
+      // không giải mã được: vẫn chụp như cũ
     }
     loadFlag = true
     console.log('--> now u can start screenshot!')
     setTimeout(() => {
       try {
         ;(window as any).loadFinishToInject('done')
-      } catch (err) {}
+      } catch {}
     }, 100)
   }
   // 超时

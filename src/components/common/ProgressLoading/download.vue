@@ -9,8 +9,8 @@
   <div v-if="percent" v-show="!hide" class="mask">
     <div class="content">
       <div class="tool">
-        <div v-show="percent < 100" class="backstage" @click="close"><span style="margin-left: 0.4rem">后台下载</span></div>
-        <iconClose v-show="percent >= 100" class="backstage" @click="cancel" width="20" />
+        <div v-show="percent < 100" class="backstage" @click="close"><span style="margin-left: 0.4rem">{{ $t('business.progress.background') }}</span></div>
+        <iconClose v-show="percent >= 100" class="backstage" width="20" @click="cancel" />
       </div>
       <div class="text">{{ text }}</div>
       <el-progress style="width: 100%" :text-inside="true" :percentage="percent" />

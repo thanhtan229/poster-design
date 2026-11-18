@@ -13,7 +13,7 @@
       <div class="brand-mark"><el-icon><Brush /></el-icon></div>
       <div class="brand-text">
         <div class="brand-name">{{ APP_NAME }}</div>
-        <div class="brand-sub">管理后台</div>
+        <div class="brand-sub">{{ $t('admin.brand.sub') }}</div>
       </div>
     </div>
 
@@ -33,32 +33,20 @@
       </div>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="user-avatar">{{ avatarChar }}</div>
-      <div class="user-meta">
-        <div class="user-name">{{ user.account }}</div>
-        <div class="user-role">管理员</div>
-      </div>
-      <el-button class="logout-btn" type="primary" link @click="$emit('logout')">
-        <el-icon><SwitchButton /></el-icon>
-      </el-button>
-    </div>
+
   </aside>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { ElIcon, ElButton } from 'element-plus'
-import { Brush, SwitchButton } from '@element-plus/icons-vue'
+import { ElIcon } from 'element-plus'
+import { Brush } from '@element-plus/icons-vue'
 import config from '@/config'
 import { NAV_GROUPS } from '../constants'
-import type { TAdminUser } from '../types'
 
-const props = defineProps<{ active: string; user: TAdminUser }>()
-defineEmits<{ select: [key: string]; logout: [] }>()
+defineProps<{ active: string }>()
+defineEmits<{ select: [key: string] }>()
 
 const APP_NAME = config.APP_NAME
-const avatarChar = computed(() => (props.user.account || 'A').slice(0, 1).toUpperCase())
 </script>
 
 <style lang="less" scoped>

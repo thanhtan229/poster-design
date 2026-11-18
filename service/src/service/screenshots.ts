@@ -18,6 +18,9 @@ import { saveScreenshot } from '../utils/download-single'
 import uuid from '../utils/uuid'
 import { filePath, upperLimit, drawLink } from '../configs'
 import { queueRun, queueList } from '../utils/node-queue'
+import { setPngFileDpi } from '../tinix/pngDpi' // [TINIX]
+import fs from 'fs'
+const sharp = require('sharp')
 // const path = require('path')
 
 /**
@@ -37,35 +40,54 @@ import { queueRun, queueList } from '../utils/node-queue'
  * @apiParam {String|Number} index 可选, 下载哪个画板
  */
 export async function screenshots(req: any, res: any) {
-  let { id, tempid, tempType, width, height, screenshot_url, type = 'file', size, quality, index = 0 } = req.query
+  let { id, tempid, tempType, width, height, screenshot_url, type = 'file', size, quality, index = 0, dpi } = req.query // [TINIX] dpi: ghi vào PNG xuất
   id == 'undefined' && (id = null)
   const url = (screenshot_url || drawLink) + `${id ? '?id=' : '?tempid='}`
   id = id || tempid
-  const path = filePath + `${id}-screenshot.png`
+  // Xuất và tạo ảnh bìa có thể chạy đồng thời cho cùng một đơn.
+  // Mỗi lượt xuất cần tệp riêng để không đọc trúng PNG đang được ghi lại.
+  const path = filePath + (type === 'file' ? `${id}-screenshot-${uuid()}.png` : `${id}-screenshot.png`)
+  const cleanup = () => { if (type === 'file') fs.unlink(path, () => {}) }
   const thumbPath = type === 'cover' && tempType != 1 ? filePath + `${id}-cover.jpg` : null
 
   if (id && width && height) {
     if (queueList.length > upperLimit) {
-      res.json({ code: 200, msg: '服务器表示顶不住啊，等等再来吧~' })
+      res.json({ code: 200, msg: 'Máy chủ đang quá tải, vui lòng thử lại sau~' })
       return
     }
     const renderToken = typeof req.query.token === 'string' ? `&token=${encodeURIComponent(req.query.token)}` : ''
-    const targetUrl = url + id + `${tempType ? '&tempType=' + tempType : ''}` + `&index=${index}${renderToken}`
+    const targetUrl = url + id + `${tempType ? '&tempType=' + tempType : ''}` + `&index=${index}${renderToken}` + (type === 'file' ? '&hq=1' : '') // [TINIX] xuất thành phẩm dùng ảnh gốc
     // /draw 会在模板、图片和字体完成加载后主动调用 loadFinishToInject；
     // 禁止 load 事件提前截图，否则会得到空白页面。
-    queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true })
-      .then(() => {
+    const sign = uuid()
+    req._queueSign = sign
+    queueRun(saveScreenshot, targetUrl, { width, height, path, thumbPath, size, quality, prevent: true }, sign)
+      .then(async () => {
+        if (res.headersSent) return
+        if (type === 'file' && req.query.format === 'jpg') {
+          const density = Math.min(1200, Math.max(36, Math.round(Number(dpi)) || 300))
+          const jpeg = await sharp(path).flatten({ background: '#ffffff' }).toColourspace('srgb')
+            .jpeg({ quality: 100, chromaSubsampling: '4:4:4' }).withMetadata({ density }).toBuffer()
+          res.setHeader('Content-Type', 'image/jpeg')
+          res.send(jpeg)
+          cleanup()
+          return
+        }
+        type === 'file' && dpi && setPngFileDpi(path, Number(dpi)) // [TINIX] ảnh tải về mang đúng DPI (khổ in)
         res.setHeader('Content-Type', 'image/jpg')
         // const stats = fs.statSync(path)
         // res.setHeader('Cache-Control', stats.size)
         // 组件模板不生成 JPG 缩略图，cover 请求直接返回 PNG 截图，避免 sendFile(null)。
-        type === 'file' || !thumbPath ? res.sendFile(path) : res.sendFile(thumbPath)
+        if (type === 'file') res.sendFile(path, (error: any) => { cleanup(); if (error && !res.headersSent) res.status(500).end() })
+        else res.sendFile(!thumbPath ? path : thumbPath)
       })
       .catch((e: any) => {
-        res.json({ code: 500, msg: '图片生成错误' })
+        console.error('[tinix:screenshot] Xuất ảnh thất bại:', e)
+        cleanup()
+        if (!res.headersSent) res.status(500).json({ code: 500, msg: e && e.message ? String(e.message) : 'Lỗi khi tạo ảnh', issues: e && e.issues })
       })
   } else {
-    res.json({ code: 500, msg: '缺少参数，请检查' })
+    res.json({ code: 500, msg: 'Thiếu tham số, vui lòng kiểm tra' })
   }
 }
 
@@ -97,7 +119,7 @@ export async function printscreen(req: any, res: any) {
     req._queueSign = sign
     // console.log(url + id, path, thumbPath);
     if (queueList.length > upperLimit) {
-      res.json({ code: 200, msg: '业务繁忙，等等再来吧~' })
+      res.json({ code: 200, msg: 'Hệ thống đang bận, vui lòng thử lại sau~' })
       return
     }
     queueRun(saveScreenshot, url, { width, height, path, thumbPath, size, quality, prevent, ua, devices, scale, wait }, sign)
@@ -106,16 +128,14 @@ export async function printscreen(req: any, res: any) {
           // res.setHeader('Content-Type', 'image/jpg')
           // const stats = fs.statSync(path)
           // res.setHeader('Cache-Control', stats.size)
-          res.json({ code: 200, msg: '截图成功', data: { path, thumbPath } })
-        } else {
-          res.json({ code: 200, msg: 'ok' })
+          res.json({ code: 200, msg: 'Chụp ảnh thành công', data: { path, thumbPath } })
         }
       })
       .catch((e: any) => {
-        res.json({ code: 500, msg: '图片生成错误!' })
+        if (!res.headersSent) res.status(500).json({ code: 500, msg: 'Lỗi khi tạo ảnh!' })
       })
   } else {
-    res.json({ code: 500, msg: '缺少参数，请检查' })
+    res.json({ code: 500, msg: 'Thiếu tham số, vui lòng kiểm tra' })
   }
 }
 
