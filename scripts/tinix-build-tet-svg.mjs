@@ -337,6 +337,30 @@ for (const it of items) {
 const refImg = arg('--reference-image')
 if (refImg) { const rl = place('ẢNH MẪU – xóa trước khi lưu', await writeAsset('reference.webp', await readFile(refImg)), 0, 0, W, H, { lock: true }); rl.opacity = 0.3 }
 
+// Tên lớp tiếng Việt (thay cho id của spec) để hộp thoại tạo đơn và bảng lớp dễ đọc.
+const VI_NAMES = {
+  'nen-do-tren': 'Nền đỏ phía trên', 'nen-do-phai': 'Nền đỏ bên phải', 'nen-kem-giua': 'Nền kem ở giữa', 'nen-do-sam-giua': 'Nền đỏ sẫm ở giữa',
+  'nen-hong-duoi': 'Nền hồng phía dưới', 'nen-kem-trai': 'Nền kem bên trái', 'nen-song-trai': 'Sóng nền bên trái', 'nen-song-phai': 'Sóng nền bên phải',
+  'vien-so-tem': 'Viền sò hồng', 'anh-lon-trai': 'Ảnh lớn bên trái', 'anh-tron-tren': 'Ảnh tròn phía trên', 'anh-phai-giua': 'Ảnh bên phải giữa',
+  'anh-tem': 'Ảnh hình tem', 'anh-lon-duoi-phai': 'Ảnh lớn dưới bên phải', 'bang-dinh-trai-tren': 'Băng dính trái trên', 'bang-dinh-phai': 'Băng dính bên phải',
+  'bang-dinh-duoi': 'Băng dính phía dưới', 'den-long-trai': 'Đèn lồng trái', 'den-long-phai': 'Đèn lồng phải', 'bang-loc': 'Băng chữ Lộc', lan: 'Lân', meo: 'Mèo',
+  'hoa-dao-trai': 'Hoa đào trái', 'nhanh-dao': 'Cành đào', 'hoa-vang-tren': 'Hoa vàng trên', 'hoa-vang-phai': 'Hoa vàng phải', 'hop-qua': 'Hộp quà', no: 'Nơ',
+  'dam-kem-yeu-thuong': 'Đám kem chữ', 'chu-tet': 'Chữ Tết', 'chu-yeu-thuong': 'Chữ yêu thương', 'nhan-mung-xuan': 'Nhãn Mừng Xuân', 'nhan-be-ngoan': 'Nhãn Bé ngoan',
+  'nhan-chuc-be': 'Nhãn chúc bé', 'dong-tien-loc': 'Đồng tiền Lộc', 'tim-do-trai': 'Tim đỏ trái', 'tim-do-phai': 'Tim đỏ phải', 'tim-hong-phai': 'Tim hồng phải',
+  'tim-do-nho': 'Tim đỏ nhỏ', 'tia-vang-tet': 'Tia vàng', 'tia-trang-anh-tron': 'Tia trắng cạnh ảnh tròn', 'tim-chuc-trai': 'Tim chữ trái', 'tim-chuc-phai': 'Tim chữ phải',
+}
+const viIds = Object.keys(VI_NAMES).sort((a, b) => b.length - a.length)
+for (const l of layers) {
+  l.name = String(l.name || '').replace(/^Cụm Cụm /, 'Cụm ').replace(/^Chữ chúc bé ([0-9])$/, (_m, d) => 'Chữ chúc bé dòng ' + (+d + 1))
+  for (const id of viIds) {
+    const re = new RegExp('(^|[^a-z0-9-])' + id + '(?![a-z0-9-])')
+    if (re.test(l.name)) { l.name = l.name.replace(re, (_m, p) => p + VI_NAMES[id]); break }
+  }
+  l.name = l.name.replace(/^Băng dính Băng dính/, 'Băng dính')
+}
+// Bỏ lớp chữ rỗng (nhãn chúc bé dùng hai dòng chữ riêng).
+for (let i = layers.length - 1; i >= 0; i--) if (layers[i].type === 'w-text' && !String(layers[i].text || '').trim()) layers.splice(i, 1)
+
 const global = {
   name: 'Tết yêu thương · vẽ SVG theo spec', type: 'page', uuid: '-1', left: 0, top: 0, width: W, height: H, backgroundColor: C.cream, backgroundGradient: '', backgroundImage: '', backgroundTransform: {},
   opacity: 1, tag: 0, record: {}, dpi: DPI, collage: { template: 'tet-svg-a', version: 1, customer: placeholders ? 'Mẫu' : 'Tết', printWorkflow: 'separate-sheets' },
