@@ -23,6 +23,8 @@ export type TPhoto = {
 export type TLibraryFavorite = { hash: string; url: string; hq: string; cate: string }
 
 export const listPhotos = () => fetch<{ list: TPhoto[]; favorites: TLibraryFavorite[]; total: number }>(base, {}, 'get')
+/** Đăng ký lại ảnh của tệp dự án vào CSDL (tệp ảnh đã được ghi lại vào static/photos) */
+export const importPhotos = (items: Array<Partial<TPhoto>>) => fetch<{ list: TPhoto[]; skipped: number }>(`${base}/import`, { items }, 'post')
 export const deletePhoto = (id: number, inUse: string[]) => fetch<{ removed: boolean; filesDeleted: boolean }>(`${base}/delete`, { id, inUse }, 'post')
 export const clearPreview = (inUse: string[]) => fetch<{ total: number; deletable: number; kept: number }>(`${base}/clear-preview`, { inUse }, 'post')
 export const clearAll = (inUse: string[]) => fetch<{ removed: number; filesDeleted: number; kept: number }>(`${base}/clear`, { inUse }, 'post')

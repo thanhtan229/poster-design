@@ -9,6 +9,9 @@ import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore } from
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import { zipImages } from './zip'
 import { unzip } from './unzip'
+import * as photosApi from '@/api/tinix-photos'
+import { photoState, reloadPhotos } from './photo-strip'
+import { adoptUsedPhotos, project, projectPhotos, resetProject, setProjectPaths, staticOf } from './project'
 
 const t = (key: string, params?: any) => i18n.global.t(key, params) as string
 const FORMAT = 'tinix-design'
@@ -18,7 +21,7 @@ const ASSET_PATTERN = /\/static\/(?!fonts\/)[^"\\]+?\.(?:png|jpe?g|webp|gif)/gi
 /** Tên thiết kế đang mở (dùng chung với ô tên ở thanh trên). */
 export const designTitle = ref('')
 
-let savedSignature = ''
+const savedSignature = ref('') // [TINIX] reactive để thanh trên hiện "Đã lưu / Chưa lưu"
 let fileHandle: any = null
 
 function snapshot() {
@@ -31,10 +34,10 @@ function signature() {
 }
 /** Ghi nhận trạng thái hiện tại là "đã lưu" (mở mẫu, mở tệp, lưu về máy). */
 export function markSaved() {
-  savedSignature = signature()
+  savedSignature.value = signature()
 }
 export function isDirty() {
-  return signature() !== savedSignature
+  return signature() !== savedSignature.value
 }
 
 function safeName(title: string) {
@@ -45,13 +48,17 @@ export function collectAssetPaths(text: string): string[] {
   return Array.from(new Set(text.match(ASSET_PATTERN) || []))
 }
 
-/** Đóng gói thiết kế hiện tại thành ZIP kèm toàn bộ ảnh được tham chiếu. */
+/** Đóng gói dự án hiện tại thành ZIP: thiết kế + toàn bộ ảnh được tham chiếu + ảnh khách đã nhập vào dự án (kể cả ảnh chưa dùng). */
 export async function buildPackage(): Promise<{ blob: Blob; missing: string[] }> {
   const layouts = JSON.parse(snapshot())
-  const text = JSON.stringify({ format: FORMAT, version: 1, title: designTitle.value, savedAt: new Date().toISOString(), layouts })
+  adoptUsedPhotos(JSON.stringify(layouts)) // ảnh đang nằm trên canvas luôn thuộc dự án
+  const photos = projectPhotos().map((p) => ({ url: p.url, web_url: p.web_url, thumb_url: p.thumb_url, width: p.width, height: p.height, hash: p.hash, size: p.size, taken_at: p.taken_at, name: p.name }))
+  const text = JSON.stringify({ format: FORMAT, version: 2, title: designTitle.value, savedAt: new Date().toISOString(), layouts, project: { photos } })
   const files: Array<{ name: string; blob: Blob }> = [{ name: 'design.json', blob: new Blob([text], { type: 'application/json' }) }]
   const missing: string[] = []
-  for (const path of collectAssetPaths(text)) {
+  const paths = new Set(collectAssetPaths(text))
+  for (const p of photos) for (const u of [p.url, p.web_url, p.thumb_url]) if (u) paths.add(staticOf(u))
+  for (const path of paths) {
     try {
       const response = await fetch(config.SCREEN_URL + path)
       if (!response.ok) throw new Error('HTTP ' + response.status)
@@ -108,6 +115,7 @@ export function applyLayouts(layouts: any[], title: string) {
   // Lịch sử hoàn tác cũ không còn khớp với thiết kế mới.
   useHistoryStore().$patch({ dHistoryStack: { changes: [], inverseChanges: [] }, dHistoryParams: { index: -1, length: 0, maxLength: 20, stackPointer: -1 } })
   designTitle.value = title
+  resetProject() // dự án mới: chưa có ảnh nào (openPackage nạp lại ảnh của tệp ngay sau đó)
   // Thiết kế này không gắn với bản ghi trong CSDL nữa: bỏ id khỏi địa chỉ để không ghi đè nhầm thiết kế cũ.
   const query = { ...router.currentRoute.value.query }
   if (query.id || query.tempid) {
@@ -196,9 +204,76 @@ export async function openPackage(file: Blob, handle?: any): Promise<boolean> {
   fileHandle = handle || null
   applyLayouts(data.layouts, String(data.title || '') || String(handle?.name || '').replace(/\.tinix\.zip$|\.zip$/i, ''))
   void warnMissingFonts(data.layouts)
+  await restoreProjectPhotos(data)
+  if (handle) void rememberRecent(handle)
   return true
 }
 type ZipEntryLike = { blob: () => Promise<Blob> }
+
+/** Đăng ký lại ảnh của dự án vào kho ảnh (tệp ảnh đã được ghi lại ở trên) rồi đặt danh sách ảnh dự án. */
+async function restoreProjectPhotos(data: any) {
+  const items: any[] = Array.isArray(data.project && data.project.photos) ? data.project.photos : []
+  try {
+    if (items.length) await photosApi.importPhotos(items)
+  } catch (_) { /* không đăng ký được: ảnh trên canvas vẫn dùng bình thường */ }
+  await reloadPhotos()
+  setProjectPaths(items.map((p) => p.url))
+  adoptUsedPhotos(JSON.stringify(data.layouts))
+  const have = new Set(photoState.photos.map((p) => staticOf(p.url)))
+  const lost = items.filter((p) => !have.has(staticOf(p.url))).length
+  if (lost) ElMessage.warning(t('tinix.ui.project.photos_missing', { n: lost }))
+}
+
+// ───────────── Danh sách dự án mở gần đây (lưu handle tệp trong IndexedDB; mở lại cần người dùng cho phép lại quyền đọc) ─────────────
+export type RecentFile = { id: number; name: string; openedAt: number; handle: any }
+async function recentDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('tinix-recent', 1)
+    request.onupgradeneeded = () => request.result.createObjectStore('files', { keyPath: 'id', autoIncrement: true })
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+  })
+}
+async function recentRun<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest): Promise<T> {
+  const db = await recentDb()
+  try {
+    return await new Promise<T>((resolve, reject) => {
+      const request = run(db.transaction('files', mode).objectStore('files'))
+      request.onsuccess = () => resolve(request.result as T)
+      request.onerror = () => reject(request.error)
+    })
+  } finally { db.close() }
+}
+export async function listRecent(): Promise<RecentFile[]> {
+  try {
+    const all = await recentRun<RecentFile[]>('readonly', (s) => s.getAll())
+    return all.sort((a, b) => b.openedAt - a.openedAt).slice(0, 8)
+  } catch (_) { return [] }
+}
+export async function rememberRecent(handle: any) {
+  try {
+    for (const old of await recentRun<RecentFile[]>('readonly', (s) => s.getAll())) {
+      let same = false
+      try { same = await old.handle.isSameEntry(handle) } catch (_) { same = false }
+      if (same) await recentRun('readwrite', (s) => s.delete(old.id))
+    }
+    await recentRun('readwrite', (s) => s.add({ name: String(handle.name || ''), openedAt: Date.now(), handle }))
+    const all = (await recentRun<RecentFile[]>('readonly', (s) => s.getAll())).sort((a, b) => a.openedAt - b.openedAt)
+    for (const extra of all.slice(0, Math.max(0, all.length - 8))) await recentRun('readwrite', (s) => s.delete(extra.id))
+  } catch (_) { /* không có IndexedDB hoặc handle không lưu được: bỏ qua */ }
+}
+/** Mở lại một dự án gần đây. Trả về false nếu bị hủy/không mở được. */
+export async function openRecent(entry: RecentFile): Promise<boolean> {
+  try {
+    const handle = entry.handle
+    if (handle.requestPermission && (await handle.requestPermission({ mode: 'readwrite' })) !== 'granted') return false
+    return await openPackage(await handle.getFile(), handle)
+  } catch (_) {
+    try { await recentRun('readwrite', (s) => s.delete(entry.id)) } catch (_e) { /* bỏ qua */ }
+    ElMessage.warning(t('tinix.ui.project.recent_failed', { name: entry.name }))
+    return false
+  }
+}
 
 /** Hộp thoại chọn tệp: dùng File System Access khi có (để Ctrl+S ghi đè đúng tệp), nếu không dùng ô chọn tệp. */
 export async function pickAndOpen(): Promise<boolean> {
@@ -252,9 +327,9 @@ export async function clearDraft() {
   try { await dbRun('readwrite', (s) => s.delete('current')) } catch (_) { /* không có IndexedDB: bỏ qua */ }
 }
 async function saveDraft() {
-  try { await dbRun('readwrite', (s) => s.put({ title: designTitle.value, layouts: snapshot(), savedAt: Date.now() }, 'current')) } catch (_) { /* bỏ qua */ }
+  try { await dbRun('readwrite', (s) => s.put({ title: designTitle.value, layouts: snapshot(), paths: project.paths.slice(), savedAt: Date.now() }, 'current')) } catch (_) { /* bỏ qua */ }
 }
-async function readDraft(): Promise<{ title: string; layouts: string; savedAt: number } | null> {
+async function readDraft(): Promise<{ title: string; layouts: string; paths?: string[]; savedAt: number } | null> {
   try { return (await dbRun<any>('readonly', (s) => s.get('current'))) || null } catch (_) { return null }
 }
 
@@ -279,7 +354,8 @@ export async function offerDraftRestore() {
     await ElMessageBox.confirm(t('tinix.ui.localFile.draft_body', { time, title: draft.title || t('tinix.ui.localFile.untitled') }), t('tinix.ui.localFile.draft_title'), { confirmButtonText: t('tinix.ui.localFile.restore'), cancelButtonText: t('tinix.ui.localFile.discard'), type: 'info', distinguishCancelAndClose: true })
     fileHandle = null
     applyLayouts(layouts, draft.title)
-    savedSignature = '?' // bản nháp chưa lưu ra tệp: vẫn coi là có thay đổi
+    if (Array.isArray(draft.paths)) setProjectPaths(draft.paths)
+    savedSignature.value = '?' // bản nháp chưa lưu ra tệp: vẫn coi là có thay đổi
   } catch (action: any) {
     if (action === 'cancel') void clearDraft()
   }

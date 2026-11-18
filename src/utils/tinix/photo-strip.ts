@@ -5,6 +5,7 @@
 import { reactive } from 'vue'
 import * as photosApi from '@/api/tinix-photos'
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result'
+import { addToProject } from '@/utils/tinix/project'
 
 export type TPhoto = photosApi.TPhoto
 /** Một ô trong dải ảnh (từ ảnh đã tải hoặc từ bộ sưu tập) */
@@ -119,6 +120,7 @@ export async function uploadFiles(files: File[]) {
         if (apiFailed(res)) throw new Error(apiMessage(res, 'Lỗi không rõ'))
         if (res.duplicate) photoState.up.dup++
         else photoState.photos.unshift(res.photo)
+        if (res.photo && res.photo.url) addToProject([res.photo.url]) // [TINIX] ảnh khách tải lên thuộc dự án đang mở (kể cả ảnh trùng đã có trong kho)
       } catch (e: any) {
         photoState.up.failed++
         photoState.up.errors.push(`${f.name}: ${(e && (e.message || e.msg)) || e}`)

@@ -12,6 +12,11 @@
       <span class="title">{{ $t('tinix.ui.photoDock.anh') }}</span>
       <span class="count">{{ summary }}</span>
 
+      <!-- [TINIX] dải ảnh theo dự án: chỉ ảnh của khách đang làm, hoặc toàn bộ kho ảnh đã tải -->
+      <div class="seg" role="group" :aria-label="$t('tinix.ui.project.scope')">
+        <button type="button" :class="{ on: stripScope.value === 'project' }" @click="stripScope.value = 'project'">{{ $t('tinix.ui.project.this_project', { n: projectCount }) }}</button>
+        <button type="button" :class="{ on: stripScope.value === 'library' }" @click="stripScope.value = 'library'">{{ $t('tinix.ui.project.library', { n: photoState.photos.length }) }}</button>
+      </div>
       <div class="seg" role="group">
         <button type="button" :class="{ on: photoState.filter === 'all' }" @click="photoState.filter = 'all'">{{ $t('tinix.ui.photoDock.tat_ca') }}</button>
         <button type="button" :class="{ on: photoState.filter === 'unused' }" @click="photoState.filter = 'unused'">{{ $t('tinix.ui.photoDock.chua_dung') }}</button>
@@ -40,6 +45,7 @@
       <span v-if="selected.length" class="sel-info">{{ $t('tinix.ui.photoAuto.da_chon_n', { n: selected.length }) }} <button type="button" class="lk" @click="clearSelection">{{ $t('tinix.ui.photoAuto.bo_chon') }}</button></span>
       <span v-else class="sel-hint">{{ $t('tinix.ui.photoAuto.huong_dan') }}</span>
       <span data-photo-history><el-button size="small" type="primary" :disabled="!selected.length || changingPage" @click="addToCurrentPage">Thêm vào trang</el-button></span>
+      <el-button v-if="stripScope.value === 'library'" size="small" :disabled="!selected.length" @click="addSelectedToProject">{{ $t('tinix.ui.project.add_selected') }}</el-button><!-- [TINIX] -->
       <span data-photo-history><el-button size="small" :disabled="!selectedPagePhotos.length || changingPage" @click="removeFromCurrentPage">Bỏ khỏi trang</el-button></span>
       <span data-photo-history><el-button size="small" :disabled="changingPage" @click="changeLayout">Đổi bố cục</el-button></span>
       <span class="spacer" />
@@ -64,7 +70,8 @@
         {{ $t('tinix.ui.photoDock.can_dang_nhap') }} <el-button size="small" link type="primary" @click="reload">{{ $t('tinix.ui.photoDock.tai_lai') }}</el-button>
       </div>
       <div v-else-if="!items.length" class="empty">
-        <template v-if="photoState.photos.length">{{ $t('tinix.ui.photoDock.khong_co_anh_loc') }}</template>
+        <template v-if="stripScope.value === 'project' && photoState.photos.length && photoState.filter === 'all'">{{ $t('tinix.ui.project.empty') }} <el-button size="small" link type="primary" @click="stripScope.value = 'library'">{{ $t('tinix.ui.project.open_library') }}</el-button></template>
+        <template v-else-if="photoState.photos.length">{{ $t('tinix.ui.photoDock.khong_co_anh_loc') }}</template>
         <template v-else>{{ $t('tinix.ui.photoDock.chua_co_anh') }}</template>
       </div>
       <div v-else class="row" @click.self="clearSelection">
@@ -114,6 +121,7 @@ import { useCanvasStore, useWidgetStore, useHistoryStore } from '@/store'
 import * as photosApi from '@/api/tinix-photos'
 import { photoState, reloadPhotos, placeValue, setAutoApply, setAutoCate, sortItems, toStripItems, uploadFiles, type StripItem } from '@/utils/tinix/photo-strip'
 import api from '@/api'
+import { addToProject, project, staticOf, stripScope } from '@/utils/tinix/project' // [TINIX]
 
 const HEAD_H = 38
 const TOOL_H = 30 // hàng công cụ (chọn nhiều + tự áp dụng mẫu)
@@ -169,13 +177,24 @@ function countFor(it: StripItem): number {
 }
 
 // ── danh sách hiển thị ──
+// [TINIX] ảnh thuộc dự án: đã nhập vào dự án, hoặc đang nằm trên canvas
+const projectSet = computed(() => new Set(project.paths))
+const inProject = (it: StripItem) => projectSet.value.has(staticOf(it.hq || it.web)) || countFor(it) > 0
+const projectCount = computed(() => toStripItems().filter(inProject).length)
+// ảnh nào được dùng trên canvas thì mặc nhiên thuộc dự án (giữ lại cả khi sau đó gỡ khỏi trang)
+watch(usedCounts, () => addToProject(toStripItems().filter((it) => countFor(it) > 0).map((it) => it.hq || it.web)))
+function addSelectedToProject() {
+  addToProject(selectedItems().map((it) => it.hq || it.web))
+  ElMessage.success(t('tinix.ui.project.added', { n: selected.value.length }))
+}
 const items = computed(() => {
   let list = toStripItems()
+  if (stripScope.value === 'project') list = list.filter(inProject)
   if (photoState.filter !== 'all') list = list.filter((it) => (countFor(it) > 0) === (photoState.filter === 'used'))
   return sortItems(list, photoState.sort)
 })
 const summary = computed(() => {
-  const all = toStripItems()
+  const all = stripScope.value === 'project' ? toStripItems().filter(inProject) : toStripItems()
   const unused = all.filter((it) => countFor(it) === 0).length
   return t('tinix.ui.photoDock.tom_tat', { n: all.length, unused })
 })

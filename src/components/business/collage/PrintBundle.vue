@@ -1,5 +1,4 @@
 <template>
- <el-button type="primary" :disabled="disabled" @click="open=true">Xuất bộ JPG cắt dán</el-button>
  <el-dialog v-model="open" class="print-bundle-dialog" title="Xuất bộ JPG cắt dán" width="850px" top="4vh" append-to-body :close-on-click-modal="!running" :close-on-press-escape="!running" :show-close="!running">
   <p>Nền sạch + các tờ chi tiết cắt + ảnh hoàn thiện. Mỗi cụm giữ nguyên kích thước in; không tự thu nhỏ.</p>
   <fieldset :disabled="running">
@@ -37,6 +36,7 @@ import config from '@/config'
 import {zipImages} from '@/utils/tinix/zip'
 import downloadBlob from '@/common/methods/download/downloadBlob'
 const props=defineProps<{saveDesign:()=>Promise<any>;title:string;disabled?:boolean}>()
+defineExpose({open:()=>{if(!props.disabled)open.value=true}}) // [TINIX] mở từ hộp thoại Xuất
 const store=useWidgetStore(); const canvas=useCanvasStore(); const open=ref(false); const running=ref(false); const progress=ref(''); const failure=ref('')
 const customerApproved=ref(false); const approvalNote=ref(''); const archivedId=ref(''); const activeJob=ref('')
 function releaseJob(){if(activeJob.value){fetch(`${config.SCREEN_URL}/api/tinix/collage-print/${activeJob.value}`,{method:'DELETE'}).catch(()=>{});activeJob.value=''}}

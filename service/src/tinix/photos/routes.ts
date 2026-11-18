@@ -3,6 +3,7 @@
  *
  *   POST /api/tinix/photos/upload          multipart: file, lastModified?, name?   → { duplicate, photo }
  *   GET  /api/tinix/photos                  → { list, favorites: [{hash,url,hq,cate}], total }
+ *   POST /api/tinix/photos/import          { items: [{url,web_url,thumb_url,width,height,hash,size,taken_at,name}] } → { list, skipped }
  *   POST /api/tinix/photos/delete           { id, inUse?: [url] }
  *   POST /api/tinix/photos/clear-preview    { inUse?: [url] }   → { total, deletable, kept }
  *   POST /api/tinix/photos/clear            { inUse?: [url] }   → { removed, filesDeleted, kept }
@@ -16,7 +17,7 @@ import express from 'express'
 import multiparty from 'multiparty'
 import { send } from '../../utils/tools'
 import { getRequestUser } from '../../utils/auth'
-import { MAX_BYTES, addFavorite, backfillLegacy, clearAll, clearPreview, clearUnused, deletePhoto, ingestPhoto, libraryFavorites, listPhotos, removeFavorite, unusedPreview } from './core'
+import { MAX_BYTES, addFavorite, backfillLegacy, clearAll, clearPreview, clearUnused, deletePhoto, importPhoto, ingestPhoto, libraryFavorites, listPhotos, removeFavorite, unusedPreview } from './core'
 
 const router = express.Router()
 const PREFIX = '/api/tinix/photos'
@@ -60,6 +61,12 @@ router.get(`${PREFIX}`, requireLogin, handle(async (_b, req) => {
   await backfillLegacy(uid(req)) // ảnh tải lên từ trước: bổ sung hash/ảnh nhẹ/ảnh thu nhỏ (một lần)
   const list = listPhotos(uid(req))
   return { list, favorites: libraryFavorites(), total: list.length }
+}))
+// Mở tệp dự án: đăng ký lại ảnh vừa được ghi vào static/photos
+router.post(`${PREFIX}/import`, requireLogin, handle(async (b, req) => {
+  const items: any[] = Array.isArray(b.items) ? b.items.slice(0, 2000) : []
+  const list = items.map((x) => importPhoto(x, uid(req))).filter((x) => !!x)
+  return { list, skipped: items.length - list.length }
 }))
 router.post(`${PREFIX}/delete`, requireLogin, handle(async (b, req) => deletePhoto(Number(b.id), uid(req), urls(b.inUse))))
 router.post(`${PREFIX}/clear-preview`, requireLogin, handle(async (b, req) => clearPreview(uid(req), urls(b.inUse))))

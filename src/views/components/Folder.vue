@@ -14,21 +14,22 @@
  * @LastEditTime: 2026-08-31 13:19:45
 -->
 <template>
-  <el-dropdown trigger="click" size="large" placement="bottom-start">
+  <el-dropdown trigger="click" size="large" placement="bottom-start" @visible-change="onVisible">
     <span class="el-dropdown-link">
       <slot />
     </span>
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item><div class="item" @click="$emit('select', 'newDesign')">{{ $t('tinix.folder.newDesign') }}</div></el-dropdown-item>
-        <el-dropdown-item @click="$emit('select', 'openFile')">{{ $t('tinix.ui.localFile.open') }}<!-- [TINIX] --></el-dropdown-item>
-        <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.localFile.save') }}<!-- [TINIX] --></el-dropdown-item>
-        <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.localFile.save_as') }}<!-- [TINIX] --></el-dropdown-item>
+        <!-- [TINIX] Tệp = dự án: một tệp .tinix.zip chứa thiết kế + ảnh của khách -->
+        <el-dropdown-item><div class="item" @click="$emit('select', 'newDesign')">{{ $t('tinix.ui.project.new_project') }}</div></el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'openFile')">{{ $t('tinix.ui.project.open') }}</el-dropdown-item>
+        <el-dropdown-item divided disabled class="recent-head">{{ $t('tinix.ui.project.recent') }}</el-dropdown-item>
+        <el-dropdown-item v-for="r in recent" :key="r.id" class="recent-item" @click="$emit('select', 'openRecent', r)">{{ r.name.replace(/\.tinix\.zip$|\.zip$/i, '') }}</el-dropdown-item>
+        <el-dropdown-item v-if="!recent.length" disabled>{{ $t('tinix.ui.project.no_recent') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.project.save') }}</el-dropdown-item>
+        <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.project.save_as') }}</el-dropdown-item>
         <el-dropdown-item v-if="isAdmin()" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.folder.saveAsTemplate') }}<!-- [TINIX] --></el-dropdown-item>
-        <el-dropdown-item @click="$emit('select', 'download')">{{ $t('tinix.folder.download') }}</el-dropdown-item>
-        <!-- <el-dropdown-item disabled>版本记录</el-dropdown-item> -->
-        <!-- <el-dropdown-item disabled>批量套模板</el-dropdown-item> -->
-        <el-dropdown-item divided @click="$emit('select', 'changeLineGuides')">{{ $t('tinix.folder.guides') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'export')">{{ $t('tinix.ui.export.menu') }}<!-- [TINIX] --></el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -36,9 +37,17 @@
 
 <script setup lang="ts">
 // import { ref, Ref } from 'vue'
+import { ref } from 'vue'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
+import { listRecent, type RecentFile } from '@/utils/tinix/design-file' // [TINIX]
 
-defineEmits<{ select: [action: string] }>()
+defineEmits<{ select: [action: string, payload?: any] }>()
+
+// [TINIX] danh sách dự án mở gần đây: nạp mỗi lần mở menu
+const recent = ref<RecentFile[]>([])
+async function onVisible(visible: boolean) {
+  if (visible) recent.value = await listRecent()
+}
 
 
 // [TINIX] chỉ admin thấy mục "Lưu thành mẫu"
@@ -49,5 +58,13 @@ const isAdmin = () => true
 <style lang="less" scoped>
 .item {
   width: 224px;
+}
+.recent-head {
+  font-size: 12px;
+  color: #94a3b8 !important;
+  line-height: 22px;
+}
+.recent-item {
+  padding-left: 28px;
 }
 </style>
