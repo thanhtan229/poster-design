@@ -60,5 +60,4 @@ export default [
     show: false,
     component: 'user-wrap',
   },
-  { name: 'Cắt dán', icon: 'icon-moban', show: false, component: 'collage-panel' },
 ] as TWidgetClassifyData[]

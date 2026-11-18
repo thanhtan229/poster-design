@@ -413,3 +413,8 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 - Mở tệp: ghi lại ảnh thiếu (`PUT /api/tinix/local-asset`) rồi `POST /api/tinix/photos/import` (`importPhoto` trong `service/src/tinix/photos/core.ts`: chỉ nhận `/static/photos/<tên>.<đuôi ảnh>`, tệp phải tồn tại, không tạo trùng theo hash/đường dẫn) để ảnh hiện lại trong dải ảnh trên máy khác.
 - **Gần đây**: handle tệp (File System Access) lưu ở IndexedDB `tinix-recent` (tối đa 8); mở lại hỏi cấp quyền; tệp đã bị xóa/di chuyển ⇒ báo và gỡ khỏi danh sách. Bản nháp tự động (`tinix-drafts`) lưu thêm `paths`.
 - Chưa làm: tùy chọn "bỏ ảnh chưa dùng khi lưu" (tệp dự án chứa mọi ảnh khách đã nhập, có thể nặng); danh sách ảnh dự án không tự đồng bộ giữa hai tab đang mở cùng lúc.
+
+## Gộp tab "Mẫu" và "Cắt dán" (2026-11-18)
+- Chỉ gộp ở giao diện; hai bảng DB (`templates`, `collage_templates`) giữ nguyên. Tab "Cắt dán" đã bỏ khỏi `WidgetClassifyList.ts`.
+- `TempListWrap.vue` [TINIX]: thanh lọc loại (Tất cả / Cắt dán / Thiết kế thường); mẫu cắt dán (`TemplateLibrary`, tải một lần) xếp trước lưới mẫu thường (phân trang). Mẫu cắt dán không có nhóm/số ảnh nên ẩn khi đang lọc theo nhóm hoặc số ảnh. Ô tìm kiếm của tab Mẫu lọc cả hai (`TemplateLibrary` nhận prop `search`).
+- `CollagePanel.vue` thành mục "Công cụ cắt dán" (Cụm in và cắt nổi + cách cũ "Kỷ niệm" trong mục thu gọn), chỉ hiện khi trang hiện tại là trang cắt dán (`dPage.collage`).
