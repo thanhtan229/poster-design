@@ -472,6 +472,7 @@ export default {
     current: 'hiện tại',
     remove_btn: 'Xóa',
     badge: 'Cắt dán',
+    print_groups: 'Cụm in và cắt nổi trên trang ({n})',
     opened: 'Đã mở mẫu: {name}',
     search: 'Tìm mẫu theo tên',
     all_cats: 'Tất cả',
