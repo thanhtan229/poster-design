@@ -48,11 +48,5 @@ export default [
   //   show: false,
   //   component: 'bg-img-list-wrap',
   // },
-  {
-    name: 'Công cụ', // [TINIX] 工具箱
-    icon: 'icon-zujian01',
-    show: false,
-    component: 'tools-list-wrap',
-  },
   // [TINIX] Đã bỏ tab "Của tôi" (user-wrap): ảnh nằm ở dải ảnh, thiết kế lưu bằng tệp .tinix.zip (xem TINIX.md)
 ] as TWidgetClassifyData[]

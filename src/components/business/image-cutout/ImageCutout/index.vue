@@ -15,6 +15,15 @@
 -->
 <template>
   <el-dialog v-model="state.show" :title="$t('business.cutout.title')" align-center width="650" @close="handleClose">
+    <!-- [TINIX] chọn model tách nền; đổi model khi đã có ảnh thì tách lại bằng model mới -->
+    <div class="tinix-engine">
+      <span>{{ $t('tinix.ui.cutoutEngine.model') }}</span>
+      <el-radio-group v-model="engine" size="small" @change="onEngineChange">
+        <el-radio-button value="birefnet">{{ $t('tinix.ui.cutoutEngine.birefnet') }}</el-radio-button>
+        <el-radio-button value="u2net">{{ $t('tinix.ui.cutoutEngine.u2net') }}</el-radio-button>
+      </el-radio-group>
+      <small>{{ engine === 'birefnet' ? $t('tinix.ui.cutoutEngine.birefnet_hint') : $t('tinix.ui.cutoutEngine.u2net_hint') }}</small>
+    </div>
     <uploader v-if="!state.rawImage" :hold="true" :drag="true" :multiple="true" class="uploader" @load="handleUploaderLoad">
       <div class="uploader__box">
         <upload-filled style="width: 64px; height: 64px" />
@@ -50,7 +59,8 @@
 
 <script lang="ts" setup>
 import { reactive, nextTick, ref } from 'vue'
-import { ElProgress } from 'element-plus'
+import { getCutoutEngine, setCutoutEngine, type CutoutEngine } from '@/utils/tinix/cutout-engine' // [TINIX]
+import { ElProgress, ElRadioGroup, ElRadioButton } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import uploader from '@/components/common/Uploader/index.vue'
 import _dl from '@/common/methods/download'
@@ -84,6 +94,8 @@ const state = reactive<TImageCutoutState>({
 })
 
 let fileName: string = 'unknow'
+const engine = ref<CutoutEngine>(getCutoutEngine()) // [TINIX]
+let currentFile: File | null = null // [TINIX] ảnh đang tách, để tách lại khi đổi model
 let isRuning: boolean = false
 
 const emits = defineEmits<{
@@ -111,11 +123,20 @@ defineExpose({
 })
 
 const handleUploaderLoad = (file: File) => {
+  currentFile = file
   selectImageFile(state as TImageCutoutState, raw, file, (result, name) => {
     fileName = name
     state.rawImage && (state.cutImage = result)
     requestAnimationFrame(run)
-  })
+  }, engine.value)
+}
+
+// [TINIX] đổi model: nhớ lựa chọn; đã có ảnh thì tách lại
+function onEngineChange(v: any) {
+  setCutoutEngine(v)
+  if (!currentFile || !state.rawImage) return
+  state.cutImage = ''
+  handleUploaderLoad(currentFile)
 }
 
 const handleClose = () => {
@@ -164,6 +185,18 @@ const edit = () => {
 </script>
 
 <style lang="less" scoped>
+.tinix-engine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  small {
+    flex-basis: 100%;
+    color: #8a8f99;
+  }
+}
 .uploader {
   &__box {
     color: #333333;

@@ -448,6 +448,15 @@ export default {
     export_failed: 'Xuất ảnh thất bại',
     exporting: 'Đang dựng ảnh…',
   },
+  cutoutEngine: {
+    model: 'Model tách nền',
+    birefnet: 'Chất lượng cao · BiRefNet',
+    u2net: 'Nhanh · U²-Net',
+    birefnet_hint: 'Chạy trên GPU của máy này qua service (7001), không gửi ảnh ra ngoài; mép tóc, quần áo đẹp hơn.',
+    u2net_hint: 'Chạy ngay trong trình duyệt, không cần service hay GPU; chi tiết mảnh kém hơn.',
+    dang_tach_birefnet: 'Đang tách nền bằng BiRefNet…',
+    birefnet_loi_dung_u2net: 'BiRefNet chưa dùng được ({msg}). Tạm dùng U²-Net.',
+  },
   templateTypes: {
     all: 'Tất cả',
     collage: 'Cắt dán',
