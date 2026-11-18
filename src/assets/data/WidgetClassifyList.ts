@@ -54,10 +54,5 @@ export default [
     show: false,
     component: 'tools-list-wrap',
   },
-  {
-    name: 'Của tôi', // [TINIX] 我的
-    icon: 'icon-shangchuan',
-    show: false,
-    component: 'user-wrap',
-  },
+  // [TINIX] Đã bỏ tab "Của tôi" (user-wrap): ảnh nằm ở dải ảnh, thiết kế lưu bằng tệp .tinix.zip (xem TINIX.md)
 ] as TWidgetClassifyData[]
