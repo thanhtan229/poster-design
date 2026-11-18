@@ -12,16 +12,14 @@
     <CollagePreview :layout="t.data" />
     <span class="tpl-badge">{{ $t('tinix.ui.collageTab.badge') }}</span>
     <span class="tpl-slots">{{ $t('tinix.ui.photoAuto.n_anh', { n: Math.max(1, t.photo_slots || 0) }) }}</span>
-    <el-dropdown trigger="click" class="tpl-more" @command="(c:string)=>onMenu(t,c)" @click.stop>
-     <button type="button" class="tpl-more-btn" :title="$t('tinix.ui.collageTab.more')" @click.stop>⋯</button>
-     <template #dropdown><el-dropdown-menu><el-dropdown-item command="rename">{{ $t('tinix.ui.collageTab.rename') }}</el-dropdown-item><el-dropdown-item v-if="props.allGroups" command="groups">{{ $t('tinix.ui.collageTab.groups') }}</el-dropdown-item><el-dropdown-item command="remove">{{ $t('tinix.ui.collageTab.remove') }}</el-dropdown-item></el-dropdown-menu></template>
-    </el-dropdown>
+    <!-- [TINIX] cùng bộ nút với thẻ mẫu thường (imgWaterFall.vue): Sửa (tab mới, chế độ Sửa mẫu) · Nhóm · Xóa; đổi tên = sửa ô tên rồi Lưu đè -->
+    <div class="tpl-card-actions" @click.stop>
+     <button type="button" class="tpl-edit-btn" :title="$t('tinix.ui.collageTab.edit_tip')" @click.stop="editTemplate(t)">{{ $t('tinix.ui.templateCard.sua_mau') }}</button>
+     <button v-if="props.allGroups" type="button" class="tpl-edit-btn grp" :title="$t('tinix.ui.templateGroups.nhom_tip')" @click.stop="grouping={open:true,id:t.id,ids:[...(t.groups||[])]}">{{ $t('tinix.ui.templateCard.nhom') }}</button>
+     <button type="button" class="tpl-edit-btn danger" :title="$t('tinix.ui.templateCard.xoa_mau_tip')" @click.stop="removeTemplate(t)">{{ $t('tinix.ui.templateCard.xoa_mau') }}</button>
+    </div>
    </div>
   </div>
-  <el-dialog v-model="renaming.open" :title="$t('tinix.ui.collageTab.rename_title')" width="380px" append-to-body>
-   <el-form label-position="top"><el-form-item :label="$t('tinix.ui.collageTab.tpl_name')"><el-input v-model="renaming.name" maxlength="100" /></el-form-item></el-form>
-   <template #footer><el-button @click="renaming.open=false">{{ $t('tinix.ui.collageTab.cancel') }}</el-button><el-button type="primary" :loading="busy" :disabled="!renaming.name.trim()" @click="saveRename">{{ $t('tinix.ui.collageTab.save') }}</el-button></template>
-  </el-dialog>
   <el-dialog v-model="grouping.open" :title="$t('tinix.ui.collageTab.groups_title')" width="340px" append-to-body>
    <p v-if="!(props.allGroups||[]).length" class="tpl-empty">{{ $t('tinix.ui.collageTab.no_groups') }}</p>
    <el-checkbox-group v-else v-model="grouping.ids" class="tpl-check"><el-checkbox v-for="g in props.allGroups" :key="g.id" :value="g.id">{{ g.name }}</el-checkbox></el-checkbox-group>
@@ -31,10 +29,12 @@
 </template>
 <script setup lang="ts">
 // [TINIX] Thư viện mẫu cắt dán: bấm vào mẫu để mở lên canvas (không tạo đơn, không ghi CSDL).
-// Lưu mẫu (đè / mới) nằm ở menu Tệp (utils/tinix/template-save.ts); menu ⋯ chỉ còn Đổi tên, Nhóm, Xóa.
+// Thẻ có Sửa · Nhóm · Xóa như mẫu thường; lưu mẫu (đè / mới) nằm ở menu Tệp (utils/tinix/template-save.ts).
 import {ref,computed,onMounted,onBeforeUnmount} from 'vue'
 import i18n from '@/languages'
-import {ElForm,ElFormItem,ElDropdown,ElDropdownMenu,ElDropdownItem,ElMessage,ElMessageBox,ElCheckbox,ElCheckboxGroup} from 'element-plus'
+import {ElMessage,ElMessageBox,ElCheckbox,ElCheckboxGroup} from 'element-plus'
+import {useRouter} from 'vue-router'
+import {TEMPLATES_CHANGED_KEY} from '@/utils/tinix/template-save'
 import CollagePreview from './CollagePreview.vue'
 import config from '@/config'
 import {openTemplateOnCanvas} from '@/utils/tinix/design-file'
@@ -56,10 +56,6 @@ async function useTemplate(t:any){
  try{if(await openTemplateOnCanvas(t.data,t.name,{kind:'collage',id:t.id,name:t.name,version:t.version})){ElMessage.success(i18n.global.t('tinix.ui.collageTab.opened',{name:t.name}));fetch(`${config.SCREEN_URL}/api/tinix/template-used`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'collage',id:t.id})}).catch(()=>undefined)}}
  catch(e:any){ElMessage.error(e.message)}
 }
-// [TINIX] Quản lý mẫu cắt dán: đổi tên/danh mục, xóa (cùng mọi phiên bản)
-const renaming=ref({open:false,id:0,name:''})
-function onMenu(t:any,c:string){if(c==='groups')grouping.value={open:true,id:t.id,ids:[...(t.groups||[])]};else if(c==='rename')renaming.value={open:true,id:t.id,name:t.name};else if(c==='remove')removeTemplate(t)}
-async function saveRename(){busy.value=true;try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates/${renaming.value.id}`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({name:renaming.value.name})});if(!r.ok)throw new Error((await r.json()).message);renaming.value.open=false;ElMessage.success(tt('renamed'));await load()}catch(e:any){ElMessage.error(e.message)}finally{busy.value=false}}
 async function removeTemplate(t:any){
  try{await ElMessageBox.confirm(tt('remove_confirm',{name:t.name}),tt('remove_title'),{type:'warning',confirmButtonText:tt('remove_btn'),cancelButtonText:tt('cancel')})}catch{return}
  try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates/${t.id}`,{method:'DELETE'});if(!r.ok)throw new Error((await r.json()).message);ElMessage.success(tt('removed'));await load();emit('changed')}catch(e:any){ElMessage.error(e.message)}
@@ -67,8 +63,13 @@ async function removeTemplate(t:any){
 // [TINIX] Nhóm chủ đề của mẫu cắt dán (dùng chung với mẫu thường)
 const grouping=ref({open:false,id:0,ids:[] as number[]})
 async function saveGroups(){busy.value=true;try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates/${grouping.value.id}/groups`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({ids:grouping.value.ids})});if(!r.ok)throw new Error((await r.json()).message);grouping.value.open=false;ElMessage.success(tt('groups_saved'));await load();emit('changed')}catch(e:any){ElMessage.error(e.message)}finally{busy.value=false}}
-onMounted(()=>{load();window.addEventListener('tinix:templates-changed',load)})
-onBeforeUnmount(()=>window.removeEventListener('tinix:templates-changed',load))
+// [TINIX] Sửa mẫu: mở tab mới ở chế độ Sửa mẫu (giống thẻ mẫu thường) — hiện công cụ đánh dấu khung ảnh, ô tên ở thanh trên, Tệp → Lưu đè mẫu
+const router=useRouter()
+function editTemplate(t:any){window.open(router.resolve({path:'/home',query:{ctemplate:String(t.id),edit:'1'}}).href,'_blank')}
+// tab Sửa mẫu lưu xong thì danh sách ở tab này tải lại (sự kiện 'storage' chỉ bắn ở tab khác)
+const onStorage=(e:StorageEvent)=>{if(e.key===TEMPLATES_CHANGED_KEY)load()}
+onMounted(()=>{load();window.addEventListener('tinix:templates-changed',load);window.addEventListener('storage',onStorage)})
+onBeforeUnmount(()=>{window.removeEventListener('tinix:templates-changed',load);window.removeEventListener('storage',onStorage)})
 </script>
 <style scoped>
 .custom-templates{padding:4px 0}
@@ -78,12 +79,14 @@ onBeforeUnmount(()=>window.removeEventListener('tinix:templates-changed',load))
 .tpl-toolbar,.tpl-msg,.tpl-empty{margin-left:14px;margin-right:14px}
 .tpl-masonry{column-width:140px;column-gap:7px;margin:0 14px 0 14px}
 .tpl-tile{position:relative;break-inside:avoid;margin-bottom:7px;border:1px solid #e0e5ea;border-radius:5px;overflow:hidden;cursor:pointer;background:#f3ece2}
+.tpl-card-actions{position:absolute;top:6px;right:6px;z-index:3;display:none;gap:4px}
+.tpl-tile:hover .tpl-card-actions{display:flex}
+.tpl-tile:hover .tpl-badge{display:none}
+.tpl-edit-btn{border:0;border-radius:4px;padding:2px 8px;font-size:12px;color:#fff;background:rgba(63,106,247,.92);cursor:pointer}
+.tpl-edit-btn.grp{background:rgba(103,194,58,.95)}.tpl-edit-btn.danger{background:rgba(245,108,108,.95)}
 .tpl-tile:hover::before{content:' ';position:absolute;inset:0;background:rgba(0,0,0,.15);z-index:1;pointer-events:none}
 .tpl-tile .tpl-badge{z-index:2}
 .tpl-slots{position:absolute;left:6px;bottom:6px;z-index:2;padding:1px 6px;font-size:11px;color:#fff;background:rgba(0,0,0,.55);border-radius:8px;pointer-events:none}
-.tpl-more{position:absolute;top:6px;right:6px;z-index:3;display:none}
-.tpl-tile:hover .tpl-more{display:block}
-.tpl-more-btn{border:0;border-radius:4px;padding:0 8px;font-size:14px;line-height:20px;color:#fff;background:rgba(63,106,247,.92);cursor:pointer}
 .tpl-thumb{cursor:pointer;background:#f3ece2;position:relative}.tpl-badge{position:absolute;left:6px;top:6px;background:#733e43;color:#fff;font-size:10px;padding:1px 6px;border-radius:8px;opacity:.9}.tpl-info{padding:8px 8px 0;display:flex;flex-direction:column;gap:2px;min-height:44px}.tpl-info b{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tpl-info small{font-size:11px;color:#8a7d72}
 .tpl-check{display:flex;flex-wrap:wrap;gap:2px 14px}
 </style>

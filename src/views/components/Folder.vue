@@ -28,9 +28,9 @@
         <el-dropdown-item v-if="!recent.length" disabled>{{ $t('tinix.ui.project.no_recent') }}</el-dropdown-item>
         <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.project.save') }}</el-dropdown-item>
         <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.project.save_as') }}</el-dropdown-item>
-        <!-- [TINIX] Lưu mẫu: lưu đè mẫu đang mở (chỉ khi trang mở từ một mẫu) hoặc lưu thành mẫu mới (tên tự đặt theo mã số) -->
-        <el-dropdown-item v-if="templateSource || tempEditing" divided @click="$emit('select', 'overwriteTemplate')">{{ $t('tinix.ui.templateSave.overwrite', { name: templateSource?.name || '' }) }}</el-dropdown-item>
-        <el-dropdown-item :divided="!(templateSource || tempEditing)" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.ui.templateSave.save_new') }}</el-dropdown-item>
+        <!-- [TINIX] Lưu mẫu: "Lưu đè" chỉ có khi đang Sửa mẫu (nút Sửa trên thẻ mẫu) để khỏi ghi đè nhầm bằng ảnh khách; còn lại chỉ "Lưu thành mẫu mới" (tên tự đặt theo mã số) -->
+        <el-dropdown-item v-if="tempEditing" divided @click="$emit('select', 'overwriteTemplate')">{{ $t('tinix.ui.templateSave.overwrite', { name: templateSource?.name || '' }) }}</el-dropdown-item>
+        <el-dropdown-item :divided="!tempEditing" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.ui.templateSave.save_new') }}</el-dropdown-item>
         <el-dropdown-item v-if="tempEditing" @click="$emit('select', 'exitTempEdit')">{{ $t('tinix.ui.templateSave.exit_edit') }}</el-dropdown-item>
         <el-dropdown-item divided @click="$emit('select', 'export')">{{ $t('tinix.ui.export.menu') }}<!-- [TINIX] --></el-dropdown-item>
       </el-dropdown-menu>

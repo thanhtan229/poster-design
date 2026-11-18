@@ -93,7 +93,7 @@ import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
 import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
 import PrintGroups from '@/components/business/collage/PrintGroups.vue' // [TINIX]
 import TemplateLibrary from '@/components/business/collage/TemplateLibrary.vue' // [TINIX]
-import { setTemplateSource } from '@/utils/tinix/template-save' // [TINIX]
+import { setTemplateSource, TEMPLATES_CHANGED_KEY } from '@/utils/tinix/template-save' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
 import config from '@/config' // [TINIX]
 
@@ -249,8 +249,15 @@ function editTemplate(item: IGetTempListData) {
 
 // [TINIX] "Tệp → Lưu thành mẫu" phát sự kiện này: tải lại danh sách để thấy mẫu mới ngay
 const onTemplatesChanged = () => load(true, pageOptions.state)
-onMounted(() => window.addEventListener('tinix:templates-changed', onTemplatesChanged))
-onBeforeUnmount(() => window.removeEventListener('tinix:templates-changed', onTemplatesChanged))
+const onStorageChanged = (e: StorageEvent) => e.key === TEMPLATES_CHANGED_KEY && onTemplatesChanged() // [TINIX] tab Sửa mẫu lưu xong
+onMounted(() => {
+  window.addEventListener('tinix:templates-changed', onTemplatesChanged)
+  window.addEventListener('storage', onStorageChanged)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('tinix:templates-changed', onTemplatesChanged)
+  window.removeEventListener('storage', onStorageChanged)
+})
 
 let reloadPending = false // [TINIX] có yêu cầu làm mới khi đang tải dở
 const load = async (init: boolean = false, stat?: string) => {

@@ -1,8 +1,7 @@
-// [TINIX] Lưu mẫu từ menu Tệp: "Lưu đè mẫu đang mở" và "Lưu thành mẫu mới".
+// [TINIX] Lưu mẫu từ menu Tệp: "Lưu đè mẫu" (chỉ khi đang ở chế độ Sửa mẫu) và "Lưu thành mẫu mới".
 // Nhớ trang trên canvas được mở từ mẫu nào (mẫu thường hay mẫu cắt dán) để lưu đè đúng chỗ.
-// Tên mẫu mới do service tự đặt theo mã số ("Mẫu 64"); đổi tên ở menu ⋯ của từng mẫu nếu cần.
+// Tên mẫu mới do service tự đặt theo mã số ("Mẫu 64"); đổi tên bằng ô tên ở thanh trên khi Sửa rồi Lưu đè.
 import { ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import i18n from '@/languages'
 import config from '@/config'
 import * as adminApi from '@/api/admin'
@@ -20,8 +19,16 @@ export function setTemplateSource(src: TemplateSource | null) {
   templateSource.value = src
 }
 
+/** Khóa localStorage để các tab khác (thư viện ở tab chính) biết mẫu vừa đổi và tải lại danh sách. */
+export const TEMPLATES_CHANGED_KEY = 'tinix.templatesChangedAt'
+
 function changed() {
-  window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách mẫu ở cả hai thư viện
+  window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách mẫu ở cả hai thư viện (tab này)
+  try {
+    localStorage.setItem(TEMPLATES_CHANGED_KEY, String(Date.now())) // sự kiện 'storage' báo cho tab khác
+  } catch (_) {
+    /* bỏ qua */
+  }
 }
 
 /** Trang hiện tại thành bố cục mẫu cắt dán { global, layers } (chỉ trang đang mở). */
@@ -31,6 +38,14 @@ function collageLayout() {
 
 async function postCollage(body: Record<string, any>): Promise<{ id: number; version: number; name: string }> {
   const r = await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const data = await r.json()
+  if (!r.ok) throw new Error(data.message)
+  return data
+}
+
+/** Tải một mẫu cắt dán để sửa (tab Sửa mẫu mở bằng ?ctemplate=<id>). */
+export async function fetchCollageTemplate(id: number): Promise<{ id: number; name: string; version: number; data: any }> {
+  const r = await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates/${id}`)
   const data = await r.json()
   if (!r.ok) throw new Error(data.message)
   return data
@@ -54,7 +69,7 @@ export async function saveAsNewTemplate(): Promise<boolean> {
       const { id } = await adminApi.saveTemplate({ title: '', type: 0, data: JSON.stringify(useWidgetStore().dLayouts), width: Number(page.width), height: Number(page.height) })
       src = { kind, id: Number(id), name: t('tinix.ui.templateSave.auto_name', { id }) }
     }
-    templateSource.value = src // các lần "Lưu đè" sau ghi vào mẫu vừa tạo
+    templateSource.value = src
     // đánh dấu "vừa dùng" để mẫu mới nằm đầu thư viện (danh sách xếp theo lần dùng gần nhất)
     await fetch(`${config.SCREEN_URL}/api/tinix/template-used`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ kind, id: src.id }) }).catch(() => undefined)
     changed()
@@ -66,25 +81,18 @@ export async function saveAsNewTemplate(): Promise<boolean> {
   }
 }
 
-/** Ghi đè mẫu đang mở (hỏi lại trước). Bản cũ vẫn được service giữ ngầm vài bản để khôi phục khi lỡ tay. */
-export async function overwriteTemplate(): Promise<boolean> {
+/**
+ * Lưu đè MẪU CẮT DÁN đang sửa (chế độ Sửa mẫu). `name` lấy từ ô tên ở thanh trên (rỗng = giữ tên cũ).
+ * Mẫu thường lưu đè bằng saveTemp của HeaderOptions (tạo lại ảnh bìa). Bản cũ được service giữ ngầm vài bản.
+ */
+export async function overwriteCollageTemplate(name: string): Promise<boolean> {
   const src = templateSource.value
-  if (!src) return false
+  if (!src || src.kind !== 'collage') return false
   try {
-    await ElMessageBox.confirm(t('tinix.ui.templateSave.confirm_body', { name: src.name }), t('tinix.ui.templateSave.confirm_title'), { type: 'warning', confirmButtonText: t('tinix.ui.templateSave.confirm_btn'), cancelButtonText: t('tinix.ui.templateSave.cancel') })
-  } catch {
-    return false
-  }
-  try {
-    if (src.kind === 'collage') {
-      const r = await postCollage({ id: src.id, version: src.version, layout: collageLayout() })
-      templateSource.value = { ...src, version: r.version }
-    } else {
-      const page = useCanvasStore().dPage
-      await adminApi.saveTemplate({ id: src.id, title: src.name, type: 0, data: JSON.stringify(useWidgetStore().dLayouts), width: Number(page.width), height: Number(page.height) })
-    }
+    const r = await postCollage({ id: src.id, version: src.version, name, layout: collageLayout() })
+    templateSource.value = { ...src, name: r.name, version: r.version }
     changed()
-    useNotification(t('tinix.ui.templateSave.saved_over', { name: src.name }), '')
+    useNotification(t('tinix.ui.templateSave.saved_over', { name: r.name }), '')
     return true
   } catch (e: any) {
     useNotification(t('tinix.ui.templateSave.failed'), e?.msg || e?.message || '', { type: 'error' })

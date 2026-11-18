@@ -17,6 +17,8 @@ router.delete('/api/tinix/collage-templates/:id',(req:any,res:any)=>{try{const i
 // [TINIX] Đặt nhóm chủ đề (dùng chung template_categories type 0)
 router.put('/api/tinix/collage-templates/:id/groups',(req:any,res:any)=>{try{const ids=setCollageGroups(Number(req.params.id),req.body&&req.body.ids);if(!ids)return res.status(404).json({message:'Không tìm thấy mẫu'});res.json({ids})}catch(e){fail(res,e)}})
 // [TINIX] Lịch sử phiên bản (mới nhất trước)
+// [TINIX] Một mẫu cắt dán (chế độ Sửa mẫu mở ở tab mới bằng ?ctemplate=<id>)
+router.get('/api/tinix/collage-templates/:id',(req:any,res:any)=>{try{const r=db().prepare('SELECT * FROM collage_templates WHERE id=?').get(Number(req.params.id));if(!r)return res.status(404).json({message:'Không tìm thấy mẫu'});res.json({...r,data:JSON.parse(r.data)})}catch(e){fail(res,e,500)}})
 router.get('/api/tinix/collage-templates/:id/versions',(req:any,res:any)=>{try{res.json({list:db().prepare('SELECT version,created_at,data FROM collage_template_versions WHERE template_id=? ORDER BY version DESC').all(Number(req.params.id)).map((r:any)=>({...r,data:JSON.parse(r.data)}))})}catch(e){fail(res,e,500)}})
 // [TINIX] Ghi nhận vừa dùng mẫu (để xếp "dùng gần đây"): kind = collage | normal
 router.post('/api/tinix/template-used',(req:any,res:any)=>{try{const b=req.body||{};res.json({ok:markUsed(b.kind==='collage'?'collage':'normal',Number(b.id))})}catch(e){fail(res,e)}})

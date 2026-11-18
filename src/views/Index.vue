@@ -102,7 +102,7 @@ import ProgressLoading from '@/components/common/ProgressLoading/download.vue'
 import { wGroupSetting } from '@/components/modules/widgets/wGroup/groupSetting'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore, useUserStore } from '@/store' // [TINIX] useUserStore
-import { overwriteTemplate, saveAsNewTemplate } from '@/utils/tinix/template-save' // [TINIX]
+import { saveAsNewTemplate } from '@/utils/tinix/template-save' // [TINIX]
 import { useRoute } from 'vue-router' // [TINIX]
 import { ElMessage, type ButtonInstance } from 'element-plus'
 import Tour from './components/Tour.vue'
@@ -247,7 +247,7 @@ function loadData() {
   optionsRef.value.load(async () => {
     markSaved() // [TINIX] mốc "đã lưu" ban đầu để so sánh thay đổi chưa lưu
     startAutosave()
-    if (!route.query.id && !route.query.tempid) void offerDraftRestore()
+    if (!route.query.id && !route.query.tempid && !route.query.ctemplate) void offerDraftRestore() // [TINIX] ctemplate = Sửa mẫu cắt dán: không đè bản nháp lên mẫu
     if (!zoomControlRef.value) return
     // await nextTick()
     // zoomControlRef.value.screenChange()
@@ -302,9 +302,8 @@ const fns: any = {
     void saveAsNewTemplate()
   },
   overwriteTemplate: () => {
-    // Chế độ sửa mẫu (Quản trị → Sửa mẫu) giữ cách lưu gốc, gồm cả mẫu thành phần (tempType 1)
-    if (useUserStore().tempEditing) optionsRef.value?.saveTemp()
-    else void overwriteTemplate()
+    // Chỉ hiện trong chế độ Sửa mẫu: mẫu thường dùng saveTemp gốc (gồm mẫu thành phần tempType 1), mẫu cắt dán dùng template-save
+    optionsRef.value?.save()
   },
   exitTempEdit: () => {
     useUserStore().managerEdit(false)
