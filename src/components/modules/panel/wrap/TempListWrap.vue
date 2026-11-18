@@ -38,7 +38,7 @@
     </el-divider>
 
     <ul ref="listRef" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
-      <collage-panel v-if="isCollagePage" /><!-- [TINIX] công cụ cắt dán: chỉ hiện khi trang hiện tại là trang cắt dán -->
+      <print-groups v-if="isCollagePage" /><!-- [TINIX] công cụ cắt dán: chỉ hiện khi trang hiện tại là trang cắt dán -->
       <template-library v-if="showCollage" :search="state.searchKeyword" /><!-- [TINIX] mẫu cắt dán xếp trước -->
       <img-water-fall v-if="typeFilter !== 'collage'" :listData="state.list" :admin-edit="isAdmin" :select-mode="selectMode" :selected="selected" @select="selectItem" @edit="editTemplate" @remove="removeTemplate" @groups="openGroupDialog" @toggle="toggleItem" /><!-- [TINIX] admin: nút Sửa mẫu -->
       <div v-show="state.loading && typeFilter !== 'collage'" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
@@ -91,7 +91,7 @@ import { ElMessage, ElMessageBox, ElDialog, ElCheckbox, ElCheckboxGroup, ElButto
 import * as adminApi from '@/api/admin' // [TINIX]
 import TinixGroupBar from './components/TinixGroupBar.vue' // [TINIX]
 import TinixPhotoCountBar from './components/TinixPhotoCountBar.vue' // [TINIX]
-import CollagePanel from '@/components/business/collage/CollagePanel.vue' // [TINIX]
+import PrintGroups from '@/components/business/collage/PrintGroups.vue' // [TINIX]
 import TemplateLibrary from '@/components/business/collage/TemplateLibrary.vue' // [TINIX]
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result' // [TINIX]
 
