@@ -47,6 +47,11 @@
 
     <template #footer>
       <span class="dialog-footer">
+        <!-- [TINIX] chỉ khi tách nền ảnh trên canvas: áp luôn viền trắng hình dán (mm); 0 = không viền -->
+        <span v-show="state.cutImage && !state.toolModel" class="tinix-sticker">
+          {{ $t('tinix.ui.stickerBorder.dialog_label') }}
+          <el-input-number v-model="borderMm" :min="0" :max="8" :step="0.5" size="small" controls-position="right" @change="onBorderChange" /> mm
+        </span>
         <el-button v-show="state.cutImage && state.toolModel" @click="clear">{{ $t('business.cutout.reselect') }}</el-button>
         <el-button v-show="state.cutImage" type="primary" plain @click="edit">{{ $t('business.cutout.edit') }}</el-button>
         <el-button v-show="state.cutImage && state.toolModel" type="primary" @click="download"> {{ $t('business.cutout.download') }} </el-button>
@@ -60,7 +65,7 @@
 <script lang="ts" setup>
 import { reactive, nextTick, ref } from 'vue'
 import { getCutoutEngine, setCutoutEngine, type CutoutEngine } from '@/utils/tinix/cutout-engine' // [TINIX]
-import { ElProgress, ElRadioGroup, ElRadioButton } from 'element-plus'
+import { ElProgress, ElRadioGroup, ElRadioButton, ElInputNumber } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import uploader from '@/components/common/Uploader/index.vue'
 import _dl from '@/common/methods/download'
@@ -95,11 +100,15 @@ const state = reactive<TImageCutoutState>({
 
 let fileName: string = 'unknow'
 const engine = ref<CutoutEngine>(getCutoutEngine()) // [TINIX]
+const borderMm = ref<number>(Number(localStorage.getItem('tinix.stickerBorderMm')) || 0) // [TINIX]
+function onBorderChange(v: any) {
+  localStorage.setItem('tinix.stickerBorderMm', String(v || 0))
+}
 let currentFile: File | null = null // [TINIX] ảnh đang tách, để tách lại khi đổi model
 let isRuning: boolean = false
 
 const emits = defineEmits<{
-  (event: "done", data: string): void
+  (event: "done", data: string, borderMm?: number): void
 }>()
 
 const raw = ref(null)
@@ -168,7 +177,7 @@ const run = () => {
 const cutDone = async () => {
   state.loading = true
   const url = await uploadCutPhotoToCloud(state.cutImage)
-  emits('done', url)
+  emits('done', url, borderMm.value)
   state.show = false
   handleClose()
 }

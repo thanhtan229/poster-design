@@ -31,6 +31,7 @@
         </div>
         <ImageFramePanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
         <ImageEffectsPanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
+        <StickerBorderPanel v-if="dActiveElement && !dActiveElement.linkedPhotoId" :key="'sb' + dActiveElement.uuid" :image="dActiveElement" /><!-- [TINIX] viền trắng hình dán -->
         <container-wrap @change="changeContainer" />
         <div class="slide-wrap">
           <number-slider v-model="state.innerElement.opacity" style="font-size: 14px" :label="$t('editor.prop.opacity')" :step="0.05" :maxValue="1" @finish="(value) => finish('opacity', value)" />
@@ -63,6 +64,9 @@
 // const NAME = 'w-image-style'
 import ImageFramePanel from './ImageFramePanel.vue'
 import ImageEffectsPanel from './ImageEffectsPanel.vue'
+import StickerBorderPanel from './StickerBorderPanel.vue' // [TINIX]
+import { applyStickerBorder } from '@/utils/tinix/sticker-apply' // [TINIX]
+import { ElMessage } from 'element-plus' // [TINIX]
 import i18n from '@/languages'
 import { nextTick, reactive, ref, watch, onBeforeUnmount } from 'vue'
 
@@ -339,10 +343,23 @@ function openImageCutout() {
 }
 
 // 完成抠图
-async function cutImageDone(url: string) {
+async function cutImageDone(url: string, borderMm: number = 0) {
   setTimeout(() => {
     state.innerElement.imgUrl = url
   }, 300)
+  // [TINIX] áp luôn viền trắng hình dán nếu người dùng chọn (mm > 0) trong cửa sổ tách nền
+  if (borderMm > 0) {
+    setTimeout(async () => {
+      const image = dActiveElement.value
+      if (!image) return
+      try {
+        await applyStickerBorder(image, borderMm, Number(canvasStore.dPage.dpi) || 300)
+        widgetStore.updateDWidgets()
+      } catch (e: any) {
+        ElMessage.warning(e?.message || String(e))
+      }
+    }, 700)
+  }
 }
 </script>
 
