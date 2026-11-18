@@ -249,7 +249,7 @@ async function load(cb: () => void) {
   if (ctemplate && !id && !tempId) {
     try {
       const tpl = await fetchCollageTemplate(Number(ctemplate))
-      applyLayouts([tpl.data], tpl.name)
+      applyLayouts([tpl.data], tpl.name, true)
       state.title = tpl.name
       setTemplateSource({ kind: 'collage', id: tpl.id, name: tpl.name, version: tpl.version })
       markSaved()

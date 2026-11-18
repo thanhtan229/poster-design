@@ -5,7 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import i18n from '@/languages'
 import config from '@/config'
 import router from '@/router'
-import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore } from '@/store'
+import { useCanvasStore, useControlStore, useHistoryStore, useUserStore, useWidgetStore } from '@/store'
 import downloadBlob from '@/common/methods/download/downloadBlob'
 import { zipImages } from './zip'
 import { unzip } from './unzip'
@@ -103,8 +103,12 @@ export async function saveToDisk(saveAs = false): Promise<boolean> {
   return true
 }
 
-/** Đưa các trang vào editor, thay thế thiết kế đang mở. */
-export function applyLayouts(layouts: any[], title: string) {
+/**
+ * Đưa các trang vào editor, thay thế thiết kế đang mở.
+ * [TINIX] Trừ khi `keepTemplateEdit` (tab Sửa mẫu tự nạp mẫu cần sửa), nạp nội dung mới = thoát chế độ Sửa mẫu,
+ * để "Lưu đè mẫu" không còn trỏ vào mẫu cũ khi người dùng bấm dùng mẫu khác / mở tệp / khôi phục bản nháp.
+ */
+export function applyLayouts(layouts: any[], title: string, keepTemplateEdit = false) {
   const widgetStore = useWidgetStore()
   const pageStore = useCanvasStore()
   useControlStore().setShowMoveable(false)
@@ -117,12 +121,17 @@ export function applyLayouts(layouts: any[], title: string) {
   useHistoryStore().$patch({ dHistoryStack: { changes: [], inverseChanges: [] }, dHistoryParams: { index: -1, length: 0, maxLength: 20, stackPointer: -1 } })
   designTitle.value = title
   setTemplateSource(null) // trang mới/mở tệp: không còn gắn với mẫu nào
+  if (!keepTemplateEdit) useUserStore().managerEdit(false)
   resetProject() // dự án mới: chưa có ảnh nào (openPackage nạp lại ảnh của tệp ngay sau đó)
   // Thiết kế này không gắn với bản ghi trong CSDL nữa: bỏ id khỏi địa chỉ để không ghi đè nhầm thiết kế cũ.
   const query = { ...router.currentRoute.value.query }
-  if (query.id || query.tempid) {
+  if (query.id || query.tempid || (!keepTemplateEdit && (query.ctemplate || query.edit))) {
     delete query.id
     delete query.tempid
+    if (!keepTemplateEdit) {
+      delete query.ctemplate // địa chỉ ?ctemplate=…&edit=1 mở lại sẽ vào Sửa mẫu cũ
+      delete query.edit
+    }
     void router.replace({ path: router.currentRoute.value.path, query })
   }
   markSaved()

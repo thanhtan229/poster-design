@@ -42,7 +42,7 @@ export function normalizePages(data: any): any[][] {
   if (typeof parsed === 'string') {
     try {
       parsed = JSON.parse(parsed)
-    } catch (e) {
+    } catch (_e) {
       return []
     }
   }
