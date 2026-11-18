@@ -1,9 +1,10 @@
 // [TINIX] Nhóm mẫu thiết kế: một mẫu thuộc nhiều nhóm (bảng template_group_links, khóa theo id).
 // templates.cate luôn được đồng bộ = tên nhóm đầu tiên (theo sort, id) hoặc '' để trang quản trị/nhập PSD cũ còn chạy.
 import { getDB } from '../db/index'
+import { collageCounts, collageGroupUsage, detachCollageGroup, ensureCollageSchema, visibleCondition, TemplateKind } from './collageGroups'
 
 type TemplateType = 0 | 1
-export type GroupRow = { id: number; name: string; type: number; sort: number; created_at: string; count: number }
+export type GroupRow = { id: number; name: string; type: number; sort: number; created_at: string; count: number; hidden?: number }
 
 /** Tên nhóm để so trùng: không phân biệt hoa thường/dấu thanh, gộp khoảng trắng, chỉ giữ chữ-số */
 export function groupKey(name: string): string {
@@ -52,15 +53,24 @@ export function getGroupsByTemplates(templateIds: number[]): Record<number, numb
 }
 
 /** Danh sách nhóm + số mẫu đang hiển thị (state = 1) của từng nhóm; kèm số mẫu chưa phân nhóm */
-export function listGroupsWithCount(type: TemplateType): { list: GroupRow[]; uncategorized: number; total: number } {
+export function listGroupsWithCount(type: TemplateType, kind: TemplateKind = 'normal'): { list: GroupRow[]; uncategorized: number; total: number } {
   const db = getDB()
-  const list: GroupRow[] = db.prepare(`SELECT c.id, c.name, c.type, c.sort, c.created_at,
+  ensureCollageSchema(db) // cột hidden + bảng liên kết mẫu cắt dán
+  const list: GroupRow[] = db.prepare(`SELECT c.id, c.name, c.type, c.sort, c.created_at, c.hidden,
       (SELECT COUNT(*) FROM template_group_links l JOIN templates t ON t.id = l.template_id WHERE l.category_id = c.id AND t.state = 1 AND t.type = c.type) AS count
     FROM template_categories c WHERE c.type = ? ORDER BY c.sort ASC, c.id ASC`).all(type)
   const uncategorized = Number(db.prepare(`SELECT COUNT(*) AS n FROM templates t WHERE t.type = ? AND t.state = 1
     AND NOT EXISTS (SELECT 1 FROM template_group_links l WHERE l.template_id = t.id)`).get(type).n)
-  const total = Number(db.prepare('SELECT COUNT(*) AS n FROM templates WHERE type = ? AND state = 1').get(type).n)
-  return { list, uncategorized, total }
+  const total = Number(db.prepare(`SELECT COUNT(*) AS n FROM templates WHERE type = ? AND state = 1 AND ${visibleCondition('templates', 'template_group_links')}`).get(type).n)
+  // [TINIX] gộp số mẫu cắt dán (chỉ nhóm loại 0); kind lọc theo loại mẫu đang chọn
+  if (type !== 0 || kind === 'normal') return { list, uncategorized, total }
+  const c = collageCounts()
+  const only = kind === 'collage'
+  return {
+    list: list.map((g) => ({ ...g, count: (only ? 0 : g.count) + (c.perGroup[g.id] || 0) })),
+    uncategorized: (only ? 0 : uncategorized) + c.uncategorized,
+    total: (only ? 0 : total) + c.total,
+  }
 }
 
 function existingCategoryIds(type: number, ids: number[]): number[] {
@@ -140,7 +150,7 @@ export function reorderGroups(type: TemplateType, ids: number[]): void {
 }
 
 export function groupUsage(id: number): number {
-  return Number(getDB().prepare('SELECT COUNT(*) AS n FROM template_group_links WHERE category_id = ?').get(id).n)
+  return Number(getDB().prepare('SELECT COUNT(*) AS n FROM template_group_links WHERE category_id = ?').get(id).n) + collageGroupUsage(id)
 }
 
 /** Xóa nhóm: gỡ khỏi mọi mẫu rồi xóa (mẫu KHÔNG bị xóa). Trả về số mẫu bị gỡ, hoặc -1 nếu nhóm không tồn tại. */
@@ -152,6 +162,7 @@ export function deleteGroupDetach(id: number): number {
     const tids: number[] = db.prepare('SELECT template_id AS id FROM template_group_links WHERE category_id = ?').all(id).map((r: any) => r.id)
     affected = tids.length
     db.prepare('DELETE FROM template_group_links WHERE category_id = ?').run(id)
+    detachCollageGroup(id)
     db.prepare('DELETE FROM template_categories WHERE id = ?').run(id)
     syncPrimary(tids)
   })()

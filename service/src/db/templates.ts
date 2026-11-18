@@ -14,6 +14,7 @@
 import { getDB } from './index'
 import { TemplateListItem, TemplateRow } from './types'
 import { photosCondition, photoCountBuckets } from '../tinix/templateSlots' // [TINIX]
+import { visibleCondition } from '../tinix/collageGroups' // [TINIX]
 
 const LIST_FIELDS = 'id, title, cover, width, height, state, photo_slots' // [TINIX] photo_slots: số khung ảnh đã đánh dấu
 
@@ -32,6 +33,8 @@ function baseConditions(type: 0 | 1, options: ListOptions): { conditions: string
   } else if (options.cate) {
     conditions.push('cate = @cate')
     params.cate = options.cate
+  } else {
+    conditions.push(visibleCondition('templates', 'template_group_links')) // [TINIX] "Tất cả": bỏ mẫu chỉ thuộc nhóm ẩn
   }
   if (options.search) {
     conditions.push('title LIKE @search')
@@ -54,7 +57,7 @@ export function listPage(type: 0 | 1, options: ListOptions): { list: TemplateLis
   photosCond && conditions.push(photosCond)
   const where = conditions.join(' AND ')
   const total = Number(getDB().prepare(`SELECT COUNT(*) AS total FROM templates WHERE ${where}`).get(params)?.total || 0)
-  const list = getDB().prepare(`SELECT ${LIST_FIELDS} FROM templates WHERE ${where} ORDER BY id DESC LIMIT @pageSize OFFSET @offset`).all(params)
+  const list = getDB().prepare(`SELECT ${LIST_FIELDS} FROM templates WHERE ${where} ORDER BY used_at DESC, id DESC LIMIT @pageSize OFFSET @offset`).all(params) // [TINIX] dùng gần đây trước
   return { list, total }
 }
 

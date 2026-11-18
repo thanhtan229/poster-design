@@ -7,6 +7,7 @@
  */
 
 import { recountAllSlots } from '../templateSlots'
+import { ensureCollageSchema } from '../collageGroups'
 
 type Db = { prepare: (sql: string) => any; exec: (sql: string) => void }
 
@@ -91,4 +92,7 @@ export function migrateTinix(db: Db): void {
       SELECT t.id, c.id FROM templates t JOIN template_categories c ON c.name = t.cate AND c.type = t.type WHERE t.cate != ''`).run()
     if (r.changes) console.log(`[tinix:migrate] template_group_links: chuyển ${r.changes} mẫu từ nhóm cũ`)
   }
+
+  // Mẫu cắt dán dùng chung nhóm chủ đề, nhóm ẩn, sắp xếp dùng gần đây (xem collageGroups.ts)
+  ensureCollageSchema(db)
 }

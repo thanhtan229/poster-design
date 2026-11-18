@@ -8,7 +8,7 @@
     <div class="chips">
       <span :class="['chip', { on: modelValue === 0 }]" @click="pick(0, '')">{{ $t('tinix.ui.templateGroups.tat_ca') }}<i>{{ total }}</i></span>
       <span :class="['chip', { on: modelValue === 'none' }]" @click="pick('none', $t('tinix.ui.templateGroups.chua_phan_nhom'))">{{ $t('tinix.ui.templateGroups.chua_phan_nhom') }}<i>{{ uncategorized }}</i></span>
-      <span v-for="g in groups" :key="g.id" :class="['chip', { on: modelValue === g.id }]" @click="pick(g.id, g.name)">
+      <span v-for="g in shownGroups" :key="g.id" :class="['chip', { on: modelValue === g.id, hid: g.hidden }]" @click="pick(g.id, g.name)">
         {{ g.name }}<i>{{ g.count }}</i>
         <el-dropdown v-if="isAdmin && modelValue === g.id" trigger="click" @command="(c: string) => onCommand(c, g)">
           <span class="more" @click.stop>⋯</span>
@@ -17,6 +17,7 @@
               <el-dropdown-item command="rename">{{ $t('tinix.ui.templateGroups.doi_ten') }}</el-dropdown-item>
               <el-dropdown-item command="up" :disabled="isFirst(g)">{{ $t('tinix.ui.templateGroups.len') }}</el-dropdown-item>
               <el-dropdown-item command="down" :disabled="isLast(g)">{{ $t('tinix.ui.templateGroups.xuong') }}</el-dropdown-item>
+              <el-dropdown-item command="hide">{{ g.hidden ? $t('tinix.ui.templateGroups.hien_nhom') : $t('tinix.ui.templateGroups.an_nhom') }}</el-dropdown-item>
               <el-dropdown-item command="delete" divided>{{ $t('tinix.ui.templateGroups.xoa_nhom') }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -29,21 +30,23 @@
       <el-button size="small" type="primary" @click="submitAdd">{{ $t('tinix.ui.templateGroups.them_nhom') }}</el-button>
     </div>
     <div v-if="isAdmin" class="tools">
+      <el-button v-if="hiddenCount" size="small" link @click="showHidden = !showHidden">{{ showHidden ? $t('tinix.ui.templateGroups.an_nhom_an') : $t('tinix.ui.templateGroups.xem_nhom_an', { n: hiddenCount }) }}</el-button>
       <el-button size="small" link :type="selectMode ? 'primary' : 'default'" @click="emit('toggleSelect')">{{ selectMode ? $t('tinix.ui.templateGroups.xong_chon') : $t('tinix.ui.templateGroups.chon_nhieu') }}</el-button>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { ElDropdown, ElDropdownMenu, ElDropdownItem, ElInput, ElButton, ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 import * as adminApi from '@/api/admin'
 import i18n from '@/languages'
 import { apiFailed, apiMessage } from '@/utils/tinix/api-result'
 import type { TTemplateGroup } from '@/api/home'
+import config from '@/config'
 
-const props = defineProps<{ modelValue: number | 'none'; isAdmin: boolean; selectMode?: boolean }>()
+const props = defineProps<{ modelValue: number | 'none'; isAdmin: boolean; selectMode?: boolean; kind?: string }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', v: number | 'none'): void
   (e: 'change', v: { id: number | 'none'; name: string }): void
@@ -58,10 +61,14 @@ const total = ref(0)
 const adding = ref(false)
 const newName = ref('')
 const addInput = ref<any>(null)
+// [TINIX] nhóm ẩn: chỉ hiện khi bấm "Xem nhóm ẩn" (hoặc đang chọn chính nhóm đó)
+const showHidden = ref(false)
+const hiddenCount = computed(() => groups.value.filter((g) => g.hidden).length)
+const shownGroups = computed(() => groups.value.filter((g) => !g.hidden || showHidden.value || props.modelValue === g.id))
 
 async function reload() {
   try {
-    const res: any = await api.home.getTemplateCategories(0)
+    const res: any = await api.home.getTemplateCategories(0, props.kind || 'normal')
     groups.value = Array.isArray(res?.list) ? res.list : []
     uncategorized.value = Number(res?.uncategorized || 0)
     total.value = Number(res?.total || 0)
@@ -100,6 +107,7 @@ const isLast = (g: TTemplateGroup) => groups.value.length > 0 && groups.value[gr
 async function onCommand(cmd: string, g: TTemplateGroup) {
   if (cmd === 'rename') return rename(g)
   if (cmd === 'delete') return remove(g)
+  if (cmd === 'hide') return toggleHidden(g)
   const ids = groups.value.map((x) => x.id)
   const i = ids.indexOf(g.id)
   const j = cmd === 'up' ? i - 1 : i + 1
@@ -149,6 +157,18 @@ async function remove(g: TTemplateGroup) {
   await reload()
   emit('changed')
 }
+
+async function toggleHidden(g: TTemplateGroup) {
+  try {
+    const r = await fetch(`${config.SCREEN_URL}/api/tinix/template-categories/${g.id}/hidden`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hidden: !g.hidden }) })
+    if (!r.ok) throw new Error((await r.json()).message)
+  } catch (e: any) {
+    return ElMessage.error(e?.message || t('tinix.ui.templateGroups.that_bai'))
+  }
+  await reload()
+  emit('changed')
+}
+watch(() => props.kind, () => reload())
 
 const onChanged = () => reload() // mẫu được lưu/xóa/gán nhóm ở nơi khác → cập nhật số đếm
 onMounted(() => {
@@ -203,6 +223,10 @@ defineExpose({ reload, groups })
     i {
       color: rgba(255, 255, 255, 0.75);
     }
+  }
+  .chip.hid {
+    border-style: dashed;
+    opacity: 0.7;
   }
   .chip.add {
     color: #3f6af7;

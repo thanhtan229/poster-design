@@ -18,6 +18,7 @@ import { serviceLink, staticLink } from '../configs'
 import { send } from '../utils/tools'
 import * as templatesRepo from '../db/templates'
 import { listGroupsWithCount, getGroupsByTemplates, attachByName } from '../tinix/templateGroups' // [TINIX]
+import { parseKind, collagePhotoBuckets } from '../tinix/collageGroups' // [TINIX]
 import { setPhotoSlots } from '../tinix/templateSlots' // [TINIX]
 import * as materialsRepo from '../db/materials'
 import * as fontsRepo from '../db/fonts'
@@ -61,12 +62,19 @@ export async function getTemplatePhotoCounts(req: any, res: Response) {
   const categoryId = /^\d+$/.test(rawCate) ? Number(rawCate) : 0
   const category = categoryId > 0 ? templateCategoriesRepo.getCategoryById(categoryId, 0) : undefined
   const uncategorized = rawCate === 'none'
-  send.success(res, { counts: templatesRepo.photoCounts(0, { page: 1, pageSize: 1, categoryId: category ? category.id : 0, uncategorized, cate: uncategorized || category ? '' : rawCate }) })
+  // [TINIX] kind = all | collage | normal: gộp số mẫu cắt dán
+  const kind = parseKind(req.query?.kind)
+  const counts = kind === 'collage' ? { '1': 0, '2': 0, '3': 0, '4': 0, '5+': 0 } as Record<string, number> : templatesRepo.photoCounts(0, { page: 1, pageSize: 1, categoryId: category ? category.id : 0, uncategorized, cate: uncategorized || category ? '' : rawCate })
+  if (kind !== 'normal') {
+    const extra = collagePhotoBuckets(uncategorized ? 'none' : category ? String(category.id) : '')
+    for (const k of Object.keys(extra)) counts[k] = (counts[k] || 0) + extra[k]
+  }
+  send.success(res, { counts })
 }
 
 export async function getTemplateCategories(req: any, res: Response) {
   // [TINIX] kèm số mẫu mỗi nhóm + số mẫu chưa phân nhóm (list vẫn giữ nguyên cấu trúc cũ + count)
-  const r = listGroupsWithCount(req.query?.type == 1 ? 1 : 0)
+  const r = listGroupsWithCount(req.query?.type == 1 ? 1 : 0, req.query?.kind === undefined ? 'normal' : parseKind(req.query.kind))
   send.success(res, { list: r.list, uncategorized: r.uncategorized, total: r.total })
 }
 
