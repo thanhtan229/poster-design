@@ -40,11 +40,9 @@
 // 组件面板
 // const NAME = 'widget-panel'
 import widgetClassifyListData from '@/assets/data/WidgetClassifyList'
-import { reactive, onMounted, watch, nextTick, } from 'vue'
-import { useRoute } from 'vue-router'
+import { reactive, watch } from 'vue'
 import { usePanelResize } from '@/utils/tinix/panel-resize' // [TINIX]
 
-const route = useRoute()
 const CLASSIFY_WIDTH = 66 // cột biểu tượng bên trái (khớp CSS .widget-classify)
 const { width: panelWidth, dragging: panelDragging, onDown: onPanelDown, reset: resetPanel } = usePanelResize({ key: 'left', def: 328, min: 260, max: 720, side: 'left' }) // [TINIX]
 const state = reactive({
@@ -57,11 +55,7 @@ const clickClassify = (index: number) => {
   state.active = true
 }
 
-onMounted(async () => {
-  await nextTick()
-  const { koutu } = route.query
-  koutu && (state.activeWidgetClassify = 4)
-})
+// [TINIX] bỏ nhảy tới tab Công cụ khi có ?koutu (tab đã gỡ)
 
 watch(
   () => state.activeWidgetClassify,

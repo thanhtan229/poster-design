@@ -437,3 +437,7 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 ## Bỏ tab "Của tôi" (2026-11-18)
 - Đã gỡ mục `Của tôi` (`user-wrap`) khỏi `WidgetClassifyList.ts` [TINIX]; thanh trái còn Mẫu, Chất liệu, Chữ, Ảnh, Công cụ. Lý do: tab con "Tài nguyên" chỉ là lời nhắc về dải ảnh; "Thiết kế của tôi" là chỗ lưu thứ ba (DB) trong khi thiết kế lưu bằng tệp `.tinix.zip` + danh sách dự án gần đây.
 - Giữ nguyên `UserWrap.vue`, API thiết kế và bảng `designs` (dữ liệu cũ, công cụ dòng lệnh còn dùng). Muốn mở lại: thêm lại mục vào `WidgetClassifyList.ts`.
+
+## Bỏ tab "Công cụ" + chọn model tách nền (2026-11-18)
+- Đã gỡ tab `Công cụ` (`tools-list-wrap`) khỏi `WidgetClassifyList.ts` và dòng nhảy tới tab này khi có `?koutu` ở `widgetPanel.vue` [TINIX]. Thanh trái còn Mẫu, Chất liệu, Chữ, Ảnh. Nút tách nền vẫn ở thanh thuộc tính khi chọn ảnh ("Xóa nền"). Mã QR không còn lối vào giao diện (file `ToolsListWrap.vue` và widget `wQrcode` giữ nguyên; muốn mở lại thì thêm mục vào `WidgetClassifyList.ts`).
+- Cửa sổ "Xóa nền bằng AI" (`ImageCutout/index.vue`, `method.ts` [TINIX]) có ô **Model tách nền**: *Chất lượng cao · BiRefNet* (mặc định; GPU local qua `POST /api/tinix/cutout/birefnet`) hoặc *Nhanh · U²-Net* (rembg-web trong trình duyệt). Lựa chọn nhớ ở `localStorage` `tinix.cutoutEngine`; đổi model khi đã có ảnh thì tách lại. BiRefNet lỗi (service tắt, chưa cài model, bận) → báo và tự dùng U²-Net. Mã dùng chung: `src/utils/tinix/cutout-engine.ts`.
