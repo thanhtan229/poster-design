@@ -15,7 +15,7 @@
 -->
 <template>
   <div class="top-title">
-    <el-input v-model="state.title" :placeholder="$t('editor.header.untitledDesign')" class="input-wrap" />
+    <el-input v-model="state.title" :placeholder="$t('tinix.ui.project.name_placeholder')" class="input-wrap" />
     <span v-if="!tempEditing" :class="['save-state', { dirty }]" role="status">{{ dirty ? $t('tinix.ui.export.unsaved') : $t('tinix.ui.export.saved') }}</span><!-- [TINIX] -->
   </div>
   <div class="top-icon-wrap">

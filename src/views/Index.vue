@@ -112,7 +112,7 @@ import AiAssistant from '@/components/business/ai-assistant'
 import multipleBoards from '@/components/modules/layout/multipleBoards'
 import PhotoStrip from '@/components/business/photo-strip/PhotoStrip.vue' // [TINIX]
 import useHistory from '@/common/hooks/history'
-import { isDirty, markSaved, pickAndOpen, startAutosave, offerDraftRestore } from '@/utils/tinix/design-file' // [TINIX]
+import { isDirty, markSaved, openRecent, pickAndOpen, startAutosave, offerDraftRestore } from '@/utils/tinix/design-file' // [TINIX]
 useHistory()
 
 function jump2admin() {
@@ -282,6 +282,14 @@ const fns: any = {
   openFile: async () => {
     try {
       await pickAndOpen()
+    } catch (e: any) {
+      ElMessage.error(i18n.global.t('tinix.ui.localFile.open_failed') + ': ' + String((e && e.message) || e).slice(0, 120))
+    }
+  },
+  // [TINIX] mở lại dự án gần đây (cần cấp lại quyền đọc tệp)
+  openRecent: async (entry: any) => {
+    try {
+      await openRecent(entry)
     } catch (e: any) {
       ElMessage.error(i18n.global.t('tinix.ui.localFile.open_failed') + ': ' + String((e && e.message) || e).slice(0, 120))
     }

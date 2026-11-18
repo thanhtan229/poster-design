@@ -162,6 +162,33 @@ export async function ingestPhoto(tmpPath: string, originalName: string, lastMod
   return { duplicate: false, photo: getPhoto(Number(info.lastInsertRowid), userId) as PhotoRow }
 }
 
+// ───────────────────────── Nhập ảnh từ tệp dự án ─────────────────────────
+const PHOTO_PATH = new RegExp("^/static/photos/[A-Za-z0-9_.-]+[.](png|jpe?g|webp|gif|tif|avif)$", "i")
+function cleanPath(value: any): string {
+  const text = staticPath(String(value || ''))
+  return PHOTO_PATH.test(text) ? text : ''
+}
+/** Đăng ký lại ảnh (tệp đã được ghi lại vào static/photos) vào bảng user_images khi mở tệp dự án từ máy khác. Không tạo trùng theo hash/đường dẫn. */
+export function importPhoto(item: any, userId: number): PhotoRow | null {
+  const url = cleanPath(item && item.url)
+  if (!url || !fs.existsSync(abs(url))) return null
+  const hash = String((item && item.hash) || '').replace(/[^0-9a-f]/gi, '').slice(0, 64)
+  const db = getDB()
+  const existing: PhotoRow | undefined = (hash && findByHash(userId, hash)) || db.prepare(`SELECT ${COLS} FROM user_images WHERE url = ? AND source = 'upload'`).get(url)
+  if (existing) return existing
+  const web = cleanPath(item.web_url)
+  const thumb = cleanPath(item.thumb_url)
+  const info = db
+    .prepare(`INSERT INTO user_images (user_id, url, width, height, web_url, thumb_url, hash, size, taken_at, name, source)
+      VALUES (@user_id, @url, @width, @height, @web, @thumb, @hash, @size, @taken, @name, 'upload')`)
+    .run({
+      user_id: userId, url, width: Math.max(0, Math.floor(Number(item.width) || 0)), height: Math.max(0, Math.floor(Number(item.height) || 0)),
+      web: web && fs.existsSync(abs(web)) ? web : '', thumb: thumb && fs.existsSync(abs(thumb)) ? thumb : '', hash,
+      size: Math.max(0, Math.floor(Number(item.size) || 0)), taken: String(item.taken_at || '').slice(0, 40), name: String(item.name || '').slice(0, 200),
+    })
+  return getPhoto(Number(info.lastInsertRowid), userId) || null
+}
+
 // ───────────────────────── Tham chiếu (an toàn khi xóa) ─────────────────────────
 /** Mọi đường dẫn /static/... đang được thiết kế đã lưu và mẫu dùng tới (tệp ảnh này KHÔNG được xóa) */
 export function referencedPaths(extra: string[] = []): Set<string> {

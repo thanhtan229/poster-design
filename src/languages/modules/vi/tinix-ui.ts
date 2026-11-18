@@ -208,6 +208,13 @@ export default {
     xuat_xong: 'Đã xuất PSD',
     xuat_loi: 'Xuất PSD không thành công: {msg}',
   },
+  project: {
+    scope: 'Phạm vi ảnh', this_project: 'Ảnh dự án ({n})', library: 'Kho chung ({n})', add_selected: 'Thêm vào dự án',
+    added: 'Đã thêm {n} ảnh vào dự án', empty: 'Dự án chưa có ảnh. Kéo ảnh khách vào đây, hoặc lấy từ kho chung.', open_library: 'Mở kho chung',
+    open: 'Mở dự án…', new_project: 'Dự án mới…', save: 'Lưu dự án', save_as: 'Lưu thành bản khác…', recent: 'Mở gần đây', no_recent: 'Chưa có dự án nào gần đây',
+    recent_failed: 'Không mở lại được "{name}" (tệp đã bị di chuyển hoặc chưa cấp quyền).', name_placeholder: 'Tên dự án (tên khách)…',
+    photos_missing: '{n} ảnh của dự án chưa được ghi lại',
+  },
   export: {
     title: 'Xuất ảnh / tệp', button: 'Xuất', menu: 'Xuất…', save_short: 'Lưu', saved: 'Đã lưu', unsaved: '● Chưa lưu',
     format: 'Định dạng xuất', jpg_hint: 'Để in (chất lượng cao nhất) · dùng nhiều nhất', png_hint: 'Nền trong suốt, ghi sẵn DPI',
