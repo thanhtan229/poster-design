@@ -400,3 +400,8 @@ Lăn chuột khó dùng nên thay bằng tay nắm riêng của ảnh, tách h�
 - Hình học (`photo-frame.ts`): ảnh đã phóng, chưa xoay có góc trên-trái `x = cropX·(w − z·sw)` (`imageRect`), nghịch đảo là `cropForTopLeft`; con trỏ → hệ khung (bỏ xoay khung quanh tâm phần tử trên màn hình) → hệ ảnh (bỏ `imgRotate` quanh tâm khung).
 - Sửa file gốc (`[TINIX]`): `Moveable.vue` (dragStart: chỉ chặn kéo khung khi đang chỉnh ảnh), `designBoard/index.vue` (gắn overlay), `wImage.vue` (nhấp đúp; bỏ lăn chuột và kéo-để-căn).
 - Chưa làm: khung lật (`flip`) — overlay không lật theo, kéo ảnh sẽ ngược chiều.
+
+## Gọn nút Lưu/Xuất (2026-11-19)
+Thanh trên chỉ còn **Lưu** (ra tệp `.tinix.zip`, Ctrl+S; cạnh ô tên có chỉ báo "Đã lưu / ● Chưa lưu" lấy từ `isDirty()` — `savedSignature` nay là `ref`) và **Xuất**. Bỏ các nút Tải ảnh xuống / Xuất JPG để in / Xuất nhiều trang / Xuất PSD / Xuất bộ JPG cắt dán và mục "Thước & đường gióng" trong menu Tệp (thước đã có trên thanh thước của canvas).
+- `src/views/components/ExportDialog.vue`: hộp thoại Xuất duy nhất. Định dạng JPG để in (mặc định, nhớ lựa chọn lần trước ở `localStorage['tinix-export-prefs']`) · PNG · PSD · Bộ tờ in cắt dán (chỉ trang cắt dán; đóng hộp thoại rồi mở `PrintBundle` qua `ref.open()`). Trang: đang mở hoặc chọn nhiều (gói ZIP). Chất lượng: đủ độ phân giải / 50%. PNG một trang 100% vẫn dùng đường nhanh `HeaderOptions.download()`. JPG qua `renderPageOnServer(…,'jpg')` (chất lượng 100, 4:4:4) rồi thu nhỏ bằng canvas nếu chọn 50%.
+- Sửa file gốc (`[TINIX]`): `views/Index.vue`, `views/components/HeaderOptions.vue`, `views/components/Folder.vue`, `PrintBundle.vue` (bỏ nút riêng, thêm `defineExpose({open})`).

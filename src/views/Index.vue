@@ -37,10 +37,9 @@
           <el-divider direction="vertical" />
         </div>
         <HeaderOptions ref="optionsRef" v-model="state.isContinue" @change="optionsChange">
-          <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('tinix.ui.localFile.save') }}</el-button><!-- [TINIX] lưu ra tệp trên máy -->
-          <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('download')">{{ $t('header.download') }}</el-button>
-          <!-- [TINIX] xuất PSD (mỗi lớp một layer) -->
-          <el-button size="large" class="primary-btn" plain :loading="psdState.loading" @click="exportPsd">{{ psdState.loading ? $t('tinix.ui.psdExport.dang_xuat', { n: psdState.done, total: psdState.total }) : $t('tinix.ui.psdExport.xuat_psd') }}</el-button>
+          <!-- [TINIX] chỉ còn hai nút: Lưu (ra tệp trên máy) và Xuất (hộp thoại JPG in / PNG / PSD / bộ cắt dán) -->
+          <el-button size="large" class="primary-btn" plain @click="dealWith('save')">{{ $t('tinix.ui.export.save_short') }}</el-button>
+          <el-button ref="ref4" size="large" class="primary-btn" type="primary" @click="dealWith('export')">{{ $t('tinix.ui.export.button') }}</el-button>
           <div class="operation-item" @click="jump2admin"><span class="text">{{ $t('tinix.menu.admin') }}</span></div>
         </HeaderOptions>
       </div>
@@ -88,7 +87,7 @@
 import i18n from '@/languages'
 import _config from '../config'
 import {
-  CSSProperties, computed, nextTick,
+  CSSProperties, computed,
   onBeforeUnmount, onMounted, reactive, ref, Ref
 } from 'vue'
 import RightClickMenu from '@/components/business/right-click-menu/RcMenu.vue'
@@ -106,8 +105,6 @@ import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore, useGroupStore } from '@/store'
 import { useRoute } from 'vue-router' // [TINIX]
 import { ElMessage, type ButtonInstance } from 'element-plus'
-import { exportPsdBlob } from '@/utils/tinix/psd-export' // [TINIX]
-import downloadBlob from '@/common/methods/download/downloadBlob'
 import Tour from './components/Tour.vue'
 import createDesign from '@/components/business/create-design'
 import CanvasSizeToolbar from '@/components/business/create-design/CanvasSizeToolbar.vue'
@@ -239,10 +236,6 @@ function handleHistory(data: "undo" | "redo") {
   historyStore.handleHistory(data)
 }
 
-function changeLineGuides() {
-  window.dispatchEvent(new Event('tinix-toggle-ruler'))
-}
-
 function downloadCancel() {
   state.downloadPercent = 0
   state.isContinue = false
@@ -293,36 +286,15 @@ const fns: any = {
       ElMessage.error(i18n.global.t('tinix.ui.localFile.open_failed') + ': ' + String((e && e.message) || e).slice(0, 120))
     }
   },
-  download: () => {
-    optionsRef.value?.download()
+  export: () => {
+    optionsRef.value?.openExport()
   },
   // [TINIX] Lưu thiết kế thành mẫu công khai (admin)
   saveAsTemplate: () => {
     optionsRef.value?.saveAsTemplate()
   },
-  changeLineGuides,
   newDesign: () => {
     createDesignRef.value?.open()
-  }
-}
-// [TINIX] Xuất PSD: dựng layer từ các widget đang hiển thị trên canvas
-const psdState = reactive({ loading: false, done: 0, total: 0 })
-async function exportPsd() {
-  if (psdState.loading) return
-  psdState.loading = true
-  psdState.done = 0
-  psdState.total = 0
-  try {
-    widgetStore.selectWidget({ uuid: '-1' }) // bỏ khung chọn để không lọt vào ảnh
-    await nextTick()
-    const blob = await exportPsdBlob(JSON.parse(JSON.stringify(dPage.value)), widgetStore.dWidgets as any, (d, t) => { psdState.done = d; psdState.total = t })
-    const title = (optionsRef.value as any)?.getTitle?.() || ''
-    downloadBlob(blob, `${String(title).trim() || i18n.global.t('editor.header.untitledWork')}.psd`)
-    ElMessage.success(i18n.global.t('tinix.ui.psdExport.xuat_xong'))
-  } catch (e: any) {
-    ElMessage.error(i18n.global.t('tinix.ui.psdExport.xuat_loi', { msg: String((e && e.message) || e).slice(0, 120) }))
-  } finally {
-    psdState.loading = false
   }
 }
 

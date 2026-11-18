@@ -18,7 +18,7 @@ const ASSET_PATTERN = /\/static\/(?!fonts\/)[^"\\]+?\.(?:png|jpe?g|webp|gif)/gi
 /** Tên thiết kế đang mở (dùng chung với ô tên ở thanh trên). */
 export const designTitle = ref('')
 
-let savedSignature = ''
+const savedSignature = ref('') // [TINIX] reactive để thanh trên hiện "Đã lưu / Chưa lưu"
 let fileHandle: any = null
 
 function snapshot() {
@@ -31,10 +31,10 @@ function signature() {
 }
 /** Ghi nhận trạng thái hiện tại là "đã lưu" (mở mẫu, mở tệp, lưu về máy). */
 export function markSaved() {
-  savedSignature = signature()
+  savedSignature.value = signature()
 }
 export function isDirty() {
-  return signature() !== savedSignature
+  return signature() !== savedSignature.value
 }
 
 function safeName(title: string) {
@@ -279,7 +279,7 @@ export async function offerDraftRestore() {
     await ElMessageBox.confirm(t('tinix.ui.localFile.draft_body', { time, title: draft.title || t('tinix.ui.localFile.untitled') }), t('tinix.ui.localFile.draft_title'), { confirmButtonText: t('tinix.ui.localFile.restore'), cancelButtonText: t('tinix.ui.localFile.discard'), type: 'info', distinguishCancelAndClose: true })
     fileHandle = null
     applyLayouts(layouts, draft.title)
-    savedSignature = '?' // bản nháp chưa lưu ra tệp: vẫn coi là có thay đổi
+    savedSignature.value = '?' // bản nháp chưa lưu ra tệp: vẫn coi là có thay đổi
   } catch (action: any) {
     if (action === 'cancel') void clearDraft()
   }

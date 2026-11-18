@@ -208,6 +208,16 @@ export default {
     xuat_xong: 'Đã xuất PSD',
     xuat_loi: 'Xuất PSD không thành công: {msg}',
   },
+  export: {
+    title: 'Xuất ảnh / tệp', button: 'Xuất', menu: 'Xuất…', save_short: 'Lưu', saved: 'Đã lưu', unsaved: '● Chưa lưu',
+    format: 'Định dạng xuất', jpg_hint: 'Để in (chất lượng cao nhất) · dùng nhiều nhất', png_hint: 'Nền trong suốt, ghi sẵn DPI',
+    psd_short: 'Có từng lớp, mở được trong Photoshop', bundle: 'Bộ tờ in cắt dán', bundle_short: 'Nền sạch + các tờ cắt nổi',
+    pages: 'Trang cần xuất', page_current: 'Trang đang mở (trang {n})', page_select: 'Chọn nhiều trang (nhiều trang sẽ gói thành một tệp ZIP)',
+    quality: 'Chất lượng', q_full: 'Đủ độ phân giải để in — {size}', q_light: 'Nhẹ để gửi Zalo/Facebook — {size}',
+    psd_hint: 'PSD chỉ xuất trang đang mở, mỗi thành phần một lớp.', bundle_hint: 'Bước tiếp theo: kiểm tra từng tờ, xem trước rồi mới tải bộ in.',
+    design_only: 'Hãy lưu mẫu thành thiết kế trước khi xuất.', go: 'Xuất', next: 'Tiếp tục', partial: 'Một số trang chưa xuất được',
+    bad_file: 'Máy chủ chưa trả về {kind} hợp lệ. Hãy khởi động lại app sau khi cập nhật.',
+  },
   batch: {
     title: 'Xuất nhiều trang', select: 'Chọn trang cần xuất', page: 'Trang {n}', format: 'Định dạng', resolution: 'Độ phân giải',
     progress: 'Đã xử lý {n}/{total} trang', failed: 'Trang lỗi: {pages}', retry: 'Xuất lại trang lỗi', start: 'Xuất ảnh',

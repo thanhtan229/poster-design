@@ -14,7 +14,10 @@
  * @LastEditTime: 2026-08-31 21:36:33
 -->
 <template>
-  <div class="top-title"><el-input v-model="state.title" :placeholder="$t('editor.header.untitledDesign')" class="input-wrap" /></div>
+  <div class="top-title">
+    <el-input v-model="state.title" :placeholder="$t('editor.header.untitledDesign')" class="input-wrap" />
+    <span v-if="!tempEditing" :class="['save-state', { dirty }]" role="status">{{ dirty ? $t('tinix.ui.export.unsaved') : $t('tinix.ui.export.saved') }}</span><!-- [TINIX] -->
+  </div>
   <div class="top-icon-wrap">
     <template v-if="tempEditing">
       <el-button plain type="primary" :loading="state.loading" :disabled="state.loading" @click="saveTemp">{{ $t('editor.header.saveTemplate') }}</el-button>
@@ -22,42 +25,26 @@
       <div class="divide__line">|</div>
     </template>
     <watermark-option style="margin-right: 0.5rem" />
-    <PrintBundle v-if="(dPage as any).collage" :save-design="()=>saveToDb(true)" :title="state.title" :disabled="tempEditing" />
-    <!-- [TINIX] Ẩn quản lý đơn/bản khách đã duyệt (ApprovedPrints, CustomerOrders): thiết kế được lưu thành tệp trên máy -->
-    <el-button type="primary" :loading="jpgRunning" :disabled="tempEditing" @click="exportPrintJpg">Xuất JPG để in</el-button>
-    <el-button plain @click="openBatch">{{ i18t('tinix.ui.batch.title') }}</el-button>
+    <!-- [TINIX] Một hộp thoại Xuất duy nhất (JPG in / PNG / PSD / bộ cắt dán); bộ cắt dán mở hộp thoại PrintBundle -->
+    <PrintBundle v-if="(dPage as any).collage" ref="bundleRef" :save-design="()=>saveToDb(true)" :title="state.title" :disabled="tempEditing" />
+    <ExportDialog ref="exportRef" :png-current="download" @bundle="bundleRef?.open()" />
     <slot />
   </div>
   <!-- 生成图片组件 -->
   <SaveImage ref="canvasImage" />
-  <el-dialog v-model="batch.open" :title="i18t('tinix.ui.batch.title')" width="480px" append-to-body>
-    <p>{{ i18t('tinix.ui.batch.select') }}</p>
-    <el-checkbox-group v-model="batch.pages" :disabled="batch.running">
-      <el-checkbox v-for="(_, i) in dLayouts" :key="i" :label="i">{{ i18t('tinix.ui.batch.page', { n: i + 1 }) }}</el-checkbox>
-    </el-checkbox-group>
-    <p>{{ i18t('tinix.ui.batch.format') }} <el-select v-model="batch.format" :disabled="batch.running"><el-option label="PNG" value="png" /><el-option label="JPG" value="jpg" /></el-select></p>
-    <p>{{ i18t('tinix.ui.batch.resolution') }} <el-select v-model="batch.scale" :disabled="batch.running"><el-option label="100%" :value="1" /><el-option label="50%" :value="0.5" /></el-select></p>
-    <p v-if="batch.running || batch.done">{{ i18t('tinix.ui.batch.progress', { n: batch.done, total: batch.total }) }}</p>
-    <p v-if="batch.failed.length">{{ i18t('tinix.ui.batch.failed', { pages: batch.failed.map((n) => n + 1).join(', ') }) }}</p>
-    <template #footer>
-      <el-button :disabled="batch.running" @click="batch.open = false">{{ i18t('common.cancel') }}</el-button>
-      <el-button v-if="batch.failed.length" :disabled="batch.running" @click="runBatch(true)">{{ i18t('tinix.ui.batch.retry') }}</el-button>
-      <el-button type="primary" :disabled="batch.running || !batch.pages.length" @click="runBatch(false)">{{ i18t('tinix.ui.batch.start') }}</el-button>
-    </template>
-  </el-dialog>
 </template>
 
 <script lang="ts" setup>
 import i18n from '@/languages'
 import api from '@/api'
 import * as adminApi from '@/api/admin' // [TINIX]
-import { reactive, ref, watch } from 'vue'
-import { ElCheckbox, ElCheckboxGroup, ElOption, ElSelect } from 'element-plus' // [TINIX] điều khiển chọn trang và định dạng
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useNotification from '@/common/methods/notification'
 import SaveImage from '@/components/business/save-download/CreateCover.vue'
 import PrintBundle from '@/components/business/collage/PrintBundle.vue'
-import { designTitle, saveToDisk } from '@/utils/tinix/design-file' // [TINIX]
+import { designTitle, isDirty, saveToDisk } from '@/utils/tinix/design-file' // [TINIX]
+import ExportDialog from './ExportDialog.vue' // [TINIX]
 import { renderPageOnServer } from '@/utils/tinix/server-export' // [TINIX]
 import { useFontStore } from '@/common/methods/fonts'
 import downloadBlob from '@/common/methods/download/downloadBlob'
@@ -66,7 +53,6 @@ import { storeToRefs } from 'pinia'
 import watermarkOption from './Watermark.vue'
 import { clampDpi, DEFAULT_DPI } from '@/utils/tinix/units' // [TINIX]
 import { withPngDpi } from '@/utils/tinix/png-dpi' // [TINIX]
-import { zipImages } from '@/utils/tinix/zip' // [TINIX]
 const i18t = (k: string, p?: any): string => i18n.global.t(k, p) as string // [TINIX]
 
 type TProps = {
@@ -93,19 +79,9 @@ const userStore = useUserStore()
 const widgetStore = useWidgetStore()
 
 const canvasImage = ref<typeof SaveImage | null>(null)
-const jpgRunning = ref(false)
-async function exportPrintJpg() {
-  if (jpgRunning.value) return
-  jpgRunning.value = true
-  try {
-    const blob = await renderPageOnServer(pageStore.dCurrentPage, 'jpg') // [TINIX] không ghi CSDL
-    const signature = new Uint8Array(await blob.slice(0, 3).arrayBuffer())
-    if (signature[0] !== 255 || signature[1] !== 216 || signature[2] !== 255) throw new Error('Máy chủ chưa trả về JPG hợp lệ. Hãy khởi động lại app sau khi cập nhật.')
-    downloadBlob(blob, `${(state.title || 'cat-dan').replace(/[<>:"/\\|?*]/g, '-')}.jpg`)
-  } catch (e:any) { useNotification('Xuất JPG thất bại', e?.message || '', { type: 'error' }) }
-  finally { jpgRunning.value = false }
-}
-
+const exportRef = ref<InstanceType<typeof ExportDialog> | null>(null)
+const bundleRef = ref<InstanceType<typeof PrintBundle> | null>(null)
+const dirty = computed(() => isDirty()) // [TINIX]
 const pageStore = useCanvasStore()
 const controlStore = useControlStore()
 
@@ -122,54 +98,6 @@ const state = reactive<TState>({
 // [TINIX] tên thiết kế dùng chung với module lưu/mở tệp
 watch(designTitle, (v) => { if (v !== state.title) state.title = v })
 watch(() => state.title, (v) => { designTitle.value = v })
-
-// [TINIX] Xuất tuần tự để tránh các lần chụp dùng chung tệp ảnh tạm trên server.
-const batch = reactive({ open: false, running: false, pages: [] as number[], failed: [] as number[], done: 0, total: 0, format: 'png', scale: 1 })
-function openBatch() {
-  batch.pages = dLayouts.value.map((_, i) => i)
-  batch.failed = []
-  batch.done = 0
-  batch.open = true
-}
-async function convertBatchImage(blob: Blob, format: string, scale: number, dpi: number): Promise<Blob> {
-  const image = await createImageBitmap(blob)
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.max(1, Math.round(image.width * scale)); canvas.height = Math.max(1, Math.round(image.height * scale))
-    const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('Canvas unavailable')
-    if (format === 'jpg') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height) }
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-    const result = await new Promise<Blob | null>((resolve) => { canvas.toBlob(resolve, format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95) })
-    if (!result) throw new Error('Image encoding failed')
-    return format === 'png' ? withPngDpi(result, dpi) : result
-  } finally { image.close() }
-}
-async function runBatch(retry: boolean) {
-  if (batch.running) return
-  const pages = (retry ? batch.failed : batch.pages).slice().sort((a, b) => a - b)
-  batch.running = true; batch.failed = []; batch.done = 0; batch.total = pages.length
-  const files: Array<{ name: string; blob: Blob }> = []
-  try {
-    if (tempEditing.value) throw new Error(i18t('tinix.ui.batch.design_only'))
-    for (const index of pages) {
-      try {
-        const page = dLayouts.value[index]?.global
-        if (!page) throw new Error('Page unavailable')
-        let blob = await renderPageOnServer(index, 'png') // [TINIX] không ghi CSDL
-        const signature = new Uint8Array(await blob.slice(0, 8).arrayBuffer())
-        if (signature[0] !== 137 || signature[1] !== 80 || signature[2] !== 78 || signature[3] !== 71) throw new Error('Invalid PNG')
-        if (batch.format === 'jpg' || batch.scale !== 1) blob = await convertBatchImage(blob, batch.format, batch.scale, clampDpi(page.dpi || DEFAULT_DPI))
-        files.push({ name: `trang-${String(index + 1).padStart(3, '0')}.${batch.format}`, blob })
-      } catch { batch.failed.push(index) }
-      batch.done++
-    }
-    if (files.length) downloadBlob(await zipImages(files), `${state.title || 'TinixPoster'}-trang.zip`)
-  } catch (e: any) {
-    batch.failed = pages
-    useNotification(i18t('tinix.ui.photoAuto.xuat_loi'), e?.message || '', { type: 'error' })
-  } finally { batch.running = false }
-}
 
 // [TINIX] Lưu thiết kế ra tệp .tinix.zip trên máy (Ctrl+S ghi đè đúng tệp đã lưu/mở). saveAs=true: chọn tệp mới.
 async function save(_silent: boolean = false, saveAs: boolean = false) {
@@ -369,6 +297,7 @@ defineExpose({
   saveTemp,
   saveToDb,
   saveAsTemplate, // [TINIX]
+  openExport: () => exportRef.value?.open(), // [TINIX]
   getTitle: () => state.title, // [TINIX] tên file khi xuất PSD
   stateChange,
   load,
@@ -394,9 +323,13 @@ defineExpose({
     }
   }
 }
+.save-state { margin-left: 10px; font-size: 12px; color: #16a34a; white-space: nowrap; }
+.save-state.dirty { color: #d97706; font-weight: 600; }
 .top-title {
   color: @color-black;
   flex: 1;
+  display: flex;
+  align-items: center;
   padding-left: 20px;
   // font-weight: bold;
   .input-wrap {

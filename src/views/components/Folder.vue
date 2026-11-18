@@ -25,10 +25,7 @@
         <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.localFile.save') }}<!-- [TINIX] --></el-dropdown-item>
         <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.localFile.save_as') }}<!-- [TINIX] --></el-dropdown-item>
         <el-dropdown-item v-if="isAdmin()" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.folder.saveAsTemplate') }}<!-- [TINIX] --></el-dropdown-item>
-        <el-dropdown-item @click="$emit('select', 'download')">{{ $t('tinix.folder.download') }}</el-dropdown-item>
-        <!-- <el-dropdown-item disabled>版本记录</el-dropdown-item> -->
-        <!-- <el-dropdown-item disabled>批量套模板</el-dropdown-item> -->
-        <el-dropdown-item divided @click="$emit('select', 'changeLineGuides')">{{ $t('tinix.folder.guides') }}</el-dropdown-item>
+        <el-dropdown-item divided @click="$emit('select', 'export')">{{ $t('tinix.ui.export.menu') }}<!-- [TINIX] --></el-dropdown-item>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
