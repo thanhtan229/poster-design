@@ -52,6 +52,8 @@ Sau khi bấm tạo trang, cửa sổ duyệt mở trước khi dựng: chọn n
 
 Ảnh nguồn, alpha đã sửa, ảnh chủ thể và ảnh viền lưu thành tài nguyên độc lập. `cutoutEdit` giữ URL nguồn/alpha, thông số mm và khung nguồn; `cutoutBorderUrl` hiển thị bên dưới ảnh cùng một widget để kéo/đổi kích thước cùng nhau. Chọn **Sửa chủ thể trên trang** trong mục Cắt dán để sửa tiếp sau khi lưu/mở lại. Thay viền hoặc sửa mặt nạ không gọi lại BiRefNet. Viền tính theo khổ mẫu 30 × 20 cm / 300 DPI, với chỗ trống cố định cho tối đa 5 mm; khi sửa trên trang dùng tỷ lệ hiện tại để tính viền. Nếu đổi khổ hoặc kéo giãn ảnh, mở sửa và áp dụng lại viền để xác lập độ dày vật lý mới. Ảnh từ phiên bản cũ đã gộp viền không có dữ liệu nguồn này; tạo lại trang để dùng tính năng sửa riêng.
 
+> **Đã bỏ (2026-11-18):** luồng "Kỷ niệm" (một ảnh chính) dưới đây cùng `CollagePanel.vue`, `CutoutReview.vue`, `utils/tinix/collage.ts`, `cutout-edit.ts`, `collage-templates.json` và hai script test của nó đã xóa; mẫu cắt dán mới (TemplateLibrary) thay thế. Phần dưới chỉ để tra lịch sử. API service `/api/tinix/cutout/birefnet` vẫn giữ.
+
 Mở mục **Cắt dán** ở thanh trái. Chọn mẫu, nhập **Tên khách / mã đơn**, chọn ảnh chính và 0–2 ảnh phụ từ thư viện hoặc file trên máy. Bấm **Tạo thiết kế cho khách mới**, duyệt mặt nạ/viền, bấm **Dùng kết quả này**. App luôn tạo bản ghi thiết kế mới (không gửi id cũ), lưu tên khách và phiên bản mẫu vào dữ liệu trang. Bấm **Mở thiết kế của khách** để mở tab riêng, chỉnh ảnh/chữ, Lưu và Xuất JPG. Thiết kế đang mở, kể cả phần chưa lưu, không bị thay đổi bởi thao tác tạo khách mới.
 
 Tài nguyên, khổ in, giới hạn ảnh, vị trí khung/chủ thể, sticker, vùng chữ và font của mẫu nằm trong `src/assets/data/collage-templates.json`. Bộ dựng dùng cấu hình này và tạo UUID/lớp mới cho mỗi khách; không sinh ảnh lại và không sửa cấu hình mẫu. Để thay riêng một ảnh đã đặt: chọn ảnh trên canvas, vào Cắt dán → **Thay ảnh đang chọn từ thư viện**. Ảnh phụ giữ nguyên khung; chủ thể mới đi qua bước tách nền/duyệt và căn lại trong vùng hiện có, các lớp khác giữ nguyên.
@@ -417,4 +419,5 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 ## Gộp tab "Mẫu" và "Cắt dán" (2026-11-18)
 - Chỉ gộp ở giao diện; hai bảng DB (`templates`, `collage_templates`) giữ nguyên. Tab "Cắt dán" đã bỏ khỏi `WidgetClassifyList.ts`.
 - `TempListWrap.vue` [TINIX]: thanh lọc loại (Tất cả / Cắt dán / Thiết kế thường); mẫu cắt dán (`TemplateLibrary`, tải một lần) xếp trước lưới mẫu thường (phân trang). Mẫu cắt dán không có nhóm/số ảnh nên ẩn khi đang lọc theo nhóm hoặc số ảnh. Ô tìm kiếm của tab Mẫu lọc cả hai (`TemplateLibrary` nhận prop `search`).
-- `CollagePanel.vue` thành mục "Công cụ cắt dán" (Cụm in và cắt nổi + cách cũ "Kỷ niệm" trong mục thu gọn), chỉ hiện khi trang hiện tại là trang cắt dán (`dPage.collage`).
+- Trên trang cắt dán (`dPage.collage`), đầu tab Mẫu hiện `PrintGroups` (Cụm in và cắt nổi).
+- Thẻ mẫu cắt dán có nhãn "Cắt dán"; menu ⋯ thêm **Đổi tên / danh mục** (`PATCH /api/tinix/collage-templates/:id`, không tạo phiên bản) và **Xóa mẫu** (`DELETE …/:id`, xóa cả `collage_template_versions`).
