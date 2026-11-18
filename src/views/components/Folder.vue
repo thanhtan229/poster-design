@@ -28,7 +28,10 @@
         <el-dropdown-item v-if="!recent.length" disabled>{{ $t('tinix.ui.project.no_recent') }}</el-dropdown-item>
         <el-dropdown-item divided @click="$emit('select', 'save')">{{ $t('tinix.ui.project.save') }}</el-dropdown-item>
         <el-dropdown-item @click="$emit('select', 'saveAs')">{{ $t('tinix.ui.project.save_as') }}</el-dropdown-item>
-        <el-dropdown-item v-if="isAdmin()" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.folder.saveAsTemplate') }}<!-- [TINIX] --></el-dropdown-item>
+        <!-- [TINIX] Lưu mẫu: lưu đè mẫu đang mở (chỉ khi trang mở từ một mẫu) hoặc lưu thành mẫu mới (tên tự đặt theo mã số) -->
+        <el-dropdown-item v-if="templateSource || tempEditing" divided @click="$emit('select', 'overwriteTemplate')">{{ $t('tinix.ui.templateSave.overwrite', { name: templateSource?.name || '' }) }}</el-dropdown-item>
+        <el-dropdown-item :divided="!(templateSource || tempEditing)" @click="$emit('select', 'saveAsTemplate')">{{ $t('tinix.ui.templateSave.save_new') }}</el-dropdown-item>
+        <el-dropdown-item v-if="tempEditing" @click="$emit('select', 'exitTempEdit')">{{ $t('tinix.ui.templateSave.exit_edit') }}</el-dropdown-item>
         <el-dropdown-item divided @click="$emit('select', 'export')">{{ $t('tinix.ui.export.menu') }}<!-- [TINIX] --></el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -40,6 +43,9 @@
 import { ref } from 'vue'
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from 'element-plus'
 import { listRecent, type RecentFile } from '@/utils/tinix/design-file' // [TINIX]
+import { templateSource } from '@/utils/tinix/template-save' // [TINIX]
+import { storeToRefs } from 'pinia' // [TINIX]
+import { useUserStore } from '@/store' // [TINIX]
 
 defineEmits<{ select: [action: string, payload?: any] }>()
 
@@ -49,9 +55,7 @@ async function onVisible(visible: boolean) {
   if (visible) recent.value = await listRecent()
 }
 
-
-// [TINIX] chỉ admin thấy mục "Lưu thành mẫu"
-const isAdmin = () => true
+const { tempEditing } = storeToRefs(useUserStore()) // [TINIX] chế độ sửa mẫu (Quản trị → Sửa mẫu)
 
 </script>
 

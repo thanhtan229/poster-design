@@ -19,11 +19,7 @@
     <span v-if="!tempEditing" :class="['save-state', { dirty }]" role="status">{{ dirty ? $t('tinix.ui.export.unsaved') : $t('tinix.ui.export.saved') }}</span><!-- [TINIX] -->
   </div>
   <div class="top-icon-wrap">
-    <template v-if="tempEditing">
-      <el-button plain type="primary" :loading="state.loading" :disabled="state.loading" @click="saveTemp">{{ $t('editor.header.saveTemplate') }}</el-button>
-      <el-button @click="userStore.managerEdit(false)">{{ $t('common.cancel') }}</el-button>
-      <div class="divide__line">|</div>
-    </template>
+    <!-- [TINIX] "Lưu mẫu" / "Hủy" của chế độ sửa mẫu đã chuyển vào menu Tệp (Lưu đè mẫu / Thoát chế độ sửa mẫu) -->
     <watermark-option style="margin-right: 0.5rem" />
     <!-- [TINIX] Một hộp thoại Xuất duy nhất (JPG in / PNG / PSD / bộ cắt dán); bộ cắt dán mở hộp thoại PrintBundle -->
     <PrintBundle v-if="(dPage as any).collage" ref="bundleRef" :save-design="()=>saveToDb(true)" :title="state.title" :disabled="tempEditing" />
@@ -37,7 +33,7 @@
 <script lang="ts" setup>
 import i18n from '@/languages'
 import api from '@/api'
-import * as adminApi from '@/api/admin' // [TINIX]
+import { setTemplateSource } from '@/utils/tinix/template-save' // [TINIX]
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import useNotification from '@/common/methods/notification'
@@ -173,27 +169,6 @@ async function saveTemp() {
   }
 }
 
-// [TINIX] Lưu thiết kế hiện tại thành MẪU CÔNG KHAI (bảng templates, hiện ở thẻ "Mẫu thiết kế") — chỉ admin
-async function saveAsTemplate() {
-  if (state.loading) return
-  state.loading = true
-  try {
-    const { id } = await adminApi.saveTemplate({
-      title: state.title || i18t('tinix.ui.headerOptions.mau_chua_dat_ten'),
-      type: 0,
-      data: JSON.stringify(dLayouts.value),
-      width: Number(dPage.value.width),
-      height: Number(dPage.value.height),
-    })
-    window.dispatchEvent(new Event('tinix:templates-changed')) // làm mới danh sách Mẫu thiết kế
-    useNotification(i18t('tinix.ui.headerOptions.da_luu_thanh_mau'), i18t('tinix.ui.headerOptions.savedBody', { id }))
-  } catch (error: any) {
-    useNotification(i18t('tinix.ui.headerOptions.luu_thanh_mau_khong_thanh'), error?.msg || error?.message || i18t('tinix.ui.headerOptions.vui_long_thu_lai'), { type: 'error' })
-  } finally {
-    state.loading = false
-  }
-}
-
 // 停用启用
 async function stateChange(e: string | number | boolean) {
   const { tempid, tempType: type } = route.query
@@ -245,6 +220,8 @@ async function load(cb: () => void) {
     wh[1] && (dPage.value.height = wh[1])
     dpi && (dPage.value.dpi = clampDpi(dpi)) // [TINIX] DPI đi kèm kích thước cm khi tạo thiết kế mới
   }
+  // [TINIX] trang mở từ mẫu thường (?tempid=) → Tệp → "Lưu đè mẫu" ghi vào mẫu đó
+  if (!id && !tempId) setTemplateSource(null)
   if (!id && !tempId) {
     initBoard()
     cb()
@@ -255,6 +232,7 @@ async function load(cb: () => void) {
   const data = JSON.parse(content)
   state.stateBollean = !!_state
   state.title = title
+  setTemplateSource(tempId && !id && Number(type) != 1 ? { kind: 'normal', id: Number(tempId), name: title || '#' + tempId } : null) // [TINIX]
   controlStore.setShowMoveable(false) // 清理掉上一次的选择框
   if (Number(type) == 1) {
     // 加载文字组合组件
@@ -296,7 +274,6 @@ defineExpose({
   save,
   saveTemp,
   saveToDb,
-  saveAsTemplate, // [TINIX]
   openExport: () => exportRef.value?.open(), // [TINIX]
   getTitle: () => state.title, // [TINIX] tên file khi xuất PSD
   stateChange,
