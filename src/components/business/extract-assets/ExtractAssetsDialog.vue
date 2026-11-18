@@ -44,10 +44,10 @@
             <el-tag v-if="item.status === 'exists'" size="small" type="info">{{ t('admin.extractDialog.exists') }}</el-tag>
             <el-tag v-else-if="item.status === 'dup'" size="small" type="warning" class="dup-tag" :title="item.dupOf">{{ t('admin.extractDialog.duplicate', { name: item.dupOf }) }}</el-tag>
             <span v-else class="name">{{ item.title }}</span>
-            <el-select v-if="item.status === 'new' && RASTER.includes(item.kind)" v-model="item.kind" size="small" class="kind-select" @click.stop>
+            <el-select v-if="item.status === 'new' && RASTER.includes(item.kind)" v-model="item.kind" size="small" class="kind-select" @click.stop @change="item.suggested = false">
               <el-option v-for="k in RASTER" :key="k" :label="KIND_LABEL(k)" :value="k" />
             </el-select>
-            <el-tag v-if="item.suggested && item.status === 'new'" size="small" type="success" class="suggest-tag">{{ t('admin.extractDialog.suggested') }}</el-tag>
+            <el-tag v-if="item.suggested && item.status === 'new'" size="small" type="success" class="suggest-tag" :title="t('admin.extractDialog.reason.' + item.suggestReason)">{{ t('admin.extractDialog.suggested') }} · {{ t('admin.extractDialog.reasonShort.' + item.suggestReason) }}</el-tag>
           </label>
         </div>
       </section>
@@ -65,10 +65,10 @@ import { reactive, computed } from 'vue'
 import { ElDialog, ElButton, ElSelect, ElOption, ElCheckbox, ElImage, ElTag, ElMessage, vLoading } from 'element-plus'
 import * as adminApi from '@/api/admin'
 import i18n from '@/languages'
-import { extractAssets } from '@/common/methods/extractAssets'
+import { extractAssets, overlapsMostly, type TRect } from '@/common/methods/extractAssets'
 
 type TKind = 'image' | 'svg' | 'mask' | 'photo' | 'text'
-type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; payload: any }
+type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; suggestReason?: 'learned' | 'context' | 'shape'; rects?: TRect[]; flat?: boolean; payload: any }
 /** 位图类可以在这几类之间互相调整 */
 const RASTER: TKind[] = ['mask', 'image', 'photo']
 
@@ -137,7 +137,7 @@ async function onOpen() {
     state.photoCates = photoRes?.list || []
     state.cates = { image: defaultMaterialCate('image'), svg: defaultMaterialCate('svg'), mask: defaultMaterialCate('mask'), photo: state.photoCates[0]?.cate || '', text: state.textCates[0]?.name || '' }
 
-    const { materials, texts } = extractAssets(props.source, props.titlePrefix || '', { image: t('admin.extractDialog.nameImage'), svg: t('admin.extractDialog.nameSvg'), mask: t('admin.extractDialog.nameMask'), group: t('admin.extractDialog.nameGroup') })
+    const { materials, texts, photoRects } = extractAssets(props.source, props.titlePrefix || '', { image: t('admin.extractDialog.nameImage'), svg: t('admin.extractDialog.nameSvg'), mask: t('admin.extractDialog.nameMask'), group: t('admin.extractDialog.nameGroup') })
     const list: TItem[] = [
       ...materials.map(
         (x): TItem => ({
@@ -147,6 +147,7 @@ async function onOpen() {
           preview: x.url,
           checked: true,
           status: 'new',
+          rects: x.rects,
           payload: { type: x.type, url: x.url, thumb: x.url, title: x.title, width: x.width, height: x.height, ...(x.type === 'svg' ? { model: '{}' } : {}) },
         }),
       ),
@@ -166,12 +167,24 @@ async function onOpen() {
         if (!mats[idx]) return
         if (r.status === 'exists') Object.assign(mats[idx], { status: 'exists', checked: false })
         else if (r.status === 'dup') Object.assign(mats[idx], { status: 'dup', checked: false, dupOf: mats[r.dupOf ?? -1]?.title })
-        // 服务端按图像内容给出类型建议：照片 / 背景默认不勾选；纯色浅色形状建议作为相框（mask）
-        else if (r.suggest === 'photo' && mats[idx].kind === 'image') Object.assign(mats[idx], { kind: 'photo', checked: false, suggested: true })
-        else if (r.suggest === 'mask' && mats[idx].kind === 'image') Object.assign(mats[idx], { kind: 'mask', suggested: true })
+        // 类型建议优先级：学到的（管理员以前的选择）> 上下文（被照片压住的纯色形状 → 相框）> 图像形状启发式
+        else if (mats[idx].kind === 'image') {
+          const item = mats[idx]
+          item.flat = !!r.flat
+          if (r.suggestBy === 'learned' && r.suggest && r.suggest !== 'image') Object.assign(item, { kind: r.suggest, checked: r.suggest !== 'photo', suggested: true, suggestReason: 'learned' })
+          else if (r.suggestBy === 'learned') Object.assign(item, { suggested: true, suggestReason: 'learned' }) // 学到的就是「贴纸」，不再套用其他规则
+          else if (r.suggest === 'photo') Object.assign(item, { kind: 'photo', checked: false, suggested: true, suggestReason: 'shape' })
+          else if (r.suggest === 'mask') Object.assign(item, { kind: 'mask', suggested: true, suggestReason: 'shape' })
+        }
       })
       check?.texts?.forEach((r, idx) => {
         if (r.status === 'exists' && txts[idx]) Object.assign(txts[idx], { status: 'exists', checked: false })
+      })
+      // 上下文：纯色形状被「照片」（用户照片占位，或被判为照片的图）压住 → 多半是相框
+      const photoBoxes: TRect[] = [...photoRects, ...mats.filter((i) => i.kind === 'photo').flatMap((i) => i.rects || [])]
+      mats.forEach((i) => {
+        if (i.kind !== 'image' || i.status !== 'new' || !i.flat || i.suggestReason === 'learned') return
+        if ((i.rects || []).some((r) => photoBoxes.some((box) => overlapsMostly(r, box)))) Object.assign(i, { kind: 'mask', suggested: true, suggestReason: 'context' })
       })
     }
     items.push(...list)

@@ -119,21 +119,80 @@ export function similar(a: TFingerprint, b: TFingerprint): boolean {
 export function suggestKind(fp: TFingerprint | null): 'photo' | 'mask' | 'image' {
   if (!fp || !fp.pixels) return 'image'
   const px = fp.pixels
+  const bins = new Set<number>()
+  for (let i = 0; i < px.length; i += 4) if (px[i + 3] >= 16) bins.add(((px[i] >> 4) << 8) | ((px[i + 1] >> 4) << 4) | (px[i + 2] >> 4))
+  const d = dominantShare(px)
+  if (!d.opaque) return 'image'
+  const transparentRatio = d.transparent / (px.length / 4)
+  if (bins.size >= 40 || (transparentRatio < 0.03 && bins.size >= 20)) return 'photo'
+  if (d.share >= FLAT_SHARE && d.lum >= 205 && transparentRatio >= 0.08) return 'mask'
+  return 'image'
+}
+
+/** 不透明像素里「最主要那种颜色（含相邻色，容纳抗锯齿）」占的比例；颜色单一的形状接近 1 */
+function dominantShare(px: Buffer): { opaque: number; transparent: number; share: number; lum: number } {
+  const counts = new Map<number, number>()
   let opaque = 0
   let transparent = 0
   let lum = 0
-  const bins = new Set<number>()
   for (let i = 0; i < px.length; i += 4) {
     if (px[i + 3] < 16) { transparent++; continue }
     opaque++
-    bins.add(((px[i] >> 4) << 8) | ((px[i + 1] >> 4) << 4) | (px[i + 2] >> 4))
+    const key = ((px[i] >> 4) << 8) | ((px[i + 1] >> 4) << 4) | (px[i + 2] >> 4)
+    counts.set(key, (counts.get(key) || 0) + 1)
     lum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]
   }
-  if (!opaque) return 'image'
-  const transparentRatio = transparent / (px.length / 4)
-  if (bins.size >= 40 || (transparentRatio < 0.03 && bins.size >= 20)) return 'photo'
-  if (bins.size <= 8 && lum / opaque >= 205 && transparentRatio >= 0.08) return 'mask'
-  return 'image'
+  if (!opaque) return { opaque, transparent, share: 0, lum: 0 }
+  const top = [...counts.entries()].sort((x, y) => y[1] - x[1])[0][0]
+  const [tr, tg, tb] = [top >> 8, (top >> 4) & 15, top & 15]
+  let near = 0
+  counts.forEach((n, key) => {
+    if (Math.abs((key >> 8) - tr) <= 1 && Math.abs(((key >> 4) & 15) - tg) <= 1 && Math.abs((key & 15) - tb) <= 1) near += n
+  })
+  return { opaque, transparent, share: near / opaque, lum: lum / opaque }
+}
+
+const FLAT_SHARE = 0.85
+
+/** 是否「纯色形状」：颜色基本单一且带透明边缘（不论颜色深浅）——可作为相框的候选，具体是否相框还要看上下文 */
+export function isFlatShape(fp: TFingerprint | null): boolean {
+  if (!fp || !fp.pixels) return false
+  const d = dominantShare(fp.pixels)
+  return d.opaque > 0 && d.share >= FLAT_SHARE && d.transparent / (fp.pixels.length / 4) >= 0.08
+}
+
+// ---- 从管理员的选择中学习：确认入库时记住「这张图被归为什么类型」，之后相似的图优先按此建议 ----
+let hintTableReady = false
+function ensureHintTable() {
+  if (hintTableReady) return
+  getDB().exec('CREATE TABLE IF NOT EXISTS asset_kind_hints (exact TEXT PRIMARY KEY, aspect REAL NOT NULL DEFAULT 0, pixels BLOB, kind TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT (datetime(\'now\', \'localtime\')))')
+  hintTableReady = true
+}
+
+/** 记录一次分类选择（同一张图再次选择会覆盖） */
+export function recordKindHint(fp: TFingerprint, kind: 'image' | 'mask' | 'photo') {
+  ensureHintTable()
+  getDB().prepare('INSERT OR REPLACE INTO asset_kind_hints (exact, aspect, pixels, kind) VALUES (?, ?, ?, ?)').run(fp.exact, fp.aspect, fp.pixels, kind)
+}
+
+/** 查找已学到的类型：先找字节完全相同的，再在相似图里按多数票决定；没有则返回 null */
+export function learnedKind(fp: TFingerprint | null, hints?: { exact: string; aspect: number; pixels: Buffer | null; kind: string }[]): 'image' | 'mask' | 'photo' | null {
+  if (!fp) return null
+  ensureHintTable()
+  const all = hints || (getDB().prepare('SELECT exact, aspect, pixels, kind FROM asset_kind_hints').all() as any[])
+  const exactHit = all.find((h) => h.exact === fp.exact)
+  if (exactHit) return exactHit.kind
+  const votes: Record<string, number> = {}
+  all.forEach((h) => {
+    if (similar(fp, { exact: h.exact, aspect: h.aspect, pixels: h.pixels ? Buffer.from(h.pixels) : null })) votes[h.kind] = (votes[h.kind] || 0) + 1
+  })
+  const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0]
+  return best ? (best[0] as 'image' | 'mask' | 'photo') : null
+}
+
+export function loadKindHints(): { exact: string; aspect: number; pixels: Buffer | null; kind: string }[] {
+  ensureHintTable()
+  return getDB().prepare('SELECT exact, aspect, pixels, kind FROM asset_kind_hints').all() as any[]
 }
 
 /** 并发取指纹（库内旧素材首次比对时较慢，之后命中缓存） */
