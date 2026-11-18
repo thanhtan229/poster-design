@@ -65,7 +65,10 @@ export function normalizeUrl(url: string): string {
   return url.trim().replace(/[?#].*$/, '')
 }
 
-export function extractAssets(data: any, titlePrefix = ''): TExtractResult {
+export type TExtractLabels = { image: string; svg: string; mask: string; group: string }
+const DEFAULT_LABELS: TExtractLabels = { image: '图片', svg: '矢量', mask: '相框', group: '文字组合' }
+
+export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabels = DEFAULT_LABELS): TExtractResult {
   const materials = new Map<string, TExtractedMaterial>()
   const texts = new Map<string, TExtractedText>()
 
@@ -80,14 +83,14 @@ export function extractAssets(data: any, titlePrefix = ''): TExtractResult {
         // 相框：mask 非空 → 容器素材；imgUrl 是用户放进相框里的图，不能入库
         if (isRemoteUrl(w.mask)) {
           const key = `mask:${normalizeUrl(w.mask)}`
-          if (!materials.has(key)) materials.set(key, { key, type: 'mask', url: w.mask.trim(), title: `${titlePrefix}相框 ${materials.size + 1}`, width: w.width, height: w.height })
+          if (!materials.has(key)) materials.set(key, { key, type: 'mask', url: w.mask.trim(), title: `${titlePrefix}${labels.mask} ${materials.size + 1}`, width: w.width, height: w.height })
         } else if (isRemoteUrl(w.imgUrl)) {
           const key = `image:${normalizeUrl(w.imgUrl)}`
-          if (!materials.has(key)) materials.set(key, { key, type: 'image', url: w.imgUrl.trim(), title: `${titlePrefix}图片 ${materials.size + 1}`, width: w.width, height: w.height })
+          if (!materials.has(key)) materials.set(key, { key, type: 'image', url: w.imgUrl.trim(), title: `${titlePrefix}${labels.image} ${materials.size + 1}`, width: w.width, height: w.height })
         }
       } else if (w.type === 'w-svg' && isRemoteUrl(w.svgUrl)) {
         const key = `svg:${normalizeUrl(w.svgUrl)}`
-        if (!materials.has(key)) materials.set(key, { key, type: 'svg', url: w.svgUrl.trim(), title: `${titlePrefix}矢量 ${materials.size + 1}`, width: w.width, height: w.height })
+        if (!materials.has(key)) materials.set(key, { key, type: 'svg', url: w.svgUrl.trim(), title: `${titlePrefix}${labels.svg} ${materials.size + 1}`, width: w.width, height: w.height })
       } else if (w.type === 'w-group') {
         const children = descendants(w.uuid)
         if (!children.some((c) => c.type === 'w-text')) return
@@ -113,7 +116,7 @@ export function extractAssets(data: any, titlePrefix = ''): TExtractResult {
         const textPreview = copies.filter((c: any) => c.type === 'w-text').map((c: any) => String(c.text || '').replace(/<[^>]+>/g, '')).join(' ').slice(0, 30)
         texts.set(signature, {
           key: signature,
-          title: `${titlePrefix}${textPreview || '文字组合'}`,
+          title: `${titlePrefix}${textPreview || labels.group}`,
           widgets: [...copies, group],
           width: Number(w.width) || 0,
           height: Number(w.height) || 0,
