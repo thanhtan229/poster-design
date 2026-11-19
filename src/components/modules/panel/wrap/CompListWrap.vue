@@ -26,8 +26,9 @@
     <classHeader v-show="!state.currentCategory" :types="state.types" @select="selectTypes">
       <template v-slot="{ index }">
         <div class="list-wrap">
-          <div v-for="(item, i) in state.showList[index]" :key="i + 'sl'" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
+          <div v-for="(item, i) in state.showList[index]" :key="i + 'sl'" class="tinix-lib-cell" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
             <el-image class="list__img-thumb" :src="item.cover" fit="contain" lazy loading="lazy"></el-image>
+            <LibraryItemMenu kind="comp" :item="item" @edit="openEdit" /><!-- [TINIX] sửa / nhân bản / xóa -->
           </div>
         </div>
       </template>
@@ -36,7 +37,8 @@
     <ul v-if="state.currentCategory" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
       <classHeader :is-back="true" @back="back">{{ state.currentCategory.name }}</classHeader>
       <el-space fill wrap :fillRatio="30" direction="horizontal" class="list">
-        <div v-for="(item, i) in state.list" :key="i + 'i'" class="list__item" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
+        <div v-for="(item, i) in state.list" :key="i + 'i'" class="list__item tinix-lib-cell" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
+          <LibraryItemMenu kind="comp" :item="item" @edit="openEdit" /><!-- [TINIX] -->
           <!-- <edit-model :isComp="true" @action="action($event, item, i)"> -->
           <el-image class="list__img" :src="item.cover" fit="contain" lazy loading="lazy" />
           <!-- </edit-model> -->
@@ -45,11 +47,15 @@
       <div v-show="state.loading" class="loading"><i class="el-icon-loading"></i> {{ $t('common.loadingMore') }}</div>
       <div v-show="state.loadDone" class="loading">Đã tải hết</div>
     </ul>
+    <LibraryInfoDialog v-model="editState.visible" kind="comp" :item="editState.item" /><!-- [TINIX] -->
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, onBeforeUnmount } from 'vue'
+import LibraryItemMenu from '@/components/business/library/LibraryItemMenu.vue' // [TINIX]
+import LibraryInfoDialog from '@/components/business/library/LibraryInfoDialog.vue' // [TINIX]
+import { LIBRARY_CHANGED } from '@/utils/tinix/library-api' // [TINIX]
 import api from '@/api'
 import getComponentsData from '@/common/methods/DesignFeatures/setComponents'
 import DragHelper from '@/common/hooks/dragHelper'
@@ -89,7 +95,26 @@ const widgetStore = useWidgetStore()
 const dPage = useCanvasStore().dPage
 const pageOptions = { type: 1, page: 0, pageSize: 20 }
 
-onMounted(async () => {
+// [TINIX] menu "⋯": hộp sửa thông tin dùng chung; thư viện đổi (lưu đè / xóa / sửa) thì tải lại danh sách
+const editState = reactive<{ visible: boolean; item: any }>({ visible: false, item: null })
+const openEdit = (item: any) => {
+  editState.item = item
+  editState.visible = true
+}
+async function reloadLibrary(e: Event) {
+  if ((e as CustomEvent).detail?.kind !== 'comp') return
+  for (const k of Object.keys(compsCache)) delete compsCache[k] // bản lưu đè phải lấy dữ liệu mới
+  tempDetail = null
+  state.types = []
+  state.showList = []
+  await loadTypes()
+  if (state.currentCategory) await load(true)
+}
+onMounted(() => window.addEventListener(LIBRARY_CHANGED, reloadLibrary))
+onBeforeUnmount(() => window.removeEventListener(LIBRARY_CHANGED, reloadLibrary))
+
+onMounted(() => loadTypes())
+async function loadTypes() {
   if (state.types.length <= 0) {
     // const types = await api.material.getKinds({ type: 3 })
     const categoryRes: any = await api.home.getTemplateCategories(1)
@@ -104,7 +129,7 @@ onMounted(async () => {
       state.showList.push(list)
     }
   }
-})
+}
 const mouseup = (e: MouseEvent) => {
   e.preventDefault()
   // setTimeout(() => {
@@ -168,7 +193,7 @@ const dragStart = async (e: MouseEvent, { id, width, height, cover }: TGetCompLi
   dragHelper.start(e, img.canvasWidth)
   tempDetail = await getCompDetail({ id, type: 1 })
   if (Array.isArray(JSON.parse(tempDetail.data))) {
-    widgetStore.setSelectItem({ data: JSON.parse(tempDetail.data), type: 'group' })
+    widgetStore.setSelectItem({ data: tagComp(JSON.parse(tempDetail.data), id), type: 'group' }) // [TINIX] nhớ mục gốc để lưu ngược
     // store.commit('selectItem', { data: JSON.parse(tempDetail.data), type: 'group' })
   } else {
     widgetStore.setSelectItem({ data: JSON.parse(tempDetail.data), type: 'text' })
@@ -185,7 +210,7 @@ const selectItem = async (item: TGetCompListResult) => {
 
   tempDetail = tempDetail || (await getCompDetail({ id: item.id, type: 1 }))
   // let group = JSON.parse(tempDetail.data)
-  const group: any = await getComponentsData(tempDetail.data)
+  const group: any = tagComp(await getComponentsData(tempDetail.data), item.id) // [TINIX] nhớ mục gốc để lưu ngược
   let parent: Record<string, any> = { x: 0, y: 0 }
   const { width: pW, height: pH } = dPage
 
@@ -207,6 +232,16 @@ const selectItem = async (item: TGetCompListResult) => {
     widgetStore.addWidget(group)
     // store.dispatch('addWidget', group)
   }
+}
+
+/** [TINIX] gắn libraryRef vào nhóm gốc của thành phần (lớp chữ rời: gắn vào chính nó) */
+function tagComp(data: any, id: number) {
+  const ref0 = { kind: 'comp', id: Number(id) }
+  if (Array.isArray(data)) {
+    const g = data.find((w: any) => w && w.type === 'w-group')
+    if (g) g.libraryRef = ref0
+  } else if (data && typeof data === 'object') data.libraryRef = ref0
+  return data
 }
 
 function getCompDetail(params: TGetTempDetail): Promise<TTempDetail> {

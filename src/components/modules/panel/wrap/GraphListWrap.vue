@@ -26,8 +26,9 @@
     <classHeader v-show="!state.currentCategory" :types="state.types" @select="selectTypes">
       <template v-slot="{ index }">
         <div class="list-wrap">
-          <div v-for="(item, i) in state.showList[index]" :key="i + 'sl'" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
+          <div v-for="(item, i) in state.showList[index]" :key="i + 'sl'" class="tinix-lib-cell" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
             <el-image class="list__img-thumb" :src="item.thumb" fit="contain" lazy loading="lazy" />
+            <LibraryItemMenu kind="material" :item="item" @edit="openEdit" /><!-- [TINIX] sửa / xóa -->
           </div>
         </div>
       </template>
@@ -36,19 +37,24 @@
     <ul v-if="state.currentCategory" v-infinite-scroll="load" class="infinite-list" :infinite-scroll-distance="150" style="overflow: auto">
       <classHeader :is-back="true" @back="back">{{ state.currentCategory.name }}</classHeader>
       <el-space fill wrap :fillRatio="30" direction="horizontal" class="list">
-        <div v-for="(item, i) in state.list" :key="i + 'i'" class="list__item" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
+        <div v-for="(item, i) in state.list" :key="i + 'i'" class="list__item tinix-lib-cell" draggable="false" @mousedown="dragStart($event, item)" @mousemove="mousemove" @mouseup="mouseup" @click.stop="selectItem(item)" @dragstart="dragStart($event, item)">
           <el-image class="list__img" :src="item.thumb" fit="contain" lazy loading="lazy" />
+          <LibraryItemMenu kind="material" :item="item" @edit="openEdit" /><!-- [TINIX] -->
         </div>
       </el-space>
       <div v-show="state.loading" class="loading"><i class="el-icon-loading" /> {{ $t('common.loadingMore') }}</div>
       <div v-show="state.loadDone" :style="state.list.length <= 0 ? 'padding-top: 4rem' : ''" class="loading">Đã tải hết</div>
     </ul>
+    <LibraryInfoDialog v-model="editState.visible" kind="material" :item="editState.item" /><!-- [TINIX] -->
   </div>
 </template>
 
 <script lang="ts" setup>
 import i18n from '@/languages'
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, onBeforeUnmount } from 'vue'
+import LibraryItemMenu from '@/components/business/library/LibraryItemMenu.vue' // [TINIX]
+import LibraryInfoDialog from '@/components/business/library/LibraryInfoDialog.vue' // [TINIX]
+import { LIBRARY_CHANGED } from '@/utils/tinix/library-api' // [TINIX]
 import api from '@/api'
 // import wImage from '../../widgets/wImage/wImage.vue'
 import wImageSetting from '../../widgets/wImage/wImageSetting'
@@ -113,7 +119,19 @@ const state = reactive<TState>({
 })
 const pageOptions = { page: 0, pageSize: 20 }
 
-onMounted(async () => {
+// [TINIX] mỗi mục nhớ (danh mục, url) để sửa / xóa / lưu ngược đúng mục; thư viện đổi thì tải lại
+const tagList = (list: any[], cate: any) => {
+  ;(list || []).forEach((it: any) => {
+    it._libraryRef = { kind: 'material', cate: String(cate || ''), url: it.url }
+  })
+  return list || []
+}
+const editState = reactive<{ visible: boolean; item: any }>({ visible: false, item: null })
+const openEdit = (item: any) => {
+  editState.item = item
+  editState.visible = true
+}
+async function loadTypes() {
   if (state.types.length <= 0) {
     const categoryRes: any = await api.material.getAssetCategories('materials')
     state.types = Array.isArray(categoryRes?.list) ? categoryRes.list : []
@@ -121,10 +139,22 @@ onMounted(async () => {
       const { list } = await api.material.getList({
         cate: iterator.cate,
       })
-      state.showList.push(list)
+      state.showList.push(tagList(list, iterator.cate))
     }
   }
+}
+async function reloadLibrary(e: Event) {
+  if ((e as CustomEvent).detail?.kind !== 'material') return
+  state.types = []
+  state.showList = []
+  await loadTypes()
+  if (state.currentCategory) await load(true)
+}
+onMounted(() => {
+  loadTypes()
+  window.addEventListener(LIBRARY_CHANGED, reloadLibrary)
 })
+onBeforeUnmount(() => window.removeEventListener(LIBRARY_CHANGED, reloadLibrary))
 
 // const dragHelper = new DragHelper()
 // let isDrag = false
@@ -158,7 +188,7 @@ const load = async (init: boolean = false) => {
   const result = await api.material.getList({
     ...{ cate: state.currentCategory?.cate || state.currentCategory?.id, search: state.searchKeyword, ...pageOptions },
   })
-  const list = result?.list || []
+  const list = tagList(result?.list || [], state.currentCategory?.cate || state.currentCategory?.id) // [TINIX]
   if (init) {
     state.list = list
   } else {
@@ -213,6 +243,7 @@ async function selectItem(item: TGetListData) {
     return
   }
   const assetType = item.type === 'png' ? 'image' : item.type
+  const libraryRef = (item as any)._libraryRef // [TINIX] nhớ mục gốc để lưu ngược về thư viện
   let setting = assetType === 'svg' ? JSON.parse(JSON.stringify(wSvgSetting)) : JSON.parse(JSON.stringify(wImageSetting))
   const img = await setImageData(item)
 
@@ -235,6 +266,7 @@ async function selectItem(item: TGetListData) {
     setting.mask = item.url
     setting.isContainer = true
   }
+  if (libraryRef) setting.libraryRef = libraryRef // [TINIX]
   widgetStore.addWidget(setting)
   // store.dispatch('addWidget', setting)
 }

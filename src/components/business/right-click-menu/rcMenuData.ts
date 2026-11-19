@@ -21,7 +21,7 @@ export const menuList: TMenuItemData = {
 }
 
 export type TWidgetItemData = {
-  type: 'copy' | 'paste' | 'duplicate' | 'index-up' | 'index-down' | 'index-front' | 'index-back' | 'del' | 'delete-all' | 'group' | 'ungroup' | 'lock' | 'lock-all' | 'unlock' | 'unlock-all' | 'hide' | 'hide-all' | 'show' | 'show-all' | 'select-all' | 'deselect-all' | 'invert-selection' | 'selection-menu' | 'arrange-menu' | 'visibility-menu' | 'locking-menu' | 'align' | `align-${TUpdateAlignData['align']}` | 'distribute' | `distribute-${TDistributeAxis}`
+  type: 'copy' | 'paste' | 'duplicate' | 'index-up' | 'index-down' | 'index-front' | 'index-back' | 'del' | 'delete-all' | 'group' | 'ungroup' | 'lock' | 'lock-all' | 'unlock' | 'unlock-all' | 'hide' | 'hide-all' | 'show' | 'show-all' | 'select-all' | 'deselect-all' | 'invert-selection' | 'selection-menu' | 'arrange-menu' | 'visibility-menu' | 'locking-menu' | 'align' | `align-${TUpdateAlignData['align']}` | 'distribute' | `distribute-${TDistributeAxis}` | 'library-menu' | 'lib-save-over' | 'lib-save-new' /* [TINIX] thư viện */
   text: string
   children?: TWidgetItemData[]
   disabled?: boolean
@@ -44,6 +44,7 @@ export function organizeMenu(items: TWidgetItemData[]): TWidgetItemData[] {
   category('arrange-menu', 'business.menu.arrangeMenu', ['index-up', 'index-down', 'index-front', 'index-back', 'align', 'distribute'])
   category('visibility-menu', 'business.menu.visibilityMenu', ['hide', 'show', 'show-all', 'hide-all'])
   category('locking-menu', 'business.menu.lock', ['lock', 'unlock', 'lock-all', 'unlock-all'])
+  category('library-menu', 'tinix.ui.library.menu', ['lib-save-over', 'lib-save-new']) // [TINIX] lưu ngược về thư viện
   for (const type of ['del', 'delete-all'] as const) {
     const item = find(type)
     if (item) result.push({ ...item, danger: true, separatorBefore: type === 'del' || !find('del') })
