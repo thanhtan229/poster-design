@@ -515,3 +515,7 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 - Menu "⋯" trên từng ô của tab Chữ / Chất liệu (`src/components/business/library/LibraryItemMenu.vue`, `LibraryInfoDialog.vue`): Sửa thông tin (tên, danh mục, loại chất liệu), Nhân bản (thành phần, ảnh bìa riêng), Xóa hẳn (hỏi lại). Thư viện đổi → sự kiện `tinix:library-changed` → hai tab tải lại (tab Chữ xóa bộ nhớ đệm dữ liệu thành phần).
 - Kiểm thử: `scripts/tinix-selftest/library.ts` (trong `tinix:test`). Thử trên editor với service của nhánh ở cổng 7002 (dùng chung dữ liệu thật, chỉ trên mục thử rồi xóa): chèn → sửa màu → lưu thành mục mới → lưu đè (ảnh bìa chụp lại đúng) → đổi tên → xóa hẳn; chất liệu: lưu vào thư viện → chuyển sang danh mục Khung kèm đổi loại → xóa (tệp ảnh còn).
 - Khối **Thư viện** ở đầu bảng Thiết lập (`LibraryPanel.vue`, nối ở `stylePanel.vue` [TINIX]): cùng các lệnh của menu chuột phải → Thư viện, kèm tên mục gốc ("Chèn từ thư viện: …") để dễ tìm hơn menu chuột phải (người dùng tìm lệnh lưu trong menu Tệp mà không thấy).
+
+## Tìm mẫu theo mã số (2026-11-19)
+
+Ô tìm mẫu (cắt dán và mẫu thường) khớp **tên hoặc đúng mã số** mẫu: gõ `66` ra mẫu mã 66 (khớp đúng, không khớp từng phần nên `6` không ra mọi mẫu có số 6). Trước đây chỉ khớp tên nên mẫu có tên tự đặt không chứa mã thì không tìm được bằng mã. Sửa ở `TemplateLibrary.vue` (hàm `nameOrIdMatch`, lọc phía trình duyệt) và `service/src/db/templates.ts` (`title LIKE ... OR CAST(id AS TEXT) = ...`); chỗ nào cũng có comment `[TINIX]`. Phần service cần khởi động lại service để có hiệu lực.

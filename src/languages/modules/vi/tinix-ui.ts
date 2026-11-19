@@ -535,7 +535,7 @@ export default {
     badge: 'Cắt dán',
     print_groups: 'Cụm in và cắt nổi trên trang ({n})',
     opened: 'Đã mở mẫu: {name}',
-    search: 'Tìm mẫu theo tên',
+    search: 'Tìm mẫu theo tên hoặc mã số',
     all_cats: 'Tất cả',
     no_cat: 'Chưa phân nhóm',
     empty: 'Chưa có mẫu nào khớp.',
