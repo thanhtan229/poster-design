@@ -448,6 +448,10 @@ export default {
   },
   library: {
     menu: 'Thư viện',
+    kindComp: 'Thành phần (tab Chữ)',
+    kindMaterial: 'Chất liệu',
+    fromLibrary: 'Chèn từ thư viện: “{name}”. Sửa xong bấm Lưu đè để cập nhật mục này.',
+    notInLibrary: 'Chưa có trong thư viện. Lưu lại để dùng lần sau.',
     saveOver: 'Lưu đè vào thư viện',
     saveNew: 'Lưu thành mục mới',
     saveToLibrary: 'Lưu vào thư viện',

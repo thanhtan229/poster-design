@@ -10,6 +10,7 @@
         <el-button plain type="primary" class="gounp__btn" @click="handleCombine">{{ $t('editor.panel.group') }}</el-button>
         <icon-item-select label="" :data="iconList" @finish="alignAction" />
       </div>
+      <LibraryPanel v-if="dActiveElement?.type && dActiveElement.uuid !== '-1'" v-show="!showGroupCombined" /><!-- [TINIX] lưu lớp/nhóm đang chọn về thư viện -->
       <component :is="dActiveElement?.type + '-style'" v-show="!showGroupCombined" v-if="dActiveElement?.type" />
     </div>
     <div v-show="activeTab === 1" class="layer-wrap">
@@ -25,6 +26,7 @@ import alignIconList, { AlignListData } from '@/assets/data/AlignListData'
 import iconItemSelect, { TIconItemSelectData } from '../settings/iconItemSelect.vue'
 import { ref, watch } from 'vue';
 import { usePanelResize } from '@/utils/tinix/panel-resize' // [TINIX]
+import LibraryPanel from '@/components/business/library/LibraryPanel.vue' // [TINIX]
 // import { useSetupMapGetters } from '@/common/hooks/mapGetters';
 import { useControlStore, useGroupStore, useWidgetStore } from '@/store';
 import { storeToRefs } from 'pinia';
