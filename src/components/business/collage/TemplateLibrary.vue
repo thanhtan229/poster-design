@@ -48,7 +48,9 @@ function inGroup(t:any){const gs:number[]=t.groups||[];const g=props.group;if(g=
 function photosOk(t:any){const p=props.photos;if(!p)return true;const n=Number(t.photo_slots||0);if(p==='5+')return n>=5;return Number(p)===1?n<=1:n===Number(p)}
 function tileTitle(t:any){const g=groupNames(t);return t.name+(g?' · '+g:'')}
 function groupNames(t:any){const by=new Map((props.allGroups||[]).map(g=>[g.id,g.name]));return (t.groups||[]).map((id:number)=>by.get(id)).filter(Boolean).join(', ')||t.category||''}
-const shown=computed(()=>templates.value.filter(t=>inGroup(t)&&photosOk(t)&&String(t.name).toLowerCase().includes((props.search ?? localSearch.value).trim().toLowerCase())))
+// [TINIX] tìm theo tên hoặc đúng mã số mẫu
+function nameOrIdMatch(t:any,kw:string){return !kw||String(t.name).toLowerCase().includes(kw)||String(t.id)===kw}
+const shown=computed(()=>templates.value.filter(t=>inGroup(t)&&photosOk(t)&&nameOrIdMatch(t,(props.search ?? localSearch.value).trim().toLowerCase())))
 async function load(){try{const r=await fetch(`${config.SCREEN_URL}/api/tinix/collage-templates`);if(!r.ok)throw new Error('Không tải được mẫu');templates.value=(await r.json()).list}catch(e:any){message.value=e.message}}
 async function useTemplate(t:any){
  try{if(await openTemplateOnCanvas(t.data,t.name,{kind:'collage',id:t.id,name:t.name,version:t.version})){ElMessage.success(i18n.global.t('tinix.ui.collageTab.opened',{name:t.name}));fetch(`${config.SCREEN_URL}/api/tinix/template-used`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'collage',id:t.id})}).catch(()=>undefined)}}

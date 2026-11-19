@@ -37,8 +37,10 @@ function baseConditions(type: 0 | 1, options: ListOptions): { conditions: string
     conditions.push(visibleCondition('templates', 'template_group_links')) // [TINIX] "Tất cả": bỏ mẫu chỉ thuộc nhóm ẩn
   }
   if (options.search) {
-    conditions.push('title LIKE @search')
+    // [TINIX] khớp tên hoặc đúng mã số mẫu (gõ "66" ra mẫu mã 66)
+    conditions.push('(title LIKE @search OR CAST(id AS TEXT) = @searchId)')
     params.search = `%${options.search}%`
+    params.searchId = String(options.search).trim()
   }
   return { conditions, params }
 }
