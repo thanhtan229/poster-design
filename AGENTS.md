@@ -14,6 +14,38 @@ Khi được nhờ tạo mẫu mới, đổi phong cách, sửa bố cục, khun
    - Xuất cắt: `node scripts/tinix-cli.mjs collage export --id <mã> --directory <thư mục> --margin 8 --gap 4`. Không được có cảnh báo.
 4. Khi người dùng nhận xét một chỗ chưa ổn: thêm **một dòng** quy tắc vào `DESIGN-RULES.md` kèm lý do (*Vì sao*) và ghi vào nhật ký cuối file, cùng commit với thay đổi mẫu.
 
+## Dựng mẫu cắt dán từ MỘT ảnh tham chiếu (ảnh chụp trang scrapbook)
+Khi người dùng đưa một ảnh mẫu và nhờ "dựng giống ảnh này" thì dùng đường này (không viết script dựng tay). Tài liệu đầy đủ: mục **"Dựng mẫu cắt dán từ ảnh tham chiếu"** trong `TINIX.md` (định dạng spec, các điều đã thử không hiệu quả). Không gọi AI trả phí.
+
+**Điều kiện trước khi làm**
+- App phải đang chạy ở `http://127.0.0.1:7001` (tải font, tách nền BiRefNet). Nếu sandbox chặn kết nối tới `127.0.0.1`, xin người dùng cho phép mạng thay vì bỏ qua bước.
+- Phải **tự xem được ảnh** trên máy (ảnh lưới, ảnh render, ảnh so sánh). Không xem được thì dừng và báo người dùng; đừng đoán toạ độ.
+- Tệp làm việc để trong `.runtime/reference/<tên>/` (không commit).
+
+**Quy trình**
+```text
+node scripts/tinix-cli.mjs reference grid --input ref.png --output ref-grid.png
+#   xem ref-grid.png, đọc toạ độ (px của ảnh gốc) rồi viết spec.json
+node scripts/tinix-cli.mjs drafts from-reference --reference ref.png --spec spec.json --output draft.json
+node scripts/tinix-cli.mjs drafts render --input draft.json --output render.png
+node scripts/tinix-cli.mjs reference compare --reference ref.png --render render.png --spec spec.json --output cmp.png
+#   xem render.png và cmp.png (mẫu | render | bản đồ lệch), sửa spec, lặp lại 3 lệnh trên
+node scripts/tinix-cli.mjs templates save-collage --input draft.json --name "Tên mẫu"   # CHỈ khi người dùng đã duyệt
+```
+
+**Viết spec** (mẫu có sẵn: `scripts/examples/smile-darling.spec.json`, `scripts/examples/luna-frame.spec.json`)
+- `elements` theo thứ tự lớp từ dưới lên: `frame` (khung giấy + ảnh bên trong), `photo` (ảnh có mask), `label` (nhãn + chữ), `sticker` (cắt từ ảnh mẫu).
+- Toạ độ, kích thước, góc xoay do mình đọc từ ảnh lưới; máy tự lo màu giấy/nền/mực, cắt ảnh khung đã duỗi thẳng, tách sticker và khớp cỡ chữ.
+- `textInk` phải bao sát chữ (không lấn viền giấy/nền tối), nếu không chữ nhiều dòng bị giãn dòng quá thưa.
+- Biểu tượng nhỏ trong nhãn: thêm `sticker` với `keep: "box"` đặt SAU nhãn. Sticker bị BiRefNet cắt hụt: dùng `keep: "box"`.
+- **Người/ảnh khách trong ảnh mẫu không được thành sticker**: đặt chỗ đó là `frame`/`photo` (khung ảnh trống). Mẫu chỉ lưu bố cục; ảnh người của ảnh mẫu không đi vào thư viện mẫu.
+- Sửa lệch bằng tay theo `reference compare`. Đừng thêm bước tự tinh chỉnh khung (leo đồi, `reference nudge`): đã thử hai lần, kết quả tệ hơn (xem `TINIX.md`).
+
+**Lưu và bàn giao**
+- Giữ mặc định `--photos placeholder` khi dựng bản để lưu. `--photos reference` chỉ để đo độ khớp, không lưu bản đó.
+- `templates save-collage` ghi thẳng vào thư viện mẫu thật (và tài nguyên vào `service/static/collage/<tên>/`). Trước khi lưu: gửi người dùng `render.png` (và số MAE/SSIM của `reference compare`), chờ đồng ý.
+- Sau khi lưu, báo mã mẫu. Người dùng mở mẫu trong app để chỉnh tiếp và lưu bằng Tệp → Lưu đè mẫu.
+
 ## Quy ước repo (bắt buộc)
 - Làm trên nhánh git riêng từ `main`. **Không push lên `origin`** (repo gốc của người khác); chỉ push lên remote `fork`.
 - PR vào `main` của `fork` (`thanhtan229/poster-design`). Chỉ merge khi người dùng yêu cầu, bằng merge commit.
