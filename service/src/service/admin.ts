@@ -172,7 +172,7 @@ export default {
     const table = req.body?.type === 'photos' ? 'photos' : 'materials'
     const cate = typeof req.body?.cate === 'string' ? req.body.cate.trim() : ''
     const asset = req.body?.asset && { ...req.body.asset, type: req.body.asset.type === 'png' ? 'image' : req.body.asset.type, ...(req.body.asset.type === 'mask' ? { isContainer: true } : {}) }
-    if (!cate || !asset || typeof asset.url !== 'string' || !asset.url.trim() || (table === 'materials' && !['image', 'svg', 'mask'].includes(asset.type))) return send.error(res, 'Tham số không hợp lệ')
+    if (!cate || !asset || typeof asset.url !== 'string' || !asset.url.trim() || (table === 'materials' && !['image', 'svg', 'mask', 'background'].includes(asset.type))) return send.error(res, 'Tham số không hợp lệ')
     addAssetRow(table, cate, asset) ? send.success(res, undefined) : send.error(res, 'Danh mục không tồn tại')
   },
 
@@ -183,11 +183,11 @@ export default {
     const texts: any[] = Array.isArray(req.body?.texts) ? req.body.texts.slice(0, 200) : []
     const materialKeys = existingMaterialKeys()
     const textSignatures = existingTextSignatures()
-    const materialResults: { url: string; status: 'added' | 'exists' | 'dup' | 'invalid' | 'failed'; by?: 'url' | 'content'; dupOf?: number; suggest?: 'photo' | 'mask' | 'image'; suggestBy?: 'learned' | 'heuristic'; flat?: boolean }[] = []
+    const materialResults: { url: string; status: 'added' | 'exists' | 'dup' | 'invalid' | 'failed'; by?: 'url' | 'content'; dupOf?: number; suggest?: 'photo' | 'mask' | 'image' | 'background'; suggestBy?: 'learned' | 'heuristic'; flat?: boolean }[] = []
     const textResults: { title: string; status: 'added' | 'exists' | 'invalid' | 'failed'; id?: number }[] = []
 
     // 第一遍：校验 + 按 URL 判重；通过的进入候选队列
-    type TCandidate = { index: number; cate: string; type: 'image' | 'svg' | 'mask' | 'photo'; table: 'materials' | 'photos'; url: string; asset: any }
+    type TCandidate = { index: number; cate: string; type: 'image' | 'svg' | 'mask' | 'photo' | 'background'; table: 'materials' | 'photos'; url: string; asset: any }
     const candidates: TCandidate[] = []
     materials.forEach((item, index) => {
       const asset = item?.asset
@@ -195,7 +195,7 @@ export default {
       const table = item?.table === 'photos' ? 'photos' : 'materials'
       const type = table === 'photos' ? 'photo' : normalizeAssetType(String(asset?.type || ''))
       const url = typeof asset?.url === 'string' ? asset.url.trim() : ''
-      if (!cate || !url || !['image', 'svg', 'mask', 'photo'].includes(type)) return void (materialResults[index] = { url, status: 'invalid' })
+      if (!cate || !url || !['image', 'svg', 'mask', 'photo', 'background'].includes(type)) return void (materialResults[index] = { url, status: 'invalid' })
       const key = assetKey(type, url)
       if (materialKeys.has(key)) return void (materialResults[index] = { url, status: 'exists', by: 'url' })
       materialKeys.add(key)
@@ -206,7 +206,7 @@ export default {
     const kinds = new Set(candidates.map((c) => c.type))
     const library = candidates.length ? listLibraryAssets().filter((x) => kinds.has(x.kind)) : []
     const [candidateFps, libraryFps] = await Promise.all([fingerprintMany(candidates.map((c) => ({ url: c.url, kind: c.type }))), fingerprintMany(library)])
-    const materialSuggest: Record<number, { kind: 'photo' | 'mask' | 'image'; by: 'learned' | 'heuristic'; flat: boolean }> = {}
+    const materialSuggest: Record<number, { kind: 'photo' | 'mask' | 'image' | 'background'; by: 'learned' | 'heuristic'; flat: boolean }> = {}
     const hints = candidates.some((c) => c.type === 'image') ? loadKindHints() : []
     const accepted: { index: number; type: string; fp: TFingerprint }[] = []
     for (let i = 0; i < candidates.length; i++) {
@@ -230,7 +230,7 @@ export default {
         continue
       }
       const saved = addAssetRow('materials', c.cate, { ...c.asset, type: c.type, url: c.url, thumb: c.asset.thumb || c.url, ...(c.type === 'mask' ? { isContainer: true } : {}), ...(c.type === 'svg' && !c.asset.model ? { model: '{}' } : {}) })
-      if (saved && fp && (c.type === 'image' || c.type === 'mask')) recordKindHint(fp, c.type)
+      if (saved && fp && (c.type === 'image' || c.type === 'mask' || c.type === 'background')) recordKindHint(fp, c.type)
       materialResults[c.index] = { url: c.url, status: saved ? 'added' : 'failed' }
     }
 
@@ -269,7 +269,7 @@ export default {
     const fromCate = typeof req.body?.fromCate === 'string' ? req.body.fromCate.trim() : cate
     const index = Number(req.body?.index)
     const asset = req.body?.asset && { ...req.body.asset, type: req.body.asset.type === 'png' ? 'image' : req.body.asset.type, ...(req.body.asset.type === 'mask' ? { isContainer: true } : {}) }
-    if (!cate || !Number.isInteger(index) || !asset || typeof asset.url !== 'string' || !asset.url.trim() || (table === 'materials' && !['image', 'svg', 'mask'].includes(asset.type))) return send.error(res, 'Tham số không hợp lệ')
+    if (!cate || !Number.isInteger(index) || !asset || typeof asset.url !== 'string' || !asset.url.trim() || (table === 'materials' && !['image', 'svg', 'mask', 'background'].includes(asset.type))) return send.error(res, 'Tham số không hợp lệ')
     const updated = fromCate !== cate ? moveAsset(table, fromCate, cate, index, asset) : saveAsset(table, cate, index, asset)
     if (updated) send.success(res, undefined)
     else send.error(res, 'Tư liệu không tồn tại')

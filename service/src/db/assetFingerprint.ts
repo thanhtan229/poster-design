@@ -170,13 +170,13 @@ function ensureHintTable() {
 }
 
 /** 记录一次分类选择（同一张图再次选择会覆盖） */
-export function recordKindHint(fp: TFingerprint, kind: 'image' | 'mask' | 'photo') {
+export function recordKindHint(fp: TFingerprint, kind: 'image' | 'mask' | 'photo' | 'background') {
   ensureHintTable()
   getDB().prepare('INSERT OR REPLACE INTO asset_kind_hints (exact, aspect, pixels, kind) VALUES (?, ?, ?, ?)').run(fp.exact, fp.aspect, fp.pixels, kind)
 }
 
 /** 查找已学到的类型：先找字节完全相同的，再在相似图里按多数票决定；没有则返回 null */
-export function learnedKind(fp: TFingerprint | null, hints?: { exact: string; aspect: number; pixels: Buffer | null; kind: string }[]): 'image' | 'mask' | 'photo' | null {
+export function learnedKind(fp: TFingerprint | null, hints?: { exact: string; aspect: number; pixels: Buffer | null; kind: string }[]): 'image' | 'mask' | 'photo' | 'background' | null {
   if (!fp) return null
   ensureHintTable()
   const all = hints || (getDB().prepare('SELECT exact, aspect, pixels, kind FROM asset_kind_hints').all() as any[])
@@ -187,7 +187,7 @@ export function learnedKind(fp: TFingerprint | null, hints?: { exact: string; as
     if (similar(fp, { exact: h.exact, aspect: h.aspect, pixels: h.pixels ? Buffer.from(h.pixels) : null })) votes[h.kind] = (votes[h.kind] || 0) + 1
   })
   const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0]
-  return best ? (best[0] as 'image' | 'mask' | 'photo') : null
+  return best ? (best[0] as 'image' | 'mask' | 'photo' | 'background') : null
 }
 
 export function loadKindHints(): { exact: string; aspect: number; pixels: Buffer | null; kind: string }[] {
@@ -211,8 +211,8 @@ export async function fingerprintMany<T extends { url: string; kind: string }>(i
 }
 
 /** 库内全部素材 / 照片（url + 类型），用于内容比对 */
-export function listLibraryAssets(): { url: string; kind: 'image' | 'svg' | 'mask' | 'photo' }[] {
-  const out: { url: string; kind: 'image' | 'svg' | 'mask' | 'photo' }[] = []
+export function listLibraryAssets(): { url: string; kind: 'image' | 'svg' | 'mask' | 'photo' | 'background' }[] {
+  const out: { url: string; kind: 'image' | 'svg' | 'mask' | 'photo' | 'background' }[] = []
   ;(['materials', 'photos'] as const).forEach((table) => {
     const rows: { list: string }[] = getDB().prepare(`SELECT list FROM ${table}`).all()
     rows.forEach((row) => {
@@ -221,7 +221,7 @@ export function listLibraryAssets(): { url: string; kind: 'image' | 'svg' | 'mas
         if (!Array.isArray(list)) return
         list.forEach((item) => {
           if (!item?.url) return
-          const kind = table === 'photos' ? 'photo' : item.type === 'svg' ? 'svg' : item.type === 'mask' ? 'mask' : 'image'
+          const kind = table === 'photos' ? 'photo' : item.type === 'svg' ? 'svg' : item.type === 'mask' ? 'mask' : item.type === 'background' ? 'background' : 'image'
           out.push({ url: item.url, kind })
         })
       } catch (e) {}

@@ -17,6 +17,8 @@ export type TExtractedMaterial = {
   height?: number
   /** 该素材在模板中出现的所有位置 */
   rects: TRect[]
+  /** 背景线索：page = 页面背景图（backgroundImage）；layer = 铺满页面且在最底层的图片 */
+  bg?: 'page' | 'layer'
 }
 
 export type TExtractedText = {
@@ -32,6 +34,9 @@ export type TExtractedText = {
 /** photoRects：用户照片占位（slot / 已链接照片）的位置，用来判断哪些形状是相框 */
 export type TExtractResult = { materials: TExtractedMaterial[]; texts: TExtractedText[]; photoRects: TRect[] }
 
+/** 一页的数据：元素 + 页面尺寸与背景图（组件等没有页面信息时为 0 / 空） */
+export type TPageDoc = { layers: any[]; width: number; height: number; backgroundImage: string }
+
 /** 文字签名需要参与比较的字段，前后端必须保持一致（见 service/src/db/assetDedupe.ts） */
 export const TEXT_SIGNATURE_FIELDS = ['text', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'color', 'letterSpacing', 'lineHeight', 'writingMode', 'textAlign'] as const
 
@@ -42,8 +47,8 @@ export function textSignature(group: any, children: any[]): string {
   return `${Math.round(Number(group?.width) || 0)}x${Math.round(Number(group?.height) || 0)}#${parts.join('~')}`
 }
 
-/** 兼容历史数据格式，统一返回「每页的扁平元素数组」 */
-export function normalizePages(data: any): any[][] {
+/** 兼容历史数据格式，统一返回每一页的元素与页面信息 */
+export function normalizeDocs(data: any): TPageDoc[] {
   let parsed = data
   if (typeof parsed === 'string') {
     try {
@@ -52,15 +57,29 @@ export function normalizePages(data: any): any[][] {
       return []
     }
   }
-  if (parsed && typeof parsed.data === 'string' && !Array.isArray(parsed)) return normalizePages(parsed.data)
+  const doc = (layers: any[], page: any): TPageDoc => ({
+    layers,
+    width: Number(page?.width) || 0,
+    height: Number(page?.height) || 0,
+    backgroundImage: typeof page?.backgroundImage === 'string' ? page.backgroundImage : '',
+  })
+  if (parsed && typeof parsed.data === 'string' && !Array.isArray(parsed)) return normalizeDocs(parsed.data)
   if (Array.isArray(parsed)) {
-    if (parsed.length && parsed.every((p) => p && Array.isArray(p.layers))) return parsed.map((p) => p.layers)
-    return [parsed] // type=1 组件：直接是元素数组
+    if (parsed.length && parsed.every((p) => p && Array.isArray(p.layers))) return parsed.map((p) => doc(p.layers, p.global))
+    return [doc(parsed, null)] // type=1 组件：直接是元素数组
   }
-  if (parsed && Array.isArray(parsed.widgets)) return [parsed.widgets]
-  if (parsed && Array.isArray(parsed.layers)) return [parsed.layers]
+  if (parsed && Array.isArray(parsed.widgets)) return [doc(parsed.widgets, parsed.page)]
+  if (parsed && Array.isArray(parsed.layers)) return [doc(parsed.layers, parsed.global)]
   return []
 }
+
+/** 兼容旧调用：只要每页的扁平元素数组 */
+export function normalizePages(data: any): any[][] {
+  return normalizeDocs(data).map((d) => d.layers)
+}
+
+/** 铺满页面的阈值：图片面积覆盖页面 ≥ 90% */
+const FULL_PAGE_RATIO = 0.9
 
 /** 文字内容转纯文本：<br> 视为空格，去掉其余标签 */
 function plainText(html: any): string {
@@ -76,31 +95,51 @@ export function normalizeUrl(url: string): string {
   return url.trim().replace(/[?#].*$/, '')
 }
 
-export type TExtractLabels = { image: string; svg: string; mask: string; group: string }
-const DEFAULT_LABELS: TExtractLabels = { image: '图片', svg: '矢量', mask: '相框', group: '文字组合' }
+export type TExtractLabels = { image: string; svg: string; mask: string; group: string; background?: string }
+const DEFAULT_LABELS: TExtractLabels = { image: '图片', svg: '矢量', mask: '相框', group: '文字组合', background: '背景' }
 
 export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabels = DEFAULT_LABELS): TExtractResult {
   const materials = new Map<string, TExtractedMaterial>()
   const texts = new Map<string, TExtractedText>()
   const photoRects: TRect[] = []
 
-  normalizePages(data).forEach((widgets, page) => {
+  normalizeDocs(data).forEach((doc, page) => {
+    const widgets = doc.layers
     if (!Array.isArray(widgets)) return
+    const pageArea = doc.width * doc.height
+    /** 图片是否铺满页面（相交面积 / 页面面积） */
+    const coversPage = (w: any) => {
+      if (!pageArea) return false
+      const iw = Math.min((Number(w.left) || 0) + (Number(w.width) || 0), doc.width) - Math.max(Number(w.left) || 0, 0)
+      const ih = Math.min((Number(w.top) || 0) + (Number(w.height) || 0), doc.height) - Math.max(Number(w.top) || 0, 0)
+      return iw > 0 && ih > 0 && (iw * ih) / pageArea >= FULL_PAGE_RATIO
+    }
+    /** 目前为止下面只有「铺满页面的图」——用于判断是否在最底层 */
+    let onlyBackdropsBelow = true
     const childrenOf = (uuid: string) => widgets.filter((w) => w && String(w.parent) === String(uuid))
     const descendants = (uuid: string): any[] => childrenOf(uuid).flatMap((c) => [c, ...(c.type === 'w-group' ? descendants(c.uuid) : [])])
 
     const rectOf = (w: any): TRect => ({ page, left: Number(w.left) || 0, top: Number(w.top) || 0, width: Number(w.width) || 0, height: Number(w.height) || 0 })
-    const addMaterial = (key: string, type: TExtractedMaterial['type'], url: string, label: string, w: any) => {
+    const addMaterial = (key: string, type: TExtractedMaterial['type'], url: string, label: string, w: any, bg?: 'page' | 'layer') => {
       const existing = materials.get(key)
       if (existing) {
         existing.rects.push(rectOf(w))
+        if (bg === 'page' || (bg && !existing.bg)) existing.bg = bg // page 线索最强
         return
       }
-      materials.set(key, { key, type, url: url.trim(), title: `${titlePrefix}${label} ${materials.size + 1}`, width: w.width, height: w.height, rects: [rectOf(w)] })
+      materials.set(key, { key, type, url: url.trim(), title: `${titlePrefix}${label} ${materials.size + 1}`, width: w.width, height: w.height, rects: [rectOf(w)], ...(bg ? { bg } : {}) })
+    }
+
+    // 页面背景图（backgroundImage）：一定是背景
+    if (isRemoteUrl(doc.backgroundImage)) {
+      addMaterial(`image:${normalizeUrl(doc.backgroundImage)}`, 'image', doc.backgroundImage, labels.background || labels.image, { left: 0, top: 0, width: doc.width, height: doc.height }, 'page')
     }
 
     widgets.forEach((w) => {
       if (!w) return
+      // 在最底层且铺满页面的图片 → 背景；任何其他可见元素（组合本体除外）出现后，后面的图就不在最底层了
+      const backdropHere = w.type === 'w-image' && !w.hidden && onlyBackdropsBelow && coversPage(w)
+      if (!w.hidden && w.type !== 'w-group' && !(w.type === 'w-image' && coversPage(w))) onlyBackdropsBelow = false
       if (w.type === 'w-image') {
         // 用户照片占位（slot / 已链接照片）属于用户内容，不入库
         if (w.slot === true || w.linkedPhotoId) {
@@ -111,7 +150,9 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
         if (isRemoteUrl(w.mask)) {
           addMaterial(`mask:${normalizeUrl(w.mask)}`, 'mask', w.mask, labels.mask, w)
         } else if (isRemoteUrl(w.imgUrl)) {
-          addMaterial(`image:${normalizeUrl(w.imgUrl)}`, 'image', w.imgUrl, labels.image, w)
+          // 铺满页面且下面没有其他元素 → 背景图（图层形式）
+          const backdrop = backdropHere
+          addMaterial(`image:${normalizeUrl(w.imgUrl)}`, 'image', w.imgUrl, backdrop ? labels.background || labels.image : labels.image, w, backdrop ? 'layer' : undefined)
         }
       } else if (w.type === 'w-svg' && isRemoteUrl(w.svgUrl)) {
         addMaterial(`svg:${normalizeUrl(w.svgUrl)}`, 'svg', w.svgUrl, labels.svg, w)

@@ -429,6 +429,7 @@
             <el-option :label="t('admin.v.typeImage')" value="image" />
             <el-option :label="t('admin.v.typeSvg')" value="svg" />
             <el-option :label="t('admin.v.typeMask')" value="mask" />
+            <el-option :label="t('admin.v.typeBackground')" value="background" />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('admin.v.name')"><el-input v-model="assetDialog.title" /></el-form-item>
@@ -705,7 +706,7 @@ function openFontDialog(row?: adminApi.TAdminFontItem) {
 }
 
 async function openAssetDialog(type: 'materials' | 'photos', row?: any) {
-  assetDialog.type = type; assetDialog.index = row?.index ?? -1; assetDialog.sourceCate = row?.category || ''; assetDialog.title = row?.title || ''; assetDialog.url = row?.url || ''; assetDialog.assetType = row?.type === 'svg' || row?.type === 'mask' ? row.type : 'image'; assetDialog.file = null
+  assetDialog.type = type; assetDialog.index = row?.index ?? -1; assetDialog.sourceCate = row?.category || ''; assetDialog.title = row?.title || ''; assetDialog.url = row?.url || ''; assetDialog.assetType = row?.type === 'svg' || row?.type === 'mask' || row?.type === 'background' ? row.type : 'image'; assetDialog.file = null
   const res: any = await adminApi.getCategories(type, { page: 1, pageSize: 100 }); assetDialog.categories = res?.list || []
   assetDialog.cate = row?.category || assetDialog.categories[0]?.cate || ''
   assetDialog.visible = true
