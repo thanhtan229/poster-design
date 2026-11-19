@@ -104,8 +104,14 @@ export async function getMaterial(req: any, res: Response) {
    * @apiVersion 1.0.0
    * @apiGroup design
    */
-  const list = materialsRepo.getMaterials(req.query.cate)
-  send.success(res, { list })
+  const all = materialsRepo.getMaterials(req.query.cate)
+  // [TINIX] có page thì trả về đúng trang + total (trước đây luôn trả cả danh sách, cuộn vô hạn bị lặp ảnh)
+  const page = Math.floor(Number(req.query?.page))
+  if (page > 0) {
+    const pageSize = Math.min(100, Math.max(1, Math.floor(Number(req.query?.pageSize) || 20)))
+    return send.success(res, { list: all.slice((page - 1) * pageSize, page * pageSize), total: all.length })
+  }
+  send.success(res, { list: all })
 }
 
 // design/imgs 获取照片素材

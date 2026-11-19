@@ -80,6 +80,8 @@ const models: TTmpModalData = {
 const modelStyle = computed(() => models[model])
 
 const pageOptions = { page: 0, pageSize: 20 }
+/** true = danh mục ảnh nền đang trống, dùng nguồn cũ */
+let useLegacySource = false
 
 const loadData = () => {
   if (state.loading) {
@@ -100,13 +102,27 @@ const load = async (init: boolean = false) => {
     pageOptions.page = 1
   }
 
-  await api.material.getImagesList({ cate: 3, page: pageOptions.page }).then(({ list }) => {
-    if (list.length > 0) {
-      state.bgList.push(...list)
+  // [TINIX] Kho ảnh nền dùng chung với tab Chất liệu (danh mục "background"); nếu chưa có ảnh nào thì dùng danh sách cũ (thư viện Ảnh, danh mục 3)
+  if (!useLegacySource) {
+    const res: any = await api.material.getList({ cate: 'background', page: pageOptions.page, pageSize: pageOptions.pageSize } as any)
+    const list = res?.list || []
+    if (pageOptions.page === 1 && list.length === 0) {
+      useLegacySource = true
     } else {
-      state.loadDone = true
+      state.bgList.push(...list)
+      const total = Number(res?.total)
+      if (list.length < pageOptions.pageSize || (Number.isFinite(total) && state.bgList.length >= total)) state.loadDone = true
     }
-  })
+  }
+  if (useLegacySource) {
+    await api.material.getImagesList({ cate: 3, page: pageOptions.page }).then(({ list }) => {
+      if (list.length > 0) {
+        state.bgList.push(...list)
+      } else {
+        state.loadDone = true
+      }
+    })
+  }
 
   setTimeout(() => {
     state.loading = false

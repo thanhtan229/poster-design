@@ -86,9 +86,11 @@ export default function bootstrapDatabase(db: any): void {
     ['png', 'Sticker, loại hình ảnh', 'materials'],
     ['svg', 'Phần tử vector SVG, có thể đổi màu', 'materials'],
     ['mask', 'Khung chứa Mask, mặt nạ hình', 'materials'],
+    ['background', 'Ảnh nền', 'materials'], // [TINIX] ảnh nền: bấm vào sẽ đặt làm nền trang
   ]
   const insertCategory = db.prepare('INSERT OR IGNORE INTO asset_categories (cate, name, type) VALUES (?, ?, ?)')
   categoryDefaults.forEach((item) => insertCategory.run(item[0], item[1], item[2]))
+  db.prepare("INSERT OR IGNORE INTO materials (cate, list) VALUES ('background', '[]')").run() // [TINIX] danh mục ảnh nền cần có hàng dữ liệu để thêm ảnh
   const existing = db.prepare('SELECT cate FROM materials').all()
   existing.forEach((row: { cate: string }) => insertCategory.run(row.cate, row.cate, 'materials'))
   const existingPhotos = db.prepare('SELECT cate FROM photos').all()

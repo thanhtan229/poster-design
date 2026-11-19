@@ -67,10 +67,10 @@ import * as adminApi from '@/api/admin'
 import i18n from '@/languages'
 import { extractAssets, overlapsMostly, type TRect } from '@/common/methods/extractAssets'
 
-type TKind = 'image' | 'svg' | 'mask' | 'photo' | 'text'
-type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; suggestReason?: 'learned' | 'context' | 'shape'; rects?: TRect[]; flat?: boolean; payload: any }
+type TKind = 'background' | 'image' | 'svg' | 'mask' | 'photo' | 'text'
+type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; suggestReason?: 'learned' | 'context' | 'shape' | 'pageBg' | 'fullPage'; rects?: TRect[]; flat?: boolean; bg?: 'page' | 'layer'; payload: any }
 /** 位图类可以在这几类之间互相调整 */
-const RASTER: TKind[] = ['mask', 'image', 'photo']
+const RASTER: TKind[] = ['background', 'mask', 'image', 'photo']
 
 const t = (key: string, params?: Record<string, any>): string => i18n.global.t(key, params ?? {}) as string
 
@@ -83,12 +83,12 @@ const state = reactive({
   materialCates: [] as any[],
   textCates: [] as any[],
   photoCates: [] as any[],
-  cates: { image: '', svg: '', mask: '', photo: '', text: '' } as Record<string, string>,
+  cates: { background: '', image: '', svg: '', mask: '', photo: '', text: '' } as Record<string, string>,
 })
 const items = reactive<TItem[]>([])
 
 const KIND_LABEL = (kind: string) => t(`admin.extractDialog.group${kind.charAt(0).toUpperCase()}${kind.slice(1)}`)
-const groups = computed(() => (['mask', 'image', 'svg', 'photo', 'text'] as const).map((kind) => ({ kind, label: KIND_LABEL(kind), items: items.filter((i) => i.kind === kind) })))
+const groups = computed(() => (['background', 'mask', 'image', 'svg', 'photo', 'text'] as const).map((kind) => ({ kind, label: KIND_LABEL(kind), items: items.filter((i) => i.kind === kind) })))
 const selectedCount = computed(() => items.filter((i) => i.status === 'new' && i.checked).length)
 const existsCount = computed(() => items.filter((i) => i.status === 'exists').length)
 const dupCount = computed(() => items.filter((i) => i.status === 'dup').length)
@@ -135,9 +135,9 @@ async function onOpen() {
     state.materialCates = materialRes?.list || []
     state.textCates = textRes?.list || []
     state.photoCates = photoRes?.list || []
-    state.cates = { image: defaultMaterialCate('image'), svg: defaultMaterialCate('svg'), mask: defaultMaterialCate('mask'), photo: state.photoCates[0]?.cate || '', text: state.textCates[0]?.name || '' }
+    state.cates = { background: defaultMaterialCate('background'), image: defaultMaterialCate('image'), svg: defaultMaterialCate('svg'), mask: defaultMaterialCate('mask'), photo: state.photoCates[0]?.cate || '', text: state.textCates[0]?.name || '' }
 
-    const { materials, texts, photoRects } = extractAssets(props.source, props.titlePrefix || '', { image: t('admin.extractDialog.nameImage'), svg: t('admin.extractDialog.nameSvg'), mask: t('admin.extractDialog.nameMask'), group: t('admin.extractDialog.nameGroup') })
+    const { materials, texts, photoRects } = extractAssets(props.source, props.titlePrefix || '', { image: t('admin.extractDialog.nameImage'), svg: t('admin.extractDialog.nameSvg'), mask: t('admin.extractDialog.nameMask'), group: t('admin.extractDialog.nameGroup'), background: t('admin.extractDialog.nameBackground') })
     const list: TItem[] = [
       ...materials.map(
         (x): TItem => ({
@@ -148,6 +148,7 @@ async function onOpen() {
           checked: true,
           status: 'new',
           rects: x.rects,
+          bg: x.bg,
           payload: { type: x.type, url: x.url, thumb: x.url, title: x.title, width: x.width, height: x.height, ...(x.type === 'svg' ? { model: '{}' } : {}) },
         }),
       ),
@@ -173,6 +174,9 @@ async function onOpen() {
           item.flat = !!r.flat
           if (r.suggestBy === 'learned' && r.suggest && r.suggest !== 'image') Object.assign(item, { kind: r.suggest, checked: r.suggest !== 'photo', suggested: true, suggestReason: 'learned' })
           else if (r.suggestBy === 'learned') Object.assign(item, { suggested: true, suggestReason: 'learned' }) // 学到的就是「贴纸」，不再套用其他规则
+          // 背景：页面背景图一定是；铺满页面的底图在「没有照片占位的模板」里可能就是用户照片（单图模板），默认不勾选
+          else if (item.bg === 'page') Object.assign(item, { kind: 'background', checked: true, suggested: true, suggestReason: 'pageBg' })
+          else if (item.bg === 'layer') Object.assign(item, { kind: 'background', checked: photoRects.length > 0, suggested: true, suggestReason: 'fullPage' })
           else if (r.suggest === 'photo') Object.assign(item, { kind: 'photo', checked: false, suggested: true, suggestReason: 'shape' })
           else if (r.suggest === 'mask') Object.assign(item, { kind: 'mask', suggested: true, suggestReason: 'shape' })
         }

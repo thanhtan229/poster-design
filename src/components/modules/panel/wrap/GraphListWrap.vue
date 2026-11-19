@@ -96,7 +96,8 @@ const colors = ['#f8704b', '#5b89ff', '#2cc4cc', '#a8ba73', '#f8704b']
 const controlStore = useControlStore()
 const widgetStore = useWidgetStore()
 
-const { dPage } = storeToRefs(useCanvasStore())
+const canvasStore = useCanvasStore()
+const { dPage } = storeToRefs(canvasStore)
 const state = reactive<TState>({
   loading: false,
   loadDone: false,
@@ -204,6 +205,13 @@ async function selectItem(item: TGetListData) {
   // store.commit('setShowMoveable', false) // 清理掉上一次的选择
   controlStore.setShowMoveable(false) // 清理掉上一次的选择
 
+  // [TINIX] Ảnh nền: bấm vào thì đặt làm nền trang (phủ kín, nằm dưới mọi lớp); muốn dùng như một lớp ảnh thì kéo thả vào canvas
+  if (item.type === 'background') {
+    canvasStore.updatePageData({ key: 'backgroundTransform', value: {} })
+    canvasStore.updatePageData({ key: 'backgroundImage', value: item.url })
+    widgetStore.selectWidget({ uuid: '-1' })
+    return
+  }
   const assetType = item.type === 'png' ? 'image' : item.type
   let setting = assetType === 'svg' ? JSON.parse(JSON.stringify(wSvgSetting)) : JSON.parse(JSON.stringify(wImageSetting))
   const img = await setImageData(item)
@@ -236,7 +244,7 @@ async function dragStart(e: MouseEvent, item: TGetListData) {
   const img = await setImageData({ width, height, url: thumb || url })
   dragHelper.start(e, img.canvasWidth)
 
-  widgetStore.setSelectItem({ data: { value: item }, type: item.type === 'png' ? 'image' : item.type })
+  widgetStore.setSelectItem({ data: { value: item }, type: item.type === 'png' || item.type === 'background' ? 'image' : item.type })
   // store.commit('selectItem', { data: { value: item }, type: item.type })
 }
 </script>
