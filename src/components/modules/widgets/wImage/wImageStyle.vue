@@ -145,8 +145,8 @@ const canvasStore = useCanvasStore()
 const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
 const { dActiveElement } = storeToRefs(widgetStore)
-// [TINIX] bảng đổi màu dựng lại khi đổi lớp hoặc đổi ảnh gốc (giữ nguyên sau khi chính nó đổi màu)
-const recolorKey = computed(() => { const e: any = dActiveElement.value; return 'rc' + (e?.uuid || '') + (e?.recolor?.originalUrl || e?.stickerBorder?.baseUrl || e?.imgUrl || '') })
+// [TINIX] bảng đổi màu dựng lại khi đổi lớp; đổi ảnh gốc thì bảng tự đọc lại màu (không theo imgUrl vì bản xem trước là data URL tạm)
+const recolorKey = computed(() => { const e: any = dActiveElement.value; return 'rc' + (e?.uuid || '') })
 let lastUuid: string | undefined
 let tag: boolean
 let toolBarStyle: { left: string; top: string } | null = null

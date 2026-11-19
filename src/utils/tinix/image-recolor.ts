@@ -194,3 +194,35 @@ export async function recolorImage(url: string, from: string, to: string, tolera
     bmp.close()
   }
 }
+
+// ───────────── xem trước tức thì (khi đang kéo trong bảng màu) ─────────────
+
+/** Ảnh đã thu nhỏ, đọc sẵn điểm ảnh một lần để mỗi lần đổi màu xem trước chỉ còn bước tính màu */
+export type RecolorPreviewSource = { width: number; height: number; data: Uint8ClampedArray }
+
+export async function loadPreviewSource(url: string, maxSide = 400): Promise<RecolorPreviewSource> {
+  const bmp = await loadBitmap(url)
+  try {
+    const { canvas, ctx } = drawToCanvas(bmp, maxSide)
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    return { width: canvas.width, height: canvas.height, data: img.data }
+  } finally {
+    bmp.close()
+  }
+}
+
+/**
+ * Dựng bản xem trước đã đổi màu, trả về data URL PNG.
+ * Dùng toDataURL (đồng bộ) thay cho toBlob: toBlob bị trình duyệt xếp lịch chạy nền, đo được ~1 giây mỗi lần
+ * trong khi tính màu chỉ ~2 ms; ảnh xem trước nhỏ (≤ 400 px) nên mã hóa đồng bộ chỉ vài ms.
+ */
+export function renderPreview(src: RecolorPreviewSource, from: string, to: string, tolerance: number): string {
+  const data = new Uint8ClampedArray(src.data)
+  recolorPixels(data, hexToRgb(from), hexToRgb(to), tolerance)
+  const canvas = document.createElement('canvas')
+  canvas.width = src.width
+  canvas.height = src.height
+  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+  ctx.putImageData(new ImageData(data, src.width, src.height), 0, 0)
+  return canvas.toDataURL('image/png')
+}
