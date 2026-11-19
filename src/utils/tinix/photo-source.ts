@@ -63,6 +63,7 @@ export function collectUsedUrls(layouts: Array<{ global?: any; layers?: any[] }>
       if (w.stickerBorder) {
         out.push(w.stickerBorder.baseUrl) // [TINIX] ảnh chưa viền: cần giữ để chỉnh lại bề dày
       }
+      if (w.recolor && w.recolor.originalUrl) out.push(w.recolor.originalUrl) // [TINIX] ảnh trước khi đổi màu: cần giữ để khôi phục / đổi lại
       if (w.origin && w.origin.original) out.push(w.origin.original)
     }
   }

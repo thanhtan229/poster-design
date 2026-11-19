@@ -47,6 +47,7 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 4.9. **Nhiều nhãn/ruy băng, mỗi trang 5–8 cái, kiểu khác nhau** (`label`: ribbon, tag, torn, stitch), nghiêng ±2–4° xen kẽ hướng, màu lấy từ bảng màu trang. Nhãn gồm nền + chữ gộp một nhóm = một mảnh cắt.
 4.10. **Sticker chủ đề lớn** (`themeSticker`: cake, camera, arrow) cỡ 200–300 px, đặt chồng mép ảnh để lấp chỗ trống; chọn theo chủ đề trang (sinh nhật → bánh, du lịch → máy ảnh). Hình vẽ không nhận ra ngay (máy bay) thì bỏ, không dùng.
 4.11. **Chữ ghép giấy màu** (từng chữ cái một ô màu, lệch ±4°) cho từ khóa lớn (ONE, FAMILY). Ô phải đủ cao: `h` ≥ cỡ chữ × 1.4, nếu không bị lỗi `TEXT_OVERFLOW`.
+4.12. **Hình phẳng lưu thành SVG đổi màu được** (sao, tim, giấy màu, nền nhãn, sticker chủ đề, mảnh trang trí không chạm mép trang): `createCollageKit` mặc định `vector: true` → lớp `w-svg`, màu tô thành chỗ đặt màu `{{colors[i]}}` (màu giấy trắng `#fffdf8`/`#fffaf0`/`#ffffff` và màu trong bộ lọc giữ cố định). Vẫn để PNG: ảnh tách nền, băng dính kẻ sọc, nền họa tiết/nền trang, mảnh bị cắt theo mép trang. Lý do: người dùng muốn đổi màu sticker ngay trong editor; PNG chỉ đổi được bằng "Đổi màu chính" (gần đúng).
 
 ## 5. Quy trình kiểm tra (bắt buộc trước khi báo "xong")
 5.1. `drafts validate` rồi `drafts render`, **xem ảnh**: khoảng trống, chữ bị che, dấu tiếng Việt, mép khung.
@@ -56,6 +57,7 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
 5.5. Chưa cắt thử trên máy thật thì phải nói rõ là chưa kiểm chứng.
 
 ## Nhật ký thay đổi quy tắc
+- 2026-11-19: thêm 4.12 (hình phẳng → lớp SVG đổi màu được, `scripts/lib/svg-layer.mjs`) theo yêu cầu người dùng: tách phần tử không thấy nhóm SVG vì bộ dựng chuyển hết sang PNG.
 - 2026-11-17: thêm 2.7 (giữ đầu người trong khung, chấp nhận mất chân khi thiếu chỗ) theo yêu cầu người dùng.
 - 2026-11-17: tạo từ phiên dựng trang báo chí (khung đa dạng, bố cục chồng lấn, ảnh tách nền cỡ lớn, chữ die-cut, gộp khung với ảnh một mảnh, chữ in nền `base`).
 - 2026-11-17: thêm quy tắc từ 6 ảnh scrapbook tham khảo (1.7, 2.8, 3.6, 4.8–4.11): khung/ảnh nghiêng, nền họa tiết, nhãn nhiều kiểu, sticker chủ đề, chữ lớn die-cut viền mực; mẫu thử `scripts/tinix-build-little-one.mjs`.

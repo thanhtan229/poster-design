@@ -25,6 +25,8 @@ const suites = [
   // Kiểm thử offline thuần (thư mục tạm, không cần app/trình duyệt/DB thật) — chuyển từ các script rời trong scripts/
   { name: 'Đường cắt laser (SVG) và dấu căn', args: [path.join(root, 'scripts/tinix-cut-paths-test.cjs')], cwd: root },
   { name: 'Kế hoạch in cắt dán (collage-print)', args: [path.join(root, 'scripts/tinix-collage-print-test.cjs')], cwd: root },
+  { name: 'Đổi màu chính ảnh PNG', args: [path.join(root, 'scripts/tinix-recolor-test.cjs')], cwd: root },
+  { name: 'Lớp SVG đổi màu của bộ dựng cắt dán', args: [path.join(root, 'scripts/tinix-svg-layer-test.mjs')], cwd: root },
   { name: 'Dựng mẫu từ bản nháp (instantiate)', args: [path.join(root, 'scripts/tinix-instantiate-test.mjs')], cwd: root },
   { name: 'Mặt nạ cắt ảnh (mask)', args: [path.join(root, 'scripts/tinix-mask-test.mjs')], cwd: root },
   { name: 'Tên scrapbook', args: [path.join(root, 'scripts/tinix-scrapbook-name-test.mjs')], cwd: root },

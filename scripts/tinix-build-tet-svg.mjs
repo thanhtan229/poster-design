@@ -251,6 +251,12 @@ async function decoBox(it, name, art, nat, { sticker = true } = {}) {
   // cắt theo mép trang: mảnh chạm mép (cành đào, mèo...) bị cắt đúng mép thành phẩm, không báo "vượt mép"
   const cl = Math.max(0, left), ct = Math.max(0, top), cr = Math.min(W, left + w), cb = Math.min(H, top + h)
   const clamped = cl !== left || ct !== top || cr !== left + w || cb !== top + h
+  // [TINIX] quy tắc 4.12: mảnh không chạm mép trang → lớp SVG đổi màu được (giữ nguyên bộ lọc STICK); chạm mép thì vẫn cắt PNG theo mép trang
+  if (kit.vector && !clamped) {
+    const v = kit.vectorPlace(name, w, h, `<g transform="${tr}"${sticker ? ' filter="url(#st)"' : ''}>${art}</g>`, STICK, left, top)
+    v.rotate = `${it.rot || 0}deg`
+    return tag(v, it.id, { specInset: pad })
+  }
   if (clamped) png = await kit.sharp(png).extract({ left: cl - left, top: ct - top, width: cr - cl, height: cb - ct }).png().toBuffer()
   const l = place(name, await writeAsset(`deco-${it.id}.png`, png), cl, ct, cr - cl, cb - ct, { printRole: 'raised' })
   l.rotate = `${it.rot || 0}deg`

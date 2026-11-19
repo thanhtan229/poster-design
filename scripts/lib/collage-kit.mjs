@@ -6,13 +6,16 @@ import { createRequire } from 'node:module'
 import { mkdir, writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { imageLayer, textLayer, groupLayer } from './reference-build.mjs'
+import { buildSvgMarkup, svgLayer } from './svg-layer.mjs'
 
 export const SHAPES = ['ellipse', 'cloud', 'flower', 'heart', 'arch', 'squircle', 'stamp'] // quy tắc 2.1: luôn đa dạng dáng khung giữa các ảnh trong một trang
 const f = (n) => +n.toFixed(1)
 const DROP = (w, h, std, dy, slope) => `<filter id="sh" filterUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}"><feGaussianBlur in="SourceAlpha" stdDeviation="${std}"/><feOffset dy="${dy}" result="o"/><feComponentTransfer><feFuncA type="linear" slope="${slope}"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`
 const heartPoints = (n) => Array.from({ length: n }, (_, i) => { const t = (i / n) * Math.PI * 2; return [16 * Math.sin(t) ** 3, -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))] })
 
-export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRows, placeholders = false, cutoutCacheDir, appUrl = process.env.TINIX_APP_URL || 'http://127.0.0.1:7001' }) {
+// vector (mặc định true, quy tắc 4.12): hình phẳng (sao, tim, giấy màu, nền nhãn, sticker chủ đề) là lớp SVG đổi màu được trong editor.
+// vector: false → dựng PNG như trước (khi cần ảnh giống hệt bản librsvg, hoặc hình có hiệu ứng phức tạp).
+export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRows, placeholders = false, cutoutCacheDir, appUrl = process.env.TINIX_APP_URL || 'http://127.0.0.1:7001', vector = true }) {
   const sharp = createRequire(path.join(root, 'service', 'package.json'))('sharp')
   await mkdir(assetsDir, { recursive: true })
   const layers = []
@@ -24,6 +27,12 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
   const fontClass = (alias) => { const r = fontRows.get(alias); if (!r) throw new Error(`Thiếu font ${alias}`); return { alias: r.alias, id: r.id, value: r.alias, url: r.ttf } }
 
   const place = (name, url, x, y, w, h, extra = {}) => { const l = imageLayer({ name, url, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), ...extra }); layers.push(l); return l }
+  // Lớp SVG đổi màu được: body/defs viết như cho svgPng; màu tô viết thẳng được đổi thành chỗ đặt màu (màu giấy trắng giữ cố định)
+  const vectorPlace = (name, w, h, body, defs, x, y, extra = {}) => {
+    const { markup, colors } = buildSvgMarkup(w, h, body, defs)
+    const l = svgLayer({ name, markup, colors, left: Math.round(x), top: Math.round(y), width: Math.round(w), height: Math.round(h), printRole: extra.printRole || 'raised', extra })
+    layers.push(l); return l
+  }
 
   // Chữ thường. extra: align, weight, italic, ls, lh, h (cao khung), bg (nền riêng = một mảnh cắt), base (in thẳng lên tờ nền), rot
   const text = (name, value, x, y, w, size, alias, color, extra = {}) => {
@@ -100,8 +109,10 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
   // Giấy màu hình tự do nằm dưới ảnh tách nền (mảnh giấy riêng)
   const paperShape = async (name, kind, x, y, w, h, fill) => {
     const b = 14, pad = 36, d = shapePath(kind, w, h), W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
-    const png = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${d}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>`, DROP(W2, H2, 5, 8, 0.4))
-    place(name, await writeAsset(`paper-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+    const body = `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${d}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>`
+    if (vector) return vectorPlace(name, W2, H2, body, DROP(W2, H2, 5, 8, 0.4), x - b - pad, y - b - pad)
+    const png = await svgPng(W2, H2, body, DROP(W2, H2, 5, 8, 0.4))
+    return place(name, await writeAsset(`paper-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
   }
 
   // Ảnh chủ đạo tách nền (BiRefNet qua service, cache theo mã ảnh) + viền trắng ôm dáng + bóng (quy tắc 1.2: cỡ lớn, nổi bật)
@@ -145,9 +156,12 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
 
   // Sticker nhỏ lấp chỗ trống (quy tắc 1.3): sao / tim, viền trắng + bóng
   const star = (R, r, n = 5) => Array.from({ length: n * 2 }, (_, i) => { const a = (i / (n * 2)) * Math.PI * 2 - Math.PI / 2, d = i % 2 ? r : R; return `${f(R + d * Math.cos(a))},${f(R + d * Math.sin(a))}` }).join(' ')
-  const sticker = async (name, x, y, size, body) => place(name, await writeAsset(name.replace(/\s+/g, '-') + '.png', await svgPng(size, size, `<g filter="url(#sh)">${body}</g>`, `<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.35"/></filter>`)), x, y, size, size, { printRole: 'raised' })
-  const starSticker = (name, x, y, size, R, r, fill) => sticker(name, x, y, size, `<polygon points="${star(R, r)}" transform="translate(${(size - 2 * R) / 2} ${(size - 2 * R) / 2})" fill="${fill}" stroke="#fffdf8" stroke-width="${R > 55 ? 5 : 4}" stroke-linejoin="round"/>`)
-  const heartSticker = (name, x, y, size, S, fill) => sticker(name, x, y, size, `<polygon transform="translate(${size / 2} ${size / 2}) scale(${S / 40})" points="${heartPoints(120).map((q) => q.map(f).join(',')).join(' ')}" fill="${fill}" stroke="#fffdf8" stroke-width="2.2" stroke-linejoin="round"/>`)
+  const STICKER_SHADOW = `<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.35"/></filter>`
+  const sticker = async (name, x, y, size, body) => place(name, await writeAsset(name.replace(/\s+/g, '-') + '.png', await svgPng(size, size, `<g filter="url(#sh)">${body}</g>`, STICKER_SHADOW)), x, y, size, size, { printRole: 'raised' })
+  // hình phẳng một màu → SVG đổi màu được (vector = false thì vẫn là PNG)
+  const flatSticker = async (name, x, y, size, body) => (vector ? vectorPlace(name, size, size, `<g filter="url(#sh)">${body}</g>`, STICKER_SHADOW, x, y) : sticker(name, x, y, size, body))
+  const starSticker = (name, x, y, size, R, r, fill) => flatSticker(name, x, y, size, `<polygon points="${star(R, r)}" transform="translate(${(size - 2 * R) / 2} ${(size - 2 * R) / 2})" fill="${fill}" stroke="#fffdf8" stroke-width="${R > 55 ? 5 : 4}" stroke-linejoin="round"/>`)
+  const heartSticker = (name, x, y, size, S, fill) => flatSticker(name, x, y, size, `<polygon transform="translate(${size / 2} ${size / 2}) scale(${S / 40})" points="${heartPoints(120).map((q) => q.map(f).join(',')).join(' ')}" fill="${fill}" stroke="#fffdf8" stroke-width="2.2" stroke-linejoin="round"/>`)
 
 
   // Nền họa tiết theo chủ đề (quy tắc 3.6): hearts | stripes | dots | check. opts: base, ink, opacity, size
@@ -195,9 +209,11 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
   const label = async (name, value, x, y, w, h, { kind = 'ribbon', fill = '#f3d36b', ink = '#141414', alias, size, rot = 0, weight = '700', ls = 4, italic = false } = {}) => {
     const b = 8, pad = 26, W2 = w + 2 * b + 2 * pad, H2 = h + 2 * b + 2 * pad
     const stitch = kind === 'stitch' || kind === 'cloud' ? `<path transform="translate(${pad + b} ${pad + b})" d="${labelPath(kind === 'cloud' ? 'cloud' : 'stitch', w - 12, h - 12)}" fill="none" stroke="${ink}" stroke-opacity="0.55" stroke-width="2" stroke-dasharray="7 6" style="transform:translate(6px,6px)"/>` : ''
-    const png = await svgPng(W2, H2, `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${labelPath(kind, w, h)}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>${stitch}`, DROP(W2, H2, 4, 6, 0.38))
+    const labelBody = `<g filter="url(#sh)"><path transform="translate(${pad + b} ${pad + b})" d="${labelPath(kind, w, h)}" fill="${fill}" stroke="#fffdf8" stroke-width="${2 * b}" stroke-linejoin="round" paint-order="stroke"/></g>${stitch}`
     const g = groupLayer({ name: 'Cụm ' + name, left: x - b - pad, top: y - b - pad, width: W2, height: H2, rotate: rot }); layers.push(g)
-    const shape = place(name + ' · nền nhãn', await writeAsset(`label-${name.replace(/\s+/g, '-')}.png`, png), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
+    const shape = vector
+      ? vectorPlace(name + ' · nền nhãn', W2, H2, labelBody, DROP(W2, H2, 4, 6, 0.38), x - b - pad, y - b - pad)
+      : place(name + ' · nền nhãn', await writeAsset(`label-${name.replace(/\s+/g, '-')}.png`, await svgPng(W2, H2, labelBody, DROP(W2, H2, 4, 6, 0.38))), x - b - pad, y - b - pad, W2, H2, { printRole: 'raised' })
     shape.parent = g.uuid; shape.printGroup = g.printGroup
     const sz = size || Math.round(h * 0.5)
     const t = text(name + ' · chữ', value, x + (kind === 'ribbon' || kind === 'tag' ? Math.round(h * 0.3) : 6), y + Math.round((h - sz * 1.25) / 2), w - (kind === 'ribbon' ? Math.round(h * 0.6) : 12), sz, alias, ink, { align: 'center', weight, ls, italic, h: Math.round(sz * 1.4), lh: 1.0 })
@@ -215,9 +231,12 @@ export async function createCollageKit({ root, assetsDir, assetsUrl, rnd, fontRo
       if (kind === 'arrow') return `<g ${sw}><path d="M16 120 L150 120" stroke="${fl(c.e)}" stroke-width="10" fill="none"/><path d="M150 96 L188 120 L150 144 Z" fill="${fl(c.e)}"/><polygon transform="translate(96 96) scale(2.1)" points="${heartPoints(60).map((q) => q.map(f).join(',')).join(' ')}" fill="${fl(c.a)}"/></g>`
       throw new Error(`Sticker "${kind}" chưa có (cake, camera, arrow)`)
     }
-    const png = await svgPng(size, size, `<g transform="scale(${size / 200})"><g filter="url(#sh)">${draw('out')}</g>${draw('fill')}</g>`, `<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.35"/></filter>`)
+    const themeBody = `<g transform="scale(${size / 200})"><g filter="url(#sh)">${draw('out')}</g>${draw('fill')}</g>`
+    const themeDefs = `<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-opacity="0.35"/></filter>`
+    if (vector) return vectorPlace(name, size, size, themeBody, themeDefs, x, y)
+    const png = await svgPng(size, size, themeBody, themeDefs)
     return place(name, await writeAsset(`sticker-${kind}-${name.replace(/\s+/g, '-')}.png`, png), x, y, size, size, { printRole: 'raised' })
   }
 
-  return { layers, sharp, patternBackground, label, themeSticker, f, place, text, dieText, shapePath, tapePiece, slot, paperShape, hero, sticker, starSticker, heartSticker, svgPng, writeAsset, maskUri, step, fontClass }
+  return { layers, sharp, vector, vectorPlace, patternBackground, label, themeSticker, f, place, text, dieText, shapePath, tapePiece, slot, paperShape, hero, sticker, starSticker, heartSticker, svgPng, writeAsset, maskUri, step, fontClass }
 }

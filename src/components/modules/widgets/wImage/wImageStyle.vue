@@ -32,6 +32,7 @@
         <ImageFramePanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
         <ImageEffectsPanel v-if="dActiveElement" :key="dActiveElement.uuid" :image="dActiveElement" />
         <StickerBorderPanel v-if="dActiveElement && !dActiveElement.linkedPhotoId" :key="'sb' + dActiveElement.uuid" :image="dActiveElement" /><!-- [TINIX] viền trắng hình dán -->
+        <ImageRecolorPanel v-if="dActiveElement && canRecolor(dActiveElement)" :key="recolorKey" :image="dActiveElement" /><!-- [TINIX] đổi màu chính ảnh PNG phẳng -->
         <container-wrap @change="changeContainer" />
         <div class="slide-wrap">
           <number-slider v-model="state.innerElement.opacity" style="font-size: 14px" :label="$t('editor.prop.opacity')" :step="0.05" :maxValue="1" @finish="(value) => finish('opacity', value)" />
@@ -65,10 +66,12 @@
 import ImageFramePanel from './ImageFramePanel.vue'
 import ImageEffectsPanel from './ImageEffectsPanel.vue'
 import StickerBorderPanel from './StickerBorderPanel.vue' // [TINIX]
+import ImageRecolorPanel from './ImageRecolorPanel.vue' // [TINIX]
+import { canRecolor } from '@/utils/tinix/recolor-apply' // [TINIX]
 import { applyStickerBorder } from '@/utils/tinix/sticker-apply' // [TINIX]
 import { ElMessage } from 'element-plus' // [TINIX]
 import i18n from '@/languages'
-import { nextTick, reactive, ref, watch, onBeforeUnmount } from 'vue'
+import { nextTick, reactive, ref, watch, onBeforeUnmount, computed } from 'vue' // [TINIX] computed: khóa của bảng đổi màu
 
 import numberInput from '../../settings/numberInput.vue'
 import iconItemSelect, { TIconItemSelectData } from '../../settings/iconItemSelect.vue'
@@ -142,6 +145,8 @@ const canvasStore = useCanvasStore()
 const controlStore = useControlStore()
 const { dMoving } = storeToRefs(controlStore)
 const { dActiveElement } = storeToRefs(widgetStore)
+// [TINIX] bảng đổi màu dựng lại khi đổi lớp hoặc đổi ảnh gốc (giữ nguyên sau khi chính nó đổi màu)
+const recolorKey = computed(() => { const e: any = dActiveElement.value; return 'rc' + (e?.uuid || '') + (e?.recolor?.originalUrl || e?.stickerBorder?.baseUrl || e?.imgUrl || '') })
 let lastUuid: string | undefined
 let tag: boolean
 let toolBarStyle: { left: string; top: string } | null = null
