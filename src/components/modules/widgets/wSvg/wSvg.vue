@@ -240,6 +240,8 @@ function loadSvg() {
             })
           } else {
             elementFactory(els)
+            // [TINIX] đi tiếp vào con của phần tử: trước đây chỉ xử lý 2 tầng, hình lồng sâu hơn (nhóm trong nhóm) không được thay màu → hiện màu đen
+            if (els.childNodes && els.childNodes.length > 0) deepElement(els.childNodes)
           }
         }
         // 元素工厂: 遍历元素中是否存在可自定义的颜色属性
