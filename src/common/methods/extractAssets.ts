@@ -29,6 +29,8 @@ export type TExtractedText = {
   width: number
   height: number
   textPreview: string
+  /** group = nhóm có sẵn trong mẫu; onShape = chữ nằm trên một hình (tự gộp theo vị trí, là gợi ý); single = chữ rời */
+  source?: 'group' | 'onShape' | 'single'
 }
 
 /** photoRects：用户照片占位（slot / 已链接照片）的位置，用来判断哪些形状是相框 */
@@ -80,6 +82,9 @@ export function normalizePages(data: any): any[][] {
 
 /** 铺满页面的阈值：图片面积覆盖页面 ≥ 90% */
 const FULL_PAGE_RATIO = 0.9
+/** Chữ trên khung (không gộp nhóm): ≥ 85% diện tích chữ nằm trong hình, hình không lớn hơn 8 lần tổng diện tích chữ */
+const TEXT_ON_SHAPE_INSIDE = 0.85
+const TEXT_ON_SHAPE_MAX_RATIO = 8
 
 /** 文字内容转纯文本：<br> 视为空格，去掉其余标签 */
 function plainText(html: any): string {
@@ -130,6 +135,60 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
       materials.set(key, { key, type, url: url.trim(), title: `${titlePrefix}${label} ${materials.size + 1}`, width: w.width, height: w.height, rects: [rectOf(w)], ...(bg ? { bg } : {}) })
     }
 
+    // ── Nhóm chữ: chữ có khung đi cùng nhau thành MỘT mục ở tab Chữ, khung không bị tách riêng sang Hình ảnh ──
+    const byUuid = new Map<string, any>(widgets.filter(Boolean).map((w) => [String(w.uuid), w]))
+    const groupOf = (w: any) => {
+      const p = byUuid.get(String(w?.parent))
+      return p && p.type === 'w-group' ? p : null
+    }
+    const isUserPhoto = (w: any) => w?.type === 'w-image' && (w.slot === true || !!w.linkedPhotoId)
+    // nhóm chữ: có chữ, không chứa ảnh người dùng (cụm ảnh + chú thích vẫn xử lý từng lớp như cũ)
+    const isTextGroup = (g: any) => {
+      const d = descendants(g.uuid)
+      return d.some((c) => c.type === 'w-text') && !d.some(isUserPhoto)
+    }
+    const insideTextGroup = (w: any) => {
+      for (let p = groupOf(w); p; p = groupOf(p)) if (isTextGroup(p)) return true
+      return false
+    }
+    // chỉ lấy nhóm chữ ngoài cùng: nhóm con nằm trong nhóm chữ khác thuộc về nhóm ngoài
+    const textGroups = new Set<string>(widgets.filter((w) => w?.type === 'w-group' && isTextGroup(w) && !insideTextGroup(w)).map((w) => String(w.uuid)))
+    /** lớp đã thuộc một mục Chữ → không liệt kê riêng */
+    const consumed = new Set<string>()
+    textGroups.forEach((id) => descendants(id).forEach((c) => consumed.add(String(c.uuid))))
+
+    // Chữ rời nằm trên một hình rời ngay bên dưới (mẫu tự thiết kế tay hay không gộp nhóm) → tự gộp chữ + hình
+    const area = (w: any) => Math.max(0, Number(w.width) || 0) * Math.max(0, Number(w.height) || 0)
+    const insideRatio = (inner: any, outer: any) => {
+      const iw = Math.min((Number(inner.left) || 0) + (Number(inner.width) || 0), (Number(outer.left) || 0) + (Number(outer.width) || 0)) - Math.max(Number(inner.left) || 0, Number(outer.left) || 0)
+      const ih = Math.min((Number(inner.top) || 0) + (Number(inner.height) || 0), (Number(outer.top) || 0) + (Number(outer.height) || 0)) - Math.max(Number(inner.top) || 0, Number(outer.top) || 0)
+      return iw > 0 && ih > 0 && area(inner) > 0 ? (iw * ih) / area(inner) : 0
+    }
+    const isShapeCandidate = (w: any) =>
+      !!w && !w.hidden && !groupOf(w) && !consumed.has(String(w.uuid)) && !isUserPhoto(w) && !coversPage(w) &&
+      ((w.type === 'w-image' && !isRemoteUrl(w.mask) && isRemoteUrl(w.imgUrl)) || (w.type === 'w-svg' && isRemoteUrl(w.svgUrl)))
+    const onShape = new Map<string, any[]>() // uuid hình → các chữ nằm trên nó
+    widgets.forEach((t, ti) => {
+      if (t?.type !== 'w-text' || t.hidden || groupOf(t) || consumed.has(String(t.uuid))) return
+      let best: any = null
+      for (let si = 0; si < ti; si++) {
+        const sh = widgets[si] // chỉ xét hình nằm DƯỚI chữ (thứ tự lớp)
+        if (!isShapeCandidate(sh) || insideRatio(t, sh) < TEXT_ON_SHAPE_INSIDE) continue
+        if (!best || area(sh) < area(best)) best = sh // hình nhỏ nhất ôm chữ = khung của chữ
+      }
+      if (best) onShape.set(String(best.uuid), [...(onShape.get(String(best.uuid)) || []), t])
+    })
+    onShape.forEach((list, sid) => {
+      const sh = byUuid.get(sid)
+      const textArea = list.reduce((sum, t) => sum + area(t), 0)
+      if (!sh || area(sh) > textArea * TEXT_ON_SHAPE_MAX_RATIO) {
+        onShape.delete(sid) // hình quá lớn so với chữ (ảnh nền, sticker lớn có chữ nhỏ đè lên): không gộp
+        return
+      }
+      consumed.add(sid)
+      list.forEach((t) => consumed.add(String(t.uuid)))
+    })
+
     // 页面背景图（backgroundImage）：一定是背景
     if (isRemoteUrl(doc.backgroundImage)) {
       addMaterial(`image:${normalizeUrl(doc.backgroundImage)}`, 'image', doc.backgroundImage, labels.background || labels.image, { left: 0, top: 0, width: doc.width, height: doc.height }, 'page')
@@ -140,6 +199,7 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
       // 在最底层且铺满页面的图片 → 背景；任何其他可见元素（组合本体除外）出现后，后面的图就不在最底层了
       const backdropHere = w.type === 'w-image' && !w.hidden && onlyBackdropsBelow && coversPage(w)
       if (!w.hidden && w.type !== 'w-group' && !(w.type === 'w-image' && coversPage(w))) onlyBackdropsBelow = false
+      if (consumed.has(String(w.uuid))) return // đã đi cùng một mục Chữ
       if (w.type === 'w-image') {
         // 用户照片占位（slot / 已链接照片）属于用户内容，不入库
         if (w.slot === true || w.linkedPhotoId) {
@@ -157,8 +217,8 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
       } else if (w.type === 'w-svg' && isRemoteUrl(w.svgUrl)) {
         addMaterial(`svg:${normalizeUrl(w.svgUrl)}`, 'svg', w.svgUrl, labels.svg, w)
       } else if (w.type === 'w-group') {
+        if (!textGroups.has(String(w.uuid))) return
         const children = descendants(w.uuid)
-        if (!children.some((c) => c.type === 'w-text')) return
         const signature = textSignature(w, children)
         if (texts.has(signature)) return
         // 组件格式：子元素在前、组合本体放最后（与「保存模板」逻辑一致）
@@ -186,13 +246,33 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
           width: Number(w.width) || 0,
           height: Number(w.height) || 0,
           textPreview,
+          source: 'group',
         })
       }
     })
 
+    // Chữ trên khung (tự gộp): hộp nhóm = hình ∪ chữ, tọa độ con tính từ góc trên trái của hộp
+    onShape.forEach((list, sid) => {
+      const sh = byUuid.get(sid)
+      const members = [sh, ...list]
+      const x0 = Math.min(...members.map((m) => Number(m.left) || 0))
+      const y0 = Math.min(...members.map((m) => Number(m.top) || 0))
+      const x1 = Math.max(...members.map((m) => (Number(m.left) || 0) + (Number(m.width) || 0)))
+      const y1 = Math.max(...members.map((m) => (Number(m.top) || 0) + (Number(m.height) || 0)))
+      const width = Math.round(x1 - x0)
+      const height = Math.round(y1 - y0)
+      const groupUuid = `grp-${sid}`
+      const group = { name: '组合', type: 'w-group', uuid: groupUuid, width, height, left: 0, top: 0, transform: '', opacity: 1, parent: '-1', isContainer: true, record: { width: 0, height: 0, minWidth: 0, minHeight: 0, dir: 'none' } }
+      const copies = JSON.parse(JSON.stringify(members)).map((c: any) => ({ ...c, left: (Number(c.left) || 0) - x0, top: (Number(c.top) || 0) - y0, parent: groupUuid }))
+      const signature = textSignature(group, copies)
+      if (texts.has(signature)) return
+      const textPreview = list.map((t) => plainText(t.text)).join(' ').slice(0, 30)
+      texts.set(signature, { key: signature, title: `${titlePrefix}${textPreview || labels.group}`, widgets: [...copies, group], width, height, textPreview, source: 'onShape' })
+    })
+
     // 独立文字（不在任何组合里）：自动包一层组合，才能作为「文字」tab 的组件
     widgets.forEach((w) => {
-      if (w?.type !== 'w-text') return
+      if (w?.type !== 'w-text' || consumed.has(String(w.uuid))) return
       const parentExists = w.parent && String(w.parent) !== '-1' && widgets.some((g) => g && String(g.uuid) === String(w.parent))
       if (parentExists) return
       const width = Math.round(Number(w.width) || Number(w.record?.width) || (Number(w.fontSize) || 24) * 4)
@@ -206,7 +286,7 @@ export function extractAssets(data: any, titlePrefix = '', labels: TExtractLabel
       const signature = textSignature(group, [child])
       if (texts.has(signature)) return
       const textPreview = plainText(child.text).slice(0, 30)
-      texts.set(signature, { key: signature, title: `${titlePrefix}${textPreview || labels.group}`, widgets: [child, group], width, height, textPreview })
+      texts.set(signature, { key: signature, title: `${titlePrefix}${textPreview || labels.group}`, widgets: [child, group], width, height, textPreview, source: 'single' })
     })
   })
 

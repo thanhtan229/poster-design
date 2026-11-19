@@ -40,6 +40,8 @@
           <label v-for="item in group.items" :key="item.key" :class="['cell', { exists: item.status !== 'new' }]">
             <el-checkbox v-model="item.checked" :disabled="item.status !== 'new'" />
             <el-image v-if="item.preview" :src="item.preview" fit="contain" class="thumb" />
+            <!-- [TINIX] mục Chữ: vẽ lại cả nhóm (khung + chữ) để thấy đúng thứ sẽ nhập -->
+            <TextGroupPreview v-else-if="item.kind === 'text'" class="thumb" :widgets="item.payload.widgets" :width="item.payload.width" :height="item.payload.height" />
             <div v-else class="thumb text-thumb">{{ item.title }}</div>
             <el-tag v-if="item.status === 'exists'" size="small" type="info">{{ t('admin.extractDialog.exists') }}</el-tag>
             <el-tag v-else-if="item.status === 'dup'" size="small" type="warning" class="dup-tag" :title="item.dupOf">{{ t('admin.extractDialog.duplicate', { name: item.dupOf }) }}</el-tag>
@@ -66,9 +68,10 @@ import { ElDialog, ElButton, ElSelect, ElOption, ElCheckbox, ElImage, ElTag, ElM
 import * as adminApi from '@/api/admin'
 import i18n from '@/languages'
 import { extractAssets, overlapsMostly, type TRect } from '@/common/methods/extractAssets'
+import TextGroupPreview from './TextGroupPreview.vue'
 
 type TKind = 'background' | 'image' | 'svg' | 'mask' | 'photo' | 'text'
-type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; suggestReason?: 'learned' | 'context' | 'shape' | 'pageBg' | 'fullPage'; rects?: TRect[]; flat?: boolean; bg?: 'page' | 'layer'; payload: any }
+type TItem = { key: string; kind: TKind; title: string; preview: string; checked: boolean; status: 'new' | 'exists' | 'dup'; dupOf?: string; suggested?: boolean; suggestReason?: 'learned' | 'context' | 'shape' | 'pageBg' | 'fullPage' | 'textOnShape'; rects?: TRect[]; flat?: boolean; bg?: 'page' | 'layer'; payload: any }
 /** 位图类可以在这几类之间互相调整 */
 const RASTER: TKind[] = ['background', 'mask', 'image', 'photo']
 
@@ -152,7 +155,8 @@ async function onOpen() {
           payload: { type: x.type, url: x.url, thumb: x.url, title: x.title, width: x.width, height: x.height, ...(x.type === 'svg' ? { model: '{}' } : {}) },
         }),
       ),
-      ...texts.map((x): TItem => ({ key: x.key, kind: 'text', title: x.title, preview: '', checked: true, status: 'new', payload: { title: x.title, widgets: x.widgets, width: x.width, height: x.height } })),
+      // chữ tự gộp với hình bên dưới (không có nhóm sẵn trong mẫu) là gợi ý: gắn nhãn để người dùng kiểm tra
+      ...texts.map((x): TItem => ({ key: x.key, kind: 'text', title: x.title, preview: '', checked: true, status: 'new', ...(x.source === 'onShape' ? { suggested: true, suggestReason: 'textOnShape' as const } : {}), payload: { title: x.title, widgets: x.widgets, width: x.width, height: x.height } })),
     ]
     if (list.length) {
       // 预检：让服务端按库内已有数据判定哪些已存在（dryRun 不写库）

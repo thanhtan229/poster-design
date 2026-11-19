@@ -500,3 +500,10 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 - Đổi id trong `<defs>` thành id riêng theo nội dung (`uniqueIds`): nhiều SVG nội tuyến trên một trang trùng id `sh` thì trình duyệt dùng chung bộ lọc đầu tiên (bóng sai vùng, bị cắt). Kiểm thử: `scripts/tinix-svg-layer-test.mjs`.
 - Mẫu đã dựng trước đây vẫn là PNG; chỉ mẫu dựng lại/dựng mới mới có lớp SVG.
 - Sửa lỗi gốc `wSvg.vue` / `wSvgStatic.vue` [TINIX] (`deepElement`): chỉ thay chỗ đặt màu ở 2 tầng phần tử đầu, hình lồng nhóm trong nhóm (sticker máy ảnh: `svg > g(scale) > g(bóng) > rect`) hiện màu đen. Nay duyệt hết các tầng. Thử trên app (editor nhánh, service 7001): 5 lớp SVG của bộ dựng hiện đúng màu, đổi màu sao giữ viền trắng; tim PNG đổi màu → khôi phục → hoàn tác/làm lại đúng.
+
+## Tách phần tử: chữ kèm khung thành một mục Chữ (2026-11-19)
+- `src/common/methods/extractAssets.ts`: lớp nằm trong **nhóm chữ** (nhóm có chữ, không chứa ảnh người dùng `slot`/`linkedPhotoId`) chỉ đi theo mục Chữ của nhóm, không bị tách riêng sang Hình ảnh/Khung/SVG. Chỉ lấy nhóm chữ ngoài cùng (nhóm con không thành mục lặp). Cụm ảnh người + chú thích giữ cách cũ (khung là chất liệu, ảnh người bỏ).
+- Chữ rời nằm trên một hình rời ngay bên dưới (≥ 85% diện tích chữ nằm trong hình, hình ≤ 8 lần tổng diện tích chữ, không phải ảnh người dùng, không phủ kín trang, không phải khung mask) → tự gộp thành một mục Chữ, `source: 'onShape'`, hộp thoại gắn nhãn "Gợi ý · chữ trên khung". Nhiều dòng chữ trên cùng một khung gộp chung.
+- Hộp tách: ô xem trước mục Chữ vẽ lại cả nhóm (`src/components/business/extract-assets/TextGroupPreview.vue`: ảnh, SVG đã thay màu, chữ thuần không dùng v-html; hiệu ứng viền chữ die-cut không vẽ).
+- Đo trên 6 mẫu cắt dán thật (mẫu "Wander" và "Nhật ký hành trình"): mỗi nhãn còn một mục Chữ, bớt 2–6 khung bị tách thừa mỗi mẫu. Kiểm thử: `scripts/tinix-extract-assets-test.cjs` (7 trường hợp, trong `tinix:test`).
+
