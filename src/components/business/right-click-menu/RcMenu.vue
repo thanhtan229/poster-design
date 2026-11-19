@@ -26,6 +26,7 @@ import ContextMenuItems from './ContextMenuItems.vue'
 import ActionFeedback from './ActionFeedback.vue'
 import useActionFeedback from './useActionFeedback'
 import { primaryModifierLabel, selectionShortcut } from '@/common/methods/selectionShortcuts'
+import { libraryTarget, saveToLibrary } from '@/utils/tinix/library-save' // [TINIX]
 
 const { feedback, canUndo, run, undo, close: dismissFeedback } = useActionFeedback()
 
@@ -231,6 +232,16 @@ async function showMenu(e: MouseEvent, contextWidget: TdWidgetData | null = dAct
       disabled: !dWidgets.value.length,
     }]
   }
+  // [TINIX] Thư viện: lưu đè mục gốc (đã chèn từ tab Chữ / Chất liệu) hoặc lưu thành mục mới
+  if (!isPage && !multiple && !unlockTargetId && !showTargetId) {
+    const target = libraryTarget()
+    if (target) {
+      const hasRef = !!target.ref && target.ref.kind === target.kind
+      menuListData.value.list = [...menuListData.value.list,
+        ...(hasRef ? [{ type: 'lib-save-over' as const, text: i18n.global.t('tinix.ui.library.saveOver') }] : []),
+        { type: 'lib-save-new' as const, text: i18n.global.t(hasRef ? 'tinix.ui.library.saveNew' : 'tinix.ui.library.saveToLibrary') }]
+    }
+  }
   menuListData.value.list = organizeMenu(menuListData.value.list)
   showMenuBg.value = true
   menuListData.value.left = e.clientX
@@ -286,6 +297,12 @@ function moveSelection(value: 1 | -1) {
 
 /** 点击菜单触发事件 */
 async function selectMenu(type: TWidgetItemData['type']) {
+  // [TINIX] lưu về thư viện không phải thao tác trên canvas: không ghi phản hồi hoàn tác
+  if (type === 'lib-save-over' || type === 'lib-save-new') {
+    closeMenu()
+    await saveToLibrary(type === 'lib-save-over' ? 'over' : 'new')
+    return
+  }
   await run(type, () => performMenuAction(type))
 }
 

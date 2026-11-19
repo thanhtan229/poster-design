@@ -58,5 +58,7 @@ export default async function(type: string, item: TCommonItemData, data: Record<
       }
     }
   }
+  // [TINIX] chất liệu kéo từ tab Chất liệu: nhớ mục gốc để lưu ngược về thư viện
+  if (item?.value?._libraryRef && (type === 'image' || type === 'svg' || type === 'mask')) setting.libraryRef = item.value._libraryRef
   return setting
 }
