@@ -7,10 +7,13 @@
 -->
 <template>
   <div>
-    <el-dialog v-model="state.show" align-center width="90%" @close="state.showMatting = false">
+    <!-- [TINIX] Mount the legacy canvas after the dialog has a measured size. -->
+    <el-dialog v-model="state.show" :title="advanced ? $t('tinix.ui.cutoutTools.title') : $t('business.cutout.edit')" append-to-body align-center width="90%" @opened="state.showMatting = !advanced" @close="state.showMatting = false">
       <template #header>
-        <div class="tool-wrap">
+        <!-- [TINIX] Hand the current brush result to the curve editor. -->
+        <div v-if="!advanced" class="tool-wrap">
           <el-button type="primary" plain @click="done">{{ $t('business.cutout.applyEdit') }}</el-button>
+          <el-button :disabled="!mattingParam" @click="openAdvanced">{{ $t('tinix.ui.cutoutTools.title') }}</el-button>
           <el-radio-group v-model="state.isErasing" style="margin-left: 35px">
             <el-radio :value="false" size="large"> <b>{{ $t('business.cutout.fixBrush') }}</b> <i class="icon sd-xiubu" /></el-radio>
             <el-radio :value="true" size="large"> <b>{{ $t('business.cutout.eraseBrush') }}</b> <i class="icon sd-cachu" /></el-radio>
@@ -31,16 +34,18 @@
           />
         </div>
       </template>
-      <matting v-if="state.showMatting" :hasHeader="false" @register="mattingStart" />
+      <CutoutCurveEditor v-if="advanced && state.show" :raw="props.raw" :result="props.result" @done="applyResult" />
+      <matting v-else-if="state.showMatting" :hasHeader="false" @register="mattingStart" />
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, nextTick } from 'vue'
+import { reactive, ref, shallowRef } from 'vue' // [TINIX]
 import matting, { MattingType } from '@palxp/image-extraction'
 import { ElRadioGroup, ElRadio } from 'element-plus'
 import numberSlider from '@/components/modules/settings/numberSlider.vue'
+import CutoutCurveEditor from '@/components/business/ai-assistant/CutoutCurveEditor.vue' // [TINIX]
 
 type TState = {
   show: boolean;
@@ -58,7 +63,7 @@ type TParams = {
   result: string
 }
 
-type TCallback = ((base64: string) => void) | null
+type TCallback = ((base64: string, usedCurves: boolean) => void) | null // [TINIX]
 
 const props: TParams = {
   raw: '',
@@ -78,7 +83,9 @@ const state = reactive<TState>({
   constants: null,
 })
 
-let mattingParam: MattingType | null
+// [TINIX] Enable the new tools once the brush editor registers.
+const mattingParam = shallowRef<MattingType>()
+const advanced = ref(false)
 
 const mattingStart = (mattingOptions: MattingType) => {
   mattingOptions.initLoadImages(props.raw, props.result)
@@ -86,17 +93,16 @@ const mattingStart = (mattingOptions: MattingType) => {
   state.radius = mattingOptions.radius as number;
   state.hardness = mattingOptions.hardness as number;
   state.constants = mattingOptions.constants
-  mattingParam = mattingOptions
+  mattingParam.value = mattingOptions // [TINIX]
 }
 
-const open = async (raw: string, result: string, cb: TCallback) => {
+const open = (raw: string, result: string, cb: TCallback, useCurves = false) => {
+  advanced.value = useCurves // [TINIX] The brush retains alpha only, so reopen cloned results in curve mode.
+  mattingParam.value = undefined
+  state.showMatting = false
   state.show = true
   props.raw = raw
   props.result = result
-  await nextTick()
-  setTimeout(() => {
-    state.showMatting = true
-  }, 300)
   callback = cb
 }
 
@@ -105,8 +111,21 @@ defineExpose({
 })
 
 const done = () => {
+  const result = mattingParam.value?.getResult()
+  if (result) applyResult(result)
+}
+
+// [TINIX] Preserve the existing apply and border workflow.
+function applyResult(result: string) {
   state.show = false
-  callback && callback(mattingParam?.getResult())
+  callback?.(result, advanced.value)
+}
+
+function openAdvanced() {
+  const result = mattingParam.value?.getResult()
+  if (!result) return
+  props.result = result
+  advanced.value = true
 }
 
 </script>

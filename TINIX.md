@@ -260,7 +260,26 @@ Kiểm thử tách nền, hai cực sáng/tối, vùng trắng và giảm trọn
 [TINIX] Bé yêu v4 phiên bản 2 giới hạn vùng tên cách sticker máy ảnh; mặc định viền chủ thể mới 0 mm. Kiểm thử giao diện và xuất đơn 215 qua scripts/tinix-baby-v4-ui-test.cjs và tinix-production-pilot.cjs.
 
 
+## Sửa mép và vá mảnh cắt
+
+- Chọn lớp ảnh rồi mở **Xóa nền → Sửa mép và vá ảnh** để xem ảnh gốc và mảnh cắt song song. Bấm để đặt điểm góc, bấm và kéo để tạo tay nắm Bézier. Có thể kéo lại điểm và tay nắm. Đường bao cho phép khôi phục pixel gốc hoặc xóa vùng. Công cụ vá lấy pixel từ vùng còn nguyên trên mảnh hiện tại, dịch theo hai điểm đã chọn và chỉ dán trong đường bao. Có thể hoàn tác một vùng vừa áp dụng. Kết quả áp dụng vào luồng tạo viền trắng sẵn có khi tách ảnh trên canvas.
+- Trong bảng **Lớp → Kiểm mép mảnh cắt**, xem các lớp ảnh và SVG có độ trong suốt trên nền sáng/tối ở kích thước lớp trên trang. Bảng đánh dấu nội dung cách mép tệp dưới 2 px, đốm alpha nhỏ tách rời và lỗi đọc. Cảnh báo cần xem bằng mắt vì các dấu trang trí có thể rời nhau có chủ ý.
+- Trong **Lớp → Mở cặp ảnh để sửa mép**, chọn ảnh gốc và PNG đã tách có cùng kích thước, cùng vị trí nội dung. Công cụ mở trình sửa trực tiếp và tải PNG đã sửa khi áp dụng. Hai ảnh đầu vào được đọc tại máy và không chạy lại model tách nền.
+- Trong **Lớp → Kiểm mép mảnh cắt → Sửa mảnh này**, áp dụng kết quả ngay vào lớp PNG, giữ vị trí và kích thước. Có thể xóa hoặc vá trực tiếp, hoặc thêm ảnh gốc cùng kích thước đã căn để khôi phục. Mở lại mảnh và chọn đường đã lưu để kéo điểm Bézier, đổi thao tác hoặc xóa đường. Lưu tệp bản thiết kế để giữ ảnh nguồn và các đường sửa trong bản nháp.
+- Hai chức năng xử lý canvas trong trình duyệt, dùng tài nguyên sẵn có. Cọ của trình chỉnh cũ chỉ lưu mặt nạ, vì vậy ảnh đã áp dụng công cụ vá sẽ mở lại trong trình sửa đường cong để giữ nguyên màu vùng vá.
+
 ## Dựng mẫu cắt dán từ ảnh tham chiếu (2026-11-16)
+
+- Mở **Dựng theo ảnh mẫu** trên thanh canvas, chọn ảnh rồi kéo **Khoanh vùng** ngay trên ảnh phủ. Chọn lớp trên canvas hoặc bảng Lớp, sau đó bấm **Gắn với lớp đang chọn**. Chọn vùng trong danh sách để mở lại lớp đã gắn. Lớp phủ có thể bật/tắt và đổi độ trong suốt, xuyên chuột ngoài lúc khoanh vùng. Ảnh được căn giữa theo tỷ lệ gốc; vùng lưu bằng tọa độ tương đối. Tệp bản nháp `.tinix.zip` giữ ảnh mẫu và liên kết theo từng trang. Khi mở lại, bật lớp phủ để căn tiếp. Ảnh mẫu xử lý cục bộ, tối đa 2.200 px cạnh dài sau khi thu nhỏ và chỉ hiện trong editor.
+- **Tạo lớp từ vùng**: tạo khung bo góc có viền giấy và ảnh giữ chỗ, hoặc mở vùng đã căn trong hộp tách sticker và chuyển nét chữ sang SVG. Sau khi áp dụng, lớp mới gắn với vùng, giữ tọa độ theo phép căn của ảnh phủ. Khung giữ chỗ không đưa ảnh tham chiếu vào lớp ảnh. Sticker dùng bộ tách nền đang chọn và viền giấy nhúng trong PNG. Nhãn dùng nét SVG trên một miếng giấy liền. Thao tác ảnh tham chiếu và công cụ dựng vùng nằm trong `ReferenceGuide.vue`.
+
+- **Lớp → Chuyển nét chữ sang SVG** thực hiện quy tắc 4.21 trong editor. Chọn PNG/JPEG/WebP đã cắt sát chữ, lấy màu mực trong lòng nét và màu giấy ngay cạnh chữ, rồi bấm **Dựng nét**. Giảm **Độ phủ tối thiểu** nếu nét còn mỏng. Tăng **Chi tiết nhỏ nhất** để lọc đốm và xem lại dấu tiếng Việt. PNG mặt nạ tùy chọn dùng alpha cùng kích thước ảnh để giới hạn vùng tách khi chữ sát trang trí khác. Xem trước rồi tải SVG hoặc thêm lớp SVG đổi màu được vào trang. Ảnh nguồn xử lý cục bộ trong trình duyệt. Lớp SVG lưu đường nét, còn nội dung chữ dùng lớp văn bản nếu cần gõ sửa.
+
+Theo quy tắc 5.6, chạy `node scripts/tinix-cli.mjs drafts check-edges --input draft.json` trước khi render trang. Lệnh đọc từng lớp ảnh/SVG, raster hóa ở kích thước lớp, rồi đếm điểm ảnh có alpha > 8 trong dải 2 px ở bốn cạnh. Nhóm, nền và ảnh giữ chỗ được bỏ qua. Ảnh theo URL được tải từ app localhost.
+
+- `ALPHA_NEAR_EDGE`: xem số điểm ở từng cạnh. Dáng khung hoặc mảnh chủ ý sát cạnh có thể báo mà vẫn đúng.
+- `PNG_PROVENANCE_REVIEW`: draft chưa phân biệt PNG dựng mới với PNG tách từ ảnh ghép, nên lệnh liệt kê thận trọng mọi PNG trong suốt. Ưu tiên soi PNG tách từ ảnh ghép để phát hiện viền đứt hoặc nền cũ bám.
+- `EMPTY_ASSET` / `ASSET_UNCHECKED`: mảnh trống hoặc không đọc được. Danh sách `review` là danh sách cần xem, không phải lỗi tiến trình. Lệnh kiểm alpha tài nguyên độc lập; mask, xoay và chồng lớp cần xem trên render toàn trang. Mã CLI ở `scripts/tinix-cli.mjs`, bộ kiểm ở `scripts/lib/draft-edges.mjs`.
 
 Lệnh CLI dựng **bản nháp** mẫu cắt dán từ một ảnh chụp trang scrapbook thật: `reference grid`, `drafts from-reference`, `reference compare`. Không gọi AI trả phí. Cần app đang chạy (tải font, tách nền BiRefNet). Mã ở `scripts/lib/reference-build.mjs` và `scripts/lib/text-measure.mjs`; ví dụ spec ở `scripts/examples/smile-darling.spec.json` (chỉ có toạ độ và chữ, không có ảnh).
 
@@ -269,7 +288,7 @@ Lệnh CLI dựng **bản nháp** mẫu cắt dán từ một ảnh chụp trang
 Thử nghiệm cho thấy dò tự động "mù" không tách được các khung chồng lớp (thành phần màu trắng dính nhau, tỉ lệ lấp đầy 0,11–0,33). Vì vậy **vị trí, kích thước và góc xoay từng thành phần do người hoặc tác tử đọc từ ảnh** rồi ghi vào spec; máy làm phần đo đếm:
 
 - cắt ảnh trong khung **đã duỗi thẳng** (khung xoay, ảnh bên trong vẫn thẳng);
-- tách **sticker thật** bằng BiRefNet (không vẽ lại bằng SVG); nhãn `shape: "cutout"` lấy hình nét cọ từ mặt nạ tách nền rồi điền màu giấy;
+- tách **sticker có họa tiết** bằng BiRefNet với lớp sửa mép khi cần theo quy tắc 4.22; nhãn `shape: "cutout"` lấy hình nét cọ từ mặt nạ tách nền rồi điền màu giấy;
 - lấy màu nền, màu giấy khung (từ dải viền ngoài), màu nhãn, màu mực; dò các trái tim trắng làm nền;
 - **tự khớp cỡ chữ**: đo "mực" chữ trong ảnh mẫu (ngưỡng Otsu), rồi đo font thật bằng Chromium của Puppeteer (cùng engine với bộ render, có kerning) để tìm cỡ chữ cho bề rộng mực bằng nhau; khung chữ luôn rộng hơn dòng dài nhất nên không xuống dòng; chữ nhiều dòng lấy `lineHeight` từ chiều cao mực mẫu; tâm mực trùng tâm mực trong ảnh mẫu.
 
@@ -278,13 +297,19 @@ Thử nghiệm cho thấy dò tự động "mù" không tách được các khun
 ```text
 node scripts/tinix-cli.mjs reference grid --input ref.png --output ref-grid.png            # lưới toạ độ (px ảnh gốc) để đọc vị trí
 # viết spec.json (xem bên dưới), rồi:
-node scripts/tinix-cli.mjs drafts from-reference --reference ref.png --spec spec.json --output draft.json
+node scripts/tinix-cli.mjs drafts from-reference --reference ref.png --spec spec.json --output draft.json --photos placeholder
+node scripts/tinix-cli.mjs drafts validate --input draft.json
+node scripts/tinix-cli.mjs drafts check-edges --input draft.json
 node scripts/tinix-cli.mjs drafts render --input draft.json --output render.png
-node scripts/tinix-cli.mjs reference compare --reference ref.png --render render.png --spec spec.json --output cmp.png
+node scripts/tinix-cli.mjs reference compare --reference ref.png --draft draft.json --spec spec.json --output cmp.png
 node scripts/tinix-cli.mjs templates save-collage --input draft.json --name "Tên mẫu"      # khi đã hài lòng
 ```
 
 Tài nguyên ghi vào `service/static/collage/<name>/`. Mặc định `--photos placeholder`: khung ảnh dùng ảnh giữ chỗ trung tính, **không nhúng ảnh người của ảnh mẫu vào mẫu**. `--photos reference` chỉ để đo độ khớp (ảnh trong khung lấy từ ảnh mẫu). `reference compare` in MAE (0–255) và SSIM (1 = giống hệt) toàn trang và theo từng phần tử, kèm ảnh cạnh nhau (mẫu | render | bản đồ lệch).
+
+Với ảnh ghép, ưu tiên BiRefNet cho mảnh nhiều nhánh, lá hoặc cánh hoa. Có thể dùng U²-Net cho mảnh đơn giản khi BiRefNet đang bận, rồi kiểm tra đủ chi tiết trước khi ghép. Trong phép thử ba mảnh của mẫu #68, U²-Net giữ được cụm lì xì, nhưng làm mất phần lớn cành đào và một bông hoa ở cụm bánh chưng. Khi đã có PNG cắt, mở lại đường sửa đã lưu từ bảng **Kiểm mép mảnh cắt** để tránh tách lại.
+
+Để đối chiếu theo lớp và loại vùng giữ chỗ, chạy `node scripts/tinix-cli.mjs reference compare --reference ref.png --draft draft.json --output cmp.png`. Có thể thêm `--spec spec.json` để lấy điểm theo các vùng của spec. Lệnh dùng trang render hiện tại của app để lấy alpha từng lớp cùng bản render, không tạo thiết kế hay mẫu trong thư viện. Báo cáo JSON ghi tên, ID, số pixel, MAE và SSIM theo lớp. Màu xám trên bản đồ là vùng khung ảnh bị loại khỏi cả hai chỉ số. Viền giấy và sticker phủ lên khung vẫn được tính ở phần nhìn thấy. Điểm lớp đo vùng có pixel của lớp đó trên bản render. Hãy xem thêm ảnh đối chiếu để phát hiện chi tiết bị thiếu hoặc nằm ngoài vùng này.
 
 ### Spec
 
@@ -336,6 +361,29 @@ Những điều đã học (đừng làm lại):
 Hộp "Xuất bộ JPG cắt dán" có hai tùy chọn mới: **Thêm file SVG đường cắt cho máy laser** và **Dấu căn laser**. Mỗi tờ chi tiết cắt (`02_chi_tiet_cat_NN.jpg`) có thêm `02_duong_cat_NN.svg` trong gói ZIP. API: `GET /api/tinix/collage-print/:id/cut/:index?inset=mm` (mặc định lùi 0,3 mm). Mã: `service/src/tinix/cutPaths.ts` (module thuần), route trong `collagePrint.ts`, dấu căn (`MARK`, `markCorners`) trong `src/utils/tinix/collage-print.ts`, test `scripts/tinix-cut-paths-test.cjs`.
 
 - **File SVG**: đơn vị mm, tỉ lệ 1:1 (`width`/`height` bằng mm + `viewBox` cùng hệ). Lớp `Cat` (đỏ) là đường cắt, lớp `Can` (xanh) là ba dấu chữ L ở góc trên-trái, trên-phải, dưới-trái (cách mép 3 mm, cánh dài 5 mm; đỉnh chữ L là điểm căn). Dấu căn cũng được in lên JPG, nằm trong vùng lề (cần lề >= 4 mm).
+- **Kiểm khả năng cắt ở khổ in thật** trong hộp Xuất bộ JPG cắt dán. Bảng trong `PrintBundle.vue` dùng `cut-readiness.ts` đọc lớp `Cat` của chính SVG xuất, gắn contour vào cụm đã xếp tờ và báo kích thước mm, số mảnh giấy rời, lỗ nhỏ và mảnh có chỗ nối hẹp. Ngưỡng mặc định 2 mm, chỉnh từ 1–10 mm. Lỗ đo theo đường kính lọt lớn nhất, chỗ nối hẹp nhận diện khi co đường bao nửa ngưỡng làm tách hai vùng giấy. Chỉ đo hình học sau bước lọc nhiễu của bộ xuất. Thao tác này dùng quy trình lưu thiết kế để tạo bộ in hiện có. Cần cắt thử để kiểm chứng trên vật liệu.
+- **Kiểm cụm cắt này** xuất hiện khi chọn một lớp thuộc cụm cắt nổi. Tên cụm trong bảng kiểm của bộ xuất cũng mở cùng công cụ. `CutPieceReview.vue` và `cut-piece-review.ts` cắt khung render quanh cụm, lấy alpha từ hai nền và dùng chung hàm dò đường cắt ở DPI của tài liệu. Có thể bật đường bao trên canvas, thấy lỗ và vị trí ước lượng của chỗ nối hẹp, kiểm phần hình thực tế có vượt mép và phần hình vượt hộp xếp. Lấp lỗ, nối hai điểm hoặc căn hộp của nhóm không xoay đều có bản xem trước riêng. Bản vá giấy nằm dưới hình in, được hoàn tác cùng thao tác áp dụng. Kiểm lại tất cả tờ xuất trước khi duyệt in.
+- [TINIX] **Kiểm mép thành phẩm** đo các lớp gần mép trên bản bố cục dùng để xuất. `print-trim-review.ts` dựng vùng quanh từng lớp cùng các nhóm cha bằng một PNG nền trong suốt tại độ phân giải 1:1. `trim-edge-scan.ts` đo trực tiếp những điểm có alpha từ 50% và đổi độ tràn sang mm ở DPI thật. Bảng phân biệt hộp lớp vượt mép với hình in vượt mép và báo riêng lớp chưa đo được. Xác nhận chi tiết chủ ý chạm mép sẽ bị xóa khi bố cục hay thiết lập xuất thay đổi.
+- [TINIX] Khi đổi kích thước lớp trên canvas cắt dán, `ResizeTrimWarning.vue` kiểm lớp đã đổi và các lớp con gần mép sau khi kích thước ổn định. Cảnh báo ghi tên lớp, mép và độ tràn tính theo mm, đồng thời đánh dấu mép trên canvas. Canvas và hộp xuất dùng chung phép đo alpha và bộ nhớ đệm theo dữ liệu dựng.
+- [TINIX] Nút đưa cụm vào mép đo các lớp trong cụm, xem trước khung và khoảng dịch nhỏ nhất theo khoảng cách mm được chọn, kiểm lại tại vị trí mới trước khi áp dụng. Khoảng cách được làm tròn lên theo pixel in và áp dụng cho các mép đang tràn. Lệnh dịch được ghi vào lịch sử hoàn tác. Khi lớp không đo được hoặc cả cụm không vừa trang, ứng dụng báo lỗi và giữ nguyên bố cục.
+- [TINIX] Bảng **Cần sửa** trên canvas nhận cảnh báo mép và đường cắt, đồng thời nhận ghi chú do người dựng phát hiện khi đối chiếu ảnh mẫu. Chọn một mục để mở lớp và vùng ảnh mẫu đã gắn. Kiểm lại theo lớp hoặc theo cụm dùng cùng bộ đo với công cụ tương ứng. Các mục được giữ trong phiên của trang đang chỉnh.
+- [TINIX] Lớp phủ ảnh mẫu đánh số và viền vàng vùng chưa gắn lớp hoặc có liên kết tới lớp đã xóa. Số vùng ở thanh công cụ mở lớp phủ và chọn vùng đầu tiên. Bấm khung vàng hoặc dùng Enter hay Space khi đang tập trung vào khung để chọn vùng. Khi gắn xong, khung vàng biến mất và vùng chưa gắn kế tiếp được chọn theo số thứ tự, vòng về đầu nếu cần. Chọn lớp trước khi gắn vùng mới.
+- [TINIX] **Shift+G** gắn vùng tham chiếu đang chọn với lớp đang chọn khi bảng **Dựng theo ảnh mẫu** mở. Nút và phím tắt dùng cùng thao tác hoàn tác.
+- [TINIX] Vùng chưa gắn hiển thị tối đa ba lớp nhìn thấy gần nhất theo độ chồng khung, khoảng cách tâm và kích thước. Bấm gợi ý để chọn lớp, sau đó thực hiện thao tác gắn.
+- [TINIX] Xếp hạng ưu tiên lớp chữ nếu vùng khoanh phủ phần lớn chữ và lớp giấy nằm dưới thuộc cùng nhãn. Vùng phủ gần trọn tờ giấy vẫn dùng điểm hình học cho lớp giấy.
+- [TINIX] Gợi ý trên canvas hiện loại **Chữ** hoặc **Giấy** cạnh tên lớp để người dựng nhận ra lớp cần chọn khi vùng khoanh bao cả nhãn.
+- [TINIX] Khi hai gợi ý cùng loại trở lên mang tên chung như **Giấy 1** và **Giấy 2**, hiển thị ảnh thu nhỏ cùng tỷ lệ để so kích thước và góc xoay.
+- [TINIX] Rê chuột hoặc đưa tiêu điểm bàn phím tới gợi ý để hiện viền xanh quanh lớp tương ứng trên canvas. Chọn gợi ý bằng thao tác bấm.
+- [TINIX] Một cặp gợi ý có cùng hình, kích thước và góc xoay hiện **Trên/Dưới** khi hai lớp nằm chủ yếu theo chiều dọc, hoặc **Trái/Phải** khi nằm chủ yếu theo chiều ngang.
+- [TINIX] Nếu có ba gợi ý giống nhau và tách vị trí rõ trên trục chính, lớp ở giữa nhận nhãn **Giữa**.
+- [TINIX] Khi trục chính không tách được ba lớp giống nhau, hiện nhãn hai trục nếu mỗi lớp nằm ở một góc riêng và cách đủ xa đường giữa.
+- [TINIX] Khi đổi giữa nhãn một trục và hai trục, giữ chế độ trước trong dải 10% quanh ngưỡng khoảng cách để tránh đổi liên tục khi căn chỉnh.
+- [TINIX] `export-render` với `trimAlpha: true` trả PNG trong suốt từ cùng trang `Draw`. Trình chỉnh sửa cắt dán chuẩn bị phiên Chrome khi mở bản nháp hoặc chọn lớp. Phiên được dùng lại giữa các lượt kiểm và tự đóng sau 60 giây rảnh. Luồng dựng đường cắt vẫn giữ phép đo qua hai nền.
+- Kết quả đo mép lưu trong bộ nhớ của editor theo lớp, bố cục trang, nhóm cha, nguồn ảnh liên kết và ETag của tài nguyên cục bộ. Khi tạo lại bộ xem trước, chỉ dựng lại các lớp đã đổi hoặc chưa xác minh được nguồn hay kết quả. Bảng ghi số lớp dùng lại, số lượt dựng và thời gian kiểm mép. Xác nhận chủ ý và lượt kiểm SVG cả bộ vẫn thực hiện trên bản xuất mới.
+- Bộ xuất dùng lại JPG và SVG theo từng tờ đã xếp nếu bố cục, DPI, bản dựng frontend và tài nguyên cục bộ vẫn khớp. SVG còn kiểm vị trí xếp, dấu căn và độ lùi đường cắt. `printArtifactCache.ts` giữ kết quả theo thiết kế trong RAM tối đa 30 phút và 96 MiB, bỏ qua tài nguyên chưa xác minh. Mỗi bộ xuất vẫn có đủ tệp JPG riêng để lưu bản khách duyệt. Bảng kiểm tính lại từ SVG của bộ hiện tại và hiển thị số tệp dùng lại cùng tổng thời gian.
+- **Giữ vị trí xếp nếu vẫn đủ tờ** dùng vị trí từ bộ xem trước hoàn thành gần nhất của cùng thiết kế và trang trong editor. `collage-print.ts` ưu tiên cụm giữ nguyên kích thước, sau đó giữ cụm đã đổi nếu còn vừa với lề và khoảng cách hiện tại. Nếu cách giữ vị trí cần thêm giấy, dùng phương án xếp mới. Bảng xem trước ghi số cụm giữ vị trí và số tờ cắt phải dựng lại. Bỏ chọn tùy chọn để xếp lại toàn bộ.
+- Khi mảnh lớn lên và vướng vị trí cũ, bộ xếp ưu tiên tìm chỗ trống trên tờ cũ rồi thử sắp lại các cụm trong chính tờ đó. Các tờ khác giữ nguyên khi phương án này vừa lề, đủ khoảng cách và không tốn thêm tờ so với các cách xếp hiện có.
+- Nếu tờ cũ không còn đủ chỗ, bộ xếp thử cùng một tờ khác. Phương án hai tờ được chọn khi tuân thủ lề và khoảng cách, giữ nguyên vị trí trên các tờ ngoài phạm vi thử và không tốn thêm giấy so với xếp mới. Trong các phương án đạt, ưu tiên ít tờ thay đổi rồi nhiều cụm giữ vị trí.
 - **Cách dò**: dựng tờ cắt (bỏ dấu căn) hai lần trên nền trắng và nền đen → alpha = 255 − trung bình(trắng − đen) (không cần trình duyệt hỗ trợ nền trong suốt) → mặt nạ alpha >= 128 → trường khoảng cách có dấu (Felzenszwalb) làm mịn Gauss σ 1,2 px → marching squares tại mức = khoảng lùi → Douglas–Peucker 0,05 mm. Bóng nướng sẵn trong PNG có alpha thấp nên bị bỏ qua. Vòng nhỏ hơn 1,5 mm² bị coi là nhiễu.
 - **"Giữa viền trắng"**: khoảng lùi tính theo từng mảnh bằng thuộc tính `cutInset` (px thiết kế) trên lớp ảnh; mảnh không khai báo dùng mặc định 0,3 mm. Script `tinix-build-moments.mjs` khai báo: ảnh chính tách nền = 5 px viền xanh + 10 px (nửa viền trắng 20 px), sticker = nửa bề dày viền trắng.
 - **Quy trình LightBurn (không camera)**: nhập SVG (kích thước đúng 300×200 mm); Start From: User Origin, Job Origin: Top-Left; đưa tia laser (chế độ đỏ/công suất thấp) lên đỉnh chữ L trên-trái đã in, bấm Set Origin; bấm Frame để tia chạy theo khung và kiểm tra hai dấu còn lại; lệch thì xoay/xê dịch giấy. Lớp xanh đặt Output tắt. In JPG ở 100%, không co vừa trang. Chưa thử trên máy laser thật: cắt thử trên giấy rẻ và công suất thấp trước.
@@ -519,3 +567,216 @@ Menu **Tệp** dùng ngôn ngữ dự án: Dự án mới… · Mở dự án…
 ## Tìm mẫu theo mã số (2026-11-19)
 
 Ô tìm mẫu (cắt dán và mẫu thường) khớp **tên hoặc đúng mã số** mẫu: gõ `66` ra mẫu mã 66 (khớp đúng, không khớp từng phần nên `6` không ra mọi mẫu có số 6). Trước đây chỉ khớp tên nên mẫu có tên tự đặt không chứa mã thì không tìm được bằng mã. Sửa ở `TemplateLibrary.vue` (hàm `nameOrIdMatch`, lọc phía trình duyệt) và `service/src/db/templates.ts` (`title LIKE ... OR CAST(id AS TEXT) = ...`); chỗ nào cũng có comment `[TINIX]`. Phần service cần khởi động lại service để có hiệu lực.
+
+## Nhập bộ ba ảnh nguyên liệu
+
+Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX] Khi chọn thư mục, TinixPoster gợi ý ảnh mẫu, ảnh nền và PNG các mảnh dựa vào tên tệp, alpha, tỷ lệ ảnh và độ tương phản cục bộ. Các ô có thể sửa và sẽ để trống nếu dấu hiệu chưa đủ rõ. Bản xem trước cho đổi ngưỡng alpha, chọn mảnh để tách hoặc gộp và đánh dấu khung ảnh hoặc ảnh chủ đạo. TinixPoster đặt nền, lưu ảnh mẫu làm lớp phủ và đưa các lớp lên canvas theo vị trí trên tấm PNG trong một thao tác có thể hoàn tác. Dùng các vùng tham chiếu để căn bố cục thành phẩm.
+
+[TINIX] **Sơ đồ bố cục** là tùy chọn. Khi ảnh sơ đồ cùng tỷ lệ với ảnh mẫu, **Gợi ý khung từ sơ đồ** tìm các nhãn khung ngắn và dùng họa tiết trên khung để gợi ý vị trí. Xem trực tiếp các dấu gợi ý trên sơ đồ rồi chọn kết quả đúng hoặc kéo khung đích để căn. Kết quả tự động luôn chờ duyệt và sơ đồ không thay ảnh mẫu trên canvas.
+
+[TINIX] Nếu sơ đồ ghi mã dạng **F01–F09**, chọn mã tương ứng trên từng khung PNG trước khi bấm **Gợi ý khung từ sơ đồ**. Công cụ đọc tiêu đề mã ngay trong trình duyệt và khoanh tìm trong vùng mang mã đó. Mã thiếu, trùng hoặc không đọc rõ sẽ báo để kiểm tra. Gán mã vẫn cần một lần nếu tấm PNG chỉ có khung và không mang mã. Kiểm vị trí, kích thước và góc riêng sau khi ghép.
+
+[TINIX] Với nhãn chỉ có mã trên nền sáng, công cụ đọc ba ký tự từ lòng nhãn. Cách này vẫn tìm được nhãn khi viền tối chạm ảnh. Kết quả trùng cùng mã và vị trí từ hai cách dò chỉ được tính một lần. Nếu cùng mã xuất hiện ở hai vị trí, công cụ giữ cảnh báo trùng.
+
+[TINIX] Có thể đặt một tệp `layout.json` cùng thư mục ảnh và bấm **Gợi ý khung từ layout.json**. TinixPoster kiểm tên và kích thước gốc của hai ảnh, tìm vùng alpha đủ khớp với từng mã F01–F09, rồi hiển thị vị trí để duyệt. Rê chuột hoặc chuyển tiêu điểm vào thẻ khung để xem hình đặt trên ảnh mẫu. Bấm **Duyệt tất cả khung đã ghép** để chọn các vị trí từ tệp trong một lượt. Có thể bỏ chọn từng khung trước khi đưa các mảnh lên canvas. Bản nháp phiên dựng giữ mã và vị trí đã gợi ý.
+
+[TINIX] Trong **Tách mảnh từ PNG**, chọn **Chọn ZIP nguyên liệu** với `01_anh_mau.png`, `02_nen_sach.png`, `03_so_do_bo_cuc.png`, `04_tam_manh_RGBA.png` và `layout.json` phiên bản 1. Bảng **Kiểm ZIP trước khi nhập** so cụm alpha từ ngưỡng 4 với lõi từ ngưỡng 128, kiểm độ khớp hộp `source` theo ngưỡng 90% và báo các trường bắt buộc còn thiếu theo mã. Vùng PNG đáng kể chưa có mã được định danh bằng tọa độ góc trái trên tấm nguồn. Kiểm này dựa trên PNG và JSON, nên cần đối chiếu sơ đồ nếu muốn xác định tên của vùng chưa khai báo. Với gói đạt, nhấn **Đưa lên canvas** để áp dụng vị trí trong JSON. Với gói ghép một phần, xem báo cáo và kiểm các thẻ trước khi nhập thủ công.
+
+[TINIX] Bấm mã trong cảnh báo để khoanh vùng trên tấm PNG nguồn. Cảnh báo dính alpha ưu tiên hộp lõi của mảnh, cảnh báo lệch `source` hiện hộp đã khai báo, còn mảnh chưa có mã hiện hộp vùng tìm được. Cảnh báo thiếu trường chỉ mở được vùng khi JSON có hộp `source` đầy đủ và nằm trong tấm PNG. Tọa độ rê chuột hiển thị theo pixel gốc.
+
+[TINIX] **Sao chép báo cáo** chép toàn bộ kết quả kiểm ZIP dưới dạng văn bản để bàn giao sửa nguyên liệu. Báo cáo giữ mã hoặc định danh vùng, hộp `x, y, width, height` theo pixel của PNG gốc và trường JSON thiếu. Khi trình duyệt từ chối quyền clipboard, bảng chọn sẵn văn bản để sao chép thủ công.
+
+[TINIX] Với vùng PNG chưa khai báo, bấm chọn vùng rồi chọn **Trùng với khung Fxx** nếu chi tiết đã có trên khung tương ứng. Có thể đổi lại **Cần bổ sung mã**. Báo cáo sao chép chia hai nhóm, giữ nguyên tọa độ và số cảnh báo tự động. Phân loại áp dụng cho lượt kiểm ZIP hiện tại.
+
+[TINIX] Khi chọn một vùng chưa khai báo, công cụ so dáng, phân bố màu và độ sáng họa tiết với các chi tiết trên khung PNG qua nhiều mức thu phóng và góc xoay nhỏ. Chỉ gợi ý khi mức khớp đủ cao và vượt rõ khung xếp thứ hai. Nút xác nhận mới cập nhật phân loại và báo cáo. Danh sách khung vẫn cho chọn thủ công.
+
+[TINIX] Chạy `node scripts/tinix-cli.mjs drafts from-material-zip --input kit.zip --directory .runtime/reference/ten-luot` để kiểm và dựng bộ ZIP ngoài giao diện. Thư mục đích phải mới và thư mục cha phải có sẵn. Gói đạt xuất `report.json`, `draft.json` và `render.png`. Gói có cảnh báo hoặc mảnh chưa ghép được xuất `report.json` và trả mã thoát 1. Nếu chỉ lỗi render, báo cáo ghi `render-failed` và bản nháp vẫn có thể dùng với `drafts render`. Lệnh giữ vùng ảnh thay riêng, dùng khổ in trong JSON nếu có, và render qua API của app đang chạy mà không tạo thiết kế hay mẫu trong thư viện.
+
+[TINIX] Cầu MCP chạy qua stdio. Cài phụ thuộc bằng `npm --prefix scripts/tinix-mcp ci` và trỏ lệnh stdio của client đến `node <đường dẫn tuyệt đối>/scripts/tinix-mcp/server.mjs`. Công cụ `build_material_draft` nhận tệp ZIP qua `openai/fileParams` và gọi CLI với TinixPoster ở `127.0.0.1:7001`. Báo cáo trả về theo mã và tọa độ. Với gói đạt, MCP trả thêm PNG xem trước tối đa 960 px mỗi cạnh. Tệp đầy đủ nằm tại `.runtime/mcp-material/<jobId>/result/`. Theo mặc định cầu tải từ CDN `oaiusercontent.com`. Nếu workspace dùng CDN tệp khác, người vận hành có thể thêm đúng hostname tin cậy vào `TINIX_MCP_FILE_HOSTS` bằng danh sách phân cách dấu phẩy.
+
+[TINIX] Để dùng từ ChatGPT web, tạo hoặc dùng lại Secure MCP Tunnel gắn với workspace, cấu hình tunnel chạy lệnh stdio trên, rồi thêm custom MCP server qua kết nối **Tunnel** trong workspace. Tunnel cần quyền và khóa chạy trên OpenAI Platform của workspace. Thử trước bằng ZIP tạo ngay trong chat và kiểm công cụ nhận được tệp qua `openai/fileParams`. Hai gói Sweet Memories đã được thử qua MCP stdio với tệp fixture và URL giả lập. Đây là phép kiểm cục bộ của cầu MCP và chưa xác nhận việc chuyển tệp từ ChatGPT web.
+
+[TINIX] Nếu ZIP tạo trong chat bị chặn, thử đính kèm lại từ Library hoặc Space. Công cụ phân biệt thiếu đối tượng tệp, đường dẫn `sandbox:`, URL sai định dạng và CDN chưa được phép. Với CDN lạ, báo hostname để kiểm tra mà không trả đường dẫn tải đầy đủ hay chữ ký.
+
+[TINIX] Lượt ChatGPT web tạo ZIP “Một ngày ở Đà Lạt” chuyển URL tải HTTPS tại `oaisdmntprindiasocentral.blob.core.windows.net`. Cầu MCP cho phép đúng hostname này. Các tài khoản lưu trữ Azure khác vẫn cần xác minh riêng.
+
+[TINIX] `fill_material_draft_photos` tạo bản sao từ `job_id` đã render, nhận mảng sáu tệp `photos` theo thứ tự F01–F06 và tệp `subject` là PNG đã tách nền. Báo cáo dựng mới có `photoSlots` để ghép theo mã. Với bản cũ hoặc khi thiếu mã, dựng lại ZIP để lấy ánh xạ hoặc truyền sáu UUID khung qua `photo_slot_ids`. Công cụ giữ mặt nạ, góc xoay, thứ tự lớp và bề dày viền SUBJECT theo bản nháp nguồn, rồi trả ảnh xem trước. Sau khi cập nhật cầu MCP, làm mới danh sách công cụ của plugin ChatGPT nếu công cụ mới chưa xuất hiện.
+
+[TINIX] `preview_material_subject_cutout` nhận một ảnh gốc JPEG, PNG hoặc WebP đính kèm (tối đa 16 MiB, 32 triệu pixel). Công cụ gọi BiRefNet cục bộ ở cổng 7001, trả PNG trong suốt để duyệt với cạnh dài tối đa 1.280 px, kèm kích thước kết quả đầy đủ. Lượt xem trước không gắn SUBJECT, sửa bản nháp hay lưu mẫu. Sau khi duyệt, dùng PNG đầy đủ của BiRefNet làm đầu vào riêng cho bước gắn ảnh. Làm mới kết nối MCP trong ChatGPT khi triển khai công cụ này.
+
+[TINIX] Luồng làm mẫu từ ảnh gốc qua ChatGPT dùng `build_material_draft` sau khi duyệt demo, rồi gọi `fill_material_draft_photos` với sáu ảnh F01–F06, ảnh chủ đạo gốc và `subject_mode: "birefnet"`. Lệnh gắn ảnh dùng trực tiếp PNG đầy đủ từ BiRefNet và giữ dữ liệu ảnh nguồn lẫn alpha để SUBJECT chỉnh riêng. Bản nháp nguồn giữ nguyên. Phản hồi có `subjectCutout` với tên model và kích thước PNG. Khi gửi PNG đã tách sẵn, dùng `subject_mode: "transparent_png"` hoặc bỏ tham số. Sau khi gắn, kiểm crop bằng `review_material_photo_crops` và gửi ảnh render để duyệt. Làm mới định nghĩa công cụ MCP sau khi nâng cấp.
+
+[TINIX] `get_material_draft_render` trả ảnh từ PNG đã lưu theo `job_id`, có thể thu nhỏ để hiển thị trong chat. Xem trạng thái crop thực tế bằng thao tác này. Khi cần sửa SUBJECT, bật `include_subject_source` để nhận ảnh gốc, ảnh trong suốt hiện tại và kích thước hệ tọa độ. Sau khi duyệt vùng chỉnh, gọi `edit_material_subject_mask` với `job_id` cùng danh sách `operations`, mỗi mục có `mode` (`restore` hoặc `erase`) và `points` theo pixel ảnh gốc từ góc trên trái. Công cụ giữ sáu khung và crop, tính viền trắng của SUBJECT theo số mm đã lưu, render bản sao và trả hai ảnh trước–sau. Bản gốc và thư viện mẫu giữ nguyên.
+
+[TINIX] Gọi `compare_material_draft_to_approved_demo` sau khi `build_material_draft` trả `rendered` và trước khi gắn ảnh khách. Cung cấp `job_id` và ảnh demo đã duyệt qua tệp đính kèm riêng `approved_demo`. Công cụ so với PNG đã lưu, loại pixel lòng khung và SUBJECT theo mặt nạ ở vị trí của bản dựng, giữ viền và các lớp trang trí đang nhìn thấy. Báo MAE 0–255, số pixel và đóng góp vào sai khác toàn trang của nền, viền khung và trang trí; bản đồ xám là vùng đã bỏ qua. Nếu vị trí ảnh trong demo lệch khỏi bản dựng, phần ảnh demo nằm ngoài mặt nạ bản dựng vẫn ảnh hưởng điểm. Xem bản đối chiếu trước khi quyết định sửa; công cụ không ghi bản nháp hoặc mẫu.
+
+[TINIX] MCP có luồng sản xuất scrapbook duyệt một lần. ChatGPT dựng ba composition phân lớp, máy cục bộ kết xuất demo và ZIP bằng exporter Scrapbook Story Studio v1.2.13. Sửa tự động giới hạn trong quyền đã cấp. QA thị giác đọc ảnh thật và chỉ bàn giao khi có căn cứ; MAE/SSIM dùng để hỗ trợ. Xem [hướng dẫn và audit](scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md) để chuẩn bị đầu vào, gọi tiếp từ bước lỗi, nhận tệp và chạy kiểm thử.
+
+[TINIX] Khi chưa có ảnh khách, chọn `mode: "template"` trong `prepare_scrapbook_workflow`. Công cụ render 2–6 demo từ tài nguyên phân lớp có ảnh minh họa và chỉ đóng ZIP cho demo đã chọn. Bản nhập có đủ bảy vị trí ảnh thay riêng; bỏ bước gắn ảnh, BiRefNet và kiểm crop khách. Cổng QA vẫn đối chiếu với demo khóa, rồi trả render placeholder, ZIP, ảnh đối chiếu và QA JSON.
+
+[TINIX] Nhấp đúp khung thay ảnh hoặc chọn **Chỉnh ảnh trong khung**. Thanh chỉnh có **Lấp đầy** (`cover`) và **Vừa ảnh** (`contain`). Kéo ảnh để căn, kéo tay nắm góc để phóng/thu. Khung có mặt nạ giữ nguyên thứ tự lớp trên canvas và mặc định ẩn ảnh mờ ngoài khung để xem đúng kết quả. Mỗi lần kéo hoặc đổi chế độ là một bước hoàn tác.
+
+[TINIX] Nút **Gợi ý căn theo mặt** gọi `POST /api/tinix/photo-faces` theo yêu cầu, dùng OpenCV YuNet cục bộ và chỉ giữ ảnh trong bộ nhớ khi chạy. Cài OpenCV với `FaceDetectorYN` cho Python dùng bởi service và đặt trọng số YuNet ở `.runtime/face-crop/yunet.onnx` hoặc cấu hình `TINIX_FACE_MODEL`. Mặc định gọi `python` trên PATH, có thể đặt `TINIX_FACE_PYTHON`. Khởi động lại service sau khi cập nhật. Trình chỉnh ảnh kiểm mặt nạ và alpha của những lớp hiển thị phía trên trong một lượt render vùng khung. Công cụ thử Lấp đầy trước, sau đó thử Vừa ảnh. Người dùng có thể tự thu đến 0,75× để tránh lớp phủ. Gợi ý hiện ngay trên canvas và hoàn tác được. Nếu vẫn có mặt sát mép hoặc bị che, canvas báo cần kiểm và căn thêm.
+
+[TINIX] Khi còn mặt bị che, canvas tô đỏ giao giữa vùng mặt và alpha của lớp phủ, rồi thử các hướng kéo ở mức phóng hiện tại. Chỉ hiện mũi tên khi có hướng cải thiện độ nhìn thấy. Bấm vùng đỏ để chọn lớp che ngay tại điểm đó. Cầu render kiểm alpha các lớp từ trên xuống trong một vùng nhỏ, giữ thứ tự lớp và bỏ qua phần trong suốt. Có thể dùng Tab rồi Enter trên vùng đỏ. Dấu và mũi tên cập nhật khi căn ảnh, xoay theo khung và không xuất hiện trong ảnh render thành phẩm.
+
+[TINIX] Gợi ý thử Vừa ảnh từ 0,98× xuống tối đa 0,85× khi xác minh vùng che chỉ thuộc lớp giấy cùng nhóm với khung. Với mỗi mức thu, thử lại điểm căn trên cả hai trục và lấy mức thu ít nhất giữ đủ mặt theo mặt nạ, đồng thời hết vùng tô đỏ. Công cụ bỏ qua lượt thu này nếu còn sticker hoặc nhãn che.
+
+[TINIX] **Áp dụng hướng kéo** dùng đúng điểm căn đã tính cho mũi tên, giữ mức phóng và hình học khung. Canvas kiểm lại vùng che từ dữ liệu sẵn có ngay sau khi dịch. Thao tác có một bước hoàn tác qua thanh công cụ hoặc Ctrl+Z.
+
+[TINIX] **Kiểm crop theo lô** trên canvas kiểm các khung ảnh chính đang hiện và có thể chỉnh, bỏ qua SUBJECT và ảnh nền liên kết. Bảng báo riêng khung đang đạt, khung có gợi ý đạt, khung cần căn tay và khung không phát hiện mặt. Nút áp dụng cập nhật các gợi ý đã kiểm trong một bước hoàn tác. Lượt kiểm đi từ lớp trên xuống để kiểm lớp dưới với crop dự kiến của lớp trên. **Mở khung** chuyển kết quả dò mặt sang trình chỉnh để hiện vùng che và hướng kéo sẵn. Nếu chưa áp dụng các crop dự kiến, công cụ tính lại lớp che từ ảnh chụp trạng thái hiện tại và dùng lại kết quả dò mặt. Khi bố cục đã đổi ngoài lượt kiểm, chạy lại bảng trước khi dùng kết quả.
+
+[TINIX] Bảng crop hiện mức phóng, tỷ lệ lòng khung nhìn thấy nằm ngoài ảnh và ảnh xem trước cho từng gợi ý có thể áp dụng. Ảnh xem trước của các khung lấy từ một lượt render toàn trang dự kiến, giữ giấy và lớp phủ. Tỷ lệ nền lộ là ước tính theo mặt nạ và hình học ảnh, bỏ phần bị giấy hoặc sticker che.
+
+[TINIX] **Áp dụng riêng** chỉ ghi crop của dòng đã chọn và tạo một bước hoàn tác. Khi còn gợi ý khác và các khung chồng lên nhau, kiểm lại crop được chọn trên bố cục hiện tại rồi làm mới các dòng còn lại sau khi áp dụng.
+
+[TINIX] Có thể đánh dấu nhiều dòng và bấm **Áp dụng dòng đã chọn**. Các crop đã chọn được ghi trong một bước hoàn tác. Nếu nhóm đã chọn có thể phụ thuộc vào khung chồng lên còn lại, bảng kiểm lại cả nhóm trước khi ghi và làm mới các gợi ý còn chờ.
+
+[TINIX] ChatGPT web có thể gọi `review_material_photo_crops` bằng mã bản nháp đã thay ảnh. Công cụ trả `reviewId`, kết quả F01–F06, mức phóng, tỷ lệ nền lộ và ảnh xem trước của các gợi ý đạt. Sau khi chọn mã khung, gọi `apply_material_photo_crops` với `job_id`, `review_id` và `frame_codes`. Một phần gợi ý được kiểm lại trên bố cục chỉ có các crop đã chọn. Bản sao có mã riêng, dùng cùng sáu khung và SUBJECT thay riêng, nằm ngoài thư viện. Cầu nối dùng bộ dò mặt cục bộ và API render cổng 7001. Khi nâng cấp, khởi động lại tunnel và làm mới danh sách công cụ trong ChatGPT.
+
+[TINIX] Bảng kiểm crop có mục **Vùng an toàn trên ảnh gốc** cho crop đề xuất hoặc vị trí hiện tại của ảnh. Với MCP, truyền `safe_area_frame_codes` vào `review_material_photo_crops` để nhận cùng lớp phủ cho các khung được chọn. Màu tối chỉ vùng ngoài mặt nạ, cam đỏ chỉ vùng bị lớp trên che, màu ảnh gốc chỉ phần nhìn thấy. Lớp phủ chỉ dùng khi xem trước. Có thể đặt `TINIX_APP_URL` tới một bản TinixPoster ở `http://127.0.0.1:<cổng>` khi kiểm crop qua MCP để lấy mặt nạ và ảnh xem trước từ cùng bản dựng frontend.
+
+[TINIX] Ảnh xem trước toàn trang của `review_material_photo_crops` dùng bản nhẹ tối đa 1.600 px cạnh dài cho ảnh nhúng trong các khung F01–F06, tạo trong bộ nhớ của lượt xem trước. Kiểm crop, lớp phủ vùng an toàn, SUBJECT, bản nháp đã áp dụng và render xuất ảnh tiếp tục lấy nguồn đầy đủ.
+
+[TINIX] Kéo trên ảnh xem trước để khoanh một chi tiết quan trọng cho mỗi khung. Bảng báo ngay tỷ lệ vùng bị cắt bởi mặt nạ và tỷ lệ vùng bị lớp phía trên che. Tỷ lệ được tính trên toàn bộ hình chữ nhật đã khoanh. Vùng khoanh được dùng lại khi chạy kiểm trên cùng trang với cùng ảnh; nó chỉ thuộc phiên kiểm và không được ghi vào thiết kế.
+
+[TINIX] **Gợi ý căn để giữ chi tiết** tìm điểm căn và mức phóng giúp giảm diện tích bị mất của vùng khoanh, ưu tiên giữ rõ mọi khuôn mặt đã phát hiện. Bảng hiển thị tỷ lệ mất trước và sau. Ảnh chỉ đổi vị trí khi áp dụng gợi ý.
+
+[TINIX] Bảng kiểm dùng lại khuôn mặt, mặt nạ và lớp che của lượt kiểm gần nhất khi gợi ý cho một khung. Ảnh xem trước của dòng vừa đổi dùng vùng PNG trên trang gốc qua `POST /api/tinix/export-render` với `region: { x, y, width, height }` (pixel nguyên). Dịch vụ chụp vùng này trong Chrome đang mở. Tọa độ nền, khung và thứ tự lớp giữ theo trang gốc. Lượt kiểm theo lô vẫn chia sẻ một bản render toàn trang. Nếu bố cục đã đổi hoặc khung chồng khung khác, bảng kiểm lại cả lượt để cập nhật các lớp che phụ thuộc.
+
+[TINIX] Trước khi gửi yêu cầu render vùng, bảng bỏ các lớp ảnh có biên sau xoay chắc chắn nằm ngoài vùng chụp. Giữ nền trang, thứ tự lớp, nhóm cha, nguồn ảnh liên kết, lớp có bóng và lớp chưa xác định được vùng vẽ. Thay đổi chỉ áp dụng cho ảnh xem trước của một khung.
+
+[TINIX] Khi kiểm lại cả bộ trên cùng trang, bảng dùng lại kết quả dò mặt, mặt nạ và gợi ý cũ của khung có cùng ảnh, thông số và các lớp che theo thứ tự vẽ. Nếu lớp che đổi, bảng tính lại mặt nạ và dùng lại kết quả dò của ảnh còn nguyên. Khi đổi trang hoặc mở lại trình chỉnh, lượt kiểm đầu xây lại dữ liệu.
+
+[TINIX] Khi thay ảnh trong khung, bảng dò mặt trên ảnh mới và dùng lại mặt nạ lớp che nếu hình học khung, lớp che, thứ tự vẽ và nguồn ảnh liên kết của chúng vẫn khớp. Phép thử để phân biệt mép giấy với lớp che khác dùng lại mặt nạ phụ khi gặp cùng nhóm lớp trong dữ liệu lớp che đã kiểm. Khi đổi lớp che, bảng tính lại cả mặt nạ chính và mặt nạ phụ cần dùng.
+
+[TINIX] Bảng giữ ảnh xem trước theo từng vùng khung trong bộ nhớ. Nếu vùng chụp và các lớp có thể ảnh hưởng đến vùng đó vẫn giống nhau sau khi áp dụng thử gợi ý, bảng dùng lại ảnh cũ. Sau thay đổi cục bộ, chỉ vùng có đầu vào đã đổi được render lại. Lượt đầu khi cần nhiều ảnh xem trước có thể dùng chung một lần render toàn trang. Đổi trang sẽ xóa bộ nhớ này.
+
+[TINIX] Kết quả kiểm theo từng khung, gồm số mặt giữ được, mức phóng và nền lộ, hiển thị khi đã tính xong. Khi bảng dựng ảnh xem trước, tổng kết vẫn hiện và dòng chưa có ảnh có trạng thái tải riêng. Có thể **Áp dụng riêng** hoặc **Áp dụng dòng đã chọn** trong giai đoạn này. Bảng so các lớp che trong bố cục chỉ áp dụng nhóm đó với dữ liệu đã kiểm, rồi chỉ render lại mặt nạ và kiểm các dòng đã chọn có lớp che thay đổi. Khi nhóm đạt, bảng ghi cả nhóm trong một bước hoàn tác và làm mới các kết quả phụ thuộc.
+
+[TINIX] Lượt làm mới sau khi áp dụng có thể dùng lại mặt nạ vừa render trong bước kiểm nhóm. Bảng đối chiếu đầu vào với cả mặt nạ trong lượt kiểm trước lẫn mặt nạ vừa kiểm nhóm. Nếu các crop còn chờ dẫn đến bố cục lớp che khác, bảng dùng mặt nạ khớp với bố cục đang đánh giá.
+
+[TINIX] Khi nhiều dòng đã chọn cần kiểm lớp che, bảng chạy tối đa hai lượt render mặt nạ song song trên cùng bố cục dự kiến. Chỉ ghi cả nhóm sau khi tất cả dòng cần kiểm đều đạt. Một lượt lỗi hoặc một dòng không đạt sẽ giữ nguyên crop của cả nhóm.
+
+[TINIX] Khi người dùng áp dụng nhóm cần kiểm lớp che, bảng tạm dừng yêu cầu ảnh xem trước đang chạy để nhường hai lượt render cho mặt nạ. Trình render đóng trang xem trước bị hủy, giữ trình duyệt dùng chung và chạy lại ảnh xem trước nếu nhóm bị từ chối. Khi nhóm đạt, bảng làm mới theo bố cục đã áp dụng.
+
+[TINIX] Bảng crop dùng mã phiên bản của lớp và chuỗi tài nguyên để kiểm bố cục, mặt nạ và ảnh xem trước. Mã phiên bản chỉ dùng trong bộ nhớ và không thay nguồn ảnh khi render. Một Web Worker chuẩn bị dữ liệu JSON cho yêu cầu render từ bảng để tránh chuyển chuỗi ảnh lớn sang byte trên luồng giao diện. Lịch sử áp dụng nhóm lưu các trường crop thay đổi của từng khung trong một bước hoàn tác.
+
+[TINIX] Ảnh xem trước crop giải mã PNG rồi lấy từng vùng để tạo ảnh thu nhỏ. Bước này không đọc toàn bộ mảng RGBA của trang. Web Worker đọc alpha của lòng khung và lớp che cho bảng kiểm. Bảng dùng lại lớp phủ vùng an toàn khi khung, crop và lớp che còn khớp, hoặc mã hóa ảnh phủ mới bất đồng bộ. Nếu trình duyệt thiếu hỗ trợ, bước đọc alpha dùng canvas.
+
+[TINIX] Lượt làm mới sau khi áp dụng một nhóm crop render riêng từng vùng xem trước cần cập nhật, tối đa hai vùng song song. Quy tắc này vẫn áp dụng khi ảnh xem trước của lượt đầu bị hủy và bộ nhớ ảnh thu nhỏ còn trống.
+
+[TINIX] `submit_material_feedback` nhận `job_id` của đúng bản đã xem, `summary` và danh sách `issues` tùy chọn với các trường `layer`, `observed`, `expected`. Công cụ trả `feedbackId` và lưu văn bản trong `.runtime/mcp-material/<jobId>/feedback/<feedbackId>/feedback.json`. Chỉ gửi nhận xét, tránh đưa ảnh khách, thông tin khách hoặc URL tải tệp vào báo cáo. Codex đọc báo cáo cục bộ và ghi kết quả bằng hàm `writeFeedbackResult` trong `scripts/tinix-mcp/feedback.mjs`. ChatGPT gọi `get_material_feedback_result` với cả `job_id` và `feedback_id` để đọc trạng thái `pending` hoặc `reviewed` và nội dung. Hai thao tác được công bố qua plugin, còn việc ghi kết quả chỉ thực hiện cục bộ. Báo cáo không sửa bản nháp hay lưu vào thư viện.
+
+[TINIX] `layout.json` phiên bản 1 có thể thêm mảng `decorations`. Mỗi mục dùng `code` dạng `D01`, `source` và `target` như khung ảnh, cùng số nguyên `z` để xếp lớp từ dưới lên. Gán `z` cho cả khung khi cần xen khung với trang trí. Có thể thêm `subjectZ` để đặt một lớp ảnh chủ đạo thay riêng đã có trên canvas vào cùng thứ tự. Mỗi giá trị thứ tự phải duy nhất. Các gói chỉ khai báo khung vẫn dùng được.
+
+[TINIX] Để tự tạo ảnh chủ đạo trên canvas trống, thêm `subject` gồm `target` và `borderMm` tùy chọn, đồng thời khai báo `subjectZ`. `target` dùng tâm, kích thước trước xoay và góc trong hệ tọa độ ảnh mẫu, giống các khung. TinixPoster tạo một lớp giữ chỗ tách nền thay riêng ở đúng thứ tự. Khi trang đã có ảnh chủ đạo, TinixPoster dùng lớp đó và giữ nội dung của lớp.
+
+[TINIX] Gói có thể khai báo khổ in bằng `"print": { "widthMm": 150, "heightMm": 200, "dpi": 300 }`. Khổ in phải cùng tỷ lệ với ảnh mẫu, có tính sai số làm tròn pixel. Khi nhập vào trang trống, TinixPoster đổi kích thước và DPI của trang cùng lượt dựng. Trang đã có lớp giữ khổ hiện tại.
+
+[TINIX] **Kiểm nhanh sau khi nhập ZIP** hiện khổ canvas, DPI, số khung và mảnh trang trí đã có vị trí. Bấm tên một mảnh cần đặt để chọn lớp đó trên canvas. Báo cáo cũng ghi rõ khi gói thiếu khổ in hoặc canvas chưa có vùng ảnh chủ đạo thay riêng.
+
+[TINIX] Trong **Cụm in và cắt**, dùng **Chỉ cắt viền ngoài** cho cụm cắt nổi cần bỏ lỗ cắt bên trong. Tùy chọn áp dụng cho SVG xuất và kiểm mảnh, đồng thời giữ hình in và các phần rời của cụm.
+
+[TINIX] Có thể đặt `"cutOuterOnly": true` trên từng mục trong `decorations` hoặc `frames` của `layout.json` phiên bản 1. Khi ghép được mảnh, TinixPoster bật tùy chọn cắt viền ngoài cho cụm tương ứng. Bỏ trường hoặc đặt `false` để dùng đường cắt mặc định.
+
+[TINIX] Khi chuyển lớp ảnh, bảng thuộc tính dựng lại dữ liệu từ cấu hình ảnh mặc định và lớp đang chọn. Việc thay ảnh liên tiếp giữ đúng cụm in cắt của mỗi khung và lớp ảnh chủ đạo.
+
+[TINIX] Bật **Chỉ hiện khung chưa duyệt** để thu gọn danh sách còn các khung chưa có vị trí hoặc có vị trí chưa duyệt. Bộ lọc giữ số thứ tự mảnh theo sơ đồ và chỉ đổi danh sách đang xem.
+
+[TINIX] Thẻ khung hiển thị **Chưa có vị trí** khi chưa có gợi ý đặt và **Chờ duyệt** khi đã có vị trí chưa được chọn.
+
+[TINIX] Bộ đếm khung chưa có vị trí và chờ duyệt luôn tính trên toàn bộ các khung, kể cả khi đang lọc danh sách.
+
+[TINIX] Bấm vào một bộ đếm để chỉ hiện nhóm khung tương ứng. Bấm lại bộ đếm đang chọn để trở về danh sách đầy đủ.
+
+[TINIX] Bật **Phủ viền khung lên ảnh mẫu** để xem mép ngoài và mép lòng ảnh ở đúng vị trí, kích thước và góc sẽ nhập. So các mép còn nhìn thấy khi khung bị che. Trong lượt duyệt, đánh dấu **Cần kiểm vị trí** ở khung còn lệch để bỏ qua khung đó khi duyệt hàng loạt. Bỏ đánh dấu sau khi đã kiểm hoặc căn lại vị trí.
+
+[TINIX] Trên thẻ đã đánh dấu, bấm **Căn vị trí** để mở thẳng công cụ kéo khung đích cho mảnh đó.
+
+[TINIX] Công cụ nạp vị trí, kích thước và góc hiện tại của khung đã đánh dấu. Kéo bên trong khung để dời mảnh, kéo một tay nắm ở góc để đổi cỡ trong khi giữ tỷ lệ và góc đối diện, hoặc bắt đầu từ ngoài khung để vẽ vùng mới. Thoát trước khi chỉnh sẽ giữ đề xuất và dấu cần kiểm.
+
+[TINIX] Bấm **Hoàn tác lần căn vừa rồi** ngay trong bảng để khôi phục vị trí và trạng thái duyệt trước lần chỉnh gần nhất của khung đang căn.
+
+```json
+{
+  "version": 1,
+  "sheet": { "file": "pieces.png", "width": 1250, "height": 1507 },
+  "reference": { "file": "reference.png", "width": 1086, "height": 1448 },
+  "frames": [{
+    "code": "F02",
+    "source": { "x": 382, "y": 24, "width": 370, "height": 362 },
+    "target": { "x": 536, "y": 500, "width": 380, "height": 506, "angle": 0 }
+  }]
+}
+```
+
+`source` là hộp alpha trên tấm mảnh tính từ góc trái trên, bằng pixel nguyên. `target.x` và `target.y` là tâm trên ảnh mẫu. `target.width` và `target.height` là kích thước mảnh trước khi xoay, tính theo pixel của ảnh mẫu và không gồm đệm trong suốt. Góc dương xoay theo chiều kim đồng hồ. Có thể khai báo một phần các khung và dùng sơ đồ cho phần còn lại. Giữ một mã cho mỗi khung và lấy tọa độ từ tài liệu nguồn để tránh truyền sai vị trí.
+
+[TINIX] Với khung vòm có lòng trong suốt, công cụ thử bám mép trong gần mã đã ghép. Tâm, chiều rộng, chiều cao và góc được dò từ đường bao của lòng PNG. Nếu mép trong thiếu tín hiệu, giữ gợi ý từ họa tiết. Kết quả vẫn chờ duyệt. Khi áp dụng, lớp giấy và mặt nạ ảnh đi cùng hình học mới, ảnh khách vẫn dùng chế độ phủ khung.
+
+[TINIX] Với Polaroid có lòng chữ nhật và chân giấy rộng, lấy vùng từ mã trên sơ đồ rồi bám bốn cạnh trong trên ảnh mẫu. Điểm bám ưu tiên đoạn có giấy sáng ở phía ngoài và có tín hiệu trên cả bốn cạnh, để giảm nhầm với đường mạnh xuất hiện trong ảnh. Nếu thiếu tín hiệu, giữ gợi ý từ họa tiết để người dùng kiểm và căn lại.
+
+[TINIX] Với khung chân giấy ngắn, phân biệt lòng gần chữ nhật và lòng bo góc từ mặt nạ PNG. Với khung tem, dùng ba cạnh rõ nhất và giữ tâm gần mã trên sơ đồ khi một cạnh bị ảnh chủ đạo che. Với khung bo góc, dùng đường bao cong của mặt nạ và kiểm tín hiệu trên bốn phía. Với các khung đã bám lòng ảnh, dùng alpha của giấy đã xoay để giới hạn vị trí gợi ý trong mép trang. Tất cả gợi ý vẫn chờ người dùng duyệt.
+
+[TINIX] Ô nhãn ngắn chỉ có mã vẫn dùng được khi đọc rõ tiêu đề F0n. Sau khi ghép mã, đối chiếu gợi ý cục bộ với mép lòng ảnh trong ảnh hoàn chỉnh. Với vòm, oval và khung bo góc, thử khoảng tìm rộng hơn quanh nhãn. Nếu ảnh hoàn chỉnh cho một đường bao đủ rõ và gợi ý khác đáng kể, hiện **Căn lại theo ảnh mẫu, cần kiểm**. Người dùng vẫn duyệt trước khi áp dụng.
+
+[TINIX] Khi hai gợi ý cho khung vòm lệch nhau, thử chấm điểm đồng thời mép giấy và mép lòng ảnh ở phần vòm và các cạnh bên. Giữ chiều cao theo sơ đồ trong giới hạn hẹp và tránh để ảnh chủ đạo tạo đáy giả. Gợi ý này mang nhãn **Bám mép giấy và lòng ảnh, cần kiểm**.
+
+[TINIX] Sau khi có gợi ý cho khung vòm đã gán mã, **Đặt điểm đáy vòm** cho bấm giữa mép giấy dưới cùng trên sơ đồ. Công cụ giữ điểm đó trong lúc dò chiều cao, chiều rộng và góc theo các đoạn mép còn thấy. Nếu đáy bị che, người dùng ước lượng vị trí; nếu tín hiệu mép quá yếu, giữ gợi ý cũ. Duyệt vị trí trước khi đưa lên canvas.
+
+[TINIX] Với khung Polaroid hoặc khung tem đã có gợi ý, dùng **Chọn cạnh chuẩn** để kéo từ đầu này đến đầu kia của một cạnh thẳng trong lòng ảnh trên ảnh hoàn chỉnh. Cạnh này chốt một kích thước và hướng cạnh; chiều còn lại dùng kích thước gợi ý và tỷ lệ lòng PNG để ước lượng. Xem trước vị trí rồi duyệt trước khi đưa lên canvas.
+
+### Gợi ý vị trí trên ảnh mẫu
+
+[TINIX] Sau khi tách PNG, nút **Gợi ý vị trí và góc xoay** dò vị trí, tỉ lệ và góc từ pixel gốc của mảnh. Xem tâm từng mảnh trên ảnh mẫu và chọn các gợi ý muốn áp dụng. Các mảnh chưa chọn được đưa lên canvas theo bố cục tấm PNG để căn sau. Vai trò ảnh chủ đạo do người dựng chọn.
+
+[TINIX] Với các mảnh dễ nhầm, chọn **Khoanh vùng tìm** trên thẻ mảnh rồi kéo một khung ngay trên ảnh mẫu. TinixPoster tìm lại tâm, tỉ lệ và góc cho mảnh đó trong vùng đã chọn. Nút **Bỏ vùng tìm** cho phép dò lại trên toàn ảnh.
+
+[TINIX] Sau khi khoanh vùng, chọn **Chỉ hướng** và kéo mũi tên theo trục ngang của mảnh sau khi xoay. TinixPoster thử các góc gần hướng đó trong vùng đã khoanh. **Bỏ hướng** trả mảnh về lượt dò góc tự do trong cùng vùng.
+
+[TINIX] Chọn **Đặt tâm** rồi bấm đúng vị trí trên ảnh mẫu khi đã biết mảnh cần đặt ở đâu. Điểm đó cố định tâm khi tính lại kích thước và góc. **Bỏ điểm tâm** đưa mảnh về lượt dò theo vùng và hướng đã chọn.
+
+[TINIX] Chọn **Kéo khung đích** trên thẻ mảnh rồi kéo hai góc đối diện ngay trên ảnh mẫu. TinixPoster đặt tâm vào giữa khung và phóng mảnh lớn nhất vừa khung theo tỷ lệ gốc, có tính góc đã chỉ hướng nếu có. Có thể dùng khi chưa chạy gợi ý. Lượt gợi ý tiếp theo giữ khung đã đặt. **Đổi khung đích** cho kéo lại và **Bỏ khung đích** trả mảnh về cách dò vị trí thông thường. Khung đích được giữ khi lưu và mở lại phiên dựng cục bộ.
+
+[TINIX] Bật **Cho kéo vượt mép ảnh mẫu** khi đặt giấy chủ ý tràn mép. Vùng xám ngoài nét đứt cho kéo thêm tối đa 25% cạnh ngắn về mỗi phía. Canvas giữ phần đặt vượt mép và cắt hiển thị theo khổ trang. Mở lại khung có phần nằm ngoài ảnh sẽ tự mở vùng kéo đó. Khoanh vùng tìm và các công cụ dò khác vẫn dùng vùng trong ảnh.
+
+[TINIX] Sau khi kéo khung đích, chỉnh **Góc xoay** và **Cạnh ưu tiên** ngay cạnh bản xem trước. **Vừa cả hai chiều** giữ toàn bộ mảnh trong khung. **Theo chiều rộng** hoặc **Theo chiều cao** khớp cạnh đã chọn sau khi xoay, vẫn giữ tỷ lệ gốc nên cạnh kia có thể vượt khung. Góc và cạnh ưu tiên được giữ khi kéo lại khung hoặc mở lại phiên dựng.
+
+[TINIX] **Tách mảnh từ PNG** tự gán **Khung ảnh** khi tìm được một lòng trong suốt lớn, khép kín trong mảnh. Có thể đổi vai trò hoặc bấm **Sửa lòng ảnh tự nhận** để xem đường bao và chỉnh lại. Khi đưa lên canvas, ảnh giữ chỗ nằm dưới PNG gốc và lấn nhẹ dưới viền để tránh khe. Vai trò và đường đã chỉnh vẫn được giữ khi lưu phiên dựng hoặc quét lại mảnh khớp một-một. Nếu PNG còn ảnh minh họa, gán mảnh là **Khung ảnh**, bấm **Khoanh lòng ảnh**, đi theo mép trong và vòng qua nhãn, băng dính, rồi bấm **Dùng lòng ảnh**. Với đường khoanh tay, TinixPoster xóa phần ảnh cũ trong lòng khung trước khi đặt ảnh thay riêng.
+
+[TINIX] Khi mở **Sửa lòng ảnh**, chế độ **Kéo điểm** hiển thị các điểm đã lưu. Chọn mức **Phóng to** đến 400%, cuộn tới đoạn cần sửa rồi kéo điểm. Bản xem trước thay đổi theo đường khoanh. **Hoàn tác kéo điểm** lùi một lượt kéo, còn **Dùng lòng ảnh** áp dụng đường sửa vào phiên dựng.
+
+[TINIX] Bật **Kéo đoạn mép** để kéo các điểm liền nhau theo đường khoanh trong một lượt. Chọn đoạn 8, 16 hoặc 32 px theo kích thước ảnh mảnh gốc. Điểm đang kéo dịch đủ, các điểm về hai đầu đoạn dịch ít dần. Một lần hoàn tác khôi phục toàn bộ điểm của lượt kéo.
+
+[TINIX] Với vệt dài, bật **Chọn hai đầu đoạn** rồi bấm hai điểm trên đường khoanh. Đoạn màu xanh là phần sẽ dịch, mặc định theo cung ngắn hơn. Dùng **Đổi phía đoạn** nếu cần cung còn lại. **Khóa vùng băng dính** cho kéo khung bảo vệ chi tiết ngay trên mảnh. Các mép chạm vùng khóa giữ nguyên, và đường khoanh không kéo xuyên qua vùng đó. Bản xem trước cập nhật trong khi kéo. Đường khoanh đã chỉnh được lưu khi bấm **Dùng lòng ảnh**. Vùng khóa dùng trong lượt sửa đang mở.
+
+[TINIX] Với góc bo, bật thêm **Kéo vuông góc với mép** sau khi chọn hai đầu đoạn. Kéo vào hoặc ra khỏi mép tại một điểm. TinixPoster dùng độ dịch vuông góc ở điểm kéo cho toàn đoạn, theo đường vuông góc riêng tại mỗi điểm. Độ dịch giảm dần về hai đầu và giữ nguyên vùng đã khóa.
+
+[TINIX] Dùng **Làm mượt đoạn đã chọn** để giảm khấc sau khi kéo. Bản xem trước cập nhật ngay, hai đầu đoạn và các mép chạm vùng khóa giữ nguyên. Mỗi lần bấm giới hạn dịch chuyển ở 2 px của ảnh mảnh gốc. **Hoàn tác làm mượt** trả lại đường khoanh trước lần bấm. **Dùng lòng ảnh** lưu đường đã duyệt.
+
+[TINIX] Chọn hai đầu đoạn, bấm **Lấy màu viền giấy** rồi lấy mẫu ở phần giấy sạch gần mép trong. Đường cam cho xem gợi ý khi tìm thấy chuyển tiếp giấy–ảnh gần nhiều điểm kề nhau. Hai đầu và vùng khóa giữ nguyên. Dùng **Áp dụng gợi ý mép** để nhận đường cam hoặc **Bỏ gợi ý mép** để giữ đường hiện tại. Khi màu giấy và ảnh khó phân biệt, TinixPoster báo thiếu dấu hiệu.
+
+[TINIX] Dùng **Xếp lớp trên ảnh mẫu** để xem các mảnh chồng lên nhau. Chọn mảnh trên bản xem trước hoặc trong danh sách, chọn một mảnh làm mốc rồi bấm **Đặt dưới** hoặc **Đặt trên**. Canvas dùng đúng thứ tự đã xem trước.
+
+[TINIX] Trong **Xếp lớp trên ảnh mẫu**, chọn nhãn cần đọc rõ rồi bấm **Tìm mảnh che chữ**. TinixPoster đo phần nét đậm bị các mảnh phía trên che và đề xuất đưa từng mảnh xuống làm lớp lót. Kiểm lại phần chữ và bố cục sau khi áp dụng gợi ý.
+
+[TINIX] **Kiểm phần bị che** đo phần diện tích đục bị che trên mảnh trang trí hoặc khung ảnh đã chọn. Xem gợi ý trên ảnh mẫu trước khi đưa mảnh che xuống làm lớp lót, vì băng keo và các chi tiết chồng mép có thể được đặt có chủ ý.
+
+[TINIX] Trong **Xếp lớp trên ảnh mẫu**, chọn mảnh rồi bấm **So mép với ảnh mẫu**. TinixPoster so màu tại vùng giao sau khi căn cục bộ bản xem trước, hiển thị cả thứ tự đã khớp và gợi ý cần duyệt. Chỉ dùng gợi ý khi mép và màu trên ảnh mẫu đủ rõ để phân biệt hai mảnh.
+
+[TINIX] Khi **So mép với ảnh mẫu** thiếu dấu hiệu, chọn hai mảnh trong **Xếp lớp trên ảnh mẫu**, bấm **Khoanh mép bị ngắt** rồi khoanh cả đoạn viền còn nhìn thấy và phần giấy bên cạnh. Một vùng quá hẹp có thể thiếu độ dài mép để so.
+
+[TINIX] **Khoanh mép bị ngắt** kiểm vùng gốc trước. Khi thiếu dấu hiệu, TinixPoster thử nới từng cạnh tối đa hai lượt, giới hạn lượt cuối ở 2,4% cạnh ngắn ảnh mẫu. Khung nét đứt đánh dấu vùng gốc, khung liền đánh dấu vùng đã kiểm.
+
+[TINIX] Khi khoanh mép bị ngắt, dấu hiệu của mảnh phía trên cần được đối chiếu với mảnh còn lại tại cùng đoạn mép. TinixPoster tìm phần mảnh dưới kéo qua đường giao và khớp màu ở phía còn lộ trên ảnh mẫu rồi mới hiện gợi ý thứ tự.
+
+[TINIX] Khi cả hai cách xếp trên/dưới cùng có dấu hiệu tại mép giao, chỉ gợi ý nếu một cách khớp rõ hơn. Vùng còn mơ hồ được giữ để người dựng kiểm trực tiếp trên ảnh mẫu.
+
+[TINIX] Khi hai viền sáng gây nhầm, TinixPoster có thể dùng các ô màu lặp lại của băng caro để phân biệt. Gợi ý theo họa tiết vẫn cần dấu hiệu của cả hai mảnh tại cùng mép giao.
+
+[TINIX] **Tách mảnh từ PNG** vẫn tự chọn ngưỡng khi mở ảnh. Nếu bản xem trước có vệt nhỏ tách rời, bật **Lọc vệt alpha rời** để quét lại ở ngưỡng hiện tại. Chức năng chỉ bỏ vùng alpha dưới 16, rộng hoặc cao tối đa 2 pixel và đứng rời ở ngưỡng 4. [TINIX] Khi quét lại cùng PNG, TinixPoster giữ vai trò, vùng tìm, hướng, điểm tâm và thứ tự lớp cho mảnh ghép được một-một với kết quả trước. Khi chỉ lệch nhẹ ở viền, vùng pixel chung phải đạt ít nhất 97% vùng hợp và mép chỉ lệch tối đa 3 pixel. Mảnh đổi viền vẫn được đánh dấu **Cần kiểm lại**. Mảnh mới, tách hoặc gộp cần gán lại thiết lập. Khi thay PNG, TinixPoster bắt đầu danh sách mới.
+
+[TINIX] Trong hộp thoại đang mở, quay lại một cấu hình ngưỡng và lọc gần đây sẽ khôi phục thiết lập của mảnh xuất hiện lại nếu vùng pixel khớp chính xác. Mảnh còn hiện diện giữ chỉnh sửa mới nhất. Bộ nhớ giữ tối đa ba cấu hình gần nhất và được xóa khi đổi ảnh nguyên liệu hoặc ảnh mẫu.
+
+[TINIX] Nút **Lưu phiên dựng vào bản nháp** và thao tác đóng hộp thoại giữ ba tệp đã chọn, ngưỡng, tùy chọn lọc, vai trò, vị trí và thứ tự lớp trong trang hiện tại. Mở lại hộp thoại trong bản nháp hoặc tệp `.tinix.zip` đã lưu để tiếp tục. TinixPoster lưu các pixel theo đoạn liên tiếp và giữ tối đa ba cấu hình quét gần đây. Khi đưa mảnh lên canvas, phiên đang dựng được thay bằng các lớp thành phẩm. Dữ liệu phiên dựng được bỏ khỏi bản lưu vào thư viện mẫu.

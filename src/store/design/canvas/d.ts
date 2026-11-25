@@ -91,6 +91,8 @@ export type TPageState = {
   /** [TINIX] Độ phân giải in (px/inch) dùng để quy đổi cm ↔ px và ghi vào file xuất. Thiết kế cũ không có → 300 */
   dpi?: number
   tinixGuides?: { x: number[]; y: number[] }
+  referenceGuide?: import('@/utils/tinix/reference-guide').CanvasReferenceGuide // [TINIX] Chỉ dùng trong bản nháp của editor.
+  materialSession?: import('@/utils/tinix/material-session').MaterialSession // [TINIX] Phiên dựng từ bộ ảnh trong bản nháp.
   /** [TINIX] id mẫu đã tự áp dụng vào trang này (để "Đổi mẫu khác") */
   tinixAuto?: number
 }

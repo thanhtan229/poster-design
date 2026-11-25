@@ -10,6 +10,11 @@
    <input type="checkbox" :checked="printSelection.selected.includes(unit.id)" :aria-label="'Chọn '+unit.name" @change="toggle(unit.id)" />
    <button class="unit-name" @click="pick(unit.id)">{{ unit.name }}</button>
    <select :value="unit.raised?'raised':'base'" :aria-label="'Cách in '+unit.name" @change="role(unit,($event.target as HTMLSelectElement).value)"><option value="base">In nền</option><option value="raised">Cắt nổi</option></select>
+   <!-- [TINIX] Change the SVG cut geometry for this unit while leaving its artwork intact. -->
+   <label v-if="unit.raised" class="cut-outer-only">
+    <input type="checkbox" :checked="unit.cutOuterOnly" @change="setOuterOnly(unit, ($event.target as HTMLInputElement).checked)" />
+    {{ $t('tinix.ui.cutReadiness.outerOnly') }}
+   </label>
   </div>
   <div class="actions"><button :disabled="selected.length<2" @click="merge">Gộp cụm đã chọn</button><button :disabled="selected.length!==1||!canSplit" @click="split">Tách cụm in/cắt</button></div>
   <div v-if="selected.length===1" class="rename"><input v-model="name" maxlength="100" aria-label="Tên cụm in/cắt" @keydown.enter.prevent="rename" /><button @click="rename">Đổi tên cụm</button></div>
@@ -43,6 +48,15 @@ function pick(id:string){printSelection.selected=[id];useControlStore().setShowM
 function toggle(id:string){printSelection.selected=printSelection.selected.includes(id)?printSelection.selected.filter(x=>x!==id):[...printSelection.selected,id]}
 function change(action:()=>void){flushHistory();const before=JSON.parse(JSON.stringify(store.dLayouts));action();store.updateDWidgets();const after=JSON.parse(JSON.stringify(store.dLayouts)); const patches=historyPatches(before,after);if(patches.patches.length)useHistoryStore().changeHistory(patches)}
 function role(unit:PrintUnit,value:string){change(()=>{for(const w of store.dWidgets as any[])if(unit.ids.includes(String(w.uuid)))w.printRole=value})}
+function setOuterOnly(unit: PrintUnit, enabled: boolean) {
+  change(() => {
+    for (const layer of store.dWidgets as (typeof store.dWidgets[number] & { cutOuterOnly?: boolean })[]) {
+      if (!unit.ids.includes(layer.uuid)) continue
+      if (enabled) layer.cutOuterOnly = true
+      else delete layer.cutOuterOnly
+    }
+  })
+}
 function merge(){if(selected.value.length<2)return;const ids=new Set(selected.value.flatMap(u=>u.ids)); const id=nanoid(); const raised=selected.value.some(u=>u.raised);change(()=>{for(const w of store.dWidgets as any[])if(ids.has(String(w.uuid))){w.printGroup=id;w.printRole=raised?'raised':'base';w.printName='Cụm ghép'}});printSelection.selected=[id];message.value='Đã gộp. Nếu có cụm cắt nổi, cụm ghép được đặt Cắt nổi; bạn có thể đổi lại.'}
 function split(){const unit=selected.value[0];if(!unit||!canSplit.value)return;change(()=>{for(const w of store.dWidgets as any[])if(unit.ids.includes(String(w.uuid))){delete w.printGroup;delete w.printName}});printSelection.selected=[];message.value='Đã tách liên kết in/cắt. Nhóm thiết kế vẫn giữ nguyên; cần bỏ nhóm trong editor nếu muốn tách các lớp con.'}
 function rename(){if(selected.value.length!==1||!name.value.trim())return;const unit=selected.value[0];change(()=>{for(const w of store.dWidgets as any[])if(unit.ids.includes(String(w.uuid)))w.printName=name.value.trim()})}

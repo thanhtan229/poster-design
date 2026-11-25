@@ -28,6 +28,7 @@ import tinixPhotosRouter from './tinix/photos/routes' // [TINIX]
 import canvasSizesRouter from './tinix/canvasSizes'
 import { setUploadContentType } from './utils/content-type' // [TINIX] gồm cả font/webp (trước đây trả application/json)
 import cutoutRouter from './tinix/cutout'
+import photoFacesRouter from './tinix/photoFaces' // [TINIX] local photo crop suggestions
 import collagePrintRouter from './tinix/collagePrint'
 import approvedPrintsRouter from './tinix/approvedPrints'
 import collageOrdersRouter from './tinix/collageOrders'
@@ -80,6 +81,7 @@ app.use(tinixAiRouter) // [TINIX] /api/tinix/ai/*
 app.use(tinixPhotosRouter) // [TINIX] /api/tinix/photos/*
 app.use(canvasSizesRouter)
 app.use(cutoutRouter)
+app.use(photoFacesRouter) // [TINIX]
 app.use(collagePrintRouter)
 app.use(approvedPrintsRouter)
 app.use(collageOrdersRouter)

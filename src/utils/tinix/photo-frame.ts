@@ -6,9 +6,37 @@ import { useCanvasStore, useControlStore, useHistoryStore, useWidgetStore } from
 
 export const MAX_FRAME_ZOOM = 5
 export const MIN_FRAME_ZOOM = 1
+const MIN_FIT_ZOOM = 0.75
+
+// [TINIX] Fit can shrink below 1× to clear an irregular inner edge or an overlay.
+export function minFrameZoom(frame: any) {
+  return isFitPhotoFrame(frame) ? MIN_FIT_ZOOM : MIN_FRAME_ZOOM
+}
 
 export function frameRotation(image: any): number {
-  return image && image.fit === 'cover' ? Number(image.imgRotate) || 0 : 0
+  return image && (image.fit === 'cover' || isFitPhotoFrame(image)) ? Number(image.imgRotate) || 0 : 0
+}
+
+// [TINIX] Keep ordinary contain images and cutout subjects outside the crop editor.
+export function isFitPhotoFrame(image: any): boolean {
+  return image?.fit === 'contain' && image.slot && image.templateRole !== 'subject'
+}
+
+export function frameBaseScale(frame: any, natural: { width: number; height: number }): number {
+  if (!isFitPhotoFrame(frame)) return Math.max(frame.width / natural.width, frame.height / natural.height)
+  const angle = frameRotation(frame) * Math.PI / 180
+  const cos = Math.abs(Math.cos(angle))
+  const sin = Math.abs(Math.sin(angle))
+  return Math.min(frame.width / (natural.width * cos + natural.height * sin),
+    frame.height / (natural.width * sin + natural.height * cos))
+}
+
+export function setPhotoFit(frame: any, fit: 'cover' | 'contain') {
+  if (frame.fit === fit) return
+  frame.fit = fit
+  frame.cropX = 50
+  frame.cropY = 50
+  setFrameZoom(frame, 1)
 }
 
 /** Kích thước gốc của ảnh đang hiển thị trong khung (lấy từ phần tử <img> trên canvas). */
@@ -67,10 +95,10 @@ export function clampZoom(value: number, minimum = MIN_FRAME_ZOOM) {
 
 /** Đặt mức phóng (không cho nhỏ hơn mức đủ phủ khung khi đang xoay). */
 export function setFrameZoom(image: any, value: number) {
-  const zoom = clampZoom(value)
+  const zoom = clampZoom(value, minFrameZoom(image))
   image.zoom = zoom
   image.transform = `scale(${zoom})`
-  const natural = frameRotation(image) ? naturalSizeOf(image.uuid) : null
+  const natural = image.fit === 'cover' && frameRotation(image) ? naturalSizeOf(image.uuid) : null
   if (natural) liftToCover(image, natural)
 }
 
@@ -79,7 +107,7 @@ export function setFrameRotation(image: any, degrees: number) {
   let value = ((((degrees + 180) % 360) + 360) % 360) - 180
   if (Math.abs(value) < 0.05) value = 0
   image.imgRotate = value
-  if (!value) return
+  if (!value || image.fit !== 'cover') return
   const natural = naturalSizeOf(image.uuid)
   if (natural) liftToCover(image, natural)
 }
@@ -156,7 +184,7 @@ export function createFrameHistory() {
 export const photoEdit = reactive({ uuid: '' })
 
 export function canEditPhoto(w: any): boolean {
-  return !!w && w.type === 'w-image' && w.fit === 'cover' && !w.lock && !w.isNinePatch
+  return !!w && w.type === 'w-image' && (w.fit === 'cover' || isFitPhotoFrame(w)) && !w.lock && !w.isNinePatch
 }
 
 export function enterPhotoEdit(uuid: string) {
@@ -179,8 +207,8 @@ export function exitPhotoEdit() {
 export function imageRect(frame: any, natural: { width: number; height: number }) {
   const w = Number(frame.width)
   const h = Number(frame.height)
-  const z = Math.max(MIN_FRAME_ZOOM, Number(frame.zoom) || 1)
-  const factor = Math.max(w / natural.width, h / natural.height)
+  const z = Math.max(minFrameZoom(frame), Number(frame.zoom) || 1)
+  const factor = frameBaseScale(frame, natural)
   const width = natural.width * factor * z
   const height = natural.height * factor * z
   const cx = (frame.cropX ?? 50) / 100
@@ -192,16 +220,16 @@ export function imageRect(frame: any, natural: { width: number; height: number }
 export function cropForTopLeft(frame: any, natural: { width: number; height: number }, zoom: number, x: number, y: number) {
   const w = Number(frame.width)
   const h = Number(frame.height)
-  const factor = Math.max(w / natural.width, h / natural.height)
+  const factor = frameBaseScale(frame, natural)
   const spareX = w - natural.width * factor * zoom
   const spareY = h - natural.height * factor * zoom
-  const pick = (value: number, spare: number, old: number) => (spare < -1e-6 ? Math.max(0, Math.min(100, (value / spare) * 100)) : old)
+  const pick = (value: number, spare: number, old: number) => (Math.abs(spare) > 1e-6 ? Math.max(0, Math.min(100, (value / spare) * 100)) : old)
   return { cropX: pick(x, spareX, frame.cropX ?? 50), cropY: pick(y, spareY, frame.cropY ?? 50) }
 }
 
 /** Ảnh (đã xoay) còn phủ kín khung không, với điểm căn và mức phóng cho trước. */
 export function coversFrame(frame: any, natural: { width: number; height: number }, crop: { cropX: number; cropY: number }, zoom: number): boolean {
   const degrees = frameRotation(frame)
-  if (!degrees) return true
+  if (!degrees || isFitPhotoFrame(frame)) return true
   return coverMinZoom({ width: frame.width, height: frame.height, ...crop }, natural, degrees) <= zoom + 1e-6
 }

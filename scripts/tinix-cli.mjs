@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url'
 import { validateSpec, loadReference, buildFromReference, compareToReference, drawGrid, drawSideBySide } from './lib/reference-build.mjs'
 import { overlayImages, checkLayout } from './lib/spec-compare.mjs'
 import { createChromiumMeasurer } from './lib/text-measure.mjs'
+import { checkDraftEdges } from './lib/draft-edges.mjs' // [TINIX] Kiểm mép theo quy tắc 5.6.
+import { renderLayerMasks } from './lib/reference-layer-masks.mjs' // [TINIX] Đối chiếu pixel nhìn thấy theo lớp.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const help = `Tinix CLI (local templates, drafts and cutouts)
@@ -24,6 +26,7 @@ Usage: node scripts/tinix-cli.mjs <command> [options]
   cutout border --input PNG --output PNG --image-output PNG --mm N --dpi N --scale N
   cutout place --input DRAFT --id LAYER --source FILE --cutout PNG --mm N --output DRAFT
   drafts validate --input FILE
+  drafts check-edges --input FILE
   drafts inspect-assets --input FILE
   drafts create --width PX --height PX --output FILE
   drafts render --input FILE --output FILE
@@ -34,8 +37,10 @@ Usage: node scripts/tinix-cli.mjs <command> [options]
   drafts restore --store FILE --version N --expected-version N
   drafts from-template --id N --output FILE [--kind standard|collage]
   drafts from-reference --reference FILE --spec FILE --output FILE [--photos placeholder|reference]
+  drafts from-material-zip --input FILE --directory NEW_DIR
   reference grid --input FILE --output FILE [--step N]
   reference compare --reference FILE --render FILE --spec FILE [--output FILE]
+  reference compare --reference FILE --draft FILE [--spec FILE] [--output FILE]
   reference overlay --reference FILE --render FILE --output FILE [--mode blend|diff] [--opacity 0.5]
   reference check-layout --input DRAFT --spec FILE   (so bản nháp với spec bố cục: vị trí, cỡ, góc, thứ tự lớp)
   drafts apply --input FILE --operations FILE --output FILE
@@ -88,6 +93,14 @@ async function json(base, route, init) {
   return typeof result.code === 'number' ? result.result : result
 }
 function post(body) { return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } }
+// [TINIX] Chỉ tải tài nguyên cùng nguồn gốc với app khi kiểm mép.
+async function readEdgeAsset(base, src) {
+  const url = new URL(src, base)
+  if (url.origin !== base || url.username || url.password) throw new Error('Edge check only reads local Tinix image URLs')
+  const response = await request(base, url.pathname + url.search, { redirect: 'error' })
+  if (!response.headers.get('content-type')?.startsWith('image/')) throw new Error('Edge check expected an image response')
+  return Buffer.from(await response.arrayBuffer())
+}
 async function saveResponse(response, file) {
   const type = response.headers.get('content-type') || ''
   if (!type.startsWith('image/')) throw new Error(`Expected image, got ${type}: ${(await response.text()).slice(0, 500)}`)
@@ -220,6 +233,7 @@ async function main() {
       const layout = await readJson(options.input), issues = validate(layout)
       if (issues.some(i => i.severity === 'error')) throw new Error(JSON.stringify(issues))
       const { width, height } = layout.global
+      delete layout.global.referenceGuide // [TINIX] The reference is an editor overlay.
       if (width > 12000 || height > 12000 || width * height > 100000000) throw new Error('Page exceeds render limits')
       const saved = await json(base, '/design/save', post({ title: 'Temporary CLI draft render', data: JSON.stringify([layout]), width, height }))
       if (!Number.isSafeInteger(saved?.id) || saved.id <= 0) throw new Error('Service did not return a design ID')
@@ -265,6 +279,7 @@ async function main() {
       if (!options.input || !options.name) throw new Error('--input and --name are required')
       const layout = await readJson(options.input), issues = validate(layout)
       if (issues.some(i => i.severity === 'error')) throw new Error(JSON.stringify(issues))
+      delete layout.global.referenceGuide // [TINIX] Keep reference art in the draft.
       result = await json(base, '/api/tinix/collage-templates', post({ name: options.name, category: options.category || '', layout }))
       break
     }
@@ -302,6 +317,16 @@ async function main() {
       const issues = validate(await readJson(options.input))
       result = { valid: !issues.some(i => i.severity === 'error'), issues }
       if (!result.valid) process.exitCode = 1
+      break
+    }
+    case 'drafts check-edges': {
+      // [TINIX] Cảnh báo là thông tin để soi mép, không làm lệnh thất bại.
+      check(options, ['input'])
+      if (!options.input) throw new Error('--input is required')
+      const layout = await readJson(options.input)
+      const issues = validate(layout)
+      if (issues.some(issue => issue.severity === 'error')) throw Object.assign(new Error('Invalid draft'), { issues })
+      result = await checkDraftEdges(layout, src => readEdgeAsset(base, src))
       break
     }
     case 'drafts apply': {
@@ -353,11 +378,21 @@ async function main() {
       break
     }
     case 'reference compare': {
-      check(options, ['reference', 'render', 'spec', 'output'])
-      if (!options.reference || !options.render || !options.spec) throw new Error('--reference, --render and --spec are required')
-      const ref = await loadReference(options.reference), spec = validateSpec(await readJson(options.spec))
-      const { render, ...stats } = await compareToReference(ref, options.render, spec)
-      if (options.output) { await writeFile(options.output, await drawSideBySide(ref, render), { flag: 'wx' }); stats.output = path.resolve(options.output) }
+      // [TINIX] Render the masks and the composite from the same draft.
+      check(options, ['reference', 'render', 'draft', 'spec', 'output'])
+      if (!options.reference || (options.draft ? options.render : !options.render || !options.spec)) {
+        throw new Error('Provide --reference with --draft or with --render and --spec')
+      }
+      const ref = await loadReference(options.reference)
+      const spec = options.spec && validateSpec(await readJson(options.spec))
+      let masks
+      if (options.draft) {
+        const draft = await readJson(options.draft), issues = validate(draft)
+        if (issues.some(i => i.severity === 'error')) throw new Error(JSON.stringify(issues))
+        masks = await renderLayerMasks(base, draft, ref)
+      }
+      const { render, ...stats } = await compareToReference(ref, masks?.render || options.render, spec, masks)
+      if (options.output) { await writeFile(options.output, await drawSideBySide(ref, render, masks?.excluded), { flag: 'wx' }); stats.output = path.resolve(options.output) }
       result = stats
       break
     }
@@ -392,6 +427,46 @@ async function main() {
         await createJson(options.output, built.draft)
         result = { output: path.resolve(options.output), assetsDir, layers: built.draft.layers.length, photos, ...built.report }
       } finally { await measurer.close() }
+      break
+    }
+    case 'drafts from-material-zip': {
+      // [TINIX] Validate before importing, and render through the stateless page endpoint.
+      check(options, ['input', 'directory'])
+      if (!options.input || !options.directory) throw new Error('--input and --directory are required')
+      const directory = path.resolve(options.directory)
+      const { prepareMaterialDraft } = await import('./lib/material-archive-cli.mjs')
+      const { draft, report } = await prepareMaterialDraft(options.input)
+      await mkdir(directory)
+      const reportPath = path.join(directory, 'report.json')
+      result = { status: report.status, report: reportPath }
+      if (!draft) {
+        await createJson(reportPath, report)
+        process.exitCode = 1
+        break
+      }
+      const issues = validate(draft)
+      if (issues.some(issue => issue.severity === 'error')) {
+        await createJson(reportPath, { ...report, status: 'blocked', reason: 'invalid-draft', issues })
+        result.status = 'blocked'
+        process.exitCode = 1
+        break
+      }
+      const draftPath = path.join(directory, 'draft.json')
+      const renderPath = path.join(directory, 'render.png')
+      await createJson(draftPath, draft)
+      result.draft = draftPath
+      const { referenceGuide, ...global } = draft.global
+      try {
+        const body = { layout: { ...draft, global }, format: 'png' }
+        await saveResponse(await request(base, '/api/tinix/export-render', { ...post(body), timeout: 180000 }), renderPath)
+      } catch (error) {
+        await createJson(reportPath, { ...report, status: 'render-failed', message: error.message })
+        result.status = 'render-failed'
+        process.exitCode = 1
+        break
+      }
+      await createJson(reportPath, { ...report, status: 'rendered' })
+      Object.assign(result, { status: 'rendered', render: renderPath, photos: report.photos, subject: report.subject })
       break
     }
     case 'fonts list': check(options, []); result = await json(base, '/design/fonts'); break

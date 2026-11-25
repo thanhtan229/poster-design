@@ -10,6 +10,7 @@
     <TemplatePhotoStatus v-if="needTools" />
     <div v-if="needTools && printSelection.active && printSelection.clean" class="print-preview-banner">Xem nền sạch · các cụm cắt nổi tạm ẩn <button @click="printSelection.clean=false">Xem thành phẩm</button></div>
     <div v-if="needTools" id="tinix-ruler-toolbar" />
+    <div v-if="needReference" id="tinix-reference-toolbar" ref="referenceToolbar" /><!-- [TINIX] Panel above the canvas viewport. -->
     <div id="main">
     <div id="page-design" ref="page_design" :style="{ paddingTop: dPaddingTop + 'px', minWidth:  (dPage.width * dZoom) / 100 + (padding ?? dPresetPadding) * 2 + 'px' }">
       <div
@@ -62,6 +63,11 @@
             </component>
             </div>
             <PhotoEditOverlay v-if="needTools" /> <!-- [TINIX] chỉnh ảnh trong khung -->
+            <ReferenceGuide v-if="needReference && referenceToolbar" :toolbar="referenceToolbar" /><!-- [TINIX] Editor-only reference overlay. -->
+            <CutPieceReview v-if="needReference && referenceToolbar" :toolbar="referenceToolbar" /><!-- [TINIX] Review one cut piece on canvas. -->
+            <ResizeTrimWarning v-if="needReference && referenceToolbar" :toolbar="referenceToolbar" /><!-- [TINIX] Check trim after a resize. -->
+            <CollageReview v-if="needReference && referenceToolbar" :toolbar="referenceToolbar" /><!-- [TINIX] Review findings on the canvas. -->
+            <BatchPhotoCrop v-if="needReference && referenceToolbar" :toolbar="referenceToolbar" /><!-- [TINIX] Batch photo crop review. -->
             <div v-if="needTools && printSelection.active" class="print-unit-overlays" aria-hidden="true">
               <div v-for="unit in highlightedPrintUnits" :key="unit.id" class="print-unit-highlight" :style="{left:unit.bounds.x+'px',top:unit.bounds.y+'px',width:unit.bounds.width+'px',height:unit.bounds.height+'px',borderWidth:Math.max(2,200/dZoom)+'px'}"><span :style="{fontSize:Math.max(12,1300/dZoom)+'px'}">{{ unit.name }} · {{ unit.raised?'Cắt nổi':'In nền' }}</span></div>
             </div>
@@ -80,9 +86,13 @@
 <script lang="ts" setup>
 import {printSelection} from '@/utils/tinix/print-selection'
 import {printUnits} from '@/utils/tinix/collage-print'
+import CutPieceReview from '@/components/business/ai-assistant/CutPieceReview.vue' // [TINIX]
+import ResizeTrimWarning from './comps/ResizeTrimWarning.vue' // [TINIX]
+import CollageReview from './comps/CollageReview.vue' // [TINIX]
+import BatchPhotoCrop from './comps/BatchPhotoCrop.vue' // [TINIX]
 import TemplatePhotoStatus from './comps/TemplatePhotoStatus.vue'
 import PhotoEditOverlay from '@/components/modules/widgets/wImage/PhotoEditOverlay.vue' // [TINIX]
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { getTarget } from '@/common/methods/target'
 import setWidgetData from '@/common/methods/DesignFeatures/setWidgetData'
 import { applyImageSource } from '@/utils/tinix/photo-source' // [TINIX]
@@ -96,6 +106,7 @@ import { TPageState } from '@/store/design/canvas/d'
 import resizePage from './comps/resize.vue'
 import watermark from './comps/pageWatermark.vue'
 import CanvasRuler from './comps/CanvasRuler.vue'
+import ReferenceGuide from './comps/ReferenceGuide.vue' // [TINIX]
 import { TdWidgetData } from '@/store/design/widget'
 import { useRoute } from 'vue-router'
 const route = useRoute()
@@ -125,6 +136,8 @@ const canvasStore = useCanvasStore()
 const props = defineProps<TProps>()
 
 const needTools = computed(() => route.name !== 'Draw' && route.name !== 'Html')
+const needReference = computed(() => route.name === 'Home' && !props.renderDPage && !props.renderDWdigets)
+const referenceToolbar = ref<HTMLElement>()
 const { dPage: curDPage } = storeToRefs(useCanvasStore())
 const { dZoom: curZoom, dPresetPadding, dPaddingTop } = storeToRefs(canvasStore)
 const { dDraging, showRotatable, dAltDown, dSpaceDown } = storeToRefs(controlStore)

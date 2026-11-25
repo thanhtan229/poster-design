@@ -539,10 +539,26 @@ export function findFont(fonts, name) {
 }
 
 // ───────────────────────────── so sánh với ảnh mẫu ──────────────────────────────────────────────────────────────────
-function ssimGray(a, b, W, H, rect) {
+// [TINIX] The same inclusion mask is used for MAE, SSIM and the heatmap.
+function ssimGray(a, b, W, H, rect, include) {
   const [x0, y0, x1, y1] = rect, C1 = (0.01 * 255) ** 2, C2 = (0.03 * 255) ** 2, win = 8
   let sum = 0, n = 0
   for (let y = y0; y + win <= y1; y += 4) for (let x = x0; x + win <= x1; x += 4) {
+    if (include) {
+      let count = 0, sumA = 0, sumB = 0, squaresA = 0, squaresB = 0, products = 0
+      for (let j = 0; j < win; j++) for (let i = 0; i < win; i++) {
+        const p = (y + j) * W + x + i
+        if (!include(p)) continue
+        const va = a[p], vb = b[p]
+        count++; sumA += va; sumB += vb; squaresA += va * va; squaresB += vb * vb; products += va * vb
+      }
+      if (count < 16) continue
+      const ma = sumA / count, mb = sumB / count
+      const va = (squaresA - sumA * ma) / (count - 1), vb = (squaresB - sumB * mb) / (count - 1), cov = (products - sumA * mb) / (count - 1)
+      sum += ((2 * ma * mb + C1) * (2 * cov + C2)) / ((ma * ma + mb * mb + C1) * (va + vb + C2))
+      n++
+      continue
+    }
     let ma = 0, mb = 0
     for (let j = 0; j < win; j++) for (let i = 0; i < win; i++) { const p = (y + j) * W + x + i; ma += a[p]; mb += b[p] }
     ma /= win * win; mb /= win * win
@@ -555,18 +571,45 @@ function ssimGray(a, b, W, H, rect) {
 }
 
 /** MAE (0–255) và SSIM (1 = giống hệt) toàn trang và theo từng phần tử của spec. Ảnh render được co về cỡ ảnh mẫu. */
-export async function compareToReference(ref, renderInput, spec) {
+export async function compareToReference(ref, renderInput, spec, masks) {
   const r = await sharp(renderInput, { limitInputPixels: 100000000 }).removeAlpha().resize(ref.width, ref.height, { fit: 'fill', kernel: 'lanczos3' }).raw().toBuffer()
   const W = ref.width, H = ref.height, ga = new Float32Array(W * H), gb = new Float32Array(W * H)
   for (let i = 0; i < W * H; i++) { ga[i] = grayAt(ref.raw, i); gb[i] = grayAt(r, i) }
-  const mae = (rect) => {
+  const stat = (rect, include) => {
     const [x0, y0, x1, y1] = rect; let s = 0, n = 0
-    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { const p = (y * W + x) * 3; s += Math.abs(ref.raw[p] - r[p]) + Math.abs(ref.raw[p + 1] - r[p + 1]) + Math.abs(ref.raw[p + 2] - r[p + 2]); n += 3 }
-    return n ? s / n : NaN
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const i = y * W + x
+      if (include && !include(i)) continue
+      const p = i * 3
+      s += Math.abs(ref.raw[p] - r[p]) + Math.abs(ref.raw[p + 1] - r[p + 1]) + Math.abs(ref.raw[p + 2] - r[p + 2])
+      n++
+    }
+    const ssim = n ? ssimGray(ga, gb, W, H, rect, include) : NaN
+    return { mae: n ? +(s / (3 * n)).toFixed(1) : null, ssim: Number.isFinite(ssim) ? +ssim.toFixed(3) : null, ...(masks ? { pixels: n } : {}) }
   }
-  const stat = (rect) => ({ mae: +mae(rect).toFixed(1), ssim: +ssimGray(ga, gb, W, H, rect).toFixed(3) })
-  const out = { overall: stat([0, 0, W, H]), elements: {} }
-  for (const el of spec?.elements || []) out.elements[el.name] = stat(clampRect(ref, elementRect(el)))
+  const all = [0, 0, W, H]
+  const include = masks && (i => !masks.excluded[i])
+  const out = { overall: stat(all, include), elements: {} }
+  for (const el of spec?.elements || []) out.elements[el.name] = stat(clampRect(ref, elementRect(el)), include)
+  if (masks) {
+    const bounds = masks.layers.map(() => [W, H, 0, 0])
+    for (let i = 0; i < masks.owners.length; i++) {
+      if (!masks.owners[i] || masks.excluded[i]) continue
+      const box = bounds[masks.owners[i] - 1], x = i % W, y = Math.floor(i / W)
+      box[0] = Math.min(box[0], x); box[1] = Math.min(box[1], y)
+      box[2] = Math.max(box[2], x + 1); box[3] = Math.max(box[3], y + 1)
+    }
+    out.excluded = { placeholderPixels: W * H - out.overall.pixels, totalPixels: W * H }
+    // [TINIX] Report the visible page backdrop separately from its individual overlays.
+    out.background = stat(all, i => include(i) && !masks.owners[i])
+    out.layers = masks.layers.map(({ placeholder, ...layer }, index) => {
+      const box = bounds[index]
+      const status = placeholder ? 'placeholder' : box[2] > box[0] ? 'scored' : 'no-visible-pixels'
+      if (status !== 'scored') return { ...layer, status, pixels: 0, mae: null, ssim: null }
+      const rect = clampRect(ref, [box[0] - 4, box[1] - 4, box[2] + 4, box[3] + 4])
+      return { ...layer, status, bounds: box, ...stat(rect, i => include(i) && masks.owners[i] === index + 1) }
+    })
+  }
   return { ...out, render: r }
 }
 
@@ -580,10 +623,14 @@ export async function drawGrid(ref, step = 100) {
 }
 
 /** Ảnh cạnh nhau: ảnh mẫu | bản render | bản đồ lệch (càng đỏ/sáng càng lệch nhiều). `render` là bộ đệm RGB cùng cỡ ảnh mẫu. */
-export async function drawSideBySide(ref, render) {
+export async function drawSideBySide(ref, render, excluded) {
   const { width: W, height: H } = ref
   const heat = Buffer.alloc(W * H * 3)
   for (let i = 0; i < W * H; i++) {
+    if (excluded?.[i]) {
+      heat[i * 3] = 104; heat[i * 3 + 1] = 116; heat[i * 3 + 2] = 126
+      continue
+    }
     const d = (Math.abs(ref.raw[i * 3] - render[i * 3]) + Math.abs(ref.raw[i * 3 + 1] - render[i * 3 + 1]) + Math.abs(ref.raw[i * 3 + 2] - render[i * 3 + 2])) / 3
     const v = Math.min(255, d * 3)
     heat[i * 3] = v; heat[i * 3 + 1] = v * 0.35; heat[i * 3 + 2] = 40

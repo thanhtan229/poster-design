@@ -174,6 +174,33 @@ try {
   assert.ok(diff.overall.ssim < 0.5 && diff.overall.mae > 20, 'ảnh khác nhiều bị phạt'); assert.ok(diff.elements['Khung'] && diff.elements['Tròn'], 'số đo theo từng phần tử')
   const side = await sharp(await drawSideBySide(ref, diff.render)).metadata(); assert.equal(side.height, 600); assert.equal(side.width, 1800)
 
+  // [TINIX] Placeholder changes must affect neither metric, even in SSIM windows that cross their edge.
+  const size = 32, area = size * size
+  const flat = Buffer.alloc(area * 3, 80), altered = Buffer.from(flat)
+  const owners = new Uint16Array(area), excluded = new Uint8Array(area)
+  for (let y = 8; y < 24; y++) for (let x = 8; x < 24; x++) {
+    const i = y * size + x
+    if (x >= 12 && x < 20 && y >= 12 && y < 20) {
+      owners[i] = 1
+    } else {
+      excluded[i] = 1
+      altered.fill(245, i * 3, i * 3 + 3)
+    }
+  }
+  const image = { width: size, height: size, channels: 3 }
+  const flatRef = { ...image, raw: flat }
+  const masks = { owners, excluded, layers: [{ id: 'sticker', name: 'Sticker' }, { id: 'photo', placeholder: true }] }
+  const compareMasked = async raw => compareToReference(flatRef, await sharp(raw, { raw: image }).png().toBuffer(), null, masks)
+  const masked = await compareMasked(altered)
+  assert.deepEqual(masked.overall, { mae: 0, ssim: 1, pixels: area - 192 })
+  assert.deepEqual(masked.excluded, { placeholderPixels: 192, totalPixels: area })
+  assert.deepEqual(masked.layers[0], { id: 'sticker', name: 'Sticker', status: 'scored', bounds: [12, 12, 20, 20], mae: 0, ssim: 1, pixels: 64 })
+  assert.equal(masked.layers[1].status, 'placeholder')
+  for (let y = 12; y < 20; y++) for (let x = 12; x < 20; x++) altered.fill(200, (y * size + x) * 3, (y * size + x + 1) * 3)
+  const stickerChanged = await compareMasked(altered)
+  assert.equal(stickerChanged.layers[0].mae, 120)
+  assert.ok(stickerChanged.overall.ssim < 1)
+
   // 11) lưới toạ độ giữ nguyên kích thước ảnh
   const grid = await sharp(await drawGrid(ref, 100)).metadata(); assert.deepEqual([grid.width, grid.height], [600, 600])
 

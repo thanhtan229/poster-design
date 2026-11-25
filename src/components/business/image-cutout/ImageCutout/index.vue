@@ -14,9 +14,9 @@
  * (at your option) any later version.
 -->
 <template>
-  <el-dialog v-model="state.show" :title="$t('business.cutout.title')" align-center width="650" @close="handleClose">
+  <el-dialog v-model="state.show" :title="$t(pairOnly ? 'tinix.ui.cutoutTools.openPair' : 'business.cutout.title')" align-center width="650" append-to-body :z-index="22000" @close="handleClose">
     <!-- [TINIX] chọn model tách nền; đổi model khi đã có ảnh thì tách lại bằng model mới -->
-    <div class="tinix-engine">
+    <div v-if="!pairOnly" class="tinix-engine">
       <span>{{ $t('tinix.ui.cutoutEngine.model') }}</span>
       <el-radio-group v-model="engine" size="small" @change="onEngineChange">
         <el-radio-button value="birefnet">{{ $t('tinix.ui.cutoutEngine.birefnet') }}</el-radio-button>
@@ -24,7 +24,7 @@
       </el-radio-group>
       <small>{{ engine === 'birefnet' ? $t('tinix.ui.cutoutEngine.birefnet_hint') : $t('tinix.ui.cutoutEngine.u2net_hint') }}</small>
     </div>
-    <uploader v-if="!state.rawImage" :hold="true" :drag="true" :multiple="true" class="uploader" @load="handleUploaderLoad">
+    <uploader v-if="!pairOnly && !state.rawImage" :hold="true" :drag="true" :multiple="true" class="uploader" @load="handleUploaderLoad">
       <div class="uploader__box">
         <upload-filled style="width: 64px; height: 64px" />
         <!-- <div class="el-upload__text">在此拖入或选择<em>上传图片</em></div> -->
@@ -32,6 +32,17 @@
       </div>
       <div class="el-upload__tip el-upload__text"><em>{{ $t('business.cutout.firstUse') }}</em></div>
     </uploader>
+    <!-- [TINIX] Repair an existing pair without starting background removal. -->
+    <form v-if="state.show && pairOnly" class="tinix-pair" @submit.prevent="openPair">
+      <label>{{ $t('tinix.ui.cutoutTools.original') }}
+        <input type="file" accept="image/*" :disabled="pairBusy" @change="selectPairFile($event, 'raw')" />
+      </label>
+      <label>{{ $t('tinix.ui.cutoutTools.result') }} (PNG)
+        <input type="file" accept="image/png" :disabled="pairBusy" @change="selectPairFile($event, 'cut')" />
+      </label>
+      <el-button native-type="submit" :disabled="!pair.raw || !pair.cut" :loading="pairBusy">{{ $t('tinix.ui.cutoutTools.openPair') }}</el-button>
+      <small v-if="pairError" role="alert">{{ $t('tinix.ui.cutoutTools.' + pairError) }}</small>
+    </form>
     <el-progress v-if="!state.cutImage && state.progressText" :percentage="state.progress">
       <el-button text>
         {{ state.progressText }} <span v-show="state.progress">{{ state.progress }}%</span>
@@ -53,7 +64,9 @@
           <el-input-number v-model="borderMm" :min="0" :max="8" :step="0.5" size="small" controls-position="right" @change="onBorderChange" /> mm
         </span>
         <el-button v-show="state.cutImage && state.toolModel" @click="clear">{{ $t('business.cutout.reselect') }}</el-button>
-        <el-button v-show="state.cutImage" type="primary" plain @click="edit">{{ $t('business.cutout.edit') }}</el-button>
+        <!-- [TINIX] Open the exact mask directly and retain cloned pixels when reopening. -->
+        <el-button v-show="state.cutImage && !usedCurves" type="primary" plain @click="edit(false)">{{ $t('business.cutout.edit') }}</el-button>
+        <el-button v-show="state.cutImage" @click="edit(true)">{{ $t('tinix.ui.cutoutTools.title') }}</el-button>
         <el-button v-show="state.cutImage && state.toolModel" type="primary" @click="download"> {{ $t('business.cutout.download') }} </el-button>
         <el-button v-show="state.cutImage && !state.toolModel" v-loading="state.loading" type="primary" @click="cutDone"> {{ state.loading ? $t('business.cutout.uploading') : $t('business.cutout.done') }} </el-button>
       </span>
@@ -65,6 +78,7 @@
 <script lang="ts" setup>
 import { reactive, nextTick, ref } from 'vue'
 import { getCutoutEngine, setCutoutEngine, type CutoutEngine } from '@/utils/tinix/cutout-engine' // [TINIX]
+import { readCutoutFile, readCutoutImage } from '@/utils/tinix/cutout-workspace' // [TINIX]
 import { ElProgress, ElRadioGroup, ElRadioButton, ElInputNumber } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import uploader from '@/components/common/Uploader/index.vue'
@@ -105,6 +119,7 @@ function onBorderChange(v: any) {
   localStorage.setItem('tinix.stickerBorderMm', String(v || 0))
 }
 let currentFile: File | null = null // [TINIX] ảnh đang tách, để tách lại khi đổi model
+let localResult: ((image: string, border: number) => void) | undefined // [TINIX] Crop is kept in its draft.
 let isRuning: boolean = false
 
 const emits = defineEmits<{
@@ -113,25 +128,75 @@ const emits = defineEmits<{
 
 const raw = ref(null)
 const matting = ref<typeof ImageExtraction | null>(null)
+const usedCurves = ref(false) // [TINIX]
+// [TINIX] This path only reads local files and downloads the edited PNG.
+const pair = reactive<{ raw?: File; cut?: File }>({})
+const pairOnly = ref(false)
+const pairBusy = ref(false)
+const pairError = ref('')
+
+function selectPairFile(event: Event, side: 'raw' | 'cut') {
+  pair[side] = (event.target as HTMLInputElement).files?.[0]
+  pairError.value = ''
+}
+
+async function openPair() {
+  const { raw, cut } = pair
+  if (!raw || !cut || pairBusy.value) return
+  pairBusy.value = true
+  pairError.value = ''
+  try {
+    const [source, result] = await Promise.all([readCutoutFile(raw), readCutoutFile(cut)])
+    const [sourceImage, resultImage] = await Promise.all([readCutoutImage(source), readCutoutImage(result)])
+    if (!state.show || pair.cut !== cut) return
+    if (sourceImage.naturalWidth !== resultImage.naturalWidth || sourceImage.naturalHeight !== resultImage.naturalHeight) {
+      pairError.value = 'pairSize'
+      return
+    }
+    matting.value?.open(source, result, (image: string) => {
+      _dl.downloadBase64File(image, cut.name.replace(/\.png$/i, '') + '-edited.png')
+    }, true)
+  } catch {
+    if (pair.cut === cut) pairError.value = 'readError'
+  } finally {
+    pairBusy.value = false
+  }
+}
 
 const open = (file: File) => {
+  localResult = undefined
+  pairOnly.value = false // [TINIX]
   clear()
+  state.toolModel = !file // [TINIX] Show the local pair form only in the standalone tool.
   state.loading = false
   state.show = true
   controlStore.setShowMoveable(false)
   nextTick(() => {
     if (file) {
-      state.toolModel = false // 在编辑模式打开则不展示工具模式下的下载和清除按钮
       handleUploaderLoad(file)
     }
   })
 }
 
-defineExpose({
-  open
-})
+function openPairInput() {
+  localResult = undefined
+  clear()
+  pairOnly.value = true
+  state.toolModel = true
+  state.show = true
+  controlStore.setShowMoveable(false)
+}
+
+function openLocal(file: File, done: (image: string, border: number) => void) {
+  open(file)
+  localResult = done
+  if (!borderMm.value) borderMm.value = 1
+}
+
+defineExpose({ open, openPairInput, openLocal })
 
 const handleUploaderLoad = (file: File) => {
+  usedCurves.value = false // [TINIX] A new cutout starts with the original colors.
   currentFile = file
   selectImageFile(state as TImageCutoutState, raw, file, (result, name) => {
     fileName = name
@@ -149,6 +214,9 @@ function onEngineChange(v: any) {
 }
 
 const handleClose = () => {
+  localResult = undefined
+  pair.raw = pair.cut = undefined // [TINIX]
+  pairError.value = ''
   controlStore.setShowMoveable(true)
 }
 
@@ -175,6 +243,12 @@ const run = () => {
 }
 
 const cutDone = async () => {
+  if (localResult) {
+    localResult(state.cutImage, borderMm.value)
+    state.show = false
+    handleClose()
+    return
+  }
   state.loading = true
   const url = await uploadCutPhotoToCloud(state.cutImage)
   emits('done', url, borderMm.value)
@@ -182,13 +256,15 @@ const cutDone = async () => {
   handleClose()
 }
 
-const edit = () => {
+// [TINIX] The curve editor returns the full PNG including any cloned color.
+const edit = (useCurves: boolean) => {
   if (!matting.value) return
-  matting.value.open(state.rawImage, state.cutImage, (base64: string) => {
+  matting.value.open(state.rawImage, state.cutImage, (base64: string, used: boolean) => {
+    usedCurves.value = used
     state.cutImage = base64
     state.percent = 0
     requestAnimationFrame(run)
-  })
+  }, useCurves || usedCurves.value)
 }
 
 </script>
@@ -205,6 +281,15 @@ const edit = () => {
     flex-basis: 100%;
     color: #8a8f99;
   }
+}
+/* [TINIX] A standalone input for an already matched pair. */
+.tinix-pair {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 16px;
+  label { display: flex; flex-wrap: wrap; gap: 6px; }
 }
 .uploader {
   &__box {

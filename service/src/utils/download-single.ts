@@ -24,6 +24,95 @@ import { MAX_EXPORT_SIDE, MAX_EXPORT_PIXELS, exportTimeoutSec } from './export-l
 const maxPXs = MAX_EXPORT_PIXELS // exported canvas keeps its original pixels up to the supported limit
 const maximum = MAX_EXPORT_SIDE // [TINIX] was 5000 → 10000 → 12000: trang PSD 8268×11220 bị cắt mất ~11% phía dưới ở mức 10000 (larger is clipped)
 
+// [TINIX] Reuse Chrome for trim scans and region previews, with a fresh page per render.
+let trimBrowser: Promise<any> | undefined
+let trimIdleTimer: ReturnType<typeof setTimeout> | undefined
+let activeTrimRenders = 0
+
+function openTrimBrowser() {
+  if (!trimBrowser) {
+    const launching = puppeteer.launch({
+      headless: true,
+      executablePath,
+      acceptInsecureCerts: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+    })
+    trimBrowser = launching
+    launching.then((browser: any) => {
+      browser.once('disconnected', () => {
+        if (trimBrowser === launching) trimBrowser = undefined
+      })
+    }, () => {
+      if (trimBrowser === launching) trimBrowser = undefined
+    })
+  }
+  return trimBrowser
+}
+
+export type RenderRegion = { x: number; y: number; width: number; height: number }
+
+export async function capturePagePixels(url: string, { width, height, region, signal }: {
+  width: number; height: number; region?: RenderRegion; signal?: AbortSignal
+}): Promise<Buffer> {
+  // [TINIX] Cancel a superseded crop preview without closing the shared browser.
+  const checkCanceled = () => { if (signal && signal.aborted) throw new Error('Preview canceled') }
+  checkCanceled()
+  if (trimIdleTimer) clearTimeout(trimIdleTimer)
+  activeTrimRenders++
+  let page: any
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  let cancel: (() => void) | undefined
+  try {
+    const browser = await openTrimBrowser()
+    checkCanceled()
+    page = await browser.newPage()
+    checkCanceled()
+    cancel = () => { void page.close().catch(() => undefined) }
+    if (signal) signal.addEventListener('abort', cancel, { once: true })
+    await page.setViewport({ width, height, deviceScaleFactor: 1 })
+    const ready = new Promise<void>((resolve, reject) => {
+      timeout = setTimeout(() => reject(new Error('Pixel render timed out')), exportTimeoutSec(width, height) * 1000)
+      page.once('close', () => reject(new Error('Pixel render page closed')))
+      page.exposeFunction('loadFinishToInject', (result: any) => {
+        if (result && result.error) reject(new Error(result.error))
+        else resolve()
+      }).then(() => page.goto(url, { waitUntil: 'domcontentloaded' })).catch(reject)
+    })
+    await ready
+    // [TINIX] Keep the original viewport so backgrounds and layer transforms retain page coordinates.
+    return Buffer.from(await page.screenshot({
+      type: 'png', omitBackground: true,
+      ...(region && { clip: region, captureBeyondViewport: false }),
+    }))
+  } finally {
+    if (signal && cancel) signal.removeEventListener('abort', cancel)
+    if (timeout) clearTimeout(timeout)
+    if (page) await page.close().catch(() => undefined)
+    activeTrimRenders--
+    releaseIdleTrimBrowser()
+  }
+}
+
+function releaseIdleTrimBrowser() {
+  if (activeTrimRenders || !trimBrowser) return
+  if (trimIdleTimer) clearTimeout(trimIdleTimer)
+  trimIdleTimer = setTimeout(() => {
+    const idle = trimBrowser
+    trimBrowser = undefined
+    if (idle) idle.then(browser => browser.close()).catch(() => undefined)
+  }, 60_000)
+  trimIdleTimer.unref()
+}
+
+export async function warmTrimBrowser() {
+  if (trimIdleTimer) clearTimeout(trimIdleTimer)
+  try {
+    await openTrimBrowser()
+  } finally {
+    releaseIdleTrimBrowser()
+  }
+}
+
 export const saveScreenshot = async (url: string, { path, width, height, thumbPath, size = 0, quality = 0, prevent, ua, devices, scale, wait }: any) => {
   return new Promise(async (resolve: Function, reject: Function) => {
     let isPageLoad = false

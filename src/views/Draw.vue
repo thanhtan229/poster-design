@@ -171,7 +171,7 @@ async function load() {
       try {
         ;(window as any).loadFinishToInject('done')
       } catch {}
-    }, 100)
+    }, route.query.trimAlpha === '1' ? 0 : 100) // [TINIX] The trim render has already waited for image decode and paint.
   }
   // 超时
   setTimeout(() => {
