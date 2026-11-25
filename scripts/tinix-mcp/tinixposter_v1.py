@@ -24,6 +24,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 from scipy import ndimage as ndi
+from mixed_handcut_qa import inspect_geometry  # [TINIX]
 
 DELIVERY = ("01_anh_mau.png", "02_nen_sach.png", "03_so_do_bo_cuc.png", "04_tam_manh_RGBA.png", "layout.json")
 REQUIRED_LAYOUT = ("version", "sheet", "reference", "print", "frames", "subjectZ", "subject", "decorations")
@@ -387,6 +388,9 @@ def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, pr
     }
     check_layout_schema(layout)
     qa = validate_sheet(layout,sheet)
+    mixed_handcut = manifest.get("mixedHandcutGeometryVersion") == 1  # [TINIX]
+    if mixed_handcut:
+        qa["mixed_handcut_geometry"] = inspect_geometry(layout, sheet)
     subject_img = Image.open((basedir/manifest["subject"]["asset"]).resolve()).convert("RGBA")
     require(np.any(np.array(subject_img.getchannel("A"))==0), "SUBJECT needs a true cutout with alpha")
     subject_prepped=prep_subject(subject_img,layout["subject"]["target"],layout["subject"].get("borderMm",0),layout["print"]["dpi"])
@@ -404,6 +408,9 @@ def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, pr
         check = checkerboard(192, 192)
         target = layout["subject"]["target"]
         subject_check = checkerboard(int(target["width"]), int(target["height"])).convert("RGBA")
+        if mixed_handcut:  # [TINIX] The checker stands in for the fitted cutout, including its irregular edge.
+            subject_check = checkerboard(*subject_prepped.size).convert("RGBA")
+            subject_check.putalpha(subject_prepped.getchannel("A"))
         render_scene(layout,sheet,bg,dict.fromkeys(photo_paths, check),subject_check).convert("RGB").save(evidence/"checker.png")
         if preview_only:
             return
@@ -461,7 +468,10 @@ def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, pr
         require(sorted(z.namelist())==sorted(DELIVERY) and z.testzip() is None, "Invalid export ZIP")
     print(json.dumps({"status":"PASS","zip":str(zip_file),**qa},ensure_ascii=False,indent=2))
     if review_dir is not None:  # [TINIX]
-        return {"demoPreviewMs": demo_ms, "kitExportMs": round((perf_counter() - kit_started) * 1000)}
+        timings = {"demoPreviewMs": demo_ms, "kitExportMs": round((perf_counter() - kit_started) * 1000)}
+        if mixed_handcut:
+            timings["mixedHandcutGeometry"] = qa["mixed_handcut_geometry"]
+        return timings
 
 
 def validate(folder: Path, qa_out: Path | None=None):
@@ -470,14 +480,15 @@ def validate(folder: Path, qa_out: Path | None=None):
         require((folder/f).is_file(),f"Missing required delivery file {f}")
     layout=json.loads((folder/"layout.json").read_text(encoding="utf-8"))
     check_layout_schema(layout)
-    imgs={f:Image.open(folder/f) for f in DELIVERY[:4]}
     size=(layout["reference"]["width"],layout["reference"]["height"])
+    # [TINIX] Close each input immediately so repeated fixture validation releases every handle.
     for f in DELIVERY[:3]:
-        require(imgs[f].size==size,f"Wrong page dimension: {f}")
-    sh=imgs[DELIVERY[3]]
-    require(sh.size==(layout["sheet"]["width"],layout["sheet"]["height"]),"Cut sheet size differs from layout.json")
-    qa=validate_sheet(layout,sh)
-    qa.update({"frame_count":len(layout["frames"]),"decorations":len(layout["decorations"]),"page_px":size,"sheet_px":sh.size})
+        with Image.open(folder/f) as image:
+            require(image.size==size,f"Wrong page dimension: {f}")
+    with Image.open(folder/DELIVERY[3]) as sheet:
+        require(sheet.size==(layout["sheet"]["width"],layout["sheet"]["height"]),"Cut sheet size differs from layout.json")
+        qa=validate_sheet(layout,sheet)
+        qa.update({"frame_count":len(layout["frames"]),"decorations":len(layout["decorations"]),"page_px":size,"sheet_px":sheet.size})
     if qa_out:
         qa_out.mkdir(parents=True,exist_ok=True)
         (qa_out/"validate_qa.json").write_text(json.dumps(qa,ensure_ascii=False,indent=2),encoding="utf-8")

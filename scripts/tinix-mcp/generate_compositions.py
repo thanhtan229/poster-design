@@ -20,13 +20,14 @@ from workflow_compositions import check_asset
 
 SKILL_SHA256 = "be9d6da6777fd4789319abe351d1213ee560ebba2c1c27f24a376516e4f0a0fc"
 FRAME_STYLES = ("torn", "polaroid", "stamp", "notebook", "ticket")
+MIXED_FRAME_STYLES = ("swept-arch", "polaroid", "petal-cutout", "stamp", "ticket", "notebook")  # [TINIX]
 PHOTO_CODES = tuple(f"F{i:02d}" for i in range(1, 7))
 ILLUSTRATIONS = (*PHOTO_CODES, "SUBJECT")
 # Normalized centers, widths, heights and angles. Each arrangement reserves an area for the title.
 ARRANGEMENTS = (
     ((.19,.30,.27,.28,-10),(.81,.28,.26,.28,8),(.17,.57,.25,.24,-5),(.82,.53,.25,.24,10),(.23,.81,.28,.25,7),(.79,.79,.29,.27,-8)),
     ((.23,.28,.31,.22,-6),(.54,.27,.24,.21,5),(.82,.31,.23,.24,12),(.78,.57,.28,.24,-6),(.79,.81,.29,.22,7),(.48,.79,.24,.22,-12)),
-    ((.17,.33,.23,.26,7),(.21,.64,.30,.28,-10),(.43,.80,.24,.23,7),(.81,.30,.28,.23,-7),(.80,.57,.25,.24,11),(.76,.82,.32,.22,-4)),
+    ((.17,.33,.23,.26,7),(.21,.64,.30,.28,-10),(.37,.83,.24,.23,7),(.81,.30,.28,.23,-7),(.80,.57,.25,.24,11),(.76,.82,.32,.22,-4)),  # [TINIX] Keep C/F03 clear of the central cutout.
     ((.26,.27,.33,.23,-9),(.74,.27,.29,.26,9),(.17,.50,.23,.23,5),(.81,.50,.25,.22,-9),(.32,.83,.27,.22,9),(.72,.83,.27,.24,-5)),
     ((.20,.29,.28,.22,8),(.19,.51,.27,.22,-8),(.23,.76,.32,.26,6),(.48,.81,.22,.22,8),(.81,.67,.27,.24,-10),(.80,.35,.28,.27,5)),
     ((.25,.33,.34,.30,-8),(.68,.28,.26,.22,5),(.83,.48,.23,.23,9),(.21,.63,.24,.24,10),(.34,.84,.28,.20,-6),(.78,.79,.32,.26,-8)),
@@ -204,6 +205,7 @@ def build(output, config, *, static_only=False):  # [TINIX]
         for i, code in enumerate(ILLUSTRATIONS):
             catalog.add("illustration", code, theme, lambda: sample(i, colors, i == 6))
     illustrations = {a["style"]: a for a in catalog.by_key.values()}
+    styles = FRAME_STYLES if static_only else MIXED_FRAME_STYLES  # [TINIX]
     illustration_uses = 0
     reports = []
 
@@ -223,9 +225,11 @@ def build(output, config, *, static_only=False):  # [TINIX]
                                           lambda: background(width, height, colors, index)))
         frames = []
         for i, (code, pose) in enumerate(zip(PHOTO_CODES, ARRANGEMENTS[index])):
-            style = FRAME_STYLES[(i+index*2) % len(FRAME_STYLES)]
-            shape = catalog.add("frame", style, 1,
-                                lambda: clean_alpha(make_frame(style, 256, 320, 20+FRAME_STYLES.index(style))),
+            # [TINIX] Keep the legacy static-proof replay byte-compatible. New batches have every role.
+            style = styles[(i+(index*2 if static_only else index)) % len(styles)]
+            seed = 20 + styles.index(style)
+            shape = catalog.add("frame", style, 1 if static_only else 2,
+                                lambda: clean_alpha(make_frame(style, 256, 320, seed, mixed_handcut=not static_only)),
                                 source="Studio v1.2.13 / handcut_assets.make_frame", cutline="white")
             with Image.open(output / shape["file"]) as sprite:
                 detect_window(sprite, code)
@@ -252,7 +256,8 @@ def build(output, config, *, static_only=False):  # [TINIX]
         tape_asset = catalog.add("tape","handcut", index%2, lambda: clean_alpha(tape(green=bool(index%2))),
                                  source="Studio v1.2.13 / handcut_assets.tape", cutline="white")
         for i, (cx,cy,w,h,angle) in enumerate(ARRANGEMENTS[index][::2]):
-            place_asset(tape_asset, (cx-w*.13,cy-h*.43,.10,.035,angle+5), 41+i)
+            # [TINIX] Tape sits over its photo but under the central cutout.
+            place_asset(tape_asset, (cx-w*.13,cy-h*.43,.10,.035,angle+5), 27+i)
         blossom = catalog.add("flower","pastel",1,flower,cutline="white")
         place_asset(blossom,(.15+index*.02,.13,.105,.10,-9+index*5),45)
         place_asset(blossom,(.86,.91,.093,.095,14-index*5),46)
@@ -261,6 +266,7 @@ def build(output, config, *, static_only=False):  # [TINIX]
         place_asset(ribbon,(.51,.91,.16,.083,index*3-8),47)
         manifest = {
             "compositionVersion": 1, "catalogVersion": 1,
+            "mixedHandcutGeometryVersion": 1,  # [TINIX] Opt in new compositions; retained on repairs.
             "page": {"width":width,"height":height}, "print":{"dpi":254,"widthMm":width/10,"heightMm":height/10},
             "background": background_file, "frames":frames, "subject":subject, "decorations":decor,
             "assetRefs": refs, "illustrationHashes": {code: illustrations[code]["sha256"] for code in ILLUSTRATIONS},

@@ -85,6 +85,7 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
    - Khi thiếu đường cắt, kiểm hộp xếp của cụm có ôm hết đường bao giấy. Với chữ nhiều nét hoặc khe quá nhỏ, nối và lấp trên đế giấy rồi kiểm lại SVG 1:1. *Vì sao:* nét in giữ nguyên, còn đường bao có thể cắt và gỡ thành một mảnh.
    - Kiểm lại cụm vừa sửa trên hình in và đường cắt trước khi áp dụng bản vá, rồi kiểm đủ các tờ khi duyệt in. *Vì sao:* có thể phát hiện sớm lỗi còn lại của bản vá mà không phải dựng cả bộ tờ cắt ở mỗi lần sửa.
 5.6. **Kiểm mép theo lô trước khi render cả trang.** Kiểm tra tự động viền, bóng hoặc chi tiết chạm mép ngoài ý muốn ở các mảnh trong suốt; chỉ soi riêng ở 100% trên nền sáng và tối khi có cảnh báo chưa giải quyết, thấy mép đáng ngờ hoặc dùng PNG mới tách từ ảnh ghép. Sau đó xem bản render toàn trang một lượt. Với mẫu dựng từ ảnh tham chiếu, ưu tiên mảnh sạch, bố cục hợp lý và không lỗi hiển thị; MAE/SSIM chỉ để tham khảo. *Vì sao:* kiểm tự động bắt được lỗi sát khung, còn soi riêng giúp thấy vệt nền bám và viền đứt; tập trung vào mảnh có rủi ro giúp giảm thời gian kiểm và dựng lại.
+   - [TINIX] Với bố cục Mixed Handcut, kiểm hai lòng ảnh tự do ngay trên alpha của tờ RGBA và đối chiếu bản trống cùng ô caro. Hai dáng phải khác nhau sau khi bỏ ảnh hưởng của xoay, lật và đổi cỡ. Mỗi khung chỉ có một lỗ trong suốt kín. *Vì sao:* mép xé nhẹ trên một hình chữ nhật vẫn giữ nhịp khung chữ nhật. QA nhiễm ảnh có thể đạt dù bố cục thiếu hình dạng hoặc mép có lỗ nhỏ.
      Khi sửa từng mục, gắn lỗi dấu chữ hoặc chi tiết bị thiếu với vùng ảnh mẫu trong bảng **Cần sửa**. Kiểm lại lớp hoặc cụm vừa sửa trước lượt duyệt cả trang. *Vì sao:* giữ được vị trí đối chiếu và giảm số lượt dựng lại toàn trang trong lúc sửa.
      Khi duyệt lớp phủ, kiểm các khung vàng đánh số trên ảnh mẫu. Gắn vùng với lớp tương ứng nếu chi tiết đã có, hoặc dùng vùng đó để dựng chi tiết còn thiếu. *Vì sao:* vùng chưa gắn lớp có thể đã có chi tiết tương ứng trong bố cục.
 5.7. **Tự triển khai, kiểm tra và sửa lỗi trong phạm vi được giao cho đến khi đạt, không dừng để xin xác nhận các bước sửa thông thường.** *Vì sao:* giảm số lần trao đổi và bảo đảm bản bàn giao đã được kiểm tra, sửa các lỗi phát hiện.
@@ -118,6 +119,7 @@ Bộ quy tắc rút ra từ việc dựng trang báo chí cắt dán (`scripts/t
      Với khung tem bị ảnh chủ đạo che một cạnh, kiểm ba cạnh còn rõ và giữ tâm gần nhãn mã. Với khung bo góc, kiểm cả đường cong ở góc lẫn tín hiệu trên bốn phía. *Vì sao:* mép của lớp che dễ bị nhận nhầm là mép khung, còn chỉ khớp các đoạn thẳng có thể làm lệch góc bo.
 
 ## Nhật ký thay đổi quy tắc
+- 2026-11-25: bổ sung kiểm hình học lòng ảnh Mixed Handcut trên alpha ở mục 5.6 sau lượt P4.
 - 2026-11-24: bổ sung kiểm và giữ phần vật đỡ tư thế trong mặt nạ SUBJECT sau lượt sửa Sweet Memories.
 - 2026-11-23: thêm ưu tiên khuôn mặt khi gợi ý căn theo vùng khoanh.
 - 2026-11-23: bổ sung khoanh chi tiết và đọc cảnh báo ngay trong bảng kiểm crop.
