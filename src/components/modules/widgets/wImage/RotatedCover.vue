@@ -8,7 +8,7 @@
 // sau đó xoay cả lớp quanh tâm khung — ảnh bị cắt bởi khung nên phần thừa của ảnh hiện ra khi xoay (xem utils/tinix/photo-frame.ts).
 import { computed, onMounted, ref } from 'vue'
 import { imageFilterStyle } from '@/utils/tinix/image-effects'
-import { frameRotation } from '@/utils/tinix/photo-frame'
+import { frameRotation, frameBaseScale, isFitPhotoFrame } from '@/utils/tinix/photo-frame'
 
 const props = defineProps<{ image: any; src: string }>()
 const el = ref<HTMLImageElement>()
@@ -29,10 +29,10 @@ const style = computed(() => {
   const h = Number(image.height)
   const { width: nw, height: nh } = natural.value
   const base: any = { ...imageFilterStyle(image), maxWidth: 'none', transform: image.transform || undefined }
-  if (!nw || !nh) return { ...base, position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', objectFit: 'cover' }
+  if (!nw || !nh) return { ...base, position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', objectFit: isFitPhotoFrame(image) ? 'contain' : 'cover' }
   const cx = (image.cropX ?? 50) / 100
   const cy = (image.cropY ?? 50) / 100
-  const factor = Math.max(w / nw, h / nh)
+  const factor = frameBaseScale(image, natural.value)
   const sw = nw * factor
   const sh = nh * factor
   const ox = (w - sw) * cx

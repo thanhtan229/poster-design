@@ -26,6 +26,60 @@ assert.equal(filled.layouts.length,3,'All three items should fit one cut sheet')
 assert.deepEqual(filled,planCollagePrint(holes,{marginMm:5,gapMm:5}),'Packing must be deterministic')
 for(const p of filled.placements)for(const q of filled.placements)if(p!==q)assert(p.x+p.width+50<=q.x||q.x+q.width+50<=p.x||p.y+p.height+50<=q.y||q.y+q.height+50<=p.y)
 console.log('PASS free-space reuse, unchanged gap and deterministic export')
+// [TINIX] Keep valid previous positions and fall back if they cost an extra sheet.
+{
+ const opt={marginMm:5,gapMm:5}
+ const first=planCollagePrint(holes,opt)
+ const resized={...holes,layers:holes.layers.map(w=>w.uuid==='short1'?{...w,width:w.width-20}:w)}
+ const stable=planCollagePrint(resized,opt,first.packing)
+ const positions=plan=>plan.placements.map(({unitId,sheet,x,y})=>[unitId,sheet,x,y])
+ assert.equal(stable.packingMode,'retained')
+ assert.deepEqual(positions(stable),positions(first))
+ assert.equal(stable.retained,3)
+ const split={...first.packing,placements:first.placements.map(p=>p.unitId==='short1'?{...p,sheet:1}:p)}
+ assert.equal(planCollagePrint(resized,opt,split).packingMode,'repacked')
+ assert.equal(planCollagePrint(resized,opt,split).layouts.length,3)
+ assert.equal(planCollagePrint(resized,{...opt,gapMm:6},first.packing).packingMode,'fresh')
+ const overlapping={...first.packing,placements:first.placements.map(p=>({...p,x:50,y:50}))}
+ const safe=planCollagePrint(resized,opt,overlapping)
+ for(const p of safe.placements)for(const q of safe.placements)if(p!==q&&p.sheet===q.sheet)assert(p.x+p.width+50<=q.x||q.x+q.width+50<=p.x||p.y+p.height+50<=q.y||q.y+q.height+50<=p.y)
+ console.log('PASS retained sheet positions, changed profile, conflicting input and sheet-count fallback')
+}
+// [TINIX] A growing piece may move its neighbors while the other sheet stays byte-identical.
+{
+ const opt={marginMm:5,gapMm:5}
+ const start={...holes,layers:[...holes.layers,image('full',0,0,900,900,{printRole:'raised'})]}
+ const before=planCollagePrint(start,opt)
+ const changed={...start,layers:start.layers.map(w=>w.uuid==='short1'?{...w,height:400}:w)}
+ const after=planCollagePrint(changed,opt,before.packing)
+ const originalSheet=before.placements.find(p=>p.unitId==='short1').sheet
+ assert.equal(after.packingMode,'local')
+ assert.equal(after.placements.find(p=>p.unitId==='short1').sheet,originalSheet)
+ assert.equal(after.layouts.length,4)
+ assert.deepEqual(after.layouts[(1-originalSheet)+1],before.layouts[(1-originalSheet)+1])
+ assert(after.placements.some(p=>p.unitId!=='short1'&&p.sheet===originalSheet&&
+   before.placements.find(old=>old.unitId===p.unitId).y!==p.y))
+ for(const p of after.placements)for(const q of after.placements)if(p!==q&&p.sheet===q.sheet)assert(p.x+p.width+50<=q.x||q.x+q.width+50<=p.x||p.y+p.height+50<=q.y||q.y+q.height+50<=p.y)
+ console.log('PASS grown piece stays on original sheet with neighbor changes')
+}
+// [TINIX] Two grown pieces fit in two old sheets while the third sheet keeps its artwork.
+{
+ const opt={marginMm:5,gapMm:5}
+ const start={global:{width:1000,height:950,dpi:254},layers:Array.from({length:17},(_,i)=>
+   image(String(i),10,20,(i*37+117)%300+90,(i*51+69)%350+90,{printRole:'raised'}))}
+ const before=planCollagePrint(start,opt)
+ const changed={...start,layers:start.layers.map((w,i)=>({...w,width:w.width+(i===3?65:0),height:w.height+(i===4?50:0)}))}
+ const after=planCollagePrint(changed,opt,before.packing)
+ assert.equal(after.packingMode,'pair')
+ assert.equal(after.layouts.length,5)
+ assert.equal(after.layouts.slice(1,-1).filter((sheet,i)=>JSON.stringify(sheet)!==JSON.stringify(before.layouts[i+1])).length,2)
+ assert.equal(after.placements.length,17)
+ for(const p of after.placements){
+  assert(p.x>=50&&p.y>=50&&p.x+p.width<=950&&p.y+p.height<=900)
+  for(const q of after.placements)if(p!==q&&p.sheet===q.sheet)assert(p.x+p.width+50<=q.x||q.x+q.width+50<=p.x||p.y+p.height+50<=q.y||q.y+q.height+50<=p.y)
+ }
+ console.log('PASS two-sheet rearrangement keeps one complete sheet and respects the gap')
+}
 
 const decorated={global:layout.global,layers:[image('decorated',30,40,200,300,{printRole:'raised',effects:{border:12,shadow:20,brightness:115},cutoutBorderUrl:'/rim.png'})]}
 const decoratedBefore=JSON.stringify(decorated),clean=planCollagePrint(decorated,{marginMm:5,gapMm:5})

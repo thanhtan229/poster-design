@@ -11,6 +11,7 @@ const suites = [
   { name: 'Duyệt font và lịch sử', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-review.ts'], cwd: root },
   { name: 'Đổi kích thước bố cục và hoàn tác', args: [path.join(root, 'scripts/tinix-selftest/resize-layout.cjs')], cwd: root },
   { name: 'So khớp ảnh chữ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-match.ts'], cwd: root },
+  { name: 'Chuyển nét chữ sang SVG', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'ink-to-svg.ts'], cwd: root }, // [TINIX]
   { name: 'Hồ sơ kỹ thuật font', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'font-profiles.ts'], cwd: root },
   { name: 'Hoàn tác khi xóa nhiều lớp', args: [path.join(root, 'scripts/tinix-selftest/history-removals.cjs')], cwd: root },
   { name: 'Hiệu ứng và nền ảnh liên kết', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'image-effects.ts'], cwd: root },
@@ -24,6 +25,9 @@ const suites = [
   { name: 'Ảnh tải lên (ảnh nhẹ, xóa an toàn, yêu thích)', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'photos.ts'], cwd: root },
   // Kiểm thử offline thuần (thư mục tạm, không cần app/trình duyệt/DB thật) — chuyển từ các script rời trong scripts/
   { name: 'Đường cắt laser (SVG) và dấu căn', args: [path.join(root, 'scripts/tinix-cut-paths-test.cjs')], cwd: root },
+  { name: 'Kiểm khả năng cắt ở khổ in thật', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'cut-readiness.ts'], cwd: root }, // [TINIX]
+  { name: 'Bộ nhớ đệm tờ in', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'print-artifact-cache.ts'], cwd: root }, // [TINIX]
+  { name: 'Xuất lại JPG sau HTTP 408', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'print-jpg-retry.ts'], cwd: root }, // [TINIX]
   { name: 'Kế hoạch in cắt dán (collage-print)', args: [path.join(root, 'scripts/tinix-collage-print-test.cjs')], cwd: root },
   { name: 'Thư viện: sửa, lưu đè, xóa thành phần và chất liệu', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'library.ts'], cwd: root },
   { name: 'Tách phần tử: chữ kèm khung', args: [path.join(root, 'scripts/tinix-extract-assets-test.cjs')], cwd: root },
@@ -31,6 +35,11 @@ const suites = [
   { name: 'Lớp SVG đổi màu của bộ dựng cắt dán', args: [path.join(root, 'scripts/tinix-svg-layer-test.mjs')], cwd: root },
   { name: 'Dựng mẫu từ bản nháp (instantiate)', args: [path.join(root, 'scripts/tinix-instantiate-test.mjs')], cwd: root },
   { name: 'Mặt nạ cắt ảnh (mask)', args: [path.join(root, 'scripts/tinix-mask-test.mjs')], cwd: root },
+  { name: 'Nhận lòng khung PNG', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'material-opening.ts'], cwd: root }, // [TINIX]
+  { name: 'Gợi ý tệp nguyên liệu', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'material-folder.ts'], cwd: root }, // [TINIX]
+  { name: 'Tìm vùng khung trên sơ đồ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'material-diagram.ts'], cwd: root }, // [TINIX]
+  { name: 'Ghép khung từ layout.json', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'material-layout.ts'], cwd: root }, // [TINIX]
+  { name: 'Bám mép lòng vòm trên sơ đồ', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'material-opening-fit.ts'], cwd: root }, // [TINIX]
   { name: 'Tên scrapbook', args: [path.join(root, 'scripts/tinix-scrapbook-name-test.mjs')], cwd: root },
   { name: 'Dọn tệp ảnh mồ côi', args: [path.join(root, 'scripts/tinix-clean-orphans-test.mjs')], cwd: root },
   { name: 'Dựng mẫu từ ảnh tham chiếu', args: [path.join(root, 'scripts/tinix-reference-build-test.mjs')], cwd: root },

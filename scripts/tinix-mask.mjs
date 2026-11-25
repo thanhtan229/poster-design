@@ -35,7 +35,29 @@ export async function editMask(sourceFile, cutoutFile, operations, output) {
         const [a, b] = [op.points[i - 1], op.points[i]], steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / Math.max(0.5, op.radius / 2)))
         for (let step = 1; step <= steps; step++) stamp(a[0] + (b[0] - a[0]) * step / steps, a[1] + (b[1] - a[1]) * step / steps)
       }
-    } else throw new Error('Mask shape must be rect or brush')
+    } else if (op.shape === 'polygon') {
+      // [TINIX] Antialias a closed outline before applying its coverage to the alpha.
+      if (!Array.isArray(op.points) || op.points.length < 3 || op.points.length > 512 ||
+          op.points.some(p => !Array.isArray(p) || p.length !== 2 || !p.every(Number.isFinite) ||
+            p[0] < 0 || p[0] > width || p[1] < 0 || p[1] > height)) throw new Error('Invalid mask polygon')
+      const left = Math.floor(Math.min(...op.points.map(([x]) => x)))
+      const top = Math.floor(Math.min(...op.points.map(([, y]) => y)))
+      const boxWidth = Math.ceil(Math.max(...op.points.map(([x]) => x))) - left
+      const boxHeight = Math.ceil(Math.max(...op.points.map(([, y]) => y))) - top
+      if (!boxWidth || !boxHeight) throw new Error('Invalid mask polygon')
+      const points = op.points.map(([x, y]) => `${x - left},${y - top}`).join(' ')
+      const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${boxWidth}" height="${boxHeight}"><polygon points="${points}" fill="white"/></svg>`)
+      const coverage = await sharp(svg, { limitInputPixels: 32000000 }).extractChannel('alpha').raw().toBuffer()
+      for (let y = 0; y < boxHeight; y++) {
+        for (let x = 0; x < boxWidth; x++) {
+          const fraction = coverage[y * boxWidth + x] / 255
+          const index = ((top + y) * width + left + x) * 4 + 3
+          const alpha = result[index]
+          result[index] = Math.round(op.mode === 'erase'
+            ? alpha * (1 - fraction) : Math.max(alpha, source.data[index] * fraction))
+        }
+      }
+    } else throw new Error('Mask shape must be rect, brush or polygon') // [TINIX]
   }
   let visible = 0
   for (let i = 3; i < result.length; i += 4) if (result[i]) visible++

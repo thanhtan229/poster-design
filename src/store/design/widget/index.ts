@@ -41,6 +41,7 @@ export type TdWidgetData = TPageState & Partial<TCommonItemData> & {
   keepCover?: boolean // [TINIX] lớp ảnh phủ kín trang: kéo di chuyển nhưng luôn phủ kín trang (mẫu 1 ảnh mặc định)
   layerName?: string // [TINIX] tên lớp do người dùng đặt (ưu tiên hơn chữ/tên mặc định)
   imgUrl?: string
+  cutoutRepair?: import('@/utils/tinix/cutout-workspace').CutoutRepair // [TINIX] Editable paths stored in the draft.
   rotate?: string
   transform?: string
   sliceData?: Record<string, any>

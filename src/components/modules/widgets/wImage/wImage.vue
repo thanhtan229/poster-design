@@ -35,7 +35,7 @@
     <ImageSurface :image="params" :src="source.imgUrl">
       <div v-if="params.isNinePatch" ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), border: `${(params.height * params.sliceData.ratio) / 2}px solid transparent`, borderImage: `url('${source.imgUrl}') ${params.sliceData.left} round` }"></div>
       <RotatedCover v-else-if="rotated" :image="params" :src="source.imgUrl" />
-      <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
+      <img v-else ref="targetRef" class="target" :style="{ ...imageFilterStyle(params), transformOrigin: params.fit === 'cover' || isFitPhotoFrame(params) ? `${params.cropX ?? 50}% ${params.cropY ?? 50}%` : 'center', objectFit: (params.fit || undefined) as any, objectPosition: `${params.cropX ?? 50}% ${params.cropY ?? 50}%` }" :src="source.imgUrl" /> <!-- [TINIX] giữ điểm căn ảnh trong khung -->
     </ImageSurface>
     <div v-if="isMask" class="drop__mask">
       <div putIn="true" :style="{ fontSize: params.width / 12 + 'px' }" class="drop__btn">{{ $t('editor.image.dropHere') }}</div>
@@ -46,7 +46,7 @@
 <script lang="ts" setup>
 import ImageSurface from './ImageSurface.vue'
 import RotatedCover from './RotatedCover.vue' // [TINIX]
-import { frameRotation, unrotateDelta, canEditPhoto, enterPhotoEdit } from '@/utils/tinix/photo-frame' // [TINIX]
+import { frameRotation, unrotateDelta, canEditPhoto, enterPhotoEdit, isFitPhotoFrame } from '@/utils/tinix/photo-frame' // [TINIX]
 import { imageFilterStyle, imageFrameStyle, resolveLinkedImage } from '@/utils/tinix/image-effects'
 
 // 图片组件

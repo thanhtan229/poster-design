@@ -59,6 +59,20 @@ const perimeter = (pts) => pts.reduce((s, p, i) => s + Math.hypot(pts[(i + 1) % 
   assert.equal(r.loops, 2, `vòng ngoài + lỗ, bỏ đốm nhiễu (đo được ${r.loops})`)
 }
 // 6) dấu căn trong SVG và hình học dấu căn của bộ xếp
+// [TINIX] The selected unit drops interior holes, while another unit keeps its normal contours.
+{
+  const alpha = blank()
+  disc(alpha, 55, 50, 30); disc(alpha, 55, 50, 12, 0)
+  disc(alpha, 175, 50, 30); disc(alpha, 175, 50, 12, 0)
+  rect(alpha, 31, 100, 68, 135); rect(alpha, 85, 100, 112, 135)
+  const placement = place(10, 10, 110, 135)
+  const options = { alpha, width: W, height: H, dpi: DPI, defaultInsetMm: 0 }
+  const normal = buildCutSvg({ ...options, placements: [placement, place(130, 10, 100, 80)] })
+  const exterior = buildCutSvg({ ...options, placements: [{ ...placement, cutOuterOnly: true }, place(130, 10, 100, 80)] })
+  assert.equal(normal.loops, 6)
+  assert.equal(exterior.loops, 5)
+  assert.equal(alpha[50 * W + 55], 0)
+}
 {
   const m = markCorners(W, H, DPI)
   assert.equal(m.length, 3); near(m[0].x, MARK.offsetMm * 10, 0.01, 'TL x'); near(m[1].x, W - MARK.offsetMm * 10, 0.01, 'TR x'); near(m[2].y, H - MARK.offsetMm * 10, 0.01, 'BL y')
@@ -71,7 +85,7 @@ const perimeter = (pts) => pts.reduce((s, p, i) => s + Math.hypot(pts[(i + 1) % 
 // 7) bộ xếp: dấu căn chỉ thêm khi bật và lề đủ; không vào placements; mang cutInset của mảnh
 {
   const image = (uuid, w, h, extra = {}) => ({ uuid, type: 'w-image', parent: '-1', left: 0, top: 0, width: w, height: h, printRole: 'raised', ...extra })
-  const lay = { global: { width: 1000, height: 800, dpi: 254, backgroundColor: '#eee' }, layers: [image('bg', 1000, 800, { printRole: 'base' }), image('a', 300, 200, { cutInset: 12 }), image('b', 200, 200)] }
+  const lay = { global: { width: 1000, height: 800, dpi: 254, backgroundColor: '#eee' }, layers: [image('bg', 1000, 800, { printRole: 'base' }), image('a', 300, 200, { cutInset: 12, cutOuterOnly: true }), image('b', 200, 200)] }
   const base = { marginMm: 10, gapMm: 3 }
   const off = planCollagePrint(lay, base), on = planCollagePrint(lay, { ...base, marks: true }), narrow = planCollagePrint(lay, { marginMm: 2, gapMm: 3, marks: true })
   const cut = (p) => p.layouts.slice(1, -1)
@@ -81,6 +95,8 @@ const perimeter = (pts) => pts.reduce((s, p, i) => s + Math.hypot(pts[(i + 1) % 
   assert.equal(on.placements.length, 2, 'dấu căn không phải mảnh'); assert.equal(on.layouts[0].layers.filter((l) => l.printMark).length, 0, 'tờ nền và thành phẩm không có dấu')
   assert.equal(on.layouts.at(-1).layers.filter((l) => l.printMark).length, 0)
   assert.equal(on.placements.find((p) => p.width === 300).cutInset, 12); assert.equal(on.placements.find((p) => p.width === 200).cutInset, 0)
+  assert.equal(on.placements.find((p) => p.width === 300).cutOuterOnly, true)
+  assert.equal(on.placements.find((p) => p.width === 200).cutOuterOnly, undefined)
   // dấu căn nằm trong vùng lề, không đè lên mảnh nào
   const mk = cut(on)[0].layers.filter((l) => l.printMark), margin = Math.ceil((10 * 254) / 25.4)
   for (const l of mk) assert.ok(l.left < margin || l.top < margin || l.left + l.width > 1000 - margin || l.top + l.height > 800 - margin, 'dấu căn nằm ở vùng lề')

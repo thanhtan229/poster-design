@@ -51,8 +51,9 @@
       <br />
     </el-collapse>
     <!-- <CropImage ref="crop" @done="cropDone" /> -->
-    <inner-tool-bar v-show="state.innerElement.cropEdit" :style="toolBarStyle">
-      <number-slider v-model="state.innerElement.zoom" class="inner-bar" :label="$t('editor.prop.zoom')" labelWidth="76px" :step="0.01" :minValue="1" :maxValue="3" />
+    <!-- [TINIX] The legacy crop control must not clamp Fit zoom while hidden. -->
+    <inner-tool-bar v-if="state.innerElement.cropEdit" :style="toolBarStyle">
+      <number-slider v-model="state.innerElement.zoom" class="inner-bar" :label="$t('editor.prop.zoom')" labelWidth="76px" :step="0.01" :minValue="minFrameZoom(state.innerElement)" :maxValue="3" />
       <i style="padding: 0 8px; cursor: pointer" class="icon sd-queren" @click="imgCrop(false)" />
     </inner-tool-bar>
     <picBox ref="picBoxRef" @select="selectDone" />
@@ -91,6 +92,7 @@ import { TGetImageListResult } from '@/api/material'
 import { storeToRefs } from 'pinia'
 import { useCanvasStore, useControlStore, useForceStore, useWidgetStore } from '@/store'
 import { fillSubjectFrame, isSubjectFrame, subjectFrameOf } from '@/utils/tinix/subject-fill' // [TINIX] khung tách nền
+import { isFitPhotoFrame, minFrameZoom } from '@/utils/tinix/photo-frame' // [TINIX] giữ lòng khung khi thay ảnh Vừa ảnh
  // [TINIX]
 import { TUpdateWidgetPayload } from '@/store/design/widget/actions/widget'
 import { TupdateLayerIndexData } from '@/store/design/widget/actions/layer'
@@ -189,7 +191,8 @@ created()
 
 function change() {
   tag = true
-  state.innerElement = JSON.parse(JSON.stringify({ ...state.innerElement, ...dActiveElement.value }))
+  // [TINIX] Rebuild from image defaults so optional fields cannot leak from the previous layer.
+  state.innerElement = JSON.parse(JSON.stringify({ ...wImageSetting, ...dActiveElement.value }))
 }
 
 function changeValue() {
@@ -310,7 +313,7 @@ async function selectDone(img: TGetImageListResult) {
   }
   state.innerElement.imgUrl = img.url
   // [TINIX] khung ảnh (fit=cover): giữ kích thước khung, không đổi theo kích thước gốc của ảnh mới
-  if (state.innerElement.fit === 'cover') return
+  if (state.innerElement.fit === 'cover' || isFitPhotoFrame(state.innerElement)) return
   const loadImg = await getImage(img.url)
   state.innerElement.width = (loadImg.width * canvasStore.dZoom) / 100
   state.innerElement.height = (loadImg.height * canvasStore.dZoom) / 100

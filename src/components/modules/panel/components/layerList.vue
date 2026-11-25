@@ -12,6 +12,17 @@
       <button type="button" :disabled="!selectedSlots.length" @click="setSlots(true)">{{ $t('tinix.ui.photoAuto.danh_dau_nhieu') }}</button>
       <button type="button" :disabled="!selectedSlots.length" @click="setSlots(false)">{{ $t('tinix.ui.photoAuto.bo_danh_dau') }}</button>
     </li>
+    <!-- [TINIX] Inspect the current page layers from the layer panel. -->
+    <li class="slot-actions">
+      <button type="button" @click="openEdgeReview">{{ $t('tinix.ui.cutoutTools.review') }}</button>
+        <button type="button" @click="openPairInput">{{ $t('tinix.ui.cutoutTools.openPair') }}</button>
+      <CutoutEdgeReview ref="edgeReview" />
+        <ImageCutout ref="imageCutout" />
+    </li>
+    <li class="slot-actions">
+      <button type="button" @click="inkTraceOpen = true">{{ $t('tinix.ui.cutoutTools.inkTitle') }}</button>
+      <InkTraceDialog v-model="inkTraceOpen" />
+    </li>
     <!-- <li v-for="widget in getWidgets" :key="widget.uuid" :class="['widget', { active: getIsActive(widget.uuid) }, 'item-one']" @click="selectLayer(widget)" @mouseover="hoverLayer(widget.uuid)" @mouseout="hoverLayer('-1')">
       <span v-show="widget.parent !== '-1'" :class="['widget-type icon', `sd-xiaji`]"></span>
       <img v-if="widget.imgUrl" class="widget-type widget-type__img" :src="widget.imgUrl" />
@@ -53,13 +64,22 @@ import { TdWidgetData } from '@/store/design/widget'
 import { defineComponent, computed, reactive, ref, toRefs } from 'vue'
 
 import draggable from 'vuedraggable'
+import CutoutEdgeReview from '@/components/business/ai-assistant/CutoutEdgeReview.vue' // [TINIX]
+import ImageCutout from '@/components/business/image-cutout/ImageCutout/index.vue' // [TINIX]
+import InkTraceDialog from '@/components/business/ai-assistant/InkTraceDialog.vue' // [TINIX]
 
 export default defineComponent({
-  components: { draggable },
+  components: { draggable, CutoutEdgeReview, ImageCutout, InkTraceDialog }, // [TINIX]
   props: ['data'],
   emits: ['change'],
   setup(props, context) {
     const widgetStore = useWidgetStore()
+    // [TINIX] Use the active page so other pages do not enter the scan.
+    const edgeReview = ref<InstanceType<typeof CutoutEdgeReview>>()
+    const openEdgeReview = () => edgeReview.value?.open(widgetStore.dWidgets)
+    const imageCutout = ref<InstanceType<typeof ImageCutout>>()
+    const openPairInput = () => imageCutout.value?.openPairInput()
+    const inkTraceOpen = ref(false)
     const selectedSlots = ref<string[]>([])
     const setSlots = (value: boolean) => {
       for (const uuid of selectedSlots.value) {
@@ -189,7 +209,7 @@ export default defineComponent({
       widgetStore.updateWidgetData({ uuid: item.uuid, key: 'layerName', value: v === original ? '' : v })
     }
 
-    return { selectedSlots, setSlots, toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem }
+    return { edgeReview, openEdgeReview, imageCutout, openPairInput, inkTraceOpen, selectedSlots, setSlots, toggleHidden, renamingUuid, renameValue, startRename, commitRename, lockLayer, onDone, onMove, selectLayer, hoverLayer, widgets, getWidgets, getIsActive, ...toRefs(state), dragOptions, showItem } // [TINIX]
   },
   watch: {
     data: {

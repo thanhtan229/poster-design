@@ -2,6 +2,10 @@
 
 Dự án TinixPoster: app thiết kế ảnh cưới/truyền thông, chỉ một người dùng, chạy localhost. Tài liệu đầy đủ: `CLAUDE.md` (quy ước repo, stack, lệnh) và `TINIX.md` (ghi chú kỹ thuật).
 
+## Đề xuất cải tiến sau mỗi task
+
+Cuối mỗi task TinixPoster, chủ động đề xuất các bước hợp lý tiếp theo để dựng mẫu nhanh và hiệu quả hơn. Dựa vào vướng mắc, thao tác lặp hoặc thời gian chờ vừa quan sát được. Chọn một bước ưu tiên, giải thích ngắn vì sao và nêu cách đo hiệu quả khi có thể. Đối chiếu với công cụ hiện có để tránh đề xuất trùng. Nếu chưa có cải tiến đáng làm, nói rõ. Triển khai đề xuất mới khi người dùng duyệt hoặc khi nó đã thuộc phạm vi task hiện tại.
+
 ## Dựng trang cắt dán (scrapbook, báo chí, mẫu sinh nhật...)
 Khi được nhờ tạo mẫu mới, đổi phong cách, sửa bố cục, khung ảnh, chữ dán, hoặc xuất tờ cắt/laser:
 
@@ -12,7 +16,7 @@ Khi được nhờ tạo mẫu mới, đổi phong cách, sửa bố cục, khun
    - Kiểm tra: `node scripts/tinix-cli.mjs drafts validate --input ...` rồi `drafts render --input ... --output ...`, và **xem ảnh xem trước**.
    - Lưu: `node scripts/tinix-cli.mjs designs create --input ... --title "..."` (trả về mã thiết kế).
    - Xuất cắt: `node scripts/tinix-cli.mjs collage export --id <mã> --directory <thư mục> --margin 8 --gap 4`. Không được có cảnh báo.
-4. Khi người dùng nhận xét một chỗ chưa ổn: thêm **một dòng** quy tắc vào `DESIGN-RULES.md` kèm lý do (*Vì sao*) và ghi vào nhật ký cuối file, cùng commit với thay đổi mẫu.
+4. Sau khi xử lý phản hồi của người dùng, đối chiếu với `DESIGN-RULES.md`. Chủ động bổ sung hoặc sửa quy tắc khi bài học áp dụng được cho mẫu sau, nêu lý do (*Vì sao*) và ghi nhật ký cuối file ngay trong lượt làm việc. Gộp vào quy tắc sẵn có khi trùng nội dung. Ghi chi tiết riêng của mẫu vào hồ sơ bản nháp. Chỉ commit khi phạm vi người dùng cho phép.
 
 ## Dựng mẫu cắt dán từ MỘT ảnh tham chiếu (ảnh chụp trang scrapbook)
 Khi người dùng đưa một ảnh mẫu và nhờ "dựng giống ảnh này" thì dùng đường này (không viết script dựng tay). Tài liệu đầy đủ: mục **"Dựng mẫu cắt dán từ ảnh tham chiếu"** trong `TINIX.md` (định dạng spec, các điều đã thử không hiệu quả). Không gọi AI trả phí.
@@ -26,10 +30,12 @@ Khi người dùng đưa một ảnh mẫu và nhờ "dựng giống ảnh này"
 ```text
 node scripts/tinix-cli.mjs reference grid --input ref.png --output ref-grid.png
 #   xem ref-grid.png, đọc toạ độ (px của ảnh gốc) rồi viết spec.json
-node scripts/tinix-cli.mjs drafts from-reference --reference ref.png --spec spec.json --output draft.json
+node scripts/tinix-cli.mjs drafts from-reference --reference ref.png --spec spec.json --output draft.json --photos placeholder
+node scripts/tinix-cli.mjs drafts validate --input draft.json
+node scripts/tinix-cli.mjs drafts check-edges --input draft.json
 node scripts/tinix-cli.mjs drafts render --input draft.json --output render.png
-node scripts/tinix-cli.mjs reference compare --reference ref.png --render render.png --spec spec.json --output cmp.png
-#   xem render.png và cmp.png (mẫu | render | bản đồ lệch), sửa spec, lặp lại 3 lệnh trên
+node scripts/tinix-cli.mjs reference compare --reference ref.png --draft draft.json --spec spec.json --output cmp.png
+#   xem hai ảnh, ưu tiên lớp có sai khác thấy rõ; sau khi sửa, kiểm và render lại
 node scripts/tinix-cli.mjs templates save-collage --input draft.json --name "Tên mẫu"   # CHỈ khi người dùng đã duyệt
 ```
 

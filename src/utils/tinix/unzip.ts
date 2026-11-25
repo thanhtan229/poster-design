@@ -1,5 +1,5 @@
 // [TINIX] Đọc tệp ZIP (kiểu lưu không nén của zip.ts, có hỗ trợ deflate để người dùng nén lại bằng công cụ khác).
-export type ZipEntry = { name: string; blob: () => Promise<Blob> }
+export type ZipEntry = { name: string; blob: (limit?: number) => Promise<Blob> }
 
 function readU32(view: DataView, offset: number) {
   return view.getUint32(offset, true)
@@ -34,13 +34,28 @@ export async function unzip(file: Blob): Promise<ZipEntry[]> {
     if (name.endsWith('/')) continue
     entries.push({
       name,
-      blob: async () => {
+      blob: async (limit) => {
         if (readU32(view, localOffset) !== 0x04034b50) throw new Error('ZIP bị hỏng (tệp ' + name + ')')
         const start = localOffset + 30 + view.getUint16(localOffset + 26, true) + view.getUint16(localOffset + 28, true)
         const data = bytes.subarray(start, start + compressed)
-        if (method === 0) return new Blob([data])
+        if (method === 0) {
+          if (limit !== undefined && data.length > limit) throw new Error('ZIP entry exceeds size limit')
+          return new Blob([data])
+        }
         if (method !== 8) throw new Error('ZIP dùng kiểu nén không hỗ trợ')
         const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+        // [TINIX] Bound decompression for the material ZIP importer.
+        if (limit !== undefined) {
+          let size = 0
+          const bounded = stream.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+            transform(chunk, controller) {
+              size += chunk.length
+              if (size > limit) throw new Error('ZIP entry exceeds size limit')
+              controller.enqueue(chunk)
+            },
+          }))
+          return new Response(bounded).blob()
+        }
         return new Response(stream).blob()
       },
     })

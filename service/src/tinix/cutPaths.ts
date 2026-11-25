@@ -238,7 +238,7 @@ export function simplifyClosed(points: Pt[], tol: number): Pt[] {
   return first.slice(0, -1).concat(second.slice(0, -1))
 }
 
-export type CutPlacement = { x: number; y: number; width: number; height: number; cutInset?: number }
+export type CutPlacement = { x: number; y: number; width: number; height: number; cutInset?: number; cutOuterOnly?: boolean }
 export type CutSvgOptions = {
   alpha: Uint8Array
   width: number
@@ -254,12 +254,55 @@ export type CutSvgOptions = {
 }
 export type CutResult = { svg: string; pieces: number; loops: number; perimeterMm: number }
 
+// [TINIX] Fill enclosed voids in the cutting mask. Keep exterior gaps and separate pieces.
+function fillCutHoles(mask: Uint8Array, width: number, height: number, placement: CutPlacement) {
+  const left = Math.max(0, Math.floor(placement.x))
+  const top = Math.max(0, Math.floor(placement.y))
+  const w = Math.min(width, Math.ceil(placement.x + placement.width)) - left
+  const h = Math.min(height, Math.ceil(placement.y + placement.height)) - top
+  if (w < 3 || h < 3) return
+  const seen = new Uint8Array(w * h)
+  const queue = new Int32Array(seen.length)
+  let tail = 0
+  function visit(index: number) {
+    if (seen[index]) return
+    seen[index] = 1
+    const x = index % w
+    const y = Math.floor(index / w)
+    if (!mask[(top + y) * width + left + x]) queue[tail++] = index
+  }
+  for (let x = 0; x < w; x++) {
+    visit(x)
+    visit((h - 1) * w + x)
+  }
+  for (let y = 0; y < h; y++) {
+    visit(y * w)
+    visit(y * w + w - 1)
+  }
+  for (let head = 0; head < tail; head++) {
+    const index = queue[head]
+    const x = index % w
+    if (x > 0) visit(index - 1)
+    if (x + 1 < w) visit(index + 1)
+    if (index >= w) visit(index - w)
+    if (index + w < seen.length) visit(index + w)
+  }
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (!seen[y * w + x]) mask[(top + y) * width + left + x] = 1
+    }
+  }
+}
+
 /** Dựng SVG đường cắt: mm, tỉ lệ 1:1, lớp "Cat" (đỏ) cho đường cắt và "Can" (xanh) cho dấu căn. */
 export function buildCutSvg(o: CutSvgOptions): CutResult {
   const { width, height, dpi } = o
   const mmPerPx = 25.4 / dpi
   const mask = new Uint8Array(width * height)
   for (let i = 0; i < mask.length; i++) mask[i] = o.alpha[i] >= 128 ? 1 : 0
+  for (const placement of o.placements) {
+    if (placement.cutOuterOnly === true) fillCutHoles(mask, width, height, placement)
+  }
   const field = smoothField(signedDistance(mask, width, height), width, height, o.smoothPx === undefined ? 1.2 : o.smoothPx)
   const defaultInset = (o.defaultInsetMm === undefined ? 0.3 : o.defaultInsetMm) / mmPerPx
   const tol = (o.toleranceMm === undefined ? 0.05 : o.toleranceMm) / mmPerPx

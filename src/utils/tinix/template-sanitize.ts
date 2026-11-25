@@ -101,9 +101,12 @@ const DROP = ['origin', 'stickerBorder', 'cutoutEdit', 'cutoutBorderUrl', 'cutIn
 /** Đổi một lớp ảnh dùng ảnh tải lên thành khung trống (sửa trực tiếp trên bản sao). Trả về loại khung hoặc null. */
 function blankImage(w: any, dpi: number): 'photo' | 'subject' | null {
   if (!w || w.type !== 'w-image') return null
-  const urls = [w.imgUrl, w.origin && w.origin.original, w.stickerBorder && w.stickerBorder.baseUrl, w.cutoutBorderUrl]
-  if (!urls.some(isUploadUrl) && !isCliHeroUrl(w.imgUrl)) return null
-  const subject = isSubject(w)
+  // [TINIX] Keep repair sources and recipes in drafts, never in shared templates.
+  const repair = String(w.imgUrl || '').startsWith('data:image/png;') ? w.cutoutRepair : undefined
+  delete w.cutoutRepair
+  const urls = [w.imgUrl, w.origin && w.origin.original, w.stickerBorder && w.stickerBorder.baseUrl, w.cutoutBorderUrl, repair?.base]
+  if (!repair?.privateAsset && !urls.some(isUploadUrl) && !urls.some(isCliHeroUrl)) return null
+  const subject = !!repair?.privateAsset || isSubject(w) || isCliHeroUrl(repair?.base)
   const mm = subject ? borderMmOf(w, dpi) : 0
   for (const k of DROP) delete w[k]
   w.imgUrl = subject ? subjectPlaceholder(w, mm) : photoPlaceholder(w)
@@ -121,6 +124,11 @@ function blankImage(w: any, dpi: number): 'photo' | 'subject' | null {
 
 /** Làm sạch một trang { global, layers } (bản sao). */
 function sanitizePage(page: any, report: SanitizeReport) {
+  if (page?.global) {
+    // [TINIX] Reference images and unplaced material stay in local drafts.
+    delete page.global.referenceGuide
+    delete page.global.materialSession
+  }
   if (page && page.global && isUploadUrl(page.global.backgroundImage)) {
     page.global.backgroundImage = ''
     report.background++

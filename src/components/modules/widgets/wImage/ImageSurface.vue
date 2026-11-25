@@ -13,12 +13,12 @@
 import {computed} from 'vue'
 import ImageAppearance from './ImageAppearance.vue'
 import RotatedCover from './RotatedCover.vue' // [TINIX]
-import {frameRotation} from '@/utils/tinix/photo-frame'
+import {frameRotation,isFitPhotoFrame} from '@/utils/tinix/photo-frame'
 import {imageFilterStyle} from '@/utils/tinix/image-effects'
 const props=defineProps<{image:any;src:string}>()
 const rotated=computed(()=>frameRotation(props.image)!==0) // [TINIX] ảnh trong khung có xoay
 const flip=computed(()=>props.image.flip?`rotate${props.image.flip}(180deg)`:undefined)
-const imageStyle=computed(()=>({...imageFilterStyle(props.image),transform:props.image.transform||undefined,transformOrigin:props.image.fit==='cover'?`${props.image.cropX??50}% ${props.image.cropY??50}%`:'center',objectFit:props.image.fit||undefined,objectPosition:`${props.image.cropX??50}% ${props.image.cropY??50}%`}))
+const imageStyle=computed(()=>({...imageFilterStyle(props.image),transform:props.image.transform||undefined,transformOrigin:props.image.fit==='cover'||isFitPhotoFrame(props.image)?`${props.image.cropX??50}% ${props.image.cropY??50}%`:'center',objectFit:props.image.fit||undefined,objectPosition:`${props.image.cropX??50}% ${props.image.cropY??50}%`}))
 </script>
 <style scoped>
 .cutout-border{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}

@@ -31,7 +31,9 @@ function snapshot() {
 // "Có thay đổi chưa lưu" dựa trên lịch sử hoàn tác (không so sánh JSON vì editor tự chuẩn hóa dữ liệu sau khi nạp).
 function signature() {
   const history = useHistoryStore()
-  return history.dHistoryStack.changes.length + ':' + history.dHistoryParams.stackPointer
+  // [TINIX] A saved editing session is draft data and does not create a canvas undo step.
+  const sessions = useWidgetStore().dLayouts.map(layout => layout.global.materialSession?.id ?? '')
+  return JSON.stringify([history.dHistoryStack.changes.length, history.dHistoryParams.stackPointer, sessions])
 }
 /** Ghi nhận trạng thái hiện tại là "đã lưu" (mở mẫu, mở tệp, lưu về máy). */
 export function markSaved() {
@@ -336,8 +338,14 @@ async function dbRun<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) =
 export async function clearDraft() {
   try { await dbRun('readwrite', (s) => s.delete('current')) } catch (_) { /* không có IndexedDB: bỏ qua */ }
 }
-async function saveDraft() {
-  try { await dbRun('readwrite', (s) => s.put({ title: designTitle.value, layouts: snapshot(), paths: project.paths.slice(), savedAt: Date.now() }, 'current')) } catch (_) { /* bỏ qua */ }
+// [TINIX] The material panel can request an immediate draft write after saving its session.
+export async function saveDraft() {
+  try {
+    await dbRun('readwrite', (s) => s.put({ title: designTitle.value, layouts: snapshot(), paths: project.paths.slice(), savedAt: Date.now() }, 'current'))
+    return true
+  } catch (_) {
+    return false
+  }
 }
 async function readDraft(): Promise<{ title: string; layouts: string; paths?: string[]; savedAt: number } | null> {
   try { return (await dbRun<any>('readonly', (s) => s.get('current'))) || null } catch (_) { return null }

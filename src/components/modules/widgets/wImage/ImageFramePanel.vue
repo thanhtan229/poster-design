@@ -2,12 +2,12 @@
 <section data-photo-history class="frame-panel" @keydown="onKey" @keyup="stopArrow">
  <strong>Căn ảnh và khung</strong>
  <button v-if="canEditPhoto(image)" class="edit-photo" :aria-pressed="editingPhoto" @click="toggleEdit">{{editingPhoto?$t('tinix.ui.photoFrame.editing'):$t('tinix.ui.photoFrame.edit')}}</button>
- <p v-if="image.fit==='cover'">{{$t('tinix.ui.photoFrame.edit_hint')}}</p>
- <template v-if="image.fit==='cover'">
- <label>Phóng ảnh {{Number(image.zoom||1).toFixed(2)}}×<input aria-label="Phóng ảnh trong khung" type="range" min="1" :max="MAX_FRAME_ZOOM" step="0.01" :value="image.zoom||1" @input="zoom(Number(($event.target as HTMLInputElement).value))" @change="commit" @blur="commit"></label>
+ <p v-if="canEditPhoto(image)">{{$t('tinix.ui.photoFrame.edit_hint')}}</p>
+ <template v-if="canEditPhoto(image)">
+ <label>Phóng ảnh {{Number(image.zoom||1).toFixed(2)}}×<input aria-label="Phóng ảnh trong khung" type="range" :min="minFrameZoom(image)" :max="MAX_FRAME_ZOOM" step="0.01" :value="image.zoom||1" @input="zoom(Number(($event.target as HTMLInputElement).value))" @change="commit" @blur="commit"></label>
  <label>{{$t('tinix.ui.photoFrame.rotate')}} {{Number(image.imgRotate||0).toFixed(1)}}°<input :aria-label="$t('tinix.ui.photoFrame.rotate')" type="range" min="-180" max="180" step="0.5" :value="image.imgRotate||0" @input="rotate(Number(($event.target as HTMLInputElement).value))" @change="commit" @blur="commit"></label>
  <div class="mode-buttons"><button @click="turn(-90)">{{$t('tinix.ui.photoFrame.turn_left')}}</button><button @click="turn(90)">{{$t('tinix.ui.photoFrame.turn_right')}}</button></div>
- <button @click="center">Căn giữa ảnh</button><button @click="fit">Vừa khung</button>
+ <button @click="center">Căn giữa ảnh</button><button @click="fit">{{$t('tinix.ui.photoFrame.reset_crop')}}</button>
  </template>
  <label>Vai trò ảnh<select aria-label="Vai trò ảnh" :value="role" @change="roleEvent"><option value="main">Ảnh chính — nhận ảnh thay thế</option><option value="subject">{{$t('tinix.ui.subjectFill.role')}}</option><option value="linked">Nền liên kết</option><option value="decoration">Ảnh trang trí</option></select></label>
  <label v-if="role==='subject'">{{$t('tinix.ui.subjectFill.border_mm')}}<input :aria-label="$t('tinix.ui.subjectFill.border_mm')" type="number" min="0" max="8" step="0.5" :value="image.templateBorderMm ?? 0" @change="setBorderMm(Number(($event.target as HTMLInputElement).value))"></label>
@@ -21,7 +21,7 @@
 <script setup lang="ts">
 import {computed,ref} from 'vue'
 import {useWidgetStore,useHistoryStore} from '@/store'
-import {createFrameHistory,setFrameZoom,setFrameRotation,MAX_FRAME_ZOOM,photoEdit,canEditPhoto,enterPhotoEdit,exitPhotoEdit} from '@/utils/tinix/photo-frame'
+import {createFrameHistory,setFrameZoom,setFrameRotation,MAX_FRAME_ZOOM,minFrameZoom,photoEdit,canEditPhoto,enterPhotoEdit,exitPhotoEdit} from '@/utils/tinix/photo-frame' // [TINIX]
 import {resolveLinkedImage} from '@/utils/tinix/image-effects'
 import {photoRole} from '@/utils/tinix/template-photo'
 const props=defineProps<{image:any}>(); const ws=useWidgetStore()

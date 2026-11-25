@@ -1,5 +1,5 @@
 /** Pure production planner shared by editor and server. Coordinates remain document pixels. */
-export type PrintUnit={id:string;name:string;raised:boolean;ids:string[];bounds:{x:number;y:number;width:number;height:number}}
+export type PrintUnit={id:string;name:string;raised:boolean;cutOuterOnly?:boolean;ids:string[];bounds:{x:number;y:number;width:number;height:number}}
 // Giới hạn xuất: khớp MAX_SIDE_PX / MAX_PIXELS ở src/utils/tinix/units.ts. Không import units.ts vì file này dùng chung với server (units.ts kéo theo vue).
 const MAX_SIDE=12000
 const MAX_PIXELS=100000000
@@ -25,11 +25,16 @@ export function printUnits(layers:any[]):PrintUnit[]{
    x=Math.min(x,...corners.map(p=>p.x-padding));y=Math.min(y,...corners.map(p=>p.y-padding));right=Math.max(right,...corners.map(p=>p.x+padding));bottom=Math.max(bottom,...corners.map(p=>p.y+padding))
   }
   const raised=primary.printRole?primary.printRole==='raised':members.some(w=>w.cutoutEdit||String(w.name).includes('cắt nổi'))
-  units.push({id,name:primary.printName||primary.name||'Cụm ảnh',raised,ids:members.map(w=>String(w.uuid)),bounds:{x,y,width:right-x,height:bottom-y}})
+  // [TINIX] The same cut mode follows the unit from the editor to the final SVG.
+  units.push({id,name:primary.printName||primary.name||'Cụm ảnh',raised,cutOuterOnly:primary.cutOuterOnly===true||undefined,
+   ids:members.map(w=>String(w.uuid)),bounds:{x,y,width:right-x,height:bottom-y}})
  })
  return units
 }
 export type PrintOptions={paperWidthMm?:number;paperHeightMm?:number;marginMm:number;gapMm:number;marks?:boolean}
+// [TINIX] Positions from a completed preview and its physical sheet profile.
+export type PrintPlacement={unitId:string;sheet:number;x:number;y:number;width:number;height:number;cutInset?:number;cutOuterOnly?:boolean}
+export type PrintPacking={profile:string;placements:PrintPlacement[]}
 // Dấu căn laser: 3 góc chữ L (trên-trái, trên-phải, dưới-trái) nằm trong vùng lề, cách mép tờ MARK.offsetMm, hai cạnh dài MARK.armMm.
 // In lên tờ cắt (JPG) và nằm trong SVG đường cắt: đặt đầu laser lên đỉnh chữ L để căn. Chỉ thêm khi options.marks===true và lề >= MARK.minMarginMm.
 export const MARK={offsetMm:3,armMm:5,strokeMm:0.3,minMarginMm:4}
@@ -49,7 +54,7 @@ function markLayers(width:number,height:number,dpi:number){
    sliceData:{ratio:0,left:0},fit:'fill',slot:false,printRole:'raised',degree:0,templateRole:'fixed',cropX:50,cropY:50,effects:{}}
  })
 }
-export function planCollagePrint(layout:any,options:PrintOptions){
+export function planCollagePrint(layout:any,options:PrintOptions,previous?:PrintPacking){
  const page=layout.global; const layers=layout.layers
  if(!page||!Array.isArray(layers)||!Number.isFinite(Number(page.width))||!Number.isFinite(Number(page.height)))throw new Error('Thiết kế không hợp lệ')
  const dpi=Number(page.dpi)||300
@@ -58,6 +63,7 @@ export function planCollagePrint(layout:any,options:PrintOptions){
  const values=[options.marginMm,options.gapMm]
  if(values.some(v=>!Number.isFinite(v))||options.marginMm<0||options.gapMm<0)throw new Error('Khổ giấy, lề hoặc khoảng cách không hợp lệ')
  const px=(mm:number)=>mm*dpi/25.4; const W=Math.round(Number(page.width)); const H=Math.round(Number(page.height)); const margin=Math.ceil(px(options.marginMm)); const gap=Math.ceil(px(options.gapMm))
+ const profile=JSON.stringify([W,H,dpi,margin,gap,!!options.marks])
  if(W>MAX_SIDE||H>MAX_SIDE||W*H>MAX_PIXELS||W-2*margin<=0||H-2*margin<=0)throw new Error('Khổ giấy/lề vượt giới hạn xuất ảnh')
  const units=printUnits(layers); const raisedIds=new Set(units.filter(u=>u.raised).flatMap(u=>u.ids))
  // Cut sheets are production artwork: omit synthetic outlines and cast shadows.
@@ -76,13 +82,19 @@ export function planCollagePrint(layout:any,options:PrintOptions){
   return {unit,width,height}
  })
  type Rect={x:number;y:number;w:number;h:number}
- function pack(sorted:typeof items,mode:number){
-  const free:Rect[][]=[]; const placed:any[]=[]
-  for(const item of sorted){
+ type Placed=typeof items[number]&{x:number;y:number;sheet:number}
+ function pack(sorted:typeof items,mode:number,locked:Placed[]=[]){
+  const free:Rect[][]=[]; const placed:Placed[]=[]
+  const emptySheet=()=>[{x:margin,y:margin,w:W-2*margin+gap,h:H-2*margin+gap}]
+  const queue:{item:typeof items[number];position?:Placed}[]=[
+   ...locked.map(item=>({item,position:item})),...sorted.map(item=>({item})),
+  ]
+  for(const {item,position} of queue){
    const w=item.width+gap; const h=item.height+gap
    let best:any=null
-    free.forEach((rects,sheet)=>rects.forEach(r=>{if(w<=r.w&&h<=r.h){const short=mode===0?Math.min(r.w-w,r.h-h):mode===1?r.w*r.h-w*h:r.y+h; const long=mode===2?r.x:Math.max(r.w-w,r.h-h);if(!best||sheet<best.sheet||sheet===best.sheet&&(short<best.short||short===best.short&&long<best.long))best={sheet,x:r.x,y:r.y,short,long}}}))
-   if(!best){best={sheet:free.length,x:margin,y:margin};free.push([{x:margin,y:margin,w:W-2*margin+gap,h:H-2*margin+gap}])}
+   if(position){best=position;while(free.length<=position.sheet)free.push(emptySheet())}
+   else free.forEach((rects,sheet)=>rects.forEach(r=>{if(w<=r.w&&h<=r.h){const short=mode===0?Math.min(r.w-w,r.h-h):mode===1?r.w*r.h-w*h:r.y+h; const long=mode===2?r.x:Math.max(r.w-w,r.h-h);if(!best||sheet<best.sheet||sheet===best.sheet&&(short<best.short||short===best.short&&long<best.long))best={sheet,x:r.x,y:r.y,short,long}}}))
+   if(!best){best={sheet:free.length,x:margin,y:margin};free.push(emptySheet())}
    const used={x:best.x,y:best.y,w,h}; const next:Rect[]=[]
    for(const r of free[best.sheet]){
     if(used.x>=r.x+r.w||used.x+w<=r.x||used.y>=r.y+r.h||used.y+h<=r.y){next.push(r);continue}
@@ -94,7 +106,9 @@ export function planCollagePrint(layout:any,options:PrintOptions){
    free[best.sheet]=next.filter((r,i)=>!next.some((q,j)=>i!==j&&q.x<=r.x&&q.y<=r.y&&q.x+q.w>=r.x+r.w&&q.y+q.h>=r.y+r.h&&(j<i||q.x!==r.x||q.y!==r.y||q.w!==r.w||q.h!==r.h)))
    placed.push({...item,x:best.x,y:best.y,sheet:best.sheet})
   }
-  return {placed,count:free.length}
+  const used=[...new Set(placed.map(item=>item.sheet))].sort((a,b)=>a-b)
+  const indexes=new Map(used.map((sheet,index)=>[sheet,index]))
+  return {placed:placed.map(item=>({...item,sheet:indexes.get(item.sheet)!})),count:used.length}
  }
  const scores=[(v:typeof items[number])=>v.width*v.height,(v:typeof items[number])=>Math.max(v.width,v.height),(v:typeof items[number])=>v.height,(v:typeof items[number])=>v.width]
  const candidates=scores.flatMap(score=>[0,1,2].map(mode=>pack([...items].sort((a,b)=>score(b)-score(a)),mode)))
@@ -105,17 +119,109 @@ export function planCollagePrint(layout:any,options:PrintOptions){
   const p=c.placed.filter(v=>v.sheet===sheet)
   return Math.max(0,...p.map(v=>v.x+v.width-margin))*Math.max(0,...p.map(v=>v.y+v.height-margin))
  }).reduce((sum,v)=>sum+v,0)
- const selected=candidates.reduce((best,c)=>c.count<best.count||c.count===best.count&&occupied(c)<occupied(best)?c:best)
- const sheets:any[]=Array.from({length:selected.count},()=>({global:{...clone(page),width:W,height:H,backgroundColor:'#ffffff',backgroundImage:'',backgroundGradient:'',collage:undefined},layers:[]})); const placements:any[]=[]
+ const bestPack=(plans:ReturnType<typeof pack>[])=>plans.reduce((best,c)=>c.count<best.count||c.count===best.count&&occupied(c)<occupied(best)?c:best)
+ const packOrders=(pieces:typeof items,locked:Placed[]=[])=>scores.flatMap(score=>
+  [0,1,2].map(mode=>pack([...pieces].sort((a,b)=>score(b)-score(a)),mode,locked)))
+ const fresh=bestPack(candidates)
+ let selected=fresh
+ let retained=0
+ let packingMode:'fresh'|'retained'|'local'|'pair'|'repacked'='fresh'
+ if(previous?.profile===profile&&Array.isArray(previous.placements)&&previous.placements.length<=2000){
+  const old=new Map(previous.placements.filter(p=>p&&Number.isInteger(p.sheet)&&p.sheet>=0&&p.sheet<50&&Number.isInteger(p.x)&&Number.isInteger(p.y)).map(p=>[p.unitId,p]))
+  const same=(item:typeof items[number])=>{const p=old.get(item.unit.id);return !!p&&p.width===item.width&&p.height===item.height}
+  const locked:Placed[]=[]
+  const pending:typeof items=[]
+  // Unchanged rectangles claim their space before a resized rectangle.
+  for(const item of [...items].sort((a,b)=>Number(same(b))-Number(same(a)))){
+   const p=old.get(item.unit.id)
+   if(!p||p.x<margin||p.y<margin||p.x+item.width>W-margin||p.y+item.height>H-margin||
+    locked.some(q=>q.sheet===p.sheet&&q.x+q.width+gap>p.x&&p.x+item.width+gap>q.x&&q.y+q.height+gap>p.y&&p.y+item.height+gap>q.y)){
+    pending.push(item);continue
+   }
+   locked.push({...item,sheet:p.sheet,x:p.x,y:p.y})
+  }
+  if(locked.length){
+   const stable=bestPack(packOrders(pending,locked))
+   // [TINIX] Try the original sheet before relocating a piece that outgrew its slot.
+   const grownSheets=new Set<number>()
+   for(const item of pending){
+    const p=old.get(item.unit.id)
+    if(p&&(item.width>p.width||item.height>p.height))grownSheets.add(p.sheet)
+   }
+   let localLocked=locked
+   let localPending=pending
+   let localCount=0
+   const countKept=(pieces:Placed[])=>pieces.filter(p=>{
+    const before=old.get(p.unit.id)
+    return before&&p.sheet===before.sheet&&p.x===before.x&&p.y===before.y
+   }).length
+   for(const sheet of grownSheets){
+    const fixed=localLocked.filter(p=>p.sheet===sheet)
+    const waiting=localPending.filter(p=>old.get(p.unit.id)?.sheet===sheet)
+    const holes=packOrders(waiting,fixed.map(p=>({...p,sheet:0}))).filter(plan=>plan.count===1)
+    const trials=holes.length?holes:packOrders([...fixed,...waiting]).filter(plan=>plan.count===1)
+    if(!trials.length)continue
+    const trialsOnSheet=trials.map(plan=>plan.placed.map(p=>({...p,sheet})))
+    const solution=trialsOnSheet.reduce((best,plan)=>countKept(plan)>countKept(best)?plan:best)
+    localLocked=[...localLocked.filter(p=>p.sheet!==sheet),...solution]
+    localPending=localPending.filter(p=>old.get(p.unit.id)?.sheet!==sheet)
+    localCount++
+   }
+   const local=localCount?bestPack(packOrders(localPending,localLocked)):undefined
+   // [TINIX] When one sheet cannot absorb a growing piece, try a second sheet.
+   const pairTrials:ReturnType<typeof pack>[]=[]
+   const sheets=[...new Set(localLocked.map(p=>p.sheet))]
+   const changed=(plan:ReturnType<typeof pack>)=>new Set(plan.placed.flatMap(p=>{
+    const prior=old.get(p.unit.id)
+    return prior&&prior.sheet===p.sheet&&prior.x===p.x&&prior.y===p.y&&prior.width===p.width&&prior.height===p.height?[]:prior?[prior.sheet,p.sheet]:[p.sheet]
+   })).size
+   for(const sheet of grownSheets){
+    if(!localPending.some(p=>old.get(p.unit.id)?.sheet===sheet))continue
+    for(const neighbor of sheets){
+     if(neighbor===sheet)continue
+     const pair=[sheet,neighbor].sort((a,b)=>a-b)
+     const inPair=(item:typeof items[number])=>pair.includes(old.get(item.unit.id)?.sheet ?? -1)
+     if(localPending.some(p=>!inPair(p)))continue
+     const outside=localLocked.filter(p=>!inPair(p))
+     if(outside.some(p=>!same(p)||old.get(p.unit.id)?.sheet!==p.sheet))continue
+     const fixed=localLocked.filter(inPair)
+     const waiting=localPending.filter(inPair)
+     const pieces=[...fixed,...waiting]
+     if(pieces.reduce((area,p)=>area+(p.width+gap)*(p.height+gap),0)>2*(W-2*margin+gap)*(H-2*margin+gap))continue
+     const rotations=[pair,[pair[1],pair[0]]]
+     const stablePositions=stable.placed.filter(inPair)
+     const mapped=packOrders(pieces).filter(plan=>plan.count<=2)
+      .flatMap(plan=>rotations.map(order=>plan.placed.map(p=>({...p,sheet:order[p.sheet]}))))
+     if(stablePositions.every(p=>pair.includes(p.sheet)))mapped.push(stablePositions)
+     if(!mapped.length)continue
+     const solution=mapped.reduce((best,plan)=>countKept(plan)>countKept(best)?plan:best)
+     const trial=pack([],0,[...outside,...solution])
+     if(trial.count<=fresh.count&&trial.count<=(local?.count??stable.count)&&trial.count<=stable.count&&
+       (trial.count<stable.count||changed(trial)<=changed(stable))&&changed(trial)<=2)pairTrials.push(trial)
+    }
+   }
+   if(pairTrials.length){
+    selected=pairTrials.reduce((best,trial)=>trial.count<best.count||trial.count===best.count&&
+      (changed(trial)<changed(best)||changed(trial)===changed(best)&&countKept(trial.placed)>countKept(best.placed))?trial:best)
+    packingMode='pair'
+   }else if(local&&local.count<=fresh.count&&local.count<=stable.count){selected=local;packingMode='local'}
+   else if(stable.count<=fresh.count){selected=stable;packingMode='retained'}
+   else packingMode='repacked'
+   retained=selected.placed.filter(item=>{const p=old.get(item.unit.id);return p&&p.sheet===item.sheet&&p.x===item.x&&p.y===item.y}).length
+  }
+ }
+ const sheets:any[]=Array.from({length:selected.count},()=>({global:{...clone(page),width:W,height:H,backgroundColor:'#ffffff',backgroundImage:'',backgroundGradient:'',collage:undefined},layers:[]})); const placements:PrintPlacement[]=[]
  for(const {unit,width,height,x,y,sheet} of selected.placed){
   const ids=new Set(unit.ids); const copies=clone(cutLayers.filter((v:any)=>ids.has(String(v.uuid))))
   for(const v of copies){v.left+=x-unit.bounds.x;v.top+=y-unit.bounds.y}
-  sheets[sheet].layers.push(...copies);placements.push({unitId:unit.id,sheet,x,y,width,height,cutInset:Math.max(0,...copies.map((v:any)=>Number(v.cutInset)||0))})
+  sheets[sheet].layers.push(...copies);placements.push({unitId:unit.id,sheet,x,y,width,height,
+   cutInset:Math.max(0,...copies.map((v:any)=>Number(v.cutInset)||0)),cutOuterOnly:unit.cutOuterOnly})
  }
  // Preserve layer stacking order on each sheet even though packing order differs.
  const order=new Map(layers.map((w:any,i:number)=>[String(w.uuid),i]))
  for(const s of sheets)s.layers.sort((a:any,b:any)=>Number(order.get(String(a.uuid)))-Number(order.get(String(b.uuid))))
  // Dấu căn laser nằm trong lề, thêm SAU khi sắp lớp; không thuộc mảnh nào nên không vào placements.
  if(options.marks===true&&options.marginMm>=MARK.minMarginMm)for(const s of sheets)s.layers.push(...markLayers(W,H,dpi))
- return {layouts:[base,...sheets,clone(layout)],names:['01_nen.jpg',...sheets.map((_,i)=>`02_chi_tiet_cat_${String(i+1).padStart(2,'0')}.jpg`),'03_thanh_pham.jpg'],units,placements,dpi}
+ placements.sort((a,b)=>a.sheet-b.sheet||a.y-b.y||a.x-b.x||a.unitId.localeCompare(b.unitId))
+ return {layouts:[base,...sheets,clone(layout)],names:['01_nen.jpg',...sheets.map((_,i)=>`02_chi_tiet_cat_${String(i+1).padStart(2,'0')}.jpg`),'03_thanh_pham.jpg'],units,placements,dpi,packing:{profile,placements},packingMode,retained}
 }
