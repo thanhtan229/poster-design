@@ -1,7 +1,7 @@
 // [TINIX] Persist demo approval and run the existing TinixPoster tools as a resumable workflow.
 import { execFile } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, mkdtemp, readFile, rename, rm, rmdir, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, rename, rm, rmdir, writeFile } from 'node:fs/promises' // [TINIX]
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,6 +16,7 @@ const sharp = createRequire(import.meta.url)('../../service/node_modules/sharp')
 const runFile = promisify(execFile)
 const exporter = fileURLToPath(new URL('./workflow_compositions.py', import.meta.url))
 const generator = fileURLToPath(new URL('./generate_compositions.py', import.meta.url)) // [TINIX]
+const sourceQa = fileURLToPath(new URL('./source_qa.py', import.meta.url)) // [TINIX]
 const studioSha256 = 'be9d6da6777fd4789319abe351d1213ee560ebba2c1c27f24a376516e4f0a0fc'
 const id = { type: 'string', pattern: '^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$' }
 const demos = ['A', 'B', 'C']
@@ -93,6 +94,20 @@ export function workflowTools(attachment) {
     description: 'Read the saved workflow status and QA. After delivery, request final_render, materials_zip, comparison or qa_report for the actual artifact.',
     annotations: { readOnlyHint: true, openWorldHint: false },
     inputSchema: schema(['workflow_id'], { workflow_id: id, artifact: { enum: ['final_render', 'materials_zip', 'comparison', 'qa_report'] } }),
+  }, { // [TINIX] Source QA writes standalone evidence, leaving the workflow and job intact.
+    name: 'audit_scrapbook_source', title: 'Kiểm tự động nguồn scrapbook và vùng ảnh thay thế',
+    description: 'Audit one template candidate using actual layer alpha, seven sentinels and asset provenance. Returns pass, fail or uncertain and evidence images. An unverified static layer cannot pass.',
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    inputSchema: schema(['workflow_id', 'demo_id'], { workflow_id: id, demo_id: { enum: templateDemos } }),
+  }, {
+    name: 'repair_scrapbook_source_asset', title: 'Thay tài nguyên nguồn trên bản sao scrapbook',
+    description: 'Replace one background, frame or decoration with a verified clean generated donor of the same kind. Frame replacement also restores the alpha window. Keeps geometry and z, returns before/after QA on a new workflow. Obtain fresh approval before advancing it.',
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    inputSchema: schema(['workflow_id', 'demo_id', 'layer', 'donor_workflow_id', 'donor_demo_id', 'donor_layer', 'reason'], {
+      workflow_id: id, demo_id: { enum: templateDemos }, layer: { type: 'string', pattern: '^(BACKGROUND|F0[1-6]|D[0-9]{2})$' },
+      donor_workflow_id: id, donor_demo_id: { enum: templateDemos }, donor_layer: { type: 'string', pattern: '^(BACKGROUND|F0[1-6]|D[0-9]{2})$' },
+      reason: { type: 'string', minLength: 1, maxLength: 2000 },
+    }),
   }]
 }
 
@@ -145,6 +160,159 @@ async function python(args, signal, script = exporter) { // [TINIX]
   await runFile(process.env.TINIX_STUDIO_PYTHON || 'python', ['-B', script, ...args], {
     windowsHide: true, signal, timeout: 230000, maxBuffer: 512000, env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
   }).catch(error => { throw new Error('Exporter Studio: ' + (error.stderr?.trim().split(/\r?\n/).at(-1) || error.code || 'không hoàn tất')) })
+}
+
+// [TINIX] Trust server-generated static inputs by original content hashes, never supplied catalog flags.
+function staticLayers(manifest) {
+  return [{ code: 'BACKGROUND', asset: manifest.background }, ...manifest.frames, ...(manifest.decorations ?? [])]
+}
+
+async function staticTrust(directory, state, demo) {
+  if (state.revision) return state.revision.trustedStaticHashes
+  if (!state.generated) return []
+  const locks = await json(path.join(directory, 'locks.json'))
+  const lock = locks.find(item => item.demoId === demo)
+  const manifest = await readFile(path.join(packageDir(directory), demo + '.source.json'))
+  if (!lock || digest(manifest) !== lock.manifestSha256) return []
+  const staticNames = new Set(staticLayers(JSON.parse(manifest)).map(layer => layer.asset))
+  return lock.inputs.filter(([name]) => staticNames.has(name)).map(([, hash]) => hash)
+}
+
+function validateCandidate(state, demo) {
+  if (state.mode !== 'template' || !state.demos?.some(row => row.demoId === demo)) {
+    throw new Error('Chọn một demo thuộc workflow mẫu.')
+  }
+}
+
+async function auditSource(root, directory, state, demo, signal) {
+  validateCandidate(state, demo)
+  const source = path.join(packageDir(directory), demo + '.source.json')
+  const trusted = await staticTrust(directory, state, demo)
+  const storedKit = material(directory, demo)
+  const hasKit = await access(storedKit).then(() => true, error => {
+    if (error.code !== 'ENOENT') throw error
+    return false
+  })
+  const audits = path.join(root, '.source-qa')
+  await mkdir(audits, { recursive: true })
+  const auditDir = await mkdtemp(path.join(audits, 'audit-'))
+  await save(path.join(auditDir, 'trust.json'), trusted)
+  await python([source, hasKit ? storedKit : '', path.join(auditDir, 'evidence'), path.join(auditDir, 'trust.json')], signal, sourceQa)
+  const evidence = path.join(auditDir, 'evidence')
+  return { report: await json(path.join(evidence, 'source-qa.json')), evidence }
+}
+
+async function auditImages(audit, original) {
+  const blocks = []
+  for (const [label, file] of [
+    ['Bản trống', path.join(audit.evidence, 'blank.png')],
+    ['Ô caro', original],
+    ['Sentinel F01–F06 và SUBJECT', path.join(audit.evidence, 'sentinel.png')],
+    ['Vùng nghi nhiễm', path.join(audit.evidence, 'suspects.png')],
+  ]) {
+    if (!file) continue
+    const bytes = await readFile(file).catch(error => { if (error.code !== 'ENOENT') throw error })
+    if (bytes) blocks.push(message(label), image(await sharp(bytes).resize({ width: 800, withoutEnlargement: true }).png().toBuffer()))
+  }
+  return blocks
+}
+
+async function requireCleanSource(root, directory, state, demo, signal) {
+  const { report } = await auditSource(root, directory, state, demo, signal)
+  if (report.status !== 'pass') {
+    throw new Error('SOURCE_QA_' + report.status.toUpperCase() + ': ' +
+      report.issues.slice(0, 5).map(({ layer, reason }) => layer + ' ' + reason).join(', '))
+  }
+  return report
+}
+
+// [TINIX] Copy just this composition and replace one static asset. No external file paths are accepted.
+async function repairSource(root, directory, state, args, signal) {
+  const { demo_id: demo, layer: code, donor_demo_id: donorDemo, donor_layer: donorCode, reason } = args
+  validateCandidate(state, demo)
+  const kind = value => value === 'BACKGROUND' ? 'background' :
+    /^F0[1-6]$/.test(value) ? 'frame' : /^D[0-9]{2}$/.test(value) ? 'decoration' : null
+  if (typeof code !== 'string' || typeof donorCode !== 'string' || !kind(code) || kind(code) !== kind(donorCode) ||
+      typeof reason !== 'string' || !reason.trim() || reason.length > 2000) throw new Error('Cần mã lớp, mảnh thay cùng loại và lý do sửa.')
+  const donorDir = path.join(path.dirname(directory), uuid(args.donor_workflow_id))
+  const donorState = await json(path.join(donorDir, stateFile))
+  validateCandidate(donorState, donorDemo)
+  const source = await json(path.join(packageDir(directory), demo + '.source.json'))
+  const donor = await json(path.join(packageDir(donorDir), donorDemo + '.source.json'))
+  const target = staticLayers(source).find(item => item.code === code)
+  const replacement = staticLayers(donor).find(item => item.code === donorCode)
+  if (!target || !replacement) throw new Error('Không tìm thấy đúng lớp thay hoặc lớp nguồn.')
+  const before = await auditSource(root, directory, state, demo, signal)
+  const donorAudit = await requireCleanSource(root, donorDir, donorState, donorDemo, signal)
+  const selected = donorAudit.layers.find(item => item.layer === donorCode && item.status === 'pass')
+  if (!selected) throw new Error('REPAIR_BLOCKED: Chưa xác minh được nguồn sạch.')
+  const readAsset = async (folder, asset) => {
+    const full = path.resolve(folder, asset)
+    const relative = path.relative(folder, full)
+    if (!relative || relative === '..' || relative.startsWith('..' + path.sep) || path.isAbsolute(relative)) throw new Error('Đường dẫn nguồn không hợp lệ.')
+    return readFile(full)
+  }
+  const donorBytes = await readAsset(packageDir(donorDir), replacement.asset)
+  if (digest(donorBytes) !== selected.sha256) throw new Error('Nguồn thay đổi sau khi kiểm.')
+  if (kind(code) === 'background' && (source.page.width !== donor.page.width || source.page.height !== donor.page.height)) {
+    throw new Error('REPAIR_BLOCKED: Nền thay cần cùng kích thước trang.')
+  }
+  const revisionId = randomUUID()
+  const destination = path.join(path.dirname(directory), revisionId)
+  const stage = await mkdtemp(destination + '-repair-')
+  try {
+    const files = packageDir(stage)
+    await mkdir(path.join(files, 'assets'), { recursive: true })
+    const copied = new Map()
+    async function storeAsset(bytes) {
+      const key = digest(bytes)
+      if (!copied.has(key)) {
+        const name = 'assets/' + key + '.png'
+        await writeFile(path.join(files, name), bytes, { flag: 'wx' })
+        copied.set(key, name)
+      }
+      return copied.get(key)
+    }
+    const beforeHash = digest(await readAsset(packageDir(directory), target.asset))
+    const copy = async asset => storeAsset(await readAsset(packageDir(directory), asset))
+    source.background = code === 'BACKGROUND' ? await storeAsset(donorBytes) : await copy(source.background)
+    for (const part of [...source.frames, ...(source.decorations ?? [])]) {
+      if (part.code === code) {
+        part.asset = await storeAsset(donorBytes)
+        if (replacement.crop) part.crop = replacement.crop
+        else delete part.crop
+      } else part.asset = await copy(part.asset)
+      if (part.photo) part.photo = await copy(part.photo)
+    }
+    source.subject.asset = await copy(source.subject.asset)
+    delete source.assetRefs
+    const manifest = path.join(files, demo + '.source.json')
+    await save(manifest, source)
+    const revision = { parentWorkflowId: state.workflowId, parentJobId: state.currentJobId, demoId: demo, layer: code,
+      beforeSha256: beforeHash, afterSha256: selected.sha256, reason: reason.trim(), approvalRequired: true,
+      trustedStaticHashes: [...new Set([...await staticTrust(directory, state, demo),
+        ...donorAudit.layers.map(item => item.sha256)])] }
+    await python(['export', manifest, path.join(files, demo)], signal, sourceQa)
+    const lock = { demoId: demo, ...await sourceLock(stage, demo, true, true) }
+    const draft = { workflowId: revisionId, mode: 'template', generated: true, revision, sourceQaRequired: true,
+      approvedDemoId: null, currentJobId: null, parentJobId: state.currentJobId, qaStatus: 'awaiting_source_qa',
+      retryCount: 0, artifacts: {}, demos: [{ demoId: demo, demoSha256: lock.demoSha256,
+        manifestSha256: lock.manifestSha256, materialSha256: lock.materialSha256 }],
+      stepStatus: { prepare: 'done', sourceQa: 'waiting', approval: 'waiting' } }
+    const after = await auditSource(root, stage, draft, demo, signal)
+    if (after.report.status === 'pass') {
+      draft.sourceReviews = [{ demoId: demo, status: 'pass', evidence: await sourceEvidence(stage, demo),
+        notes: 'Automated source QA. Review the revision before approval.' }]
+      draft.qaStatus = 'awaiting_demo'
+      draft.stepStatus.sourceQa = 'done'
+    } else draft.qaStatus = 'source_qa_failed'
+    await save(path.join(stage, 'locks.json'), [lock])
+    await save(path.join(stage, 'repair.json'), { revision, before: before.report, after: after.report })
+    await save(path.join(stage, stateFile), draft)
+    const visuals = [...await auditImages(before), ...await auditImages(after, sourceFiles(stage,demo)[1])]
+    await rename(stage, destination)
+    return response({ ...draft, before: before.report, after: after.report }, visuals)
+  } finally { await rm(stage, { recursive: true, force: true }) }
 }
 
 async function previews(directory, state) {
@@ -351,6 +519,9 @@ async function advance(root, directory, state, args, dependencies, signal) {
         throw new Error('Ảnh kiểm nguồn đã thay đổi sau QA.')
       }
     }
+    if (state.generated) { // [TINIX] A manual pass cannot override an automated fail or uncertain.
+      state.automatedSourceQa = await requireCleanSource(root, directory, state, args.approved_demo_id, signal)
+    }
     state.approvedDemoId = args.approved_demo_id
     state.policy = Object.fromEntries(policyKeys.map(key => [key, args.policy?.[key] === true]))
     state.stepStatus.approval = 'done'
@@ -480,6 +651,11 @@ async function advance(root, directory, state, args, dependencies, signal) {
       const size = await sharp(png).metadata()
       const technical = await json(path.join(packageDir(directory), state.variant, 'qa', 'tinixposter_qa.json'))
       const failures = []
+      const automated = state.automatedSourceQa ??
+        (await auditSource(root, directory, state, state.approvedDemoId, signal)).report // [TINIX]
+      if (automated.status !== 'pass') failures.push('source_qa_' + automated.status)
+      const comparison = await json(path.join(directory, 'comparison.json'))
+      if (comparison.overall.ssim < 0.65 || comparison.overall.mae > 20) failures.push('render_mismatch_requires_review') // [TINIX]
       if (report.photoSlots?.length !== 6 || frames.some(code => !report.photoSlots.some(slot =>
         slot.code === code && layout.layers.some(layer => layer.uuid === slot.id && layer.mask && layer.slot && layer.templateRole === 'photo'))) ||
         !subject || subject.cutoutEdit) failures.push('placeholder_slots')
@@ -490,7 +666,7 @@ async function advance(root, directory, state, args, dependencies, signal) {
         confidence: { technical: failures.length ? 'failed' : 'verified', visual: 'agent-reviewed' },
         recommendedFixes: failures.map(item => ({ item, action: 'Verify the locked composition, export and stored placeholder render.' })),
         approvedDemoSha256: state.approved.demoSha256, finalJobId: state.importJobId, layoutReview: state.layoutReview,
-        material: technical, comparison: await json(path.join(directory, 'comparison.json')) }
+        material: technical, sourceQa: automated, comparison } // [TINIX]
       await save(path.join(directory, 'qa.json'), qa)
       state.artifacts.qa_report = true
       state.currentJobId = state.importJobId
@@ -615,6 +791,13 @@ export async function runScrapbookWorkflow(root, name, args, signal, dependencie
   }
   root = path.resolve(root)
   const load = () => json(path.join(directory, stateFile))
+  if (name === 'audit_scrapbook_source') { // [TINIX]
+    const state = await load()
+    const audit = await auditSource(root, directory, state, args.demo_id, signal)
+    return response(audit.report, await auditImages(audit, sourceFiles(directory, args.demo_id)[1]))
+  }
+  if (name === 'repair_scrapbook_source_asset') return withLock(directory, async () =>
+    repairSource(root, directory, await load(), args, signal)) // [TINIX]
   if (name === 'review_scrapbook_template_sources') return withLock(directory, async () =>
     reviewTemplateSources(directory, await load(), args.reviews))
   if (name === 'advance_scrapbook_workflow') return withLock(directory, async () =>
@@ -623,6 +806,12 @@ export async function runScrapbookWorkflow(root, name, args, signal, dependencie
   const artifact = args.artifact
   if (!artifact) return response(state)
   if (!Object.hasOwn(state.artifacts, artifact)) throw new Error('Tệp bàn giao chưa có cho workflow này.')
+  if (state.mode === 'template' && ['final_render', 'materials_zip'].includes(artifact)) { // [TINIX]
+    const lock = await sourceLock(directory, state.approvedDemoId, true, state.generated === true)
+    const { demoId, ...expected } = state.approved
+    if (JSON.stringify(lock) !== JSON.stringify(expected)) throw new Error('Nguồn demo đã khóa bị thay đổi.')
+    await requireCleanSource(root, directory, state, state.approvedDemoId, signal)
+  }
   const [file, mimeType] = {
     final_render: [path.join(resultDir(root, state.currentJobId), 'render.png'), 'image/png'],
     materials_zip: [material(directory, state.variant), 'application/zip'],

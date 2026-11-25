@@ -1,5 +1,25 @@
 # Dựng scrapbook qua MCP với một lần duyệt
 
+## P2 · Kiểm nguồn và sửa trên bản sao
+
+[TINIX] Server MCP 1.2.0 thêm hai công cụ, giữ schema của 15 công cụ trước.
+
+- `audit_scrapbook_source({workflow_id, demo_id})` trả kết luận từng lớp, hash, bản trống, ô caro khi có, sentinel bảy vùng và ảnh đánh dấu chỗ tìm thấy mẫu RGB. Sentinel tính trên alpha thật, biến đổi, mép trang và lớp chồng. Nhận dạng ảnh cũ chỉ dùng mảnh RGB đủ đặc trưng làm bằng chứng dương tính. Lớp tĩnh thiếu nguồn sạch đã xác minh trả `uncertain` khi không tìm được mảnh trùng. Không dùng kết quả không khớp để kết luận sạch.
+- `repair_scrapbook_source_asset({workflow_id, demo_id, layer, donor_workflow_id, donor_demo_id, donor_layer, reason})` thay một lớp `BACKGROUND`, F01–F06 hoặc Dxx bằng lớp donor cùng nhóm từ workflow sạch đã kiểm. Thay cả sprite khung để khôi phục lòng alpha, viền và bóng nếu sprite donor đã có. Giữ đích, góc và z. Nền donor cần đúng kích thước trang. Không có nguồn donor hợp lệ thì dừng. Tool giữ hash trước/sau và QA, trả workflow revision chưa duyệt. Kiểm lại thẩm mỹ và chọn demo revision trước khi gọi advance.
+
+P1 generated template cần QA nguồn tự động `pass` để dựng. Template nhập kiểu cũ vẫn có thể dựng bản nháp chẩn đoán và so bố cục. Khi thiếu bằng chứng nguồn, workflow chặn bàn giao render và kit. Luồng customer và thao tác dựng ZIP thô vẫn phục vụ chẩn đoán và thử nghiệm, chưa chứng nhận template sạch. Giữ thẩm định hình ảnh ở bước layout review, gồm chất giấy, viền trắng, ren, chữ, bóng và SUBJECT. Nếu sai khác tổng thể vượt ngưỡng sàng lọc, workflow báo ngoại lệ. Độ khác biệt nhỏ không thay cho thẩm định hình ảnh.
+
+Lệnh thử cục bộ với server ở localhost:7001, chạy trong checkout riêng và dùng tên thư mục đích mới.
+
+```sh
+python -B scripts/tinix-mcp/source_qa_test.py
+node scripts/tinix-mcp/source-qa-workflow.test.mjs .runtime/scrapbook-p2-test .runtime/mcp-material
+node scripts/tinix-mcp/generated-workflow.test.mjs .runtime/scrapbook-p2-p1-test
+npm run tinix:test
+```
+
+Tham số MCP root thứ hai chỉ cần khi kiểm Demo D cục bộ. Test đọc nguồn khóa và ghi bằng chứng QA ở thư mục riêng.
+
 ## P1 · Tạo demo và kit cùng lúc từ brief
 
 [TINIX] Server `tinixposter-material` 1.1.0 bổ sung `prepare_generated_scrapbook_workflow`. Luồng cũ tiếp tục nhận ZIP composition và có lịch xuất như trước. Đường mới tạo mặc định ba demo, chấp nhận 2–6 demo và tỷ lệ 1:3 đến 3:1.

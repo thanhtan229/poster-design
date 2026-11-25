@@ -785,3 +785,7 @@ Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX
 ## Scrapbook A–Z · P1
 
 [TINIX] `prepare_generated_scrapbook_workflow` dùng catalog tài nguyên theo batch để dựng đồng thời demo và kit đã kiểm từ một manifest. MCP giữ hash preview, manifest và ZIP; khi duyệt, dùng đúng bytes ZIP của demo đã chọn. Luồng nhập ZIP phân lớp cũ vẫn được giữ. Xem hợp đồng, kiểm Skill và lệnh thử tại `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
+
+## Scrapbook A–Z · P2
+
+[TINIX] `audit_scrapbook_source` kiểm bằng alpha trong kit, kiểm nguồn tĩnh và bảy sentinel. `repair_scrapbook_source_asset` chỉ thay từ nguồn sạch đã kiểm lên một workflow mới, giữ hash và báo cáo trước/sau để duyệt. Xem điều kiện bàn giao và lệnh thử trong `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.

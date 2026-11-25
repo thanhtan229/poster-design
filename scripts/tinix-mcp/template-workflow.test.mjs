@@ -62,13 +62,17 @@ try {
   assert.equal(uncertain.artifacts.final_render, undefined)
   const delivery = (await call(advance, { ...run, layout_review: { job_id: id,
     status: 'pass', notes: 'Synthetic fixture: compare paper, title and six frame silhouettes outside placeholder regions.' } })).structuredContent
-  assert.equal(delivery.qaStatus, 'passed', JSON.stringify(delivery.lastError ?? delivery.qa))
+  // [TINIX] Legacy manual templates still import and compare, but unverified static art cannot be delivered.
+  assert.equal(delivery.qaStatus, 'exception', JSON.stringify(delivery.lastError ?? delivery.qa))
+  assert.ok(delivery.qa.failures.includes('source_qa_uncertain'))
   assert.equal(delivery.stepStatus.fill, undefined)
   assert.equal(delivery.stepStatus.cropReview, undefined)
   assert.equal(delivery.currentJobId, id)
   const state = (await call(advance, run)).structuredContent
   assert.equal(state.currentJobId, id)
-  const filenames = { final_render: 'placeholder.png', materials_zip: 'material.zip', comparison: 'comparison.png', qa_report: 'qa.json' }
+  await call('get_scrapbook_workflow', { ...run, artifact: 'final_render' }, true)
+  await call('get_scrapbook_workflow', { ...run, artifact: 'materials_zip' }, true)
+  const filenames = { comparison: 'comparison.png', qa_report: 'qa.json' }
   for (const [artifact, filename] of Object.entries(filenames)) {
     const result = await call('get_scrapbook_workflow', { ...run, artifact })
     const bytes = Buffer.from(result.content.find(item => item.type === 'resource').resource.blob, 'base64')

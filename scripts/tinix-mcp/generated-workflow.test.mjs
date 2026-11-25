@@ -136,8 +136,8 @@ async function checkOldCustomer(source) {
 try {
   const previous = await json(new URL('./evidence/p0/mcp-local-tools.json', import.meta.url))
   const { tools } = await client.listTools()
-  assert.equal(client.getServerVersion().version, '1.1.0')
-  assert.equal(new Set(tools.map(tool => tool.name)).size, 15)
+  assert.equal(client.getServerVersion().version, '1.2.0') // [TINIX]
+  assert.equal(new Set(tools.map(tool => tool.name)).size, 17) // [TINIX]
   for (const old of previous) assert.deepEqual(tools.find(tool => tool.name === old.name), old, old.name)
   assert.ok(tools.some(tool => tool.name === prepare))
   assert.ok((await call(prepare, { ...base, request_id: randomUUID(), skill_version: '1.2.6' })).isError)
@@ -179,7 +179,7 @@ try {
   const report = await json(path.join(jobResults, 'report.json'))
   assert.equal(report.status, 'rendered')
   assert.equal(report.sourceKitSha256, hash(exact))
-  assert.deepEqual((await readdir(output)).filter(item => item !== '.workflows'), [built.currentJobId])
+  assert.deepEqual((await readdir(output)).filter(item => !item.startsWith('.')), [built.currentJobId]) // [TINIX]
   const stored = (await invoke('get_material_draft_render', { job_id: built.currentJobId })).structuredContent
   assert.equal(stored.subjectIndependent, true)
   assert.equal(stored.photoSlots.length, 6)
