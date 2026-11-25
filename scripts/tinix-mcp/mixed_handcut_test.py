@@ -26,10 +26,10 @@ def frame_sprites():
             for i, style in enumerate(MIXED_FRAME_STYLES)]
 
 
-def packed_geometry(sprites):
+def packed_geometry(sprites, **options):
     sprites = [(code, trim_nonzero(image, code)) for code, image in sprites]
     sheet, boxes = pack_assets(sprites, None, 22, 24)
-    return inspect_geometry({"frames":[{"code":code, "source":box} for code, box in boxes.items()]}, sheet)
+    return inspect_geometry({"frames":[{"code":code, "source":box} for code, box in boxes.items()]}, sheet, **options)
 
 
 def read_json(file):
@@ -78,6 +78,44 @@ class MixedHandcutTest(unittest.TestCase):
         geometry = packed_geometry(sprites)
         self.assertEqual(geometry["stampsOrTickets"], [])
         self.assertEqual(geometry["status"], "fail")
+
+    def test_notebook_uses_relative_contrast_after_recoloring(self):
+        sprites = frame_sprites()
+        image = sprites[5][1]
+        pixels = np.array(image)
+        # Replace the original ink color and vary paper/ink brightness across the width.
+        tone = pixels[:,:,:3].astype(np.int16)
+        ink = np.all(tone == (190,159,137), axis=2)
+        tone[ink] = (163,131,118)
+        tone += np.rint(np.linspace(-7,8,image.width))[None,:,None].astype(np.int16)
+        pixels[:,:,:3] = np.clip(tone,0,255)
+        sprites[5] = ("F06", Image.fromarray(pixels,"RGBA"))
+        report = packed_geometry(sprites)
+        self.assertTrue(report["notebookRequired"])
+        self.assertEqual(report["notebooks"], ["F06"])
+        self.assertEqual(report["polaroids"], ["F02"])
+        self.assertEqual(report["status"], "pass")
+
+    def test_erasing_notebook_rules_blocks_required_style(self):
+        sprites = frame_sprites()
+        image = sprites[5][1]
+        pixels = np.array(image)
+        start, end = round(.14*image.width), round(.86*image.width)+1
+        for fraction in (.85,.90):
+            row = int(fraction*image.height)
+            # Cover each real printed rule with adjacent paper, leaving alpha untouched.
+            pixels[row,start:end,:3] = pixels[row-2,start:end,:3]
+        np.testing.assert_array_equal(pixels[:,:,3],np.asarray(image.getchannel("A")))
+        sprites[5] = ("F06", Image.fromarray(pixels,"RGBA"))
+        report = packed_geometry(sprites)
+        self.assertTrue(report["allSixWindows"])
+        self.assertTrue(report["silhouettePairs"][0]["distinct"])
+        self.assertTrue(report["stampsOrTickets"])
+        self.assertEqual(report["notebooks"], [])
+        self.assertEqual(report["frames"]["F06"]["notebookRuleRows"], [])
+        self.assertIn("F02",report["polaroids"])
+        self.assertEqual(report["status"], "fail")
+        self.assertEqual(packed_geometry(sprites,require_notebook=False)["status"], "pass")
 
     def test_four_exported_demos_and_sentinels(self):
         evidence = os.environ.get("TINIX_MIXED_HANDCUT_EVIDENCE")

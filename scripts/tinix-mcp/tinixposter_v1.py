@@ -390,7 +390,8 @@ def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, pr
     qa = validate_sheet(layout,sheet)
     mixed_handcut = manifest.get("mixedHandcutGeometryVersion") == 1  # [TINIX]
     if mixed_handcut:
-        qa["mixed_handcut_geometry"] = inspect_geometry(layout, sheet)
+        qa["mixed_handcut_geometry"] = inspect_geometry(
+            layout, sheet, require_notebook=manifest.get("mixedHandcutRequireNotebook", True))  # [TINIX]
     subject_img = Image.open((basedir/manifest["subject"]["asset"]).resolve()).convert("RGBA")
     require(np.any(np.array(subject_img.getchannel("A"))==0), "SUBJECT needs a true cutout with alpha")
     subject_prepped=prep_subject(subject_img,layout["subject"]["target"],layout["subject"].get("borderMm",0),layout["print"]["dpi"])

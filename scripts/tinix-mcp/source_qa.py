@@ -225,7 +225,8 @@ def inspect(source, kit, destination, trusted, procedural=frozenset()):  # [TINI
             issue("BACKGROUND","fail","kit_background_differs_from_source")
         structural = validate_sheet(layout,sheet)
         if manifest.get("mixedHandcutGeometryVersion") == 1:  # [TINIX] Separate geometry from contamination QA.
-            geometry = inspect_geometry(layout, sheet)
+            geometry = inspect_geometry(
+                layout, sheet, require_notebook=manifest.get("mixedHandcutRequireNotebook", True))  # [TINIX]
         if [x["code"] for x in layout["frames"]] != CODES:
             issue("FRAMES","fail","expected_six_frames")
         declared = manifest["frames"]+manifest.get("decorations",[])
