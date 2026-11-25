@@ -1,0 +1,245 @@
+{
+  "variant": "B1",
+  "onlyChangedSourceAsset": "assets/lace-f9061ffa5e45152f.png",
+  "laceOriginalSize": [
+    280,
+    70
+  ],
+  "A3ProceduralPixelsReproduced": true,
+  "D04ProtectedPixels": 9035,
+  "D04Placement": {
+    "x": 540,
+    "y": 994,
+    "width": 734,
+    "height": 79,
+    "angle": -3
+  },
+  "layoutByteIdentical": true,
+  "onlyD04AtlasRgbChanged": true,
+  "D04Diff": {
+    "alphaChangedPixels": 0,
+    "rgbChangedPixels": 9511,
+    "rgbChangedPixelsOutsideAlpha": 0,
+    "meanRgbAbsoluteDeltaOnVisiblePixels": 17.8923,
+    "maxRgbDelta": 87
+  },
+  "packedAtlasDiff": {
+    "alphaChangedPixels": 0,
+    "rgbChangedPixels": 9511,
+    "rgbChangedPixelsOutsideAlpha": 0,
+    "meanRgbAbsoluteDeltaOnVisiblePixels": 0.6845,
+    "maxRgbDelta": 87
+  },
+  "laceCropDiff": {
+    "alphaChangedPixels": null,
+    "rgbChangedPixels": 11879,
+    "rgbChangedPixelsOutsideAlpha": 0,
+    "meanRgbAbsoluteDeltaOnVisiblePixels": 14.8391,
+    "maxRgbDelta": 102
+  },
+  "previewDiff": {
+    "alphaChangedPixels": null,
+    "rgbChangedPixels": 23915,
+    "rgbChangedPixelsOutsideAlpha": 0,
+    "meanRgbAbsoluteDeltaOnVisiblePixels": 0.4991,
+    "maxRgbDelta": 102
+  },
+  "sourceQa": "pass",
+  "geometry": {
+    "status": "pass",
+    "allSixWindows": true,
+    "frames": {
+      "F01": {
+        "closedAlphaZeroHoles": 1,
+        "validWindow": true,
+        "openingFillRatio": 0.9888,
+        "reflectionMismatch": 0.0,
+        "asymmetricSilhouette": false,
+        "polaroidFoot": true,
+        "notebookRuling": false,
+        "notebookRuleRows": [],
+        "bottomPaperRatio": 0.2115,
+        "stampNotches": 1,
+        "stampOrTicket": false
+      },
+      "F02": {
+        "closedAlphaZeroHoles": 1,
+        "validWindow": true,
+        "openingFillRatio": 0.6947,
+        "reflectionMismatch": 0.07,
+        "asymmetricSilhouette": true,
+        "polaroidFoot": false,
+        "notebookRuling": false,
+        "notebookRuleRows": [],
+        "bottomPaperRatio": 0.0396,
+        "stampNotches": 1,
+        "stampOrTicket": false
+      },
+      "F03": {
+        "closedAlphaZeroHoles": 1,
+        "validWindow": true,
+        "openingFillRatio": 0.9699,
+        "reflectionMismatch": 0.0,
+        "asymmetricSilhouette": false,
+        "polaroidFoot": false,
+        "notebookRuling": false,
+        "notebookRuleRows": [],
+        "bottomPaperRatio": 0.1365,
+        "stampNotches": 7,
+        "stampOrTicket": true
+      },
+      "F04": {
+        "closedAlphaZeroHoles": 1,
+        "validWindow": true,
+        "openingFillRatio": 0.979,
+        "reflectionMismatch": 0.0,
+        "asymmetricSilhouette": false,
+        "polaroidFoot": false,
+        "notebookRuling": false,
+        "notebookRuleRows": [],
+        "bottomPaperRatio": 0.1447,
+        "stampNotches": 7,
+        "stampOrTicket": true
+      },
+      "F05": {
+        "closedAlphaZeroHoles": 1,
+        "validWindow": true,
+        "openingFillRatio": 0.9652,
+        "reflectionMismatch": 0.0,
+        "asymmetricSilhouette": false,
+        "polaroidFoot": false,
+        "notebookRuling": true,
+        "notebookRuleRows": [
+          269,
+          285
+        ],
+        "bottomPaperRatio": 0.1987,
+        "stampNotches": 2,
+        "stampOrTicket": false
+      },
+      "F06": {
+        "closedAlphaZeroHoles": 1,
+        "validWindow": true,
+        "openingFillRatio": 0.7261,
+        "reflectionMismatch": 0.0505,
+        "asymmetricSilhouette": true,
+        "polaroidFoot": false,
+        "notebookRuling": false,
+        "notebookRuleRows": [],
+        "bottomPaperRatio": 0.0406,
+        "stampNotches": 0,
+        "stampOrTicket": false
+      }
+    },
+    "silhouettePairs": [
+      {
+        "frames": [
+          "F02",
+          "F06"
+        ],
+        "mismatch": 0.1659,
+        "distinct": true
+      }
+    ],
+    "polaroids": [
+      "F01"
+    ],
+    "stampsOrTickets": [
+      "F03",
+      "F04"
+    ],
+    "notebooks": [
+      "F05"
+    ],
+    "notebookRequired": true,
+    "visualReviewRequired": true
+  },
+  "sheetQa": {
+    "pieces": 17,
+    "components_by_alpha": {
+      "1": 17,
+      "8": 17,
+      "16": 17,
+      "24": 17
+    },
+    "min_bounding_box_gap_px": 22.0,
+    "enclosed_windows_alpha_zero": {
+      "F01": 47585,
+      "F02": 38741,
+      "F03": 45961,
+      "F04": 48251,
+      "F05": 46619,
+      "F06": 37607
+    },
+    "frame_count": 6,
+    "decorations": 11,
+    "page_px": [
+      1080,
+      1080
+    ],
+    "sheet_px": [
+      1241,
+      1154
+    ]
+  },
+  "sentinels": {
+    "SUBJECT": {
+      "onPageMaskPx": 97524,
+      "visibleMaskPx": 97524,
+      "changedPx": 97524,
+      "outsideMaskPx": 0
+    },
+    "F06": {
+      "onPageMaskPx": 39035,
+      "visibleMaskPx": 38250,
+      "changedPx": 37714,
+      "outsideMaskPx": 0
+    },
+    "F05": {
+      "onPageMaskPx": 46834,
+      "visibleMaskPx": 42992,
+      "changedPx": 42383,
+      "outsideMaskPx": 0
+    },
+    "F04": {
+      "onPageMaskPx": 51454,
+      "visibleMaskPx": 51035,
+      "changedPx": 50241,
+      "outsideMaskPx": 0
+    },
+    "F03": {
+      "onPageMaskPx": 39102,
+      "visibleMaskPx": 37175,
+      "changedPx": 36937,
+      "outsideMaskPx": 0
+    },
+    "F02": {
+      "onPageMaskPx": 35996,
+      "visibleMaskPx": 35652,
+      "changedPx": 35192,
+      "outsideMaskPx": 0
+    },
+    "F01": {
+      "onPageMaskPx": 51293,
+      "visibleMaskPx": 47433,
+      "changedPx": 46630,
+      "outsideMaskPx": 0
+    }
+  },
+  "jsonRoundTrip": {
+    "B0": true,
+    "B1": true
+  },
+  "zipSha256": {
+    "B0": "bce2fd5cc3b8673ccca625b11aad915555485898a5b9361ffea2d535c841daf4",
+    "B1": "b2d51f4cbb2768f2f411d66710d484529b0a3e73affbdf180b9700c044676638"
+  },
+  "originalFilesVerified": 225,
+  "jpegBytes": {
+    "compare-demo.jpg": 598767,
+    "B0.jpg": 294906,
+    "B1.jpg": 295963,
+    "compare-blank.jpg": 462534,
+    "compare-checker.jpg": 556826
+  }
+}
