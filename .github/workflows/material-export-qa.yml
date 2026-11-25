@@ -37,4 +37,5 @@ jobs:
       - run: npm ci --prefix scripts/tinix-mcp
       - run: node --check scripts/tinix-mcp/server.mjs
       - run: node --check scripts/tinix-mcp/material-export.mjs
+      - run: node --check scripts/tinix-mcp/material-export-live-smoke.mjs
       - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs
