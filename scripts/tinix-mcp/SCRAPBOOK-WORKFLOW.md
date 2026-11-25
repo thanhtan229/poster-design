@@ -1,5 +1,25 @@
 # Dựng scrapbook qua MCP với một lần duyệt
 
+## P3 · Điều phối từ brief đến bàn giao
+
+[TINIX] MCP 1.3.0 thêm `orchestrate_scrapbook_workflow` và giữ schema các tool P1/P2. Mỗi thao tác ghi kết quả theo cặp `workflow_id` và `operation_id` (UUID). Dùng lại cùng ID và đầu vào khi lỗi tạm thời. Thao tác mới dùng ID mới. ID job được lưu khi duyệt. ID thao tác sửa đồng thời là ID revision.
+
+| Action | Cách dùng |
+|---|---|
+| `prepare` | Gửi `brief`, tùy chọn số demo 2–6 (mặc định 3), tỷ lệ, theme, title và bảy `illustrations` F01–F06, SUBJECT. Tạo N kit và QA nguồn trước khi trả ảnh các demo đạt. |
+| `status` | Đọc workflow và biên nhận của operation ID nếu có. Gọi lại `prepare` với đầu vào cũ để nhận preview. |
+| `review_sources` | ChatGPT gửi `reviews` với `demo_id`, `status` và `notes` cho cả batch. Soi viền trắng, ren, chữ, bóng đổ, mép SUBJECT và chi tiết che. Cổng tự động chặn ghi pass cho ứng viên lỗi hoặc chưa đủ chứng cứ. |
+| `advance` | Gửi `approved_demo_id` sau khi người dùng chọn. Tại `awaiting_layout_qa`, kiểm render và gửi thao tác mới với `layout_review` gồm job_id, status và notes. Nếu đạt, trả manifest bàn giao gồm SHA-256 và kích thước của từng tệp. |
+| `repair` | Gửi demo_id, layer, donor_workflow_id, donor_demo_id, donor_layer và reason. Nếu an toàn, tạo revision riêng và kiểm lại. Revision yêu cầu duyệt mới trước khi dựng. |
+
+Gọi `get_scrapbook_workflow` để nhận bytes của `final_render`, `materials_zip`, `comparison` và `qa_report` qua MCP. Lượt nghiệm thu ChatGPT web cần tải thử và đối chiếu hash của cả bốn tệp.
+
+Host đọc và băm ZIP Skill v1.2.13 tại `TINIX_STUDIO_SKILL_ARCHIVE`, mặc định `Downloads/skill (8).zip` của tài khoản chạy server. Gói khác trả `SKILL_SOURCE_MISMATCH`. Bằng chứng này xác nhận nguồn host, còn Skill đang hoạt động trong ChatGPT được ghi `not_verified` cho tới khi kiểm trên web. Tool không nhận chuỗi hash Skill từ client. TinixPoster dùng chung bảy hình cho toàn batch và ghi số lượt AI của mình riêng với số phía ChatGPT.
+
+Hash khóa chứng minh bytes bất biến. Khi dò RGB không đủ mẫu, QA chỉ chấp nhận thêm biên nhận băm từ bộ sinh procedural chạy trên host. Với các workflow procedural cũ chưa có biên nhận, host sinh lại riêng lớp tĩnh trong thư mục QA và đối chiếu hash. Thiếu bằng chứng trả `uncertain`. Bộ dò RGB chính xác có giới hạn khi ảnh đã xoay, cắt, đổi cỡ hay màu.
+
+Chạy integration bằng `node scripts/tinix-mcp/orchestrator.test.mjs .runtime/scrapbook-p3-test .runtime/mcp-material` với app cục bộ, Python và gói Skill host. Tham số cuối là tùy chọn để kiểm fixture P2. `node --test scripts/tinix-mcp/orchestrator-contract.test.mjs` kiểm hợp đồng MCP trên CI. Nếu tiến trình bị tắt cưỡng bức trong khi giữ khóa thư mục, quản trị viên cần xác minh tiến trình đã dừng trước khi xử lý khóa mồ côi.
+
 ## P2 · Kiểm nguồn và sửa trên bản sao
 
 [TINIX] Server MCP 1.2.0 thêm hai công cụ, giữ schema của 15 công cụ trước.

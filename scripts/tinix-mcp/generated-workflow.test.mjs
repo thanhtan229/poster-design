@@ -136,8 +136,8 @@ async function checkOldCustomer(source) {
 try {
   const previous = await json(new URL('./evidence/p0/mcp-local-tools.json', import.meta.url))
   const { tools } = await client.listTools()
-  assert.equal(client.getServerVersion().version, '1.2.0') // [TINIX]
-  assert.equal(new Set(tools.map(tool => tool.name)).size, 17) // [TINIX]
+  assert.equal(client.getServerVersion().version, '1.3.0') // [TINIX]
+  assert.equal(new Set(tools.map(tool => tool.name)).size, 18) // [TINIX]
   for (const old of previous) assert.deepEqual(tools.find(tool => tool.name === old.name), old, old.name)
   assert.ok(tools.some(tool => tool.name === prepare))
   assert.ok((await call(prepare, { ...base, request_id: randomUUID(), skill_version: '1.2.6' })).isError)

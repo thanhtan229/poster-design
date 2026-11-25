@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
 import { access, mkdir, mkdtemp, readFile, rename, rm, rmdir, writeFile } from 'node:fs/promises' // [TINIX]
 import { createRequire } from 'node:module'
+import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
@@ -108,6 +109,32 @@ export function workflowTools(attachment) {
       donor_workflow_id: id, donor_demo_id: { enum: templateDemos }, donor_layer: { type: 'string', pattern: '^(BACKGROUND|F0[1-6]|D[0-9]{2})$' },
       reason: { type: 'string', minLength: 1, maxLength: 2000 },
     }),
+  }, { // [TINIX] Stateful entry point for the P3 producer without changing existing tool schemas.
+    name: 'orchestrate_scrapbook_workflow', title: 'Điều phối sản xuất scrapbook từ brief',
+    description: 'Prepare a batch with automatic source QA, resume, record visual source review, advance an approved demo, or repair one asset on a revision. Use a fresh operation_id for each distinct action; reuse it unchanged on retry. Read completed artifacts via get_scrapbook_workflow.',
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    _meta: { 'openai/fileParams': ['illustrations'] },
+    inputSchema: schema(['action', 'workflow_id', 'operation_id'], {
+      action: { type: 'string', enum: ['prepare', 'review_sources', 'advance', 'repair', 'status'] },
+      workflow_id: id, operation_id: id,
+      brief: { type: 'string', minLength: 1, maxLength: 3000 },
+      title: { type: 'string', maxLength: 70 }, theme: { type: 'string', enum: ['pastel', 'vintage', 'coastal'] },
+      demo_count: { type: 'integer', minimum: 2, maximum: 6 },
+      aspect_ratio: { type: 'string', pattern: '^[1-9][0-9]{0,3}:[1-9][0-9]{0,3}$' },
+      illustrations: { type: 'array', minItems: 7, maxItems: 7, items: attachment },
+      reviews: { type: 'array', minItems: 1, maxItems: 6, items: schema(['demo_id', 'status', 'notes'], {
+        demo_id: { type: 'string', enum: templateDemos }, status: { type: 'string', enum: ['pass', 'fail', 'uncertain'] },
+        notes: { type: 'string', minLength: 1, maxLength: 2000 },
+      }) },
+      approved_demo_id: { type: 'string', enum: templateDemos },
+      layout_review: schema(['job_id', 'status', 'notes'], {
+        job_id: id, status: { type: 'string', enum: ['pass', 'fail', 'uncertain'] },
+        notes: { type: 'string', minLength: 1, maxLength: 2000 },
+      }),
+      demo_id: { type: 'string', enum: templateDemos }, layer: { type: 'string' },
+      donor_workflow_id: id, donor_demo_id: { type: 'string', enum: templateDemos },
+      donor_layer: { type: 'string' }, reason: { type: 'string', minLength: 1, maxLength: 2000 },
+    }),
   }]
 }
 
@@ -168,14 +195,18 @@ function staticLayers(manifest) {
 }
 
 async function staticTrust(directory, state, demo) {
-  if (state.revision) return state.revision.trustedStaticHashes
-  if (!state.generated) return []
+  if (state.revision) return { trusted: state.revision.trustedStaticHashes ?? [], procedural: state.revision.proceduralStaticHashes ?? [] }
+  const empty = { trusted: [], procedural: [] }
+  if (!state.generated) return empty
   const locks = await json(path.join(directory, 'locks.json'))
   const lock = locks.find(item => item.demoId === demo)
   const manifest = await readFile(path.join(packageDir(directory), demo + '.source.json'))
-  if (!lock || digest(manifest) !== lock.manifestSha256) return []
+  if (!lock || digest(manifest) !== lock.manifestSha256) return empty
   const staticNames = new Set(staticLayers(JSON.parse(manifest)).map(layer => layer.asset))
-  return lock.inputs.filter(([name]) => staticNames.has(name)).map(([, hash]) => hash)
+  const trusted = lock.inputs.filter(([name]) => staticNames.has(name)).map(([, hash]) => hash)
+  // [TINIX] Only a server-generated receipt bound to this candidate can substitute for scan coverage.
+  const procedural = new Set(lock.proceduralStaticSha256 ?? [])
+  return { trusted, procedural: trusted.filter(hash => procedural.has(hash)), replay: !lock.proceduralStaticSha256 }
 }
 
 function validateCandidate(state, demo) {
@@ -196,6 +227,22 @@ async function auditSource(root, directory, state, demo, signal) {
   const audits = path.join(root, '.source-qa')
   await mkdir(audits, { recursive: true })
   const auditDir = await mkdtemp(path.join(audits, 'audit-'))
+  if (trusted.replay) { // [TINIX] Re-verify old procedural assets from the server's generator, never from their claimed trust.
+    const settings = path.join(directory, 'generation.json')
+    const available = await access(settings).then(() => true, error => {
+      if (error.code !== 'ENOENT') throw error
+      return false
+    })
+    if (available) {
+      const replay = path.join(auditDir, 'procedural-replay')
+      try {
+        await python([replay, settings, 'static-proof'], signal, generator)
+        const { proceduralStaticSha256 } = await json(path.join(replay, 'batch.json'))
+        const verified = new Set(proceduralStaticSha256)
+        trusted.procedural = trusted.trusted.filter(hash => verified.has(hash))
+      } finally { await rm(replay, { recursive: true, force: true }) }
+    }
+  }
   await save(path.join(auditDir, 'trust.json'), trusted)
   await python([source, hasKit ? storedKit : '', path.join(auditDir, 'evidence'), path.join(auditDir, 'trust.json')], signal, sourceQa)
   const evidence = path.join(auditDir, 'evidence')
@@ -227,7 +274,7 @@ async function requireCleanSource(root, directory, state, demo, signal) {
 }
 
 // [TINIX] Copy just this composition and replace one static asset. No external file paths are accepted.
-async function repairSource(root, directory, state, args, signal) {
+async function repairSource(root, directory, state, args, signal, revisionId = randomUUID()) { // [TINIX]
   const { demo_id: demo, layer: code, donor_demo_id: donorDemo, donor_layer: donorCode, reason } = args
   validateCandidate(state, demo)
   const kind = value => value === 'BACKGROUND' ? 'background' :
@@ -257,7 +304,6 @@ async function repairSource(root, directory, state, args, signal) {
   if (kind(code) === 'background' && (source.page.width !== donor.page.width || source.page.height !== donor.page.height)) {
     throw new Error('REPAIR_BLOCKED: Nền thay cần cùng kích thước trang.')
   }
-  const revisionId = randomUUID()
   const destination = path.join(path.dirname(directory), revisionId)
   const stage = await mkdtemp(destination + '-repair-')
   try {
@@ -297,10 +343,13 @@ async function repairSource(root, directory, state, args, signal) {
       // [TINIX] A rejected parent's digest must not propagate into the revision.
       trustedStaticHashes: [...new Set([...before.report.layers.filter(item => item.status === 'pass' && item.provenanceVerified)
         .map(item => item.sha256),
-        ...donorAudit.layers.map(item => item.sha256)])] }
+        ...donorAudit.layers.map(item => item.sha256)])],
+      proceduralStaticHashes: [...new Set([...before.report.layers, ...donorAudit.layers]
+        .filter(item => item.status === 'pass' && item.proceduralGenerationVerified).map(item => item.sha256))] }
     await python(['export', manifest, path.join(files, demo)], signal, sourceQa)
     const lock = { demoId: demo, ...await sourceLock(stage, demo, true, true) }
     const draft = { workflowId: revisionId, mode: 'template', generated: true, revision, sourceQaRequired: true,
+      ...(state.orchestration && { orchestration: state.orchestration, skillProof: state.skillProof }),
       approvedDemoId: null, currentJobId: null, parentJobId: state.currentJobId, qaStatus: 'awaiting_source_qa',
       retryCount: 0, artifacts: {}, demos: [{ demoId: demo, demoSha256: lock.demoSha256,
         manifestSha256: lock.manifestSha256, materialSha256: lock.materialSha256 }],
@@ -312,6 +361,7 @@ async function repairSource(root, directory, state, args, signal) {
       draft.qaStatus = 'awaiting_demo'
       draft.stepStatus.sourceQa = 'done'
     } else draft.qaStatus = 'source_qa_failed'
+    if (draft.orchestration) draft.sourceScreen = { [demo]: after.report } // [TINIX]
     await save(path.join(stage, 'locks.json'), [lock])
     await save(path.join(stage, 'repair.json'), { revision, before: before.report, after: after.report })
     await save(path.join(stage, stateFile), draft)
@@ -322,7 +372,8 @@ async function repairSource(root, directory, state, args, signal) {
 }
 
 async function previews(directory, state) {
-  const panels = await Promise.all(state.demos.map(async ({ demoId: demo }) => {
+  const eligible = state.orchestration ? state.demos.filter(demo => state.sourceScreen?.[demo.demoId]?.status === 'pass') : state.demos
+  const panels = await Promise.all(eligible.map(async ({ demoId: demo }) => {
     const preview = file => sharp(file).resize(700, 900, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 92 }).toBuffer()
     const original = state.mode === 'template' ? await preview(demoFile(directory, demo, true))
       : await readFile(path.join(packageDir(directory), demo, 'qa', 'preview.jpg'))
@@ -349,6 +400,10 @@ async function reviewTemplateSources(directory, state, reviews) { // [TINIX]
   const locks = await json(path.join(directory, 'locks.json'))
   state.sourceReviews = await Promise.all(reviews.map(async ({ demo_id, status, notes }) => {
     const { demoId, ...expected } = locks.find(lock => lock.demoId === demo_id)
+    if (state.orchestration && status === 'pass' && state.sourceScreen?.[demoId]?.status !== 'pass') {
+      throw new Error('SOURCE_QA_BLOCKED: ' + demoId)
+    }
+    delete expected.proceduralStaticSha256 // [TINIX] Generation proof is persisted separately from the byte lock.
     if (JSON.stringify(await sourceLock(directory, demoId, true, state.generated === true)) !== JSON.stringify(expected)) throw new Error('Nguồn demo đã thay đổi.')
     return { demoId, status, notes: notes.trim(), evidence: await sourceEvidence(directory, demoId) }
   }))
@@ -359,7 +414,7 @@ async function reviewTemplateSources(directory, state, reviews) { // [TINIX]
 }
 
 // [TINIX] Store each proposed kit once and keep it tied to exactly one request and source.
-async function prepareGenerated(directory, workflowId, args, dependencies, signal) {
+async function prepareGenerated(directory, workflowId, args, dependencies, signal, skillProof) {
   const { brief, title, theme, demo_count: count = 3, aspect_ratio: aspect = '1:1',
     skill_version: skillVersion, skill_source_sha256: skillSourceSha256, illustrations } = args
   if (skillVersion !== '1.2.13' || skillSourceSha256 !== studioSha256) {
@@ -376,11 +431,12 @@ async function prepareGenerated(directory, workflowId, args, dependencies, signa
       illustrations.some(file => !nonempty(file?.file_id, 512)) ||
       new Set(illustrations.map(file => file.file_id)).size !== 7)) throw new Error('Cần đúng bảy ảnh minh họa riêng theo thứ tự F01–F06, SUBJECT.')
   const config = { brief: brief.trim(), title: title?.trim(), theme, demoCount: count, aspectRatio: aspect, skillVersion, skillSourceSha256 }
-  const requestSha256 = digest(JSON.stringify([config, illustrations?.map(file => file.file_id)]))
+  const requestSha256 = digest(JSON.stringify([config, illustrations?.map(file => file.file_id),
+    ...(skillProof ? [skillProof.sha256] : [])]))
   const existing = await json(path.join(directory, stateFile)).catch(error => { if (error.code !== 'ENOENT') throw error })
   if (existing) {
     if (existing.requestSha256 !== requestSha256) throw new Error('Mã yêu cầu đã gắn với đầu vào khác.')
-    return previews(directory, existing)
+    return skillProof ? response(existing) : previews(directory, existing)
   }
   const stage = await mkdtemp(directory + '-prepare-')
   try {
@@ -398,8 +454,12 @@ async function prepareGenerated(directory, workflowId, args, dependencies, signa
     const locks = await Promise.all(templateDemos.slice(0, count).map(async demoId =>
       ({ demoId, ...await sourceLock(stage, demoId, true, true) })))
     if (locks.some((lock, index) => lock.materialSha256 !== batch.kits[index].kitSha256)) throw new Error('SHA-256 của ZIP không khớp.')
+    const procedural = new Set(batch.proceduralStaticSha256)
+    for (const lock of locks) lock.proceduralStaticSha256 = [...new Set(lock.inputs.map(([, sha]) => sha)
+      .filter(sha => procedural.has(sha)))]
     const state = {
       workflowId, mode: 'template', generated: true, requestSha256, brief: config.brief, aspectRatio: aspect,
+      ...(skillProof && { orchestration: 3, skillProof, sourceScreen: {} }),
       skillVersion, skillSourceSha256, batch, approvedDemoId: null, currentJobId: null, parentJobId: null,
       qaStatus: 'awaiting_source_qa', sourceQaRequired: true, retryCount: 0, artifacts: {},
       stepStatus: { prepare: 'done', sourceQa: 'waiting', approval: 'waiting' },
@@ -409,7 +469,7 @@ async function prepareGenerated(directory, workflowId, args, dependencies, signa
     await save(path.join(stage, 'locks.json'), locks)
     await save(path.join(stage, stateFile), state)
     await rename(stage, directory)
-    return previews(directory, state)
+    return skillProof ? response(state) : previews(directory, state)
   } finally { await rm(stage, { recursive: true, force: true }) }
 }
 
@@ -548,6 +608,7 @@ async function advance(root, directory, state, args, dependencies, signal) {
   if (changes.some(([action]) => !state.policy[action])) throw new Error('Quyền sửa này chưa được cấp khi duyệt demo.')
   const lock = await sourceLock(directory, state.approvedDemoId, template, state.generated === true)
   const { demoId, ...approvedLock } = state.approved
+  delete approvedLock.proceduralStaticSha256 // [TINIX]
   if (JSON.stringify(lock) !== JSON.stringify(approvedLock)) throw new Error('Nguồn demo đã khóa bị thay đổi.')
   if (state.qaStatus === 'passed') return response(state)
   const actionKey = changes.length ? digest(JSON.stringify(changes)) : undefined
@@ -678,7 +739,11 @@ async function advance(root, directory, state, args, dependencies, signal) {
       state.currentJobId = state.importJobId
       state.qaStatus = qa.pass ? 'passed' : 'exception'
       state.stepStatus.delivery = qa.pass ? 'done' : 'blocked'
-      if (qa.pass) state.artifacts = { final_render: state.currentJobId, materials_zip: state.variant, comparison: true, qa_report: true }
+      if (qa.pass) {
+        state.artifacts = { final_render: state.currentJobId, materials_zip: state.variant, comparison: true, qa_report: true }
+        if (state.orchestration) state.delivery = await Promise.all(Object.keys(state.artifacts).map(async artifact =>
+          (await artifactFile(root, directory, state, artifact)).info)) // [TINIX]
+      }
       await commit()
       return response({ ...state, qa }, (await runSubjectEditTool(root, subjectEditTools[0].name,
         { job_id: state.currentJobId })).content.slice(1))
@@ -785,12 +850,147 @@ async function advance(root, directory, state, args, dependencies, signal) {
   }
 }
 
+// [TINIX] Verify the actual immutable Studio source available to the host for each new batch.
+async function verifyStudioSource() {
+  const source = process.env.TINIX_STUDIO_SKILL_ARCHIVE || path.join(homedir(), 'Downloads', 'skill (8).zip')
+  const verified = await readFile(source).then(bytes => digest(bytes) === studioSha256, error => {
+    if (error.code !== 'ENOENT') throw error
+    return false
+  })
+  if (!verified) throw new Error('SKILL_SOURCE_MISMATCH: TINIX_STUDIO_SKILL_ARCHIVE phải trỏ tới ZIP Studio v1.2.13 đã duyệt.')
+  return { version: '1.2.13', sha256: studioSha256, verifiedBy: 'host_archive_sha256', clientSkill: 'not_verified' }
+}
+
+const actionFields = { // [TINIX]
+  prepare: ['brief', 'title', 'theme', 'demo_count', 'aspect_ratio', 'illustrations'],
+  review_sources: ['reviews'],
+  advance: ['approved_demo_id', 'layout_review'],
+  repair: ['demo_id', 'layer', 'donor_workflow_id', 'donor_demo_id', 'donor_layer', 'reason'],
+  status: [],
+}
+
+async function screenCandidates(root, directory, state, signal) { // [TINIX] Checkpoints let retries continue after the last completed candidate.
+  const locks = await json(path.join(directory, 'locks.json'))
+  for (const { demoId } of state.demos) {
+    const { demoId: ignored, proceduralStaticSha256, ...expected } = locks.find(lock => lock.demoId === demoId)
+    if (JSON.stringify(await sourceLock(directory, demoId, true, true)) !== JSON.stringify(expected)) {
+      throw new Error('SOURCE_QA_BLOCKED: Nguồn demo đã thay đổi.')
+    }
+    if (state.sourceScreen[demoId]) continue
+    const { report } = await auditSource(root, directory, state, demoId, signal)
+    state.sourceScreen[demoId] = { status: report.status, issues: report.issues,
+      manifestSha256: report.manifestSha256, kitSha256: report.kitSha256 }
+    await save(path.join(directory, stateFile), state)
+  }
+  const eligible = Object.values(state.sourceScreen).some(row => row.status === 'pass')
+  state.stepStatus.sourceScreen = eligible ? 'done' : 'blocked'
+  if (!eligible) state.qaStatus = 'source_qa_failed'
+  await save(path.join(directory, stateFile), state)
+  return previews(directory, state)
+}
+
+async function orchestrate(root, directory, workflowId, args, dependencies, signal) { // [TINIX]
+  const { action, operation_id: rawId } = args
+  const operationId = uuid(rawId)
+  if (!Object.hasOwn(actionFields, action)) throw new Error('Thao tác workflow không hợp lệ.')
+  const fields = actionFields[action]
+  if (Object.keys(args).some(key => !['workflow_id', 'operation_id', 'action', ...fields].includes(key))) {
+    throw new Error('Tham số không phù hợp với thao tác workflow.')
+  }
+  const load = () => json(path.join(directory, stateFile))
+  const operationRoot = path.join(root, '.workflow-operations', workflowId)
+  const operationFile = path.join(operationRoot, operationId + '.json')
+  if (action === 'status') {
+    const [state, operation] = await Promise.all([load(), json(operationFile)].map(task =>
+      task.catch(error => { if (error.code !== 'ENOENT') throw error; return null })))
+    if (!state && !operation) throw new Error('Không tìm thấy workflow hoặc thao tác.')
+    const { key, ...visible } = operation ?? {}
+    return response({ ...(state ?? { workflowId }), ...(operation && { operation: { operationId, ...visible } }) })
+  }
+  await mkdir(operationRoot, { recursive: true })
+  const input = Object.fromEntries(fields.map(field => [field, args[field]]))
+  const key = digest(JSON.stringify([action, { ...input, ...(input.illustrations &&
+    { illustrations: input.illustrations.map(item => item?.file_id) }) }], (_, value) =>
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value))
+  const prior = await json(operationFile).catch(error => { if (error.code !== 'ENOENT') throw error })
+  if (prior && prior.key !== key) throw new Error('OPERATION_ID_REUSED: Mã thao tác đã dùng cho đầu vào khác.')
+  const receipt = prior ?? { action, key }
+  const record = async (status, details = {}) => save(operationFile, { ...receipt, status, ...details })
+  if (prior?.status === 'done' && action !== 'prepare') {
+    if (action === 'repair') {
+      const stored = path.join(path.dirname(directory), operationId)
+      const result = await json(path.join(stored, 'repair.json'))
+      return response({ ...await json(path.join(stored, stateFile)), before: result.before, after: result.after })
+    }
+    const state = await load()
+    return state.qaStatus === 'awaiting_layout_qa'
+      ? response(state, [image(await readFile(path.join(directory, 'comparison.png')))]) : response(state)
+  }
+  await record('pending')
+  try {
+    let result
+    if (action === 'prepare') {
+      const existing = await load().catch(error => { if (error.code !== 'ENOENT') throw error })
+      if (existing && existing.orchestration !== 3) throw new Error('WORKFLOW_ID_REUSED: Chọn workflow ID mới.')
+      const proof = existing?.skillProof ?? await verifyStudioSource()
+      await prepareGenerated(directory, workflowId, { ...input, skill_version: proof.version,
+        skill_source_sha256: proof.sha256 }, dependencies, signal, proof)
+      result = await screenCandidates(root, directory, await load(), signal)
+    } else {
+      const state = await load()
+      if (action === 'repair') {
+        const revision = path.join(path.dirname(directory), operationId)
+        if (await access(revision).then(() => true, error => { if (error.code !== 'ENOENT') throw error; return false })) {
+          const saved = await json(path.join(revision, 'repair.json'))
+          if (!prior || saved.revision.parentWorkflowId !== workflowId) throw new Error('OPERATION_ID_REUSED: Trùng mã revision.')
+          result = response({ ...await json(path.join(revision, stateFile)), before: saved.before, after: saved.after })
+        } else {
+          const proof = state.skillProof ?? await verifyStudioSource()
+          result = await repairSource(root, directory, { ...state, orchestration: 3, skillProof: proof }, args, signal, operationId)
+        }
+      } else {
+        if (state.orchestration !== 3) throw new Error('Workflow này dùng công cụ P1/P2 hiện tại.')
+        result = action === 'review_sources'
+          ? await reviewTemplateSources(directory, state, args.reviews)
+          : await advance(root, directory, state, args, dependencies, signal)
+      }
+    }
+    const next = result.structuredContent
+    await record(next.qaStatus === 'retryable_error' ? 'retryable_error' : 'done', {
+      workflowId: next.workflowId, jobId: next.currentJobId ?? null, ...(next.lastError && { error: next.lastError }),
+    })
+    return result
+  } catch (error) {
+    await record('error', { error: error.message })
+    if (action === 'repair' && /REPAIR_BLOCKED|SOURCE_QA_(FAIL|UNCERTAIN)/.test(error.message)) {
+      return response({ workflowId, qaStatus: 'blocked', operationId, reason: error.message })
+    }
+    throw error
+  }
+}
+
+async function artifactFile(root, directory, state, artifact) { // [TINIX]
+  const [file, mimeType] = {
+    final_render: [path.join(resultDir(root, state.currentJobId), 'render.png'), 'image/png'],
+    materials_zip: [material(directory, state.variant), 'application/zip'],
+    comparison: [path.join(directory, 'comparison.png'), 'image/png'],
+    qa_report: [path.join(directory, 'qa.json'), 'application/json'],
+  }[artifact]
+  const bytes = await readFile(file)
+  return { bytes, mimeType, info: { artifact, fileName: path.basename(file), bytes: bytes.length, sha256: digest(bytes) } }
+}
+
 export async function runScrapbookWorkflow(root, name, args, signal, dependencies) {
   const generated = name === 'prepare_generated_scrapbook_workflow' // [TINIX]
   const staging = generated || name === 'prepare_scrapbook_workflow'
   const workflowId = uuid(staging ? args?.request_id : args?.workflow_id)
   const workflows = path.resolve(root, '.workflows')
   const directory = path.join(workflows, workflowId)
+  if (name === 'orchestrate_scrapbook_workflow') { // [TINIX]
+    await mkdir(workflows, { recursive: true })
+    return withLock(directory, () => orchestrate(path.resolve(root), directory, workflowId, args, dependencies, signal))
+  }
   if (staging) {
     await mkdir(workflows, { recursive: true })
     return withLock(directory, () => (generated ? prepareGenerated : prepare)(directory, workflowId, args, dependencies, signal))
@@ -815,17 +1015,14 @@ export async function runScrapbookWorkflow(root, name, args, signal, dependencie
   if (state.mode === 'template' && ['final_render', 'materials_zip'].includes(artifact)) { // [TINIX]
     const lock = await sourceLock(directory, state.approvedDemoId, true, state.generated === true)
     const { demoId, ...expected } = state.approved
+    delete expected.proceduralStaticSha256 // [TINIX]
     if (JSON.stringify(lock) !== JSON.stringify(expected)) throw new Error('Nguồn demo đã khóa bị thay đổi.')
     await requireCleanSource(root, directory, state, state.approvedDemoId, signal)
   }
-  const [file, mimeType] = {
-    final_render: [path.join(resultDir(root, state.currentJobId), 'render.png'), 'image/png'],
-    materials_zip: [material(directory, state.variant), 'application/zip'],
-    comparison: [path.join(directory, 'comparison.png'), 'image/png'],
-    qa_report: [path.join(directory, 'qa.json'), 'application/json'],
-  }[artifact]
-  const bytes = await readFile(file)
-  return response({ workflowId, artifact, fileName: path.basename(file), bytes: bytes.length, sha256: digest(bytes) }, [{
+  const { bytes, mimeType, info } = await artifactFile(root, directory, state, artifact)
+  const expected = state.delivery?.find(item => item.artifact === artifact)
+  if (expected && expected.sha256 !== info.sha256) throw new Error('Tệp bàn giao đã thay đổi.')
+  return response({ workflowId, ...info }, [{
     type: 'resource', resource: { uri: 'tinixposter://workflow/' + workflowId + '/' + artifact, mimeType, blob: bytes.toString('base64') },
   }])
 }

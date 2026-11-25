@@ -169,7 +169,7 @@ def sample(index, colors, subject=False):
     return image
 
 
-def build(output, config):
+def build(output, config, *, static_only=False):  # [TINIX]
     started = perf_counter()
     require(config["skillVersion"] == "1.2.13" and config["skillSourceSha256"] == SKILL_SHA256,
             "Skill source mismatch; use the approved Studio v1.2.13 bundle")
@@ -267,6 +267,8 @@ def build(output, config):
         }
         static_files = {background_file, *(part["asset"] for part in frames+decor)}
         require(not static_files.intersection(i["file"] for i in illustrations.values()), "Illustration used in a static layer")
+        if static_only:
+            continue
         manifest_file = output / (demo+".source.json")
         manifest_file.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
         export_started = perf_counter()
@@ -280,6 +282,9 @@ def build(output, config):
     assets = list(catalog.by_key.values())
     (output / "catalog.json").write_text(json.dumps({"version":1,"assets":assets},ensure_ascii=False,indent=2),encoding="utf-8")
     return {"scope":"batch", "aiCallsByTinixPoster":0, "upstreamAiCalls":None if supplied else 0,
+            # [TINIX] The generator records proof from its own static render outputs, before MCP publishes the batch.
+            "proceduralStaticSha256":sorted({a["sha256"] for a in assets
+                                              if not a["previewOnly"] and a["provenance"]["origin"] == "code"}),
             "illustrationMode":"attached-preview" if supplied else "procedural-fixture",
             "newStaticAssets":sum(not a["previewOnly"] for a in assets),
             "newProceduralAssets":sum(a["provenance"]["origin"] == "code" for a in assets),
@@ -289,6 +294,11 @@ def build(output, config):
 
 
 if __name__ == "__main__":
-    destination, settings = map(Path, sys.argv[1:])
-    result = build(destination, json.loads(settings.read_text(encoding="utf-8")))
+    destination, settings = map(Path, sys.argv[1:3])
+    config = json.loads(settings.read_text(encoding="utf-8"))
+    static_only = sys.argv[3:] == ["static-proof"]
+    if static_only:
+        # [TINIX] Replay only code-generated pixels for old locks without a receipt.
+        config.pop("illustrations", None)
+    result = build(destination, config, static_only=static_only)
     (destination / "batch.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

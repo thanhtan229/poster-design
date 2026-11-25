@@ -21,7 +21,7 @@ def texture(seed):
     return Image.fromarray(generator.integers(20, 230, (155, 120, 3), dtype=np.uint8), "RGB")
 
 
-def contaminate(parent, candidate, code, layer, *, scaled=False, visible=False, hidden_rgb=False):
+def contaminate(parent, candidate, code, layer, *, scaled=False, visible=False, hidden_rgb=False, transformed=None):
     candidate.mkdir()
     shutil.copytree(parent/"assets",candidate/"assets")
     source = candidate/(code+".source.json")
@@ -33,6 +33,10 @@ def contaminate(parent, candidate, code, layer, *, scaled=False, visible=False, 
     patch = Image.fromarray(patch).convert("RGBA")
     if scaled:
         patch = patch.resize((18,18),Image.Resampling.BILINEAR)
+    if transformed == "rotated":  # [TINIX] Transform already baked into the static asset.
+        patch = patch.rotate(21,Image.Resampling.BICUBIC,expand=True)
+    if transformed == "cropped":
+        patch = patch.crop((0,0,16,20))
     asset = manifest["background"] if layer == "BACKGROUND" else next(
         part["asset"] for part in manifest["frames"]+manifest["decorations"] if part["code"] == layer)
     file = candidate/asset
@@ -73,7 +77,7 @@ class SourceQaTest(unittest.TestCase):
 
     def audit(self, folder, name, trust=None):
         return inspect(folder/"A.source.json",folder/"A/material.zip",self.root/name,
-                       self.trust if trust is None else trust)
+                       self.trust if trust is None else trust,self.trust)
 
     def audit_with_trusted_layer(self, home, name, code):
         manifest = json.loads((home/"A.source.json").read_text(encoding="utf-8"))
@@ -88,6 +92,12 @@ class SourceQaTest(unittest.TestCase):
         self.assertEqual(len(result["sentinels"]),7)
         self.assertTrue(all(not s["outsideMaskPx"] and s["changedPx"] for s in result["sentinels"].values()))
         self.assertEqual(self.audit(self.clean,"unknown-audit",set())["status"],"uncertain")
+
+    def test_trusted_without_independent_generation_is_uncertain(self):
+        result = inspect(self.clean/"A.source.json",self.clean/"A/material.zip",
+                         self.root/"trusted-only-audit",self.trust)
+        self.assertEqual(result["status"],"uncertain")
+        self.assertTrue(any(x["reason"] == "static_reference_scan_incomplete" for x in result["issues"]))
 
     def test_background_behind_subject(self):
         home = self.root/"background"
@@ -124,6 +134,14 @@ class SourceQaTest(unittest.TestCase):
         contaminate(self.clean,home,"A","BACKGROUND",scaled=True)
         result = self.audit(home,"scaled-audit")
         self.assertEqual(result["status"],"uncertain",result["issues"])
+
+    def test_rotated_and_cropped_fragments_without_proof_are_uncertain(self):
+        for variant in ("rotated","cropped"):
+            with self.subTest(variant=variant):
+                home = self.root/variant
+                contaminate(self.clean,home,"A","BACKGROUND",transformed=variant)
+                result = self.audit(home,variant+"-audit")
+                self.assertEqual(result["status"],"uncertain",result["issues"])
 
     def test_no_match_on_different_image(self):
         self.assertIsNone(locate_reference(texture(1),reference_tiles({"F01":texture(2)})))

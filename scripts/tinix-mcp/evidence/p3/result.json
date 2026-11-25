@@ -1,0 +1,62 @@
+{
+  "workflowId": "04eef0d0-9281-4d53-bd4f-00f8133e793b",
+  "jobId": "1a296723-eaf4-4b62-8e45-4f2dccaf4606",
+  "selected": "B",
+  "delivery": [
+    {
+      "artifact": "final_render",
+      "fileName": "render.png",
+      "bytes": 887762,
+      "sha256": "2808a1cf741a1078e23fa821f313382d5fa7591571290a8cbd00069987e4e596"
+    },
+    {
+      "artifact": "materials_zip",
+      "fileName": "material.zip",
+      "bytes": 3700688,
+      "sha256": "fa9e0249e054021308534f0040cdf3415e4dd2f40c7197bd0854e2610583cdeb"
+    },
+    {
+      "artifact": "comparison",
+      "fileName": "comparison.png",
+      "bytes": 686190,
+      "sha256": "297be8a12ee5a6c9a63cbbaf9a8520a4825706dfcc2a8ec888314d7616a88e15"
+    },
+    {
+      "artifact": "qa_report",
+      "fileName": "qa.json",
+      "bytes": 15249,
+      "sha256": "12b89e04de10a5c9b6cbc9d4a5b4284ddbd6f696cd8f9ab3a63f6f550e97b7ce"
+    }
+  ],
+  "demos": [
+    {
+      "demoId": "A",
+      "demoSha256": "a0769f4897abc3b43b06258d2507538d236a28bd0acef355d22013640f244923",
+      "manifestSha256": "d91635f5dce44b564e73bd6003021f39f3581137bc63b850d6738dbe3562524e",
+      "materialSha256": "3d8c5445cae2a6a1c9fa84b88e72ce0028e898834439fa771e119e571c619647"
+    },
+    {
+      "demoId": "B",
+      "demoSha256": "d88caf07fddb6f64266f61474fc5e51a0325fcf63f9a7f91d77f28a189a43fd9",
+      "manifestSha256": "13c60b190c5ac174d7bb850af3ecdf282584bb99ef30335e4458aaffcf652473",
+      "materialSha256": "fa9e0249e054021308534f0040cdf3415e4dd2f40c7197bd0854e2610583cdeb"
+    },
+    {
+      "demoId": "C",
+      "demoSha256": "901ada199db96077ffc3cae11a78a938f89e775db82d44bbe5ec8191ff5f2e1e",
+      "manifestSha256": "0fa2f9fd0d4dfb4622dbe2219efde3a2e3174d1523b73c366ea16551b8531fb1",
+      "materialSha256": "0494d8e910cf8e072440fa24174670c00e0e2434e669f2b8a0f3e47151fba7a3"
+    }
+  ],
+  "renderer": "real-local",
+  "retryInjection": "HTTP 408 at build adapter",
+  "distinctJobsForSelection": 1,
+  "upstreamAiCalls": 0,
+  "restart": "MCP sessions recreated",
+  "repair": {
+    "parentWorkflowId": "79fb93c1-ea3d-4ca7-92dc-dcc1b6590908",
+    "revisionId": "79dff525-1a1a-4eef-b2ac-b30c03de2181",
+    "before": "fail",
+    "after": "pass"
+  }
+}

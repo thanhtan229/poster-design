@@ -211,7 +211,7 @@ async function runDraft(input, output, signal) {
 
 export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root, '.runtime', 'mcp-material'),
   additionalHosts = new Set() } = {}) {
-  const server = new Server({ name: 'tinixposter-material', version: '1.2.0' }, { capabilities: { tools: {} } }) // [TINIX] Audits source and creates verified repair copies.
+  const server = new Server({ name: 'tinixposter-material', version: '1.3.0' }, { capabilities: { tools: {} } }) // [TINIX] Adds persistent P3 orchestration.
   let busy = false
   const attachmentTools = [tool, photoTool, subjectPreviewTool, demoComparisonTool] // [TINIX]
   const workflows = workflowTools(attachmentSchema) // [TINIX]
