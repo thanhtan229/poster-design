@@ -127,9 +127,18 @@ def convert(source_zip, filled_png, dest_zip, report_path):
         if png(outputs[name]).size != actual.size:
             raise ExportBlocked("OUTPUT_PAGE_SIZE_MISMATCH")
     dest_zip.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(dest_zip, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=3) as dst:
-        for name in REQUIRED:
-            dst.writestr(name, outputs[name])
+    # Atomic, deterministic, retry-safe artifact. A rerun cannot leave a partial ZIP.
+    temporary = dest_zip.with_suffix(".part.zip")
+    try:
+        with zipfile.ZipFile(temporary, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=3) as dst:
+            for name in REQUIRED:
+                info = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                dst.writestr(info, outputs[name], compress_type=zipfile.ZIP_DEFLATED, compresslevel=3)
+        os.replace(temporary, dest_zip)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
     checksums = {name: hashlib.sha256(outputs[name]).hexdigest() for name in REQUIRED}
     report = {
         "status": "exported_requires_import_qa",
