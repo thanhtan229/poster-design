@@ -1,0 +1,416 @@
+{
+  "serverVersion": "1.3.0",
+  "toolCount": 18,
+  "workflowId": "09fe1b66-2f07-4961-b892-0de369087370",
+  "jobId": "39fd3ad7-97fd-410c-b610-de95511d2591",
+  "harness": "MCP SDK in-memory, fixture bytes at download seam, real local renderer on port 7001",
+  "fixtureInputSha256": {
+    "F04": "0998d6a0865c38afdf9a0743b781322328a32a66fd2a54bd8605456993bfeed5",
+    "F03": "b2e5bfc9bdcf5bf5ef2fa037c1f29f25f0f307872aefb80dd99fd1f5078f2d15",
+    "F05": "4d968613a5f2fcc6069cbba1df1d35a371e040d1c21a6f5049199eaae215156f",
+    "F06": "dd72f163237f93ed419aaa8df4b8ee49b0d3bb452663274487023ee9742c616d",
+    "SUBJECT": "6a786b2c00107a9fac34bbc8d754119d74564c73040728e1bbf3b85c45ffd30a",
+    "F01": "ce111d4e05c10619e4c91ff39f7836a148ea09e66d6a69c0cbdb22d6d6f7e4ec",
+    "F02": "8fb6e8f2581c119c552b71c8df804a48446af92f9bf0ee289cb9f92a5011e603"
+  },
+  "prepareWallMs": 36890,
+  "downloads": 7,
+  "illustrationUses": 28,
+  "illustrationReuses": 21,
+  "batch": {
+    "scope": "batch",
+    "aiCallsByTinixPoster": 0,
+    "upstreamAiCalls": null,
+    "illustrationMode": "attached-preview",
+    "newStaticAssets": 22,
+    "newProceduralAssets": 22,
+    "assetCacheHits": 59,
+    "sharedIllustrations": 7,
+    "illustrationHashes": {
+      "F01": "30638cc08d5d61dab5d49ed0aebadc7a8c44687ed264053fac2a30c9a2d8931f",
+      "F02": "e6e2ec1fb19e44f4c6f356ddb7b3ff4e8865a9c7e6e1128c5ebb05a43b090053",
+      "F03": "b2e5bfc9bdcf5bf5ef2fa037c1f29f25f0f307872aefb80dd99fd1f5078f2d15",
+      "F04": "0998d6a0865c38afdf9a0743b781322328a32a66fd2a54bd8605456993bfeed5",
+      "F05": "4d968613a5f2fcc6069cbba1df1d35a371e040d1c21a6f5049199eaae215156f",
+      "F06": "dd72f163237f93ed419aaa8df4b8ee49b0d3bb452663274487023ee9742c616d",
+      "SUBJECT": "6a786b2c00107a9fac34bbc8d754119d74564c73040728e1bbf3b85c45ffd30a"
+    },
+    "kits": [
+      {
+        "demoId": "A",
+        "compositionMs": 742,
+        "demoPreviewMs": 281,
+        "kitExportMs": 2442,
+        "renderAndExportMs": 3468,
+        "kitBytes": 3749005,
+        "kitSha256": "f842cb80d29cc6ebed6c11db410ac9b0cacd612e87baf855392bced5d000d969",
+        "manifestSha256": "1480bd1c83f93ebaa3302277bca604b7779ccc594dc7384de3e79316d8d7478b"
+      },
+      {
+        "demoId": "B",
+        "compositionMs": 933,
+        "demoPreviewMs": 490,
+        "kitExportMs": 2717,
+        "renderAndExportMs": 4573,
+        "kitBytes": 3700688,
+        "kitSha256": "e1a1371f001213b605cda97951954b624b442921348e73399538cc27ca8676a6",
+        "manifestSha256": "99acaea9ea058f72be87a27fd5ec6de9d8d9cdf57ab8f8d1e1c9e69b65793a34"
+      },
+      {
+        "demoId": "C",
+        "compositionMs": 880,
+        "demoPreviewMs": 519,
+        "kitExportMs": 2829,
+        "renderAndExportMs": 4794,
+        "kitBytes": 3746482,
+        "kitSha256": "5d7b3256898bce8236ad30d64397e990ed7909a1ebdc111fd4f89f23d674ee3d",
+        "manifestSha256": "381bfb6ed05e836c1f5ce177f5df0c3a8c402f2318480ba07bed361fc6c09c03"
+      },
+      {
+        "demoId": "D",
+        "compositionMs": 882,
+        "demoPreviewMs": 505,
+        "kitExportMs": 2786,
+        "renderAndExportMs": 4711,
+        "kitBytes": 3736200,
+        "kitSha256": "018ad6470893c9932c3b23ad68e35297d9fc71c12dc298976ada83adfdb1cd20",
+        "manifestSha256": "0374f1905ab52f7eacb96aa0271f510d079c706b8453c4bae62ea1c3a3d745c2"
+      }
+    ],
+    "batchMs": 21121
+  },
+  "variants": [
+    {
+      "id": "A",
+      "previewHashes": {
+        "demo.png": "91f66f2a10dda2d30c5b241a74814f1d7f1e8888a8a7f35fd2f447785d84049e",
+        "blank.png": "5661a63cad1f7fe8b8e6dbc165b94e1ebce3ebe4d5a0427cfaed031c3f3c855e",
+        "checker.png": "1a461e5285dbe6e0655b35a938d2f71a98be31abe2cbe104f5f66c4f691cb617"
+      },
+      "kitSha256": "f842cb80d29cc6ebed6c11db410ac9b0cacd612e87baf855392bced5d000d969",
+      "kitBytes": 3749005,
+      "frameStyles": [
+        "torn",
+        "polaroid",
+        "stamp",
+        "notebook",
+        "ticket",
+        "torn"
+      ],
+      "poses": [
+        {
+          "x": 205,
+          "y": 324,
+          "width": 292,
+          "height": 302,
+          "angle": -10
+        },
+        {
+          "x": 875,
+          "y": 302,
+          "width": 281,
+          "height": 302,
+          "angle": 8
+        },
+        {
+          "x": 184,
+          "y": 616,
+          "width": 270,
+          "height": 259,
+          "angle": -5
+        },
+        {
+          "x": 886,
+          "y": 572,
+          "width": 270,
+          "height": 259,
+          "angle": 10
+        },
+        {
+          "x": 248,
+          "y": 875,
+          "width": 302,
+          "height": 270,
+          "angle": 7
+        },
+        {
+          "x": 853,
+          "y": 853,
+          "width": 313,
+          "height": 292,
+          "angle": -8
+        }
+      ],
+      "subject": {
+        "x": 540,
+        "y": 594,
+        "width": 421,
+        "height": 572,
+        "angle": 0
+      }
+    },
+    {
+      "id": "B",
+      "previewHashes": {
+        "demo.png": "f4e743e5b8baef850c04aac6b0b57a2501676d327568f65817e61f3baad32187",
+        "blank.png": "02884845852cc48baadbf77dc11a593d3a59f865abc8d03b40ff4d3b6667eebe",
+        "checker.png": "38e0a3d635c143c16125867334618f33ecf1a3c19cc8b0f71b54e4978bf902a3"
+      },
+      "kitSha256": "e1a1371f001213b605cda97951954b624b442921348e73399538cc27ca8676a6",
+      "kitBytes": 3700688,
+      "frameStyles": [
+        "stamp",
+        "notebook",
+        "ticket",
+        "torn",
+        "polaroid",
+        "stamp"
+      ],
+      "poses": [
+        {
+          "x": 248,
+          "y": 302,
+          "width": 335,
+          "height": 238,
+          "angle": -6
+        },
+        {
+          "x": 583,
+          "y": 292,
+          "width": 259,
+          "height": 227,
+          "angle": 5
+        },
+        {
+          "x": 886,
+          "y": 335,
+          "width": 248,
+          "height": 259,
+          "angle": 12
+        },
+        {
+          "x": 842,
+          "y": 616,
+          "width": 302,
+          "height": 259,
+          "angle": -6
+        },
+        {
+          "x": 853,
+          "y": 875,
+          "width": 313,
+          "height": 238,
+          "angle": 7
+        },
+        {
+          "x": 518,
+          "y": 853,
+          "width": 259,
+          "height": 238,
+          "angle": -12
+        }
+      ],
+      "subject": {
+        "x": 335,
+        "y": 616,
+        "width": 421,
+        "height": 572,
+        "angle": 0
+      }
+    },
+    {
+      "id": "C",
+      "previewHashes": {
+        "demo.png": "f25a41aab95c4d391560c3993a1194826a22fa89c026ea822af75da8bc7ac1f4",
+        "blank.png": "dc88cd82273bf3ae2e27cac030f8f38f4d25145fdf84bcdf52e091873a02eb2f",
+        "checker.png": "9c722c675d1b7580828916c8f80204949137f2f6b2eec27d298cd43a23e9616f"
+      },
+      "kitSha256": "5d7b3256898bce8236ad30d64397e990ed7909a1ebdc111fd4f89f23d674ee3d",
+      "kitBytes": 3746482,
+      "frameStyles": [
+        "ticket",
+        "torn",
+        "polaroid",
+        "stamp",
+        "notebook",
+        "ticket"
+      ],
+      "poses": [
+        {
+          "x": 184,
+          "y": 356,
+          "width": 248,
+          "height": 281,
+          "angle": 7
+        },
+        {
+          "x": 227,
+          "y": 691,
+          "width": 324,
+          "height": 302,
+          "angle": -10
+        },
+        {
+          "x": 464,
+          "y": 864,
+          "width": 259,
+          "height": 248,
+          "angle": 7
+        },
+        {
+          "x": 875,
+          "y": 324,
+          "width": 302,
+          "height": 248,
+          "angle": -7
+        },
+        {
+          "x": 864,
+          "y": 616,
+          "width": 270,
+          "height": 259,
+          "angle": 11
+        },
+        {
+          "x": 821,
+          "y": 886,
+          "width": 346,
+          "height": 238,
+          "angle": -4
+        }
+      ],
+      "subject": {
+        "x": 540,
+        "y": 562,
+        "width": 421,
+        "height": 572,
+        "angle": 0
+      }
+    },
+    {
+      "id": "D",
+      "previewHashes": {
+        "demo.png": "d2360d6b068606b794091d8ec3d7961ae3d9c2b3f1333fda7b27e392e3f0ce36",
+        "blank.png": "ed02ed29f298bb9a5e951d9ef79953e7fcc6cbde95bf29b547e7e53519dbc642",
+        "checker.png": "15cec31489c3d58bc9a0881b5c6b297f550d25482004a85dbb56c26f7a3d258a"
+      },
+      "kitSha256": "018ad6470893c9932c3b23ad68e35297d9fc71c12dc298976ada83adfdb1cd20",
+      "kitBytes": 3736200,
+      "frameStyles": [
+        "polaroid",
+        "stamp",
+        "notebook",
+        "ticket",
+        "torn",
+        "polaroid"
+      ],
+      "poses": [
+        {
+          "x": 281,
+          "y": 292,
+          "width": 356,
+          "height": 248,
+          "angle": -9
+        },
+        {
+          "x": 799,
+          "y": 292,
+          "width": 313,
+          "height": 281,
+          "angle": 9
+        },
+        {
+          "x": 184,
+          "y": 540,
+          "width": 248,
+          "height": 248,
+          "angle": 5
+        },
+        {
+          "x": 875,
+          "y": 540,
+          "width": 270,
+          "height": 238,
+          "angle": -9
+        },
+        {
+          "x": 346,
+          "y": 896,
+          "width": 292,
+          "height": 238,
+          "angle": 9
+        },
+        {
+          "x": 778,
+          "y": 896,
+          "width": 292,
+          "height": 259,
+          "angle": -5
+        }
+      ],
+      "subject": {
+        "x": 551,
+        "y": 605,
+        "width": 421,
+        "height": 572,
+        "angle": 0
+      }
+    }
+  ],
+  "previews": 12,
+  "publishedJobsBefore": 0,
+  "publishedJobsAfterReplay": 1,
+  "selected": "B",
+  "importSha256": "e1a1371f001213b605cda97951954b624b442921348e73399538cc27ca8676a6",
+  "photoSlots": 6,
+  "subjectIndependent": true,
+  "technicalQa": {
+    "pass": 4,
+    "fail": 0,
+    "uncertain": 0
+  },
+  "repairs": 0,
+  "delivery": [
+    {
+      "artifact": "final_render",
+      "fileName": "render.png",
+      "bytes": 887762,
+      "sha256": "2808a1cf741a1078e23fa821f313382d5fa7591571290a8cbd00069987e4e596"
+    },
+    {
+      "artifact": "materials_zip",
+      "fileName": "material.zip",
+      "bytes": 3700688,
+      "sha256": "e1a1371f001213b605cda97951954b624b442921348e73399538cc27ca8676a6"
+    },
+    {
+      "artifact": "comparison",
+      "fileName": "comparison.png",
+      "bytes": 689246,
+      "sha256": "6fe58d1193515387fbdb79263be048ab3f90b56a7e2b295b4089906ca475da6d"
+    },
+    {
+      "artifact": "qa_report",
+      "fileName": "qa.json",
+      "bytes": 14857,
+      "sha256": "b656ed3b256fc9bfa504671a589fccab99d6e5700c0a78c3b60959542bb782b2"
+    }
+  ],
+  "negative": {
+    "missingDownloadUrl": "FILE_REFERENCE_MISSING: Đính kèm tệp bằng nút + hoặc Add from library. TinixPoster cần đối tượng tệp do ChatGPT chuyển.",
+    "sandbox": "SANDBOX_FILE_REFERENCE: TinixPoster nhận đường dẫn sandbox. Hãy đính kèm tệp từ Library hoặc Space để ChatGPT chuyển URL tải tệp.",
+    "unknownCdn": "FILE_CDN_NOT_ALLOWED: Máy chủ tải tệp (example.org) chưa được xác minh cho TinixPoster.",
+    "expired": "Không tải được tệp. Hãy chọn lại tệp nếu liên kết đã hết hạn.",
+    "tooBig": "Tệp vượt giới hạn 16 MiB.",
+    "opaqueSubject": "Exporter Studio: ValueError: SUBJECT needs a genuine transparent cutout"
+  },
+  "zipEntriesVerified": [
+    "01_anh_mau.png",
+    "02_nen_sach.png",
+    "03_so_do_bo_cuc.png",
+    "04_tam_manh_RGBA.png",
+    "layout.json"
+  ],
+  "revision": "5919869",
+  "openAIWebBrokerVerified": false
+}
