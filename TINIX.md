@@ -781,3 +781,7 @@ Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX
 [TINIX] Trong hộp thoại đang mở, quay lại một cấu hình ngưỡng và lọc gần đây sẽ khôi phục thiết lập của mảnh xuất hiện lại nếu vùng pixel khớp chính xác. Mảnh còn hiện diện giữ chỉnh sửa mới nhất. Bộ nhớ giữ tối đa ba cấu hình gần nhất và được xóa khi đổi ảnh nguyên liệu hoặc ảnh mẫu.
 
 [TINIX] Nút **Lưu phiên dựng vào bản nháp** và thao tác đóng hộp thoại giữ ba tệp đã chọn, ngưỡng, tùy chọn lọc, vai trò, vị trí và thứ tự lớp trong trang hiện tại. Mở lại hộp thoại trong bản nháp hoặc tệp `.tinix.zip` đã lưu để tiếp tục. TinixPoster lưu các pixel theo đoạn liên tiếp và giữ tối đa ba cấu hình quét gần đây. Khi đưa mảnh lên canvas, phiên đang dựng được thay bằng các lớp thành phẩm. Dữ liệu phiên dựng được bỏ khỏi bản lưu vào thư viện mẫu.
+
+## Scrapbook A–Z · P1
+
+[TINIX] `prepare_generated_scrapbook_workflow` dùng catalog tài nguyên theo batch để dựng đồng thời demo và kit đã kiểm từ một manifest. MCP giữ hash preview, manifest và ZIP; khi duyệt, dùng đúng bytes ZIP của demo đã chọn. Luồng nhập ZIP phân lớp cũ vẫn được giữ. Xem hợp đồng, kiểm Skill và lệnh thử tại `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.

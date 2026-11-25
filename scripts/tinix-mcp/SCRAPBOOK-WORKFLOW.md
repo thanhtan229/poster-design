@@ -1,5 +1,32 @@
 # Dựng scrapbook qua MCP với một lần duyệt
 
+## P1 · Tạo demo và kit cùng lúc từ brief
+
+[TINIX] Server `tinixposter-material` 1.1.0 bổ sung `prepare_generated_scrapbook_workflow`. Luồng cũ tiếp tục nhận ZIP composition và có lịch xuất như trước. Đường mới tạo mặc định ba demo, chấp nhận 2–6 demo và tỷ lệ 1:3 đến 3:1.
+
+```json
+{
+  "request_id": "<UUID>",
+  "brief": "Tạo scrapbook sinh nhật bé gái, giấy pastel Mixed Handcut",
+  "skill_version": "1.2.13",
+  "skill_source_sha256": "be9d6da6777fd4789319abe351d1213ee560ebba2c1c27f24a376516e4f0a0fc",
+  "demo_count": 4,
+  "aspect_ratio": "1:1"
+}
+```
+
+Có thể gửi thêm `theme` (pastel, vintage, coastal), `title` hoặc bảy `illustrations` (attachment F01–F06, sau đó SUBJECT PNG có alpha). Chỉ gửi ảnh minh họa có quyền sử dụng. ChatGPT phải kiểm phiên bản Skill đang dùng trước khi khai báo `skill_version` và fingerprint nguồn. Server từ chối cặp khác. Cặp khai báo đúng không chứng minh Skill đã được cài đúng trong ChatGPT. Khi thiếu ảnh minh họa, tool tạo bộ hình vector đơn giản để thử bố cục và khai báo 0 lượt gọi AI. Khi có ảnh đính kèm, TinixPoster vẫn gọi 0 lượt AI và báo số lượt phía tạo ảnh là unknown.
+
+Catalog phạm vi batch cấp `assetId`, hash, provenance, alpha, viền trắng, cache key và vai trò preview cho từng ảnh. Nền, khung, giấy, ren, tiêu đề và sticker đến từ hàm tạo mảnh bằng code. Các hình preview có đường dẫn và hash riêng, dùng chung cho toàn batch. Chưa hỗ trợ áp giấy bóng đổ động lên toàn bộ các khung trong kit.
+
+Manifest nguồn version 1 trong thư mục batch giữ khung, vị trí, góc, lớp tĩnh và vùng SUBJECT. Exporter dùng cùng atlas và placement để tạo ảnh minh họa, bản trống, bản ô caro và kit `layout.json` v1 gồm đúng năm tệp. Ảnh mẫu bên trong kit dùng chỗ giữ ảnh trung tính. Alpha và ZIP được kiểm trước khi trả preview. Mỗi demo mang hash của preview, manifest và ZIP. Số asset sinh mới, cache hit, thời gian chuẩn bị, thời gian render/xuất và bytes của kit nằm trong `batch`.
+
+Gọi `review_scrapbook_template_sources` rồi `advance_scrapbook_workflow` theo thứ tự. Advance dùng ZIP đã tạo, so SHA-256 với khóa nguồn trước khi nhập và trả `sourceKitSha256` trong báo cáo job. Nhập chỉ một demo. Đường P1 từ chối sửa vị trí sau duyệt để bảo toàn kit; tạo workflow mới nếu muốn đổi. Chưa có phát hiện ảnh dính ở mức pixel ngoài kiểm provenance và quan sát bản trống/ô caro.
+
+MCP đăng ký qua `tools/list` trong `server.mjs`. Sau khi chạy bản server mới, đối chiếu phiên bản 1.1.0 và đủ 15 tên, gồm tool tạo demo và tool kiểm nguồn. Nếu connector chưa hiện đủ thì làm mới schema theo cơ chế quản trị connector và xác minh lại từ ChatGPT web. Bài test MCP SDK cục bộ không chứng minh connector đã đồng bộ. Schema cũ, kết quả CI và mốc QA đã lọc dữ liệu nằm trong `evidence/p0/`.
+
+Lệnh thử: `node scripts/tinix-mcp/generated-workflow.test.mjs .runtime/scrapbook-p1-test` với thư mục đích mới, app test ở localhost:7001 và Python 3.11+ có Pillow, NumPy, SciPy, OpenCV. Test dùng ảnh minh họa tổng hợp.
+
 ## Audit và thứ tự triển khai
 
 | Công cụ hiện có | Phạm vi và giới hạn |

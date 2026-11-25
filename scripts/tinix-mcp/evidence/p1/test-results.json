@@ -1,0 +1,124 @@
+{
+  "three": {
+    "scope": "batch",
+    "aiCallsByTinixPoster": 0,
+    "upstreamAiCalls": 0,
+    "illustrationMode": "procedural-fixture",
+    "newStaticAssets": 20,
+    "newProceduralAssets": 27,
+    "assetCacheHits": 39,
+    "sharedIllustrations": 7,
+    "illustrationHashes": {
+      "F01": "1a2738fcd273a4f1da2f190761605ceaed79bfc1307fdf8e81f9ce1d7193c147",
+      "F02": "fbd8bfdcee42961f79f1eb8ddcfd13b8f75fa9d7cc1c2cea7b61e8a2b239619d",
+      "F03": "b2e5bfc9bdcf5bf5ef2fa037c1f29f25f0f307872aefb80dd99fd1f5078f2d15",
+      "F04": "0998d6a0865c38afdf9a0743b781322328a32a66fd2a54bd8605456993bfeed5",
+      "F05": "4d968613a5f2fcc6069cbba1df1d35a371e040d1c21a6f5049199eaae215156f",
+      "F06": "dd72f163237f93ed419aaa8df4b8ee49b0d3bb452663274487023ee9742c616d",
+      "SUBJECT": "6a786b2c00107a9fac34bbc8d754119d74564c73040728e1bbf3b85c45ffd30a"
+    },
+    "kits": [
+      {
+        "demoId": "A",
+        "compositionMs": 733,
+        "demoPreviewMs": 287,
+        "kitExportMs": 2614,
+        "renderAndExportMs": 3672,
+        "kitBytes": 3749005,
+        "kitSha256": "166c02cb139abfb4aa9bbc510796fdb054181465d5179af130839eabb5c44dc7",
+        "manifestSha256": "d91635f5dce44b564e73bd6003021f39f3581137bc63b850d6738dbe3562524e"
+      },
+      {
+        "demoId": "B",
+        "compositionMs": 936,
+        "demoPreviewMs": 491,
+        "kitExportMs": 2838,
+        "renderAndExportMs": 4704,
+        "kitBytes": 3700688,
+        "kitSha256": "01980e3766161e97d2e08860d9a0c9c6591b19f33fb6129a29d6a6038504961d",
+        "manifestSha256": "13c60b190c5ac174d7bb850af3ecdf282584bb99ef30335e4458aaffcf652473"
+      },
+      {
+        "demoId": "C",
+        "compositionMs": 923,
+        "demoPreviewMs": 498,
+        "kitExportMs": 2916,
+        "renderAndExportMs": 4827,
+        "kitBytes": 3746482,
+        "kitSha256": "9f1925f4ac8dbdc60d1d7f1a457fe9cf4f9415c479202aa1401d7171c00bf667",
+        "manifestSha256": "0fa2f9fd0d4dfb4622dbe2219efde3a2e3174d1523b73c366ea16551b8531fb1"
+      }
+    ],
+    "batchMs": 15851
+  },
+  "four": {
+    "scope": "batch",
+    "aiCallsByTinixPoster": 0,
+    "upstreamAiCalls": null,
+    "illustrationMode": "attached-preview",
+    "newStaticAssets": 22,
+    "newProceduralAssets": 22,
+    "assetCacheHits": 59,
+    "sharedIllustrations": 7,
+    "illustrationHashes": {
+      "F01": "1a2738fcd273a4f1da2f190761605ceaed79bfc1307fdf8e81f9ce1d7193c147",
+      "F02": "fbd8bfdcee42961f79f1eb8ddcfd13b8f75fa9d7cc1c2cea7b61e8a2b239619d",
+      "F03": "b2e5bfc9bdcf5bf5ef2fa037c1f29f25f0f307872aefb80dd99fd1f5078f2d15",
+      "F04": "0998d6a0865c38afdf9a0743b781322328a32a66fd2a54bd8605456993bfeed5",
+      "F05": "4d968613a5f2fcc6069cbba1df1d35a371e040d1c21a6f5049199eaae215156f",
+      "F06": "dd72f163237f93ed419aaa8df4b8ee49b0d3bb452663274487023ee9742c616d",
+      "SUBJECT": "6a786b2c00107a9fac34bbc8d754119d74564c73040728e1bbf3b85c45ffd30a"
+    },
+    "kits": [
+      {
+        "demoId": "A",
+        "compositionMs": 819,
+        "demoPreviewMs": 307,
+        "kitExportMs": 2603,
+        "renderAndExportMs": 3683,
+        "kitBytes": 3749005,
+        "kitSha256": "d474c8f25eeef6c7a996da6235adb9b7d07650b0131f66bd1b6883f180e4dce6",
+        "manifestSha256": "50ab6d0a660e20f31a7cfdcd81840e19bdb681e565abd9a6c2dda4c983b64d3e"
+      },
+      {
+        "demoId": "B",
+        "compositionMs": 883,
+        "demoPreviewMs": 480,
+        "kitExportMs": 2760,
+        "renderAndExportMs": 4614,
+        "kitBytes": 3700688,
+        "kitSha256": "2e2b98360afee870d4ccd6e7de9e2c073d5bf2aa78ef7ef8ae4b07adde230c00",
+        "manifestSha256": "e04e0d2a4ff1712c94630fe7cf2e06ac38f3fce05d3e91618508e51358c1f09f"
+      },
+      {
+        "demoId": "C",
+        "compositionMs": 842,
+        "demoPreviewMs": 529,
+        "kitExportMs": 2747,
+        "renderAndExportMs": 4657,
+        "kitBytes": 3746482,
+        "kitSha256": "d1432ce2fcc0cff18a67c4dcc6541573cc526b7f42d91b0caeb9a16d4df0a813",
+        "manifestSha256": "ce607d97eb2b3c91a7c65766cc00140b837755db0308a1907e7f2298d32a8133"
+      },
+      {
+        "demoId": "D",
+        "compositionMs": 836,
+        "demoPreviewMs": 484,
+        "kitExportMs": 2703,
+        "renderAndExportMs": 4550,
+        "kitBytes": 3736200,
+        "kitSha256": "3888bc92a6782b1159775e27224fc2a7de81c33391cfc05c17dc53a61a7a8e1c",
+        "manifestSha256": "5fcb28fc17e8a710f02a5a5468881adc694df00eed9d405e3ee2023e3f686e19"
+      }
+    ],
+    "batchMs": 20958
+  },
+  "selectedDemo": "B",
+  "importedKitSha256": "01980e3766161e97d2e08860d9a0c9c6591b19f33fb6129a29d6a6038504961d",
+  "localMcpTools": 15,
+  "legacyCustomer": {
+    "cropRows": 6,
+    "cutout": "stub"
+  },
+  "chatgptWeb": "not verified"
+}

@@ -15,6 +15,8 @@ import { cutoutSubject } from './subject-preview.mjs'
 const sharp = createRequire(import.meta.url)('../../service/node_modules/sharp')
 const runFile = promisify(execFile)
 const exporter = fileURLToPath(new URL('./workflow_compositions.py', import.meta.url))
+const generator = fileURLToPath(new URL('./generate_compositions.py', import.meta.url)) // [TINIX]
+const studioSha256 = 'be9d6da6777fd4789319abe351d1213ee560ebba2c1c27f24a376516e4f0a0fc'
 const id = { type: 'string', pattern: '^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$' }
 const demos = ['A', 'B', 'C']
 const templateDemos = ['A', 'B', 'C', 'D', 'E', 'F'] // [TINIX]
@@ -39,6 +41,21 @@ export function workflowTools(attachment) {
       brief: { type: 'string', minLength: 1, maxLength: 3000 },
       demo_count: { type: 'integer', minimum: 2, maximum: 6, default: 3 },
       aspect_ratio: { type: 'string', pattern: '^[1-9][0-9]{0,3}:[1-9][0-9]{0,3}$' },
+    }),
+  }, { // [TINIX] Explicit opt-in keeps the existing preparation contract unchanged.
+    name: 'prepare_generated_scrapbook_workflow', title: 'Tạo nhiều demo scrapbook từ brief và tài nguyên sạch',
+    description: 'Generate 2–6 layered template demos and their validated TinixPoster ZIPs before approval. Supply the approved Studio v1.2.13 source fingerprint and optionally seven illustration-only attachments in F01–F06, SUBJECT order. Without attachments, uses procedural sample illustrations. No model calls. Review blank/checker evidence before selection.',
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+    _meta: { 'openai/fileParams': ['illustrations'] },
+    inputSchema: schema(['request_id', 'brief', 'skill_version', 'skill_source_sha256'], {
+      request_id: id, brief: { type: 'string', minLength: 1, maxLength: 3000 },
+      skill_version: { type: 'string', const: '1.2.13' },
+      skill_source_sha256: { type: 'string', const: studioSha256 },
+      demo_count: { type: 'integer', minimum: 2, maximum: 6, default: 3 },
+      aspect_ratio: { type: 'string', pattern: '^[1-9][0-9]{0,3}:[1-9][0-9]{0,3}$', default: '1:1' },
+      title: { type: 'string', minLength: 1, maxLength: 70 },
+      theme: { enum: ['pastel', 'vintage', 'coastal'] },
+      illustrations: { type: 'array', minItems: 7, maxItems: 7, items: attachment },
     }),
   }, {
     name: 'review_scrapbook_template_sources', title: 'Kiểm lớp mẫu trước khi đưa demo ra chọn',
@@ -113,7 +130,7 @@ const sourceFiles = (directory, demo) => ['blank.png', 'checker.png'].map(name =
   path.join(packageDir(directory), demo, name))
 const sourceEvidence = (directory, demo) => Promise.all(sourceFiles(directory, demo).map(async file => digest(await readFile(file))))
 
-async function sourceLock(directory, demo, template = false) { // [TINIX]
+async function sourceLock(directory, demo, template = false, generated = false) { // [TINIX]
   const root = packageDir(directory)
   const source = path.join(root, demo + '.source.json')
   const manifest = await json(source)
@@ -121,11 +138,11 @@ async function sourceLock(directory, demo, template = false) { // [TINIX]
     ...(manifest.decorations ?? []).map(layer => layer.asset)])].sort()
   const inputs = await Promise.all(assets.map(async asset => [asset, digest(await readFile(path.resolve(root, asset)))]))
   return { demoSha256: digest(await readFile(demoFile(directory, demo, template))), manifestSha256: digest(await readFile(source)),
-    ...(!template && { materialSha256: digest(await readFile(material(directory, demo))) }), inputs }
+    ...((!template || generated) && { materialSha256: digest(await readFile(material(directory, demo))) }), inputs }
 }
 
-async function python(args, signal) {
-  await runFile(process.env.TINIX_STUDIO_PYTHON || 'python', ['-B', exporter, ...args], {
+async function python(args, signal, script = exporter) { // [TINIX]
+  await runFile(process.env.TINIX_STUDIO_PYTHON || 'python', ['-B', script, ...args], {
     windowsHide: true, signal, timeout: 230000, maxBuffer: 512000, env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
   }).catch(error => { throw new Error('Exporter Studio: ' + (error.stderr?.trim().split(/\r?\n/).at(-1) || error.code || 'không hoàn tất')) })
 }
@@ -158,13 +175,68 @@ async function reviewTemplateSources(directory, state, reviews) { // [TINIX]
   const locks = await json(path.join(directory, 'locks.json'))
   state.sourceReviews = await Promise.all(reviews.map(async ({ demo_id, status, notes }) => {
     const { demoId, ...expected } = locks.find(lock => lock.demoId === demo_id)
-    if (JSON.stringify(await sourceLock(directory, demoId, true)) !== JSON.stringify(expected)) throw new Error('Nguồn demo đã thay đổi.')
+    if (JSON.stringify(await sourceLock(directory, demoId, true, state.generated === true)) !== JSON.stringify(expected)) throw new Error('Nguồn demo đã thay đổi.')
     return { demoId, status, notes: notes.trim(), evidence: await sourceEvidence(directory, demoId) }
   }))
   state.stepStatus.sourceQa = 'done'
   state.qaStatus = reviews.some(review => review.status === 'pass') ? 'awaiting_demo' : 'source_qa_failed'
   await save(path.join(directory, stateFile), state)
   return response(state)
+}
+
+// [TINIX] Store each proposed kit once and keep it tied to exactly one request and source.
+async function prepareGenerated(directory, workflowId, args, dependencies, signal) {
+  const { brief, title, theme, demo_count: count = 3, aspect_ratio: aspect = '1:1',
+    skill_version: skillVersion, skill_source_sha256: skillSourceSha256, illustrations } = args
+  if (skillVersion !== '1.2.13' || skillSourceSha256 !== studioSha256) {
+    throw new Error('SKILL_SOURCE_MISMATCH: Cần đúng gói Scrapbook Story Studio v1.2.13 đã duyệt.')
+  }
+  const nonempty = (value, max) => typeof value === 'string' && value.trim().length > 0 && value.length <= max
+  if (!nonempty(brief, 3000) || (title !== undefined && !nonempty(title, 70)) ||
+      (theme !== undefined && !['pastel', 'vintage', 'coastal'].includes(theme)) ||
+      !Number.isInteger(count) || count < 2 || count > 6 || typeof aspect !== 'string' ||
+      !/^[1-9][0-9]{0,3}:[1-9][0-9]{0,3}$/.test(aspect)) throw new Error('Brief, số demo, tỷ lệ, tiêu đề hoặc chủ đề không hợp lệ.')
+  const [w, h] = aspect.split(':').map(Number)
+  if (Math.max(w, h) > 3 * Math.min(w, h)) throw new Error('Tỷ lệ được hỗ trợ từ 1:3 đến 3:1.')
+  if (illustrations !== undefined && (!Array.isArray(illustrations) || illustrations.length !== 7 ||
+      illustrations.some(file => !nonempty(file?.file_id, 512)) ||
+      new Set(illustrations.map(file => file.file_id)).size !== 7)) throw new Error('Cần đúng bảy ảnh minh họa riêng theo thứ tự F01–F06, SUBJECT.')
+  const config = { brief: brief.trim(), title: title?.trim(), theme, demoCount: count, aspectRatio: aspect, skillVersion, skillSourceSha256 }
+  const requestSha256 = digest(JSON.stringify([config, illustrations?.map(file => file.file_id)]))
+  const existing = await json(path.join(directory, stateFile)).catch(error => { if (error.code !== 'ENOENT') throw error })
+  if (existing) {
+    if (existing.requestSha256 !== requestSha256) throw new Error('Mã yêu cầu đã gắn với đầu vào khác.')
+    return previews(directory, existing)
+  }
+  const stage = await mkdtemp(directory + '-prepare-')
+  try {
+    const names = illustrations?.map((_, index) => 'illustration-' + index)
+    if (names) {
+      const downloaded = await Promise.allSettled(illustrations.map((file, index) =>
+        dependencies.download(file, path.join(stage, names[index]), signal, 'image')))
+      const failure = downloaded.find(result => result.status === 'rejected')
+      if (failure) throw failure.reason
+    }
+    const settings = path.join(stage, 'generation.json')
+    await save(settings, { ...config, illustrations: names })
+    await python([packageDir(stage), settings], signal, generator)
+    const batch = await json(path.join(packageDir(stage), 'batch.json'))
+    const locks = await Promise.all(templateDemos.slice(0, count).map(async demoId =>
+      ({ demoId, ...await sourceLock(stage, demoId, true, true) })))
+    if (locks.some((lock, index) => lock.materialSha256 !== batch.kits[index].kitSha256)) throw new Error('SHA-256 của ZIP không khớp.')
+    const state = {
+      workflowId, mode: 'template', generated: true, requestSha256, brief: config.brief, aspectRatio: aspect,
+      skillVersion, skillSourceSha256, batch, approvedDemoId: null, currentJobId: null, parentJobId: null,
+      qaStatus: 'awaiting_source_qa', sourceQaRequired: true, retryCount: 0, artifacts: {},
+      stepStatus: { prepare: 'done', sourceQa: 'waiting', approval: 'waiting' },
+      demos: locks.map(({ demoId, demoSha256, manifestSha256, materialSha256 }) =>
+        ({ demoId, demoSha256, manifestSha256, materialSha256 })),
+    }
+    await save(path.join(stage, 'locks.json'), locks)
+    await save(path.join(stage, stateFile), state)
+    await rename(stage, directory)
+    return previews(directory, state)
+  } finally { await rm(stage, { recursive: true, force: true }) }
 }
 
 async function prepare(directory, workflowId, args, dependencies, signal) {
@@ -260,6 +332,9 @@ function resetVisualStages(state) {
 async function advance(root, directory, state, args, dependencies, signal) {
   const commit = () => save(path.join(directory, stateFile), state)
   const template = state.mode === 'template' // [TINIX]
+  if (state.generated && (args.layer_repairs !== undefined || args.policy?.layer_position)) { // [TINIX]
+    throw new Error('Workflow P1 chỉ dùng ZIP đã khóa. Sửa nguồn cần một workflow mới.')
+  }
   const changes = [
     ['layer_position', args.layer_repairs], ['subject_mask', args.subject_operations], ['crop', args.crop_frame_codes],
   ].filter(([, edit]) => edit !== undefined)
@@ -280,6 +355,10 @@ async function advance(root, directory, state, args, dependencies, signal) {
     state.policy = Object.fromEntries(policyKeys.map(key => [key, args.policy?.[key] === true]))
     state.stepStatus.approval = 'done'
     state.approved = (await json(path.join(directory, 'locks.json'))).find(item => item.demoId === state.approvedDemoId)
+    if (state.generated) { // [TINIX] Select the exact previously validated artifact.
+      state.exportSha256 = state.approved.materialSha256
+      state.stepStatus.export = 'done'
+    }
     state.variant = state.approvedDemoId
     state.importJobId = randomUUID()
     if (!template) state.fillJobId = randomUUID()
@@ -290,7 +369,7 @@ async function advance(root, directory, state, args, dependencies, signal) {
     throw new Error('Demo và quyền sửa đã khóa. Tạo workflow mới nếu cần thay đổi.')
   }
   if (changes.some(([action]) => !state.policy[action])) throw new Error('Quyền sửa này chưa được cấp khi duyệt demo.')
-  const lock = await sourceLock(directory, state.approvedDemoId, template)
+  const lock = await sourceLock(directory, state.approvedDemoId, template, state.generated === true)
   const { demoId, ...approvedLock } = state.approved
   if (JSON.stringify(lock) !== JSON.stringify(approvedLock)) throw new Error('Nguồn demo đã khóa bị thay đổi.')
   if (state.qaStatus === 'passed') return response(state)
@@ -361,6 +440,7 @@ async function advance(root, directory, state, args, dependencies, signal) {
     failureStep = 'build'
     const base = await publish(root, state.importJobId, async candidate => ({
       ...await dependencies.build(material(directory, state.variant), candidate, signal),
+      ...(state.generated && { sourceKitSha256: state.exportSha256 }), // [TINIX] Report which locked ZIP was imported.
       ...(state.variant !== state.approvedDemoId && { parentJobId: state.parentJobId }),
     }))
     state.stepStatus.build = 'done'
@@ -524,13 +604,14 @@ async function advance(root, directory, state, args, dependencies, signal) {
 }
 
 export async function runScrapbookWorkflow(root, name, args, signal, dependencies) {
-  const staging = name === 'prepare_scrapbook_workflow'
+  const generated = name === 'prepare_generated_scrapbook_workflow' // [TINIX]
+  const staging = generated || name === 'prepare_scrapbook_workflow'
   const workflowId = uuid(staging ? args?.request_id : args?.workflow_id)
   const workflows = path.resolve(root, '.workflows')
   const directory = path.join(workflows, workflowId)
   if (staging) {
     await mkdir(workflows, { recursive: true })
-    return withLock(directory, () => prepare(directory, workflowId, args, dependencies, signal))
+    return withLock(directory, () => (generated ? prepareGenerated : prepare)(directory, workflowId, args, dependencies, signal))
   }
   root = path.resolve(root)
   const load = () => json(path.join(directory, stateFile))
