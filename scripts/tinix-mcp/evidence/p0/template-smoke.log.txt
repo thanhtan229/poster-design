@@ -1,0 +1,1 @@
+{"workflowId":"[runtime-id]","jobId":"[runtime-id]","status":"passed","overall":{"mae":0.2,"ssim":0.984,"pixels":230289},"demoCount":4,"selected":"D"}
