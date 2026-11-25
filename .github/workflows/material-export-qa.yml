@@ -16,8 +16,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install pillow
+      - run: pip install pillow numpy scipy
       - run: python -B scripts/tinix-mcp/export_filled_material_test.py -v
+      - run: python -B scripts/tinix-mcp/qa_reconstruction_test.py -v
   mcp-contract:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
