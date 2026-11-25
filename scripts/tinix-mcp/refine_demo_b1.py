@@ -13,7 +13,8 @@ from PIL import Image
 from mixed_handcut_qa import inspect_geometry
 from refine_demo_a import diff, digest, read_json, require, verify_zip_preview
 from refine_demo_a2 import small_jpeg
-from refine_demo_a3 import board, textile_rgb
+from embroidery_lace import textile_rgb  # [TINIX]
+from refine_demo_a3 import board
 from source_qa import inspect as inspect_source
 from tinixposter_v1 import DELIVERY, export, validate
 

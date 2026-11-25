@@ -12,6 +12,7 @@ import unicodedata
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
+from embroidery_lace import LACE_STYLE, pastel_embroidery  # [TINIX]
 from handcut_assets import (bow, grain_fill, make_frame, points_mask, tape,
                             torn_rect, with_cutline)
 from seed_handcut_catalog import clean_alpha
@@ -177,6 +178,9 @@ def build(output, config, *, static_only=False):  # [TINIX]
     theme, fallback_title = layout_theme(config["brief"])
     theme = config.get("theme", theme)
     colors = PALETTES[theme]
+    lace_style = config.get("laceStyle")  # [TINIX] An explicit preset only; retain the legacy catalog and bytes by default.
+    require(lace_style is None or (lace_style == LACE_STYLE and theme == "pastel"),
+            "Embroidered lace requires the pastel theme")
     title = unicodedata.normalize("NFC", config.get("title", fallback_title))
     aw, ah = map(int, config["aspectRatio"].split(":"))
     require(max(aw, ah) / min(aw, ah) <= 3, "Supported aspect range is 1:3 to 3:1")
@@ -248,7 +252,11 @@ def build(output, config, *, static_only=False):  # [TINIX]
             paper = catalog.add("paper", "torn", (index+i)%4,
                                 lambda: paper_asset(colors[(index+i)%4], 41+(index+i)%4), cutline="white")
             place_asset(paper, pose, 2+i)
-        lace = catalog.add("lace", "stitched", 1, lambda: paper_asset((253,239,219), 41, kind="lace"), cutline="white")
+        def render_lace():
+            sprite = paper_asset((253,239,219), 41, kind="lace")
+            return pastel_embroidery(sprite) if lace_style else sprite
+
+        lace = catalog.add("lace", lace_style or "stitched", 1, render_lace, cutline="white")
         place_asset(lace, (.50,.92,.68,.073,-5+index*2), 6)
         title_asset = catalog.add("title", "paper-label", (title,index%4),
                                   lambda: paper_asset(colors[index%4], 51+index%4, title), cutline="white")

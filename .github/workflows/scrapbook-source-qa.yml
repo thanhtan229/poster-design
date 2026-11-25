@@ -3,7 +3,7 @@ name: Scrapbook source QA
 
 on:
   pull_request:
-    branches: [main, codex/scrapbook-p1, codex/scrapbook-p2, codex/scrapbook-p3, codex/scrapbook-p4-preflight, codex/scrapbook-p4-a2] # [TINIX]
+    branches: [main, codex/scrapbook-p1, codex/scrapbook-p2, codex/scrapbook-p3, codex/scrapbook-p4-preflight, codex/scrapbook-p4-a2, codex/scrapbook-p4-b1-lace] # [TINIX]
   push:
     branches: [main]
 

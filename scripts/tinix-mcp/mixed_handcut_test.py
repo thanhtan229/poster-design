@@ -117,6 +117,34 @@ class MixedHandcutTest(unittest.TestCase):
         self.assertEqual(report["status"], "fail")
         self.assertEqual(packed_geometry(sprites,require_notebook=False)["status"], "pass")
 
+    def test_pastel_lace_catalog_preserves_every_other_layer(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            config = {"brief":"Sinh nhật", "demoCount":2, "aspectRatio":"1:1", "theme":"pastel",
+                      "skillVersion":"1.2.13", "skillSourceSha256":SKILL_SHA256}
+            with redirect_stdout(StringIO()):
+                default = build(root/"base", config)
+                embroidered = build(root/"embroidery", {**config, "laceStyle":"embroidered_pastel"})
+            for original, revised in zip(default["kits"],embroidered["kits"]):
+                demo = original["demoId"]
+                self.assertNotEqual(original["kitSha256"],revised["kitSha256"])
+                self.assertEqual(original["mixedHandcutGeometry"],revised["mixedHandcutGeometry"])
+                base = root/"base"/demo/"material"
+                option = root/"embroidery"/demo/"material"
+                self.assertEqual((base/"layout.json").read_bytes(),(option/"layout.json").read_bytes())
+                self.assertEqual((base/DELIVERY[1]).read_bytes(),(option/DELIVERY[1]).read_bytes())
+                with Image.open(base/DELIVERY[3]) as old, Image.open(option/DELIVERY[3]) as new:
+                    old,new = np.array(old),np.array(new)
+                np.testing.assert_array_equal(old[:,:,3],new[:,:,3])
+                rect = next(d["source"] for d in read_json(base/"layout.json")["decorations"] if d["code"]=="D04")
+                difference = np.any(old!=new,axis=2)
+                self.assertTrue(difference.any())
+                y,x,w,h = (rect[k] for k in ("y","x","width","height"))
+                difference[y:y+h,x:x+w] = False
+                self.assertFalse(difference.any())
+            with self.assertRaisesRegex(ValueError,"requires the pastel theme"):
+                build(root/"wrong-theme",{**config,"theme":"vintage","laceStyle":"embroidered_pastel"})
+
     def test_four_exported_demos_and_sentinels(self):
         evidence = os.environ.get("TINIX_MIXED_HANDCUT_EVIDENCE")
         with TemporaryDirectory() as temp:

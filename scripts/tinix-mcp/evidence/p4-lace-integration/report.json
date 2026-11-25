@@ -1,0 +1,1242 @@
+{
+  "candidates": {
+    "A": {
+      "defaultKitSha256": "4ed60d0b5bf5e21cbd1ff12dd3c54c94de257ab28e580059fa6a58d63e702c9b",
+      "embroideredKitSha256": "b10177370993183a55117e3e7f05edaf1e14a778aa98c38ab239c8d123c63e1b",
+      "atlasDiff": {
+        "alphaChangedPixels": 0,
+        "rgbChangedPixels": 9511,
+        "rgbChangedPixelsOutsideAlpha": 0,
+        "meanRgbAbsoluteDeltaOnVisiblePixels": 0.6856,
+        "maxRgbDelta": 87
+      },
+      "sourceQa": "pass",
+      "geometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F01",
+              "F03"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F02"
+        ],
+        "stampsOrTickets": [
+          "F04",
+          "F05"
+        ],
+        "notebooks": [
+          "F06"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      },
+      "pieces": 17,
+      "gapPx": 22.0,
+      "sentinels": {
+        "SUBJECT": {
+          "onPageMaskPx": 159881,
+          "visibleMaskPx": 159881,
+          "changedPx": 159881,
+          "outsideMaskPx": 0
+        },
+        "F06": {
+          "onPageMaskPx": 57249,
+          "visibleMaskPx": 56776,
+          "changedPx": 56136,
+          "outsideMaskPx": 0
+        },
+        "F05": {
+          "onPageMaskPx": 53089,
+          "visibleMaskPx": 50756,
+          "changedPx": 50234,
+          "outsideMaskPx": 0
+        },
+        "F04": {
+          "onPageMaskPx": 43075,
+          "visibleMaskPx": 42653,
+          "changedPx": 42025,
+          "outsideMaskPx": 0
+        },
+        "F03": {
+          "onPageMaskPx": 42832,
+          "visibleMaskPx": 42000,
+          "changedPx": 41404,
+          "outsideMaskPx": 0
+        },
+        "F02": {
+          "onPageMaskPx": 53927,
+          "visibleMaskPx": 52191,
+          "changedPx": 51692,
+          "outsideMaskPx": 0
+        },
+        "F01": {
+          "onPageMaskPx": 55697,
+          "visibleMaskPx": 52401,
+          "changedPx": 51650,
+          "outsideMaskPx": 0
+        }
+      },
+      "jsonRoundTrip": true
+    },
+    "B": {
+      "defaultKitSha256": "2d7e4b2711cf4e048862f247b662900aac1797820b0636ab0f3b326b60aaf6a3",
+      "embroideredKitSha256": "ddf7d6cf9ea9a19f8dde83f626e8c2f3a25aa30eb83bef80d8879cf566bec62f",
+      "atlasDiff": {
+        "alphaChangedPixels": 0,
+        "rgbChangedPixels": 9511,
+        "rgbChangedPixelsOutsideAlpha": 0,
+        "meanRgbAbsoluteDeltaOnVisiblePixels": 0.6845,
+        "maxRgbDelta": 87
+      },
+      "sourceQa": "pass",
+      "geometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F02",
+              "F06"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F01"
+        ],
+        "stampsOrTickets": [
+          "F03",
+          "F04"
+        ],
+        "notebooks": [
+          "F05"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      },
+      "pieces": 17,
+      "gapPx": 22.0,
+      "sentinels": {
+        "SUBJECT": {
+          "onPageMaskPx": 159881,
+          "visibleMaskPx": 159881,
+          "changedPx": 159881,
+          "outsideMaskPx": 0
+        },
+        "F06": {
+          "onPageMaskPx": 39035,
+          "visibleMaskPx": 30923,
+          "changedPx": 30519,
+          "outsideMaskPx": 0
+        },
+        "F05": {
+          "onPageMaskPx": 46834,
+          "visibleMaskPx": 42992,
+          "changedPx": 42383,
+          "outsideMaskPx": 0
+        },
+        "F04": {
+          "onPageMaskPx": 51454,
+          "visibleMaskPx": 51035,
+          "changedPx": 50241,
+          "outsideMaskPx": 0
+        },
+        "F03": {
+          "onPageMaskPx": 39102,
+          "visibleMaskPx": 37175,
+          "changedPx": 36937,
+          "outsideMaskPx": 0
+        },
+        "F02": {
+          "onPageMaskPx": 35996,
+          "visibleMaskPx": 35652,
+          "changedPx": 35192,
+          "outsideMaskPx": 0
+        },
+        "F01": {
+          "onPageMaskPx": 51293,
+          "visibleMaskPx": 45291,
+          "changedPx": 44545,
+          "outsideMaskPx": 0
+        }
+      },
+      "jsonRoundTrip": true
+    },
+    "C": {
+      "defaultKitSha256": "9ea24b1febdda9bacc1f9bb83a298c62a1b43ae7c62008ac144819688b5e23de",
+      "embroideredKitSha256": "71010b115b2c44095b7bbe58ebf769b7df0adce1c04a0bae4c711af2d50b0b0c",
+      "atlasDiff": {
+        "alphaChangedPixels": 0,
+        "rgbChangedPixels": 9511,
+        "rgbChangedPixelsOutsideAlpha": 0,
+        "meanRgbAbsoluteDeltaOnVisiblePixels": 0.685,
+        "maxRgbDelta": 87
+      },
+      "sourceQa": "pass",
+      "geometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F01",
+              "F05"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F06"
+        ],
+        "stampsOrTickets": [
+          "F02",
+          "F03"
+        ],
+        "notebooks": [
+          "F04"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      },
+      "pieces": 17,
+      "gapPx": 22.0,
+      "sentinels": {
+        "SUBJECT": {
+          "onPageMaskPx": 159881,
+          "visibleMaskPx": 159881,
+          "changedPx": 159867,
+          "outsideMaskPx": 0
+        },
+        "F06": {
+          "onPageMaskPx": 52896,
+          "visibleMaskPx": 51245,
+          "changedPx": 50452,
+          "outsideMaskPx": 0
+        },
+        "F05": {
+          "onPageMaskPx": 44181,
+          "visibleMaskPx": 42693,
+          "changedPx": 42053,
+          "outsideMaskPx": 0
+        },
+        "F04": {
+          "onPageMaskPx": 47074,
+          "visibleMaskPx": 46677,
+          "changedPx": 46064,
+          "outsideMaskPx": 0
+        },
+        "F03": {
+          "onPageMaskPx": 41969,
+          "visibleMaskPx": 33614,
+          "changedPx": 33400,
+          "outsideMaskPx": 0
+        },
+        "F02": {
+          "onPageMaskPx": 60188,
+          "visibleMaskPx": 58432,
+          "changedPx": 57521,
+          "outsideMaskPx": 0
+        },
+        "F01": {
+          "onPageMaskPx": 42760,
+          "visibleMaskPx": 41979,
+          "changedPx": 41325,
+          "outsideMaskPx": 0
+        }
+      },
+      "jsonRoundTrip": true
+    },
+    "D": {
+      "defaultKitSha256": "e2d354468395d73006396971ef1e8a7b01b61765082b9c5e3244813fa75b380f",
+      "embroideredKitSha256": "b5595708c528a9f31b570595c4fa0e0c7622ea8776c52abc9dee376fa50dd50c",
+      "atlasDiff": {
+        "alphaChangedPixels": 0,
+        "rgbChangedPixels": 9511,
+        "rgbChangedPixelsOutsideAlpha": 0,
+        "meanRgbAbsoluteDeltaOnVisiblePixels": 0.6852,
+        "maxRgbDelta": 87
+      },
+      "sourceQa": "pass",
+      "geometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0.0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F04",
+              "F06"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F05"
+        ],
+        "stampsOrTickets": [
+          "F01",
+          "F02"
+        ],
+        "notebooks": [
+          "F03"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      },
+      "pieces": 17,
+      "gapPx": 22.0,
+      "sentinels": {
+        "SUBJECT": {
+          "onPageMaskPx": 159881,
+          "visibleMaskPx": 159881,
+          "changedPx": 159859,
+          "outsideMaskPx": 0
+        },
+        "F06": {
+          "onPageMaskPx": 46351,
+          "visibleMaskPx": 43080,
+          "changedPx": 42483,
+          "outsideMaskPx": 0
+        },
+        "F05": {
+          "onPageMaskPx": 44421,
+          "visibleMaskPx": 35715,
+          "changedPx": 35300,
+          "outsideMaskPx": 0
+        },
+        "F04": {
+          "onPageMaskPx": 40668,
+          "visibleMaskPx": 40317,
+          "changedPx": 39719,
+          "outsideMaskPx": 0
+        },
+        "F03": {
+          "onPageMaskPx": 38224,
+          "visibleMaskPx": 36104,
+          "changedPx": 35940,
+          "outsideMaskPx": 0
+        },
+        "F02": {
+          "onPageMaskPx": 57760,
+          "visibleMaskPx": 50462,
+          "changedPx": 49771,
+          "outsideMaskPx": 0
+        },
+        "F01": {
+          "onPageMaskPx": 54545,
+          "visibleMaskPx": 53307,
+          "changedPx": 52403,
+          "outsideMaskPx": 0
+        }
+      },
+      "jsonRoundTrip": true
+    }
+  },
+  "fixtureIllustrations": "procedural shared across A\u2013D and both batches",
+  "toolCount": 18,
+  "baseId": "d0d6b34f-e2da-49fb-8b80-2b206a2b7599",
+  "nextId": "9983a8f4-1ddb-44be-b5a6-75b70202b706",
+  "jobsCreated": 0,
+  "wrongZipRejected": true,
+  "files": [
+    {
+      "demo": "A",
+      "kind": "demo",
+      "bytes": 986760,
+      "sha256": "eb60cf5a5ea6570711a9079de03a07ba77831d82a4fc850adf9c7b76382db0b6"
+    },
+    {
+      "demo": "A",
+      "kind": "blank",
+      "bytes": 1248180,
+      "sha256": "55296c55d62a52e168dda5bfaa6c4e21f6f5d570bb3586b593cd3e19ac268999"
+    },
+    {
+      "demo": "A",
+      "kind": "checker",
+      "bytes": 1150425,
+      "sha256": "10cbdfe7ab13e662a2c79a6739afbe3a4d800f5f5e23fe7843e734f50b01c9d3"
+    },
+    {
+      "demo": "A",
+      "kind": "materials_zip",
+      "bytes": 3711428,
+      "sha256": "b10177370993183a55117e3e7f05edaf1e14a778aa98c38ab239c8d123c63e1b"
+    },
+    {
+      "demo": "B",
+      "kind": "demo",
+      "bytes": 975431,
+      "sha256": "9451ffe4b1d12ce738f62addd638cafd7903f4ea7eb8b7b8843aee9d66e27167"
+    },
+    {
+      "demo": "B",
+      "kind": "blank",
+      "bytes": 1200887,
+      "sha256": "63cdef83b82fce77938e7ddb28c7e090c7fd63b27f8e885a24a822a9271b9f4f"
+    },
+    {
+      "demo": "B",
+      "kind": "checker",
+      "bytes": 1109868,
+      "sha256": "7f94b9154faf8b20df44c4296596ec04005406fefee8308fe897f4a46b830952"
+    },
+    {
+      "demo": "B",
+      "kind": "materials_zip",
+      "bytes": 3627835,
+      "sha256": "ddf7d6cf9ea9a19f8dde83f626e8c2f3a25aa30eb83bef80d8879cf566bec62f"
+    },
+    {
+      "demo": "C",
+      "kind": "demo",
+      "bytes": 969269,
+      "sha256": "f833449e7aa144688589b9601ace7ab2bbdd6e94c9dece2c43e95269bcf3ff1c"
+    },
+    {
+      "demo": "C",
+      "kind": "blank",
+      "bytes": 1217008,
+      "sha256": "6e724eb1daf14dbbba66edb588357c8ccfac0e03a6a927135d7c3968afa35e3e"
+    },
+    {
+      "demo": "C",
+      "kind": "checker",
+      "bytes": 1114446,
+      "sha256": "7010a11669a49babb4783ffc53c48da98096d6cf6b34ed60e719ed2f2846c182"
+    },
+    {
+      "demo": "C",
+      "kind": "materials_zip",
+      "bytes": 3645557,
+      "sha256": "71010b115b2c44095b7bbe58ebf769b7df0adce1c04a0bae4c711af2d50b0b0c"
+    },
+    {
+      "demo": "D",
+      "kind": "demo",
+      "bytes": 962217,
+      "sha256": "2c54aaec6822bfa78c7b042d6ba3a79269f2793e5fce95e4fb1704682498b97f"
+    },
+    {
+      "demo": "D",
+      "kind": "blank",
+      "bytes": 1205188,
+      "sha256": "408aa61321f4f33d5d68948ba42c3778941a927549d26b2b4b186f9dcb7a203a"
+    },
+    {
+      "demo": "D",
+      "kind": "checker",
+      "bytes": 1103618,
+      "sha256": "37e632f375bc99a624ffa4a9e9ccf947b45fcecb1cb0d9a07874f7c70f005b36"
+    },
+    {
+      "demo": "D",
+      "kind": "materials_zip",
+      "bytes": 3631061,
+      "sha256": "b5595708c528a9f31b570595c4fa0e0c7622ea8776c52abc9dee376fa50dd50c"
+    }
+  ],
+  "geometry": {
+    "A": {
+      "status": "pass",
+      "issues": [],
+      "manifestSha256": "344a4bab079fd0408b53ac8cd119260cff2ce9645af8a900c6d83e230458b6ee",
+      "kitSha256": "b10177370993183a55117e3e7f05edaf1e14a778aa98c38ab239c8d123c63e1b",
+      "mixedHandcutGeometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F01",
+              "F03"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F02"
+        ],
+        "stampsOrTickets": [
+          "F04",
+          "F05"
+        ],
+        "notebooks": [
+          "F06"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      }
+    },
+    "B": {
+      "status": "pass",
+      "issues": [],
+      "manifestSha256": "00e9c6e39fcea379651442f73a1cc7852c91a6263b2f1a3e9c06d45f2ab405f1",
+      "kitSha256": "ddf7d6cf9ea9a19f8dde83f626e8c2f3a25aa30eb83bef80d8879cf566bec62f",
+      "mixedHandcutGeometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F02",
+              "F06"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F01"
+        ],
+        "stampsOrTickets": [
+          "F03",
+          "F04"
+        ],
+        "notebooks": [
+          "F05"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      }
+    },
+    "C": {
+      "status": "pass",
+      "issues": [],
+      "manifestSha256": "e2ce7402788cdb47b49b0e478b23979c741891d3f3dc333f35a986e76538ab95",
+      "kitSha256": "71010b115b2c44095b7bbe58ebf769b7df0adce1c04a0bae4c711af2d50b0b0c",
+      "mixedHandcutGeometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F01",
+              "F05"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F06"
+        ],
+        "stampsOrTickets": [
+          "F02",
+          "F03"
+        ],
+        "notebooks": [
+          "F04"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      }
+    },
+    "D": {
+      "status": "pass",
+      "issues": [],
+      "manifestSha256": "9ee7f2eb4bcb7f08f2a40339e17dd4e597956713c33572e245326649204d81f7",
+      "kitSha256": "b5595708c528a9f31b570595c4fa0e0c7622ea8776c52abc9dee376fa50dd50c",
+      "mixedHandcutGeometry": {
+        "status": "pass",
+        "allSixWindows": true,
+        "frames": {
+          "F01": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9699,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1365,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F02": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.979,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.1447,
+            "stampNotches": 7,
+            "stampOrTicket": true
+          },
+          "F03": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9652,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": false,
+            "notebookRuling": true,
+            "notebookRuleRows": [
+              269,
+              285
+            ],
+            "bottomPaperRatio": 0.1987,
+            "stampNotches": 2,
+            "stampOrTicket": false
+          },
+          "F04": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.7261,
+            "reflectionMismatch": 0.0505,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0406,
+            "stampNotches": 0,
+            "stampOrTicket": false
+          },
+          "F05": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.9888,
+            "reflectionMismatch": 0,
+            "asymmetricSilhouette": false,
+            "polaroidFoot": true,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.2115,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          },
+          "F06": {
+            "closedAlphaZeroHoles": 1,
+            "validWindow": true,
+            "openingFillRatio": 0.6947,
+            "reflectionMismatch": 0.07,
+            "asymmetricSilhouette": true,
+            "polaroidFoot": false,
+            "notebookRuling": false,
+            "notebookRuleRows": [],
+            "bottomPaperRatio": 0.0396,
+            "stampNotches": 1,
+            "stampOrTicket": false
+          }
+        },
+        "silhouettePairs": [
+          {
+            "frames": [
+              "F04",
+              "F06"
+            ],
+            "mismatch": 0.1659,
+            "distinct": true
+          }
+        ],
+        "polaroids": [
+          "F05"
+        ],
+        "stampsOrTickets": [
+          "F01",
+          "F02"
+        ],
+        "notebooks": [
+          "F03"
+        ],
+        "notebookRequired": true,
+        "visualReviewRequired": true
+      }
+    }
+  }
+}
