@@ -59,13 +59,33 @@ export async function runMaterialExport(root, jobId, source, signal) {
   // Verify actual compatibility with the existing TinixPoster archive importer.
   const reimport = await prepareMaterialDraft(kit)
   if (!reimport.draft || reimport.report?.status !== 'ready') throw new Error('EXPORTED_KIT_FAILED_REIMPORT')
+  // Fail closed if fixed backgrounds, frame borders and decoration placement no
+  // longer match the actual filled render. Mask only customer photo windows
+  // and the SUBJECT box; produce evidence outside the ZIP.
+  const staticQaDir = path.join(folder, 'static-qa')
+  await mkdir(staticQaDir, { recursive: true })
+  const staticQaFile = path.join(staticQaDir, 'reconstruction_qa.json')
+  try {
+    await run(python, [path.join(import.meta.dirname, 'qa_reconstruction.py'),
+      '--kit', kit, '--qa-out', staticQaDir], { timeout: 180000, windowsHide: true, signal })
+  } catch (error) {
+    let detail = error.message
+    try {
+      const result = JSON.parse(await readFile(staticQaFile, 'utf8'))
+      detail = 'MAE=' + result.staticMae255 + ' bad=' + result.badFractionAbove30
+    } catch {}
+    throw new Error('STATIC_RECONSTRUCTION_QA_FAILED: ' + String(detail).slice(0, 350))
+  }
+  const staticQa = JSON.parse(await readFile(staticQaFile, 'utf8'))
+  if (staticQa.status !== 'pass') throw new Error('STATIC_RECONSTRUCTION_QA_FAILED')
   const [bytes, rawReport] = await Promise.all([readFile(kit), readFile(qa, 'utf8')])
   const report = JSON.parse(rawReport)
   report.jobId = jobId
   report.qa.importer = 'passed'
-  report.qa.sourceReconstruction = 'not_verified'
+  report.qa.sourceReconstruction = 'static_regions_passed'
+  report.qa.staticReconstruction = staticQa
   report.qa.guiImport = 'not_verified'
-  report.qaStatus = 'requires_visual_and_gui_validation'
+  report.qaStatus = 'requires_subject_crop_and_gui_validation'
   report.sha256 = createHash('sha256').update(bytes).digest('hex')
   return { structuredContent: report, content: [
     { type: 'text', text: JSON.stringify(report, null, 2) },
