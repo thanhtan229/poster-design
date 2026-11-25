@@ -137,6 +137,9 @@ class MixedHandcutTest(unittest.TestCase):
         self.assertEqual(len(audit["sentinels"]), 7)
         self.assertTrue(all(slot["outsideMaskPx"] == 0 and slot["changedPx"] > 0
                             for slot in audit["sentinels"].values()))
+        # The fixture's subject and accents should never hide over a quarter of an opening.
+        self.assertTrue(all(slot["visibleMaskPx"] >= .75*slot["onPageMaskPx"]
+                            for slot in audit["sentinels"].values()), audit["sentinels"])
         return {"demoId":code, "styleQa":geometry, "sourceQa":audit["status"], "sentinels":audit["sentinels"],
                 "pieces":qa["pieces"], "componentsByAlpha":qa["components_by_alpha"],
                 "minGapPx":qa["min_bounding_box_gap_px"], "jsonPixelMatch":qa["render_pixel_identical_from_json"],

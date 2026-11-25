@@ -162,8 +162,8 @@
       "checker.png": "d34c440fc003b572a0e8615a4e6496e4ec9f6ca8e006871e3badf21108c2b7e9",
       "demo.png": "dfbf216065404fe5dbba03c023b78d941b08d98cc965d9028d5b7fc7f343be43",
       "layout.json": "2e54605a5b465b4540db5766d5347e65238aac1eba2c9e5f7d727d29d6979263",
-      "material.zip": "5082e9e8f0b91f030376c4a6c8012b4335f06c80af3f11cb0a8253dd32f0afab",
-      "source-qa.json": "c491233364bd60bc122022945c9d4b366c925252280333e9854a855d8e0b4d18",
+      "material.zip": "d040e7beb3f19388b9980191d029c432eb0a3a064f48b16144ddc722abf8c80a",
+      "source-qa.json": "bb813adcb8a74e510375b99ef93a5ca986031a31358acfaafb54c9fc3dc1eab0",
       "tinixposter_qa.json": "5cc55ea9cffec9463a2841c6a61f9c3177ae9196676a71002a23d19dea9ae8cb"
     }
   },
@@ -330,8 +330,8 @@
       "checker.png": "6ca0ffcf06be3a52cb96afa1d4b494c0bbc40a1f363fb99708f03e0e6878e9d5",
       "demo.png": "bef7b764b3e9884d1ad0db3e6b2df5b0914ae10d647e97c2c0482d54de48f0f3",
       "layout.json": "ad5e01584ba67161a141339cda32c530c3772bdc5add323b97043b99c4495e23",
-      "material.zip": "19a293eb28467e2aa59cc52c6729cc26b98ecca93cb17d7d1ca4aa6874f44b83",
-      "source-qa.json": "80f25bf7d68f2c0bcbc9daadb1d9ed8d4878c7098b14d46e2704378c10f831b0",
+      "material.zip": "740c795430d81738112c57f2544df77f1e5690e91fd572d2165894889c275b8e",
+      "source-qa.json": "8b13886fe23b649414392717e8f64be97412788ab6092c47a3df33160d897254",
       "tinixposter_qa.json": "11714d6339463efd32ee76cfe64cde65b39a8f87d001bfc2edda63577fb9210a"
     }
   },
@@ -441,7 +441,7 @@
       "SUBJECT": {
         "onPageMaskPx": 159881,
         "visibleMaskPx": 159881,
-        "changedPx": 159860,
+        "changedPx": 159867,
         "outsideMaskPx": 0
       },
       "F06": {
@@ -464,14 +464,14 @@
       },
       "F03": {
         "onPageMaskPx": 41969,
-        "visibleMaskPx": 26001,
-        "changedPx": 25777,
+        "visibleMaskPx": 33614,
+        "changedPx": 33399,
         "outsideMaskPx": 0
       },
       "F02": {
         "onPageMaskPx": 60188,
-        "visibleMaskPx": 59072,
-        "changedPx": 58182,
+        "visibleMaskPx": 58432,
+        "changedPx": 57521,
         "outsideMaskPx": 0
       },
       "F01": {
@@ -490,16 +490,16 @@
     },
     "minGapPx": 22.0,
     "jsonPixelMatch": true,
-    "sourceManifestSha256": "60d4e2c76f0cc02add4cd4c6934e9e1e85e0e4fe21bcc5859f8d9999d26da216",
+    "sourceManifestSha256": "5806d9a1ab25d72e4d17b8c6206081ca742dc5cdf89b5ed6e8ce33253f4f4858",
     "sha256": {
       "04_tam_manh_RGBA.png": "fc4fb9997b2a0bab1cfe060b5a51f176e42111ffc3bfd0bc66452eb1d82691b8",
       "alpha_on_light_dark.jpg": "141b4cd997823222128687061542f3e52a3d82fe13ba039e575d51bdbf75bbe1",
-      "blank.png": "e4612b141b8e12f9cb245496ec3a18baf8dedba0156cafb3b4dd0303f07c532e",
-      "checker.png": "3eedae710cf3562266ce508cab79a29aacfb452fee3b6692413262586c8273fb",
-      "demo.png": "526ff1af78dd84f295999f9f0d189b53b90fa343bca82c439d6fcf16a19e5754",
-      "layout.json": "6ef32806ba367b363bec7269f6ae5ad97d0727d7528b14be4721a3de34071faf",
-      "material.zip": "8d86d135ad8336543ecdfb04dd12a86e41ccda7b33701ccdd40fbf3fdae9a772",
-      "source-qa.json": "9ec5e43102cf1250b3e3652864f258f1654b718b54e732b9a1135e16162afaf3",
+      "blank.png": "9c8242994c13119756f6f7228dde6cd7c6a3ae39a50f8f84d494698ac0cade5e",
+      "checker.png": "0ba3a8dc4c266227883d4fa4a6babeccabc37f2c83a05622d3e0621bcd3aea08",
+      "demo.png": "83ffe1af291ad747c3299435f7dd8415c69c01f7346a1f5eb09d097fbafa206c",
+      "layout.json": "e78eeb2c72e228d546ca5f016764f03a74085a523d46ac60264c1dda350018a9",
+      "material.zip": "57d70326aaf5c794e2b21d45b7f6f89c269d1fa7ce4a155ad6501ef05287d5de",
+      "source-qa.json": "fdab03676826deadc427ebdd699782b02c2d6eeeb052db35ad2847a54f4ba3c9",
       "tinixposter_qa.json": "91335113a455d63fb70b9ab8d2b8cf7e0ba982411ff01b6d6089112a0c981149"
     }
   },
@@ -666,8 +666,8 @@
       "checker.png": "660197c575fe7ac082c5a6e1a0351a8024709336bc30c3a98bb312002bf70731",
       "demo.png": "43bbeb3907e87283bc3349fc400c4da017724c6fe5c51efaf329e7cc221794bd",
       "layout.json": "ee5deb56cd253283fc1ab489d9243adaf829313fcf0843a40779acad458d6822",
-      "material.zip": "e9bacc2b768bff3472e72c6e6add5dc0300c5999f5455f690f04e9d614a8d2b5",
-      "source-qa.json": "a7122605a71dc6b0d9a2faf0c2107bdba9e3943b5aa11cce2c80ec76f6a45645",
+      "material.zip": "5ced83855a577fc091a58e9c82bacc50fcff208d63f7df12473c6413dcc716c5",
+      "source-qa.json": "7add29e2038318b22e2b30c6dada87af8088485cfb307b5765138bd27cde28c0",
       "tinixposter_qa.json": "d11a37b9b52670eab7569f65c528268e61250136d76c9b63ed649229e52c105b"
     }
   }
