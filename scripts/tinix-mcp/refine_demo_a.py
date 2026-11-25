@@ -74,13 +74,13 @@ def refined_background(original, palette):
     return canvas.convert("RGB")
 
 
-def pair(left, right, file, region=None):
+def pair(left, right, file, region=None, variant="A1"):  # [TINIX]
     if region:
         left,right = left.crop(region),right.crop(region)
     width,height = left.size
     combined = Image.new("RGB",(width*2+12,height+22),"#ece9e5")
     draw = ImageDraw.Draw(combined)
-    for column,(title,image) in enumerate((("A0",left),("A1",right))):
+    for column,(title,image) in enumerate((("A0",left),(variant,right))):
         x = column*(width+12)
         draw.text((x+4,4),title,fill="#302629")
         combined.paste(image.convert("RGB"),(x,22))
@@ -117,9 +117,8 @@ def verify_zip_preview(folder, inputs, spec):
                 "Illustrated preview did not rebuild from archived JSON and locked photos")
 
 
-def main(workflow, output):
+def main(workflow, output, *, variant="A1", relief=paper_relief, backdrop=refined_background):  # [TINIX]
     old = workflow/"compositions"
-    state = read_json(workflow/"workflow.json")
     snapshots = {path:digest(path) for path in workflow.rglob("*") if path.is_file()}
     spec = read_json(old/"A.source.json")
     lock = next(row for row in read_json(workflow/"locks.json") if row["demoId"]=="A")
@@ -127,9 +126,9 @@ def main(workflow, output):
     require(lock["manifestSha256"]==digest(old/"A.source.json") and lock["materialSha256"]==digest(a0/"material.zip")
             and lock["demoSha256"]==digest(a0/"demo.png"),"A0 differs from the locked artifacts")
     require(spec["mixedHandcutGeometryVersion"]==1 and len(spec["frames"])==6,"Expected Mixed Handcut Demo A")
-    require(not output.is_relative_to(workflow),"A1 output must be outside the locked workflow")
+    require(not output.is_relative_to(workflow),"Output must be outside the locked workflow")
     output.mkdir(parents=True)
-    source = output/"A1.source.json"
+    source = output/(variant+".source.json")
     copy2(old/"A.source.json",source)
     layers = spec["frames"]+spec["decorations"]
     photos = {layer["photo"] for layer in spec["frames"]}|{spec["subject"]["asset"]}
@@ -147,7 +146,7 @@ def main(workflow, output):
         if not (code.startswith("F") or code in ("D01","D02","D03","D04")):
             continue
         sprite = Image.open(old/name).convert("RGBA")
-        refined = paper_relief(sprite,110+i,lace=code=="D04")
+        refined = relief(sprite,110+i,lace=code=="D04")
         atlas_diffs[code] = diff(sprite,refined)
         require(atlas_diffs[code]["alphaChangedPixels"]==0 and atlas_diffs[code]["rgbChangedPixelsOutsideAlpha"]==0,
                 f"{code}: RGB refinement escaped the source alpha")
@@ -155,11 +154,11 @@ def main(workflow, output):
         audit_trust.add(digest(output/name))
     name = spec["background"]
     base = Image.open(old/name).convert("RGB")
-    new_base = refined_background(base,PALETTES[read_json(workflow/"generation.json")["theme"]])
+    new_base = backdrop(base,PALETTES[read_json(workflow/"generation.json")["theme"]])
     new_base.save(output/name)
     audit_trust.add(digest(output/name))
     assert all(digest(output/name)==digest(old/name) for name in photos)
-    a1 = output/"A1"
+    a1 = output/variant
     with redirect_stdout(StringIO()):
         export(source,a1/"material",a1/"qa",placeholders=True,review_dir=a1)
     material = a1/"material.zip"
@@ -181,31 +180,31 @@ def main(workflow, output):
     require(audit["status"]=="pass" and audit["mixedHandcutGeometry"]["status"]=="pass","Source or geometry QA failed")
     require(len(audit["sentinels"])==7 and all(row["outsideMaskPx"]==0 for row in audit["sentinels"].values()),
             "Sentinel exceeded mask")
-    require(digest(material)!=lock["materialSha256"],"A1 ZIP SHA must differ")
+    require(digest(material)!=lock["materialSha256"],"Refined ZIP SHA must differ")
 
     for file in ("demo.png","blank.png","checker.png"):
-        pair(Image.open(a0/file),Image.open(a1/file),output/("compare-"+file))
+        pair(Image.open(a0/file),Image.open(a1/file),output/("compare-"+file),variant=variant)
     demo0,demo1 = (Image.open(d/"demo.png").convert("RGB") for d in (a0,a1))
     detail = {"paper-edge":(307,305,488,555),"fixed-paper-shadow":(608,307,746,562),"lace":(326,925,491,1069),
               "polaroid":(756,353,1002,483),"ticket":(98,845,374,1030),
               "subject":(426,311,676,573),"subject-shoes":(472,710,633,885)}
     for name,region in detail.items():
-        pair(demo0,demo1,output/f"100pct-{name}.png",region)
+        pair(demo0,demo1,output/f"100pct-{name}.png",region,variant)
     for label,color in (("light","#faf7f0"),("dark","#2a3039")):
         plates=[]
         for sheet in (sheet0,sheet1):
             plate=Image.new("RGBA",sheet.size,color)
             plate.alpha_composite(sheet)
             plates.append(plate)
-        pair(*plates,output/f"rgba-{label}.png")
+        pair(*plates,output/f"rgba-{label}.png",variant=variant)
 
     require({path:digest(path) for path in workflow.rglob("*") if path.is_file()}==snapshots,
             "An original workflow file changed")
-    report = {"sourceWorkflowId":workflow.name,"variant":"A1","layoutByteIdentical":True,
+    report = {"sourceWorkflowId":workflow.name,"variant":variant,"layoutByteIdentical":True,
               "sevenIllustrationAssetsByteIdentical":True,"originalWorkflowFilesVerified":len(snapshots),
-              "zipSha256":{"A0":lock["materialSha256"],"A1":digest(material)},
+              "zipSha256":{"A0":lock["materialSha256"],variant:digest(material)},
               "atlasDiff":alpha_diff,"spriteDiff":atlas_diffs,"backgroundDiff":diff(base,new_base),
-              "previewDiff":diff(demo0,demo1),"sheetQa":qa,"jsonRoundTrip":{"A0":True,"A1":True},"sourceQa":audit["status"],
+              "previewDiff":diff(demo0,demo1),"sheetQa":qa,"jsonRoundTrip":{"A0":True,variant:True},"sourceQa":audit["status"],
               "geometry":audit["mixedHandcutGeometry"],"sentinels":audit["sentinels"],"visualReviewRequired":True}
     (output/"report.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
 
