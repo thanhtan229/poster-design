@@ -38,7 +38,7 @@ async function invoke(name, args) {
 }
 const inspect = async (workflow_id, demo_id) => {
   const result = await invoke(auditTool, { workflow_id, demo_id })
-  assert.ok(result.content.filter(item => item.type === 'image').length >= 3)
+  assert.equal(result.content.filter(item => item.type === 'image').length, 4)
   return result.structuredContent
 }
 
@@ -82,6 +82,7 @@ try {
   assert.equal(repaired.before.status, 'fail')
   assert.equal(repaired.revision.approvalRequired, true)
   assert.notEqual(repaired.revision.beforeSha256, repaired.revision.afterSha256)
+  assert.equal(repaired.revision.parentDemoSha256, hash(initial[1]))
   const revised = repaired.workflowId
   assert.equal((await read(path.join(workflowFolder(revised), 'workflow.json'))).approvedDemoId, null)
   const request = { workflow_id: revised }

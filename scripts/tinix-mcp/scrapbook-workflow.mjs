@@ -202,11 +202,11 @@ async function auditSource(root, directory, state, demo, signal) {
   return { report: await json(path.join(evidence, 'source-qa.json')), evidence }
 }
 
-async function auditImages(audit, original) {
+async function auditImages(audit) {
   const blocks = []
   for (const [label, file] of [
     ['Bản trống', path.join(audit.evidence, 'blank.png')],
-    ['Ô caro', original],
+    ['Ô caro', path.join(audit.evidence, 'checker.png')],
     ['Sentinel F01–F06 và SUBJECT', path.join(audit.evidence, 'sentinel.png')],
     ['Vùng nghi nhiễm', path.join(audit.evidence, 'suspects.png')],
   ]) {
@@ -274,6 +274,9 @@ async function repairSource(root, directory, state, args, signal) {
       return copied.get(key)
     }
     const beforeHash = digest(await readAsset(packageDir(directory), target.asset))
+    if (beforeHash === selected.sha256 && JSON.stringify(target.crop) === JSON.stringify(replacement.crop)) {
+      throw new Error('REPAIR_BLOCKED: Mảnh thay trùng với nguồn hiện tại.')
+    }
     const copy = async asset => storeAsset(await readAsset(packageDir(directory), asset))
     source.background = code === 'BACKGROUND' ? await storeAsset(donorBytes) : await copy(source.background)
     for (const part of [...source.frames, ...(source.decorations ?? [])]) {
@@ -290,6 +293,7 @@ async function repairSource(root, directory, state, args, signal) {
     await save(manifest, source)
     const revision = { parentWorkflowId: state.workflowId, parentJobId: state.currentJobId, demoId: demo, layer: code,
       beforeSha256: beforeHash, afterSha256: selected.sha256, reason: reason.trim(), approvalRequired: true,
+      parentDemoSha256: digest(await readFile(demoFile(directory, demo, true))),
       trustedStaticHashes: [...new Set([...await staticTrust(directory, state, demo),
         ...donorAudit.layers.map(item => item.sha256)])] }
     await python(['export', manifest, path.join(files, demo)], signal, sourceQa)
@@ -309,7 +313,7 @@ async function repairSource(root, directory, state, args, signal) {
     await save(path.join(stage, 'locks.json'), [lock])
     await save(path.join(stage, 'repair.json'), { revision, before: before.report, after: after.report })
     await save(path.join(stage, stateFile), draft)
-    const visuals = [...await auditImages(before), ...await auditImages(after, sourceFiles(stage,demo)[1])]
+    const visuals = [...await auditImages(before), ...await auditImages(after)]
     await rename(stage, destination)
     return response({ ...draft, before: before.report, after: after.report }, visuals)
   } finally { await rm(stage, { recursive: true, force: true }) }
@@ -794,7 +798,7 @@ export async function runScrapbookWorkflow(root, name, args, signal, dependencie
   if (name === 'audit_scrapbook_source') { // [TINIX]
     const state = await load()
     const audit = await auditSource(root, directory, state, args.demo_id, signal)
-    return response(audit.report, await auditImages(audit, sourceFiles(directory, args.demo_id)[1]))
+    return response(audit.report, await auditImages(audit))
   }
   if (name === 'repair_scrapbook_source_asset') return withLock(directory, async () =>
     repairSource(root, directory, await load(), args, signal)) // [TINIX]

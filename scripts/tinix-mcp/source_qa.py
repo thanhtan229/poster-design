@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
-from tinixposter_v1 import (DELIVERY, check_layout_schema, detect_window, export,
+from tinixposter_v1 import (DELIVERY, check_layout_schema, checkerboard, export,
                             load_asset, make_photo_layer, place, prep_subject,
                             render_scene, validate_sheet)
 
@@ -204,6 +204,9 @@ def inspect(source, kit, destination, trusted):
         structural = validate_sheet(layout,sheet)
         if [x["code"] for x in layout["frames"]] != CODES:
             issue("FRAMES","fail","expected_six_frames")
+        declared = manifest["frames"]+manifest.get("decorations",[])
+        if [x["code"] for x in declared] != [x["code"] for x in layout["frames"]+layout["decorations"]]:
+            issue("KIT","fail","kit_layer_inventory_differs_from_source")
         for entry in layout["frames"]+layout["decorations"]:
             code, box = entry["code"], entry["source"]
             tile = sheet.crop((box["x"],box["y"],box["x"]+box["width"],box["y"]+box["height"]))
@@ -218,10 +221,16 @@ def inspect(source, kit, destination, trusted):
             near_white = (rgb.min(axis=2) >= 232) & ((rgb.max(axis=2)-rgb.min(axis=2)) <= 25)
             if not np.any(edge & near_white):
                 issue(code,"uncertain","white_cutline_not_confirmed")
-        if layout["subject"]["target"] != manifest["subject"]["target"] or layout["subjectZ"] != manifest["subject"]["z"]:
+        if (layout["subject"]["target"] != manifest["subject"]["target"]
+            or layout["subjectZ"] != manifest["subject"]["z"]
+            or layout["subject"].get("borderMm",0) != manifest["subject"].get("borderMm",.9)):
             issue("SUBJECT","fail","kit_subject_placement_differs_from_source")
         fitted = prep_subject(subject,layout["subject"]["target"],layout["subject"].get("borderMm",0),layout["print"]["dpi"])
         sentinel, overlay = sentinel_check(background,sheet,layout,fitted,destination)
+        check_subject = checkerboard(*fitted.size).convert("RGBA")
+        check_subject.putalpha(fitted.getchannel("A"))
+        check = checkerboard(180, 180)
+        render_scene(layout,sheet,background,dict.fromkeys(CODES,check),check_subject).convert("RGB").save(destination/"checker.png")
         for code, marks in sentinel.items():
             if marks["outsideMaskPx"]:
                 issue(code,"fail","sentinel_outside_visible_mask")
