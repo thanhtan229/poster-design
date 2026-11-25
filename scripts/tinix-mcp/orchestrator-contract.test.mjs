@@ -91,6 +91,7 @@ test('embroidery candidate bytes and approval stay bound to the same SHA-256', a
   const legacy = Buffer.from('old kit fixture')
   await writeFile(kitFile, kit)
   const candidate = { workflowId, orchestration: 3, mode: 'template', generated: true, laceStyle: 'embroidered_pastel',
+    skillProof: { version: '1.2.13' }, // Fixture represents a previously verified prepare.
     sourceScreen: { B: { status: 'pass', mixedHandcutGeometry: { status: 'pass' } } },
     demos: [{ demoId: 'B', materialSha256: sha(kit), reviewImageSha256: [] }],
     approvedDemoId: null, currentJobId: null }
