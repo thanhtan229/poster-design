@@ -74,6 +74,16 @@ class ExportTest(unittest.TestCase):
                 for name in mod.REQUIRED[:3]:
                     self.assertEqual(mod.png(z.read(name)).size, (1504, 1504))
 
+    def test_repeat_is_idempotent_and_same_checksum(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder = Path(d)
+            source, render, _ = self.make_fixture(folder)
+            output, report = folder / "export.zip", folder / "qa.json"
+            first = mod.convert(source, render, output, report)
+            second = mod.convert(source, render, output, report)
+            self.assertEqual(first["zipSha256"], second["zipSha256"])
+            self.assertEqual(first["files"], second["files"])
+
     def test_mismatched_aspect_is_blocked(self):
         with tempfile.TemporaryDirectory() as d:
             folder = Path(d)
