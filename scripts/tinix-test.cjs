@@ -27,6 +27,7 @@ const suites = [
   { name: 'Đường cắt laser (SVG) và dấu căn', args: [path.join(root, 'scripts/tinix-cut-paths-test.cjs')], cwd: root },
   { name: 'Kiểm khả năng cắt ở khổ in thật', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'cut-readiness.ts'], cwd: root }, // [TINIX]
   { name: 'Bộ nhớ đệm tờ in', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'print-artifact-cache.ts'], cwd: root }, // [TINIX]
+  { name: 'Xuất lại JPG sau HTTP 408', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'print-jpg-retry.ts'], cwd: root }, // [TINIX]
   { name: 'Kế hoạch in cắt dán (collage-print)', args: [path.join(root, 'scripts/tinix-collage-print-test.cjs')], cwd: root },
   { name: 'Thư viện: sửa, lưu đè, xóa thành phần và chất liệu', args: [path.join(root, 'scripts/tinix-selftest/run-ts.cjs'), 'library.ts'], cwd: root },
   { name: 'Tách phần tử: chữ kèm khung', args: [path.join(root, 'scripts/tinix-extract-assets-test.cjs')], cwd: root },
