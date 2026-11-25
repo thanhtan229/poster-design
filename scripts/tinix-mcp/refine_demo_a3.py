@@ -17,7 +17,7 @@ from source_qa import inspect as inspect_source
 from tinixposter_v1 import DELIVERY, export, validate
 
 
-def textile_rgb(sprite):
+def textile_rgb(sprite, *, ivory_mix=0.):  # [TINIX]
     """Procedural laid threads and openwork-like weave, clipped to the existing RGB interior."""
     width, height = sprite.size
     require((width,height)==(280,70),"D04 prototype expects the locked lace sprite")
@@ -66,6 +66,8 @@ def textile_rgb(sprite):
 
     source = np.array(sprite)
     yarn = np.asarray(field.resize(sprite.size,Image.Resampling.LANCZOS),dtype=float)
+    require(0 <= ivory_mix <= 1, "Invalid ivory mix")
+    yarn = yarn*(1-ivory_mix) + np.array([249,239,230])*ivory_mix
     y,x = np.indices(source.shape[:2])
     distance = ndimage.distance_transform_edt(source[:,:,3]>=248)
     # Never recolor the four-pixel cutline or weak-alpha pixels. Preserve the existing aperture edge.
@@ -79,17 +81,19 @@ def textile_rgb(sprite):
     return Image.fromarray(result,"RGBA"), int(protected.sum())
 
 
-def board(images, region=None, zoom=1):
+def board(images, region=None, zoom=1, *, labels=None):  # [TINIX]
     panes=[image.crop(region) if region else image for image in images]
     if zoom != 1:
         panes=[pane.resize((pane.width*zoom,pane.height*zoom),Image.Resampling.NEAREST) for pane in panes]
     w,h=panes[0].size
-    result=Image.new("RGB",(4*w+42,h+35),"#efe9e4")
+    labels = labels if labels is not None else [f"A{i}" for i in range(len(panes))]
+    require(len(panes)==len(labels), "Panel label count differs")
+    result=Image.new("RGB",(len(panes)*w+(len(panes)-1)*14,h+35),"#efe9e4")
     draw=ImageDraw.Draw(result)
     font=ImageFont.load_default(size=19)
     for index,pane in enumerate(panes):
         x=index*(w+14)
-        draw.text((x+8,7),f"A{index}",font=font,fill="#302629")
+        draw.text((x+8,7),labels[index],font=font,fill="#302629")
         result.paste(pane.convert("RGB"),(x,35))
     return result
 
