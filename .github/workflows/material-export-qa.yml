@@ -1,0 +1,39 @@
+# [TINIX] Validate the proposed filled-draft export without touching customer jobs.
+name: Material export QA
+on:
+  pull_request:
+    branches: [codex/scrapbook-p3]
+  push:
+    branches: [codex/material-export-from-job]
+permissions:
+  contents: read
+jobs:
+  export-unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pillow
+      - run: python -B scripts/tinix-mcp/export_filled_material_test.py -v
+  mcp-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            service/package-lock.json
+            scripts/tinix-mcp/package-lock.json
+      - run: npm ci --prefix service
+      - run: npm ci --prefix scripts/tinix-mcp
+      - run: node --check scripts/tinix-mcp/server.mjs
+      - run: node --check scripts/tinix-mcp/material-export.mjs
+      - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs
