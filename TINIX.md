@@ -795,3 +795,7 @@ Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX
 ## Scrapbook A–Z · P3
 
 [TINIX] MCP 1.3.0 thêm `orchestrate_scrapbook_workflow` với QA nguồn trước preview, biên nhận từng thao tác và bàn giao theo hash. QA yêu cầu biên nhận sinh thủ tục khi thiếu mẫu RGB. Công cụ băm gói Skill thật trên host trước khi tạo batch. Xem hợp đồng tại `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
+
+## Scrapbook A–Z · P4 Mixed Handcut
+
+[TINIX] Mỗi demo mới có hai lòng ảnh cắt tự do với đường bao khác nhau, một Polaroid, một tem, một ticket và một notebook. Exporter đọc alpha của chính tờ RGBA để kiểm sáu lỗ, phân bố kiểu và sự khác nhau của hai đường bao sau khi chuẩn hóa phép xoay, lật và đổi cỡ. MCP báo `mixedHandcutGeometry` bên cạnh kết quả QA nhiễm ảnh và chỉ nhận duyệt ứng viên qua cả hai cổng. Chất lượng crop, viền và chồng lớp vẫn cần xem trực quan. Các batch đã khóa giữ ZIP và không bị áp bộ kiểm mới. Lượt thử web Pilot A có bóng số 3 ở ảnh F06. Cần thay ảnh đó bằng bản trung tính trước khi chốt nếu người dùng chưa xác nhận tuổi.

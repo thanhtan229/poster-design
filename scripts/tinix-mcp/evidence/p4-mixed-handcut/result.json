@@ -1,0 +1,674 @@
+[
+  {
+    "demoId": "A",
+    "styleQa": {
+      "status": "pass",
+      "allSixWindows": true,
+      "frames": {
+        "F01": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.7261,
+          "reflectionMismatch": 0.0505,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0406,
+          "stampNotches": 0,
+          "stampOrTicket": false
+        },
+        "F02": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9888,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": true,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.2115,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        },
+        "F03": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.6947,
+          "reflectionMismatch": 0.07,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0396,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        },
+        "F04": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9699,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1365,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F05": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.979,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1447,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F06": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9652,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": true,
+          "bottomPaperRatio": 0.1987,
+          "stampNotches": 2,
+          "stampOrTicket": false
+        }
+      },
+      "silhouettePairs": [
+        {
+          "frames": [
+            "F01",
+            "F03"
+          ],
+          "mismatch": 0.1659,
+          "distinct": true
+        }
+      ],
+      "polaroids": [
+        "F02"
+      ],
+      "stampsOrTickets": [
+        "F04",
+        "F05"
+      ],
+      "notebooks": [
+        "F06"
+      ],
+      "visualReviewRequired": true
+    },
+    "sourceQa": "pass",
+    "sentinels": {
+      "SUBJECT": {
+        "onPageMaskPx": 159881,
+        "visibleMaskPx": 159881,
+        "changedPx": 159881,
+        "outsideMaskPx": 0
+      },
+      "F06": {
+        "onPageMaskPx": 57249,
+        "visibleMaskPx": 56776,
+        "changedPx": 56135,
+        "outsideMaskPx": 0
+      },
+      "F05": {
+        "onPageMaskPx": 53089,
+        "visibleMaskPx": 50756,
+        "changedPx": 50234,
+        "outsideMaskPx": 0
+      },
+      "F04": {
+        "onPageMaskPx": 43075,
+        "visibleMaskPx": 42653,
+        "changedPx": 42025,
+        "outsideMaskPx": 0
+      },
+      "F03": {
+        "onPageMaskPx": 42832,
+        "visibleMaskPx": 42000,
+        "changedPx": 41404,
+        "outsideMaskPx": 0
+      },
+      "F02": {
+        "onPageMaskPx": 53927,
+        "visibleMaskPx": 52191,
+        "changedPx": 51692,
+        "outsideMaskPx": 0
+      },
+      "F01": {
+        "onPageMaskPx": 55697,
+        "visibleMaskPx": 52401,
+        "changedPx": 51650,
+        "outsideMaskPx": 0
+      }
+    },
+    "pieces": 17,
+    "componentsByAlpha": {
+      "1": 17,
+      "8": 17,
+      "16": 17,
+      "24": 17
+    },
+    "minGapPx": 22.0,
+    "jsonPixelMatch": true,
+    "sourceManifestSha256": "cf3598f1e9355f671ac862d65856156df2e327330d5f2264cc7f52d1d2cbe0b6",
+    "sha256": {
+      "04_tam_manh_RGBA.png": "14351048b936f8ab23308a45c332a0fc817e671a95ec2724d23db129345d636a",
+      "alpha_on_light_dark.jpg": "b34e42f51cbdbe3a0e5dae457ad19ab5d8d25dcfd5060691bd9325452d4a54ef",
+      "blank.png": "133680342a2f7457a1a53125d2635a13a62ea30f3fc53fe0f451466dd9c60bca",
+      "checker.png": "d34c440fc003b572a0e8615a4e6496e4ec9f6ca8e006871e3badf21108c2b7e9",
+      "demo.png": "dfbf216065404fe5dbba03c023b78d941b08d98cc965d9028d5b7fc7f343be43",
+      "layout.json": "2e54605a5b465b4540db5766d5347e65238aac1eba2c9e5f7d727d29d6979263",
+      "material.zip": "5082e9e8f0b91f030376c4a6c8012b4335f06c80af3f11cb0a8253dd32f0afab",
+      "source-qa.json": "c491233364bd60bc122022945c9d4b366c925252280333e9854a855d8e0b4d18",
+      "tinixposter_qa.json": "5cc55ea9cffec9463a2841c6a61f9c3177ae9196676a71002a23d19dea9ae8cb"
+    }
+  },
+  {
+    "demoId": "B",
+    "styleQa": {
+      "status": "pass",
+      "allSixWindows": true,
+      "frames": {
+        "F01": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9888,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": true,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.2115,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        },
+        "F02": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.6947,
+          "reflectionMismatch": 0.07,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0396,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        },
+        "F03": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9699,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1365,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F04": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.979,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1447,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F05": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9652,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": true,
+          "bottomPaperRatio": 0.1987,
+          "stampNotches": 2,
+          "stampOrTicket": false
+        },
+        "F06": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.7261,
+          "reflectionMismatch": 0.0505,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0406,
+          "stampNotches": 0,
+          "stampOrTicket": false
+        }
+      },
+      "silhouettePairs": [
+        {
+          "frames": [
+            "F02",
+            "F06"
+          ],
+          "mismatch": 0.1659,
+          "distinct": true
+        }
+      ],
+      "polaroids": [
+        "F01"
+      ],
+      "stampsOrTickets": [
+        "F03",
+        "F04"
+      ],
+      "notebooks": [
+        "F05"
+      ],
+      "visualReviewRequired": true
+    },
+    "sourceQa": "pass",
+    "sentinels": {
+      "SUBJECT": {
+        "onPageMaskPx": 159881,
+        "visibleMaskPx": 159881,
+        "changedPx": 159881,
+        "outsideMaskPx": 0
+      },
+      "F06": {
+        "onPageMaskPx": 39035,
+        "visibleMaskPx": 30923,
+        "changedPx": 30519,
+        "outsideMaskPx": 0
+      },
+      "F05": {
+        "onPageMaskPx": 46834,
+        "visibleMaskPx": 42992,
+        "changedPx": 42383,
+        "outsideMaskPx": 0
+      },
+      "F04": {
+        "onPageMaskPx": 51454,
+        "visibleMaskPx": 51035,
+        "changedPx": 50241,
+        "outsideMaskPx": 0
+      },
+      "F03": {
+        "onPageMaskPx": 39102,
+        "visibleMaskPx": 37175,
+        "changedPx": 36937,
+        "outsideMaskPx": 0
+      },
+      "F02": {
+        "onPageMaskPx": 35996,
+        "visibleMaskPx": 35652,
+        "changedPx": 35192,
+        "outsideMaskPx": 0
+      },
+      "F01": {
+        "onPageMaskPx": 51293,
+        "visibleMaskPx": 45291,
+        "changedPx": 44545,
+        "outsideMaskPx": 0
+      }
+    },
+    "pieces": 17,
+    "componentsByAlpha": {
+      "1": 17,
+      "8": 17,
+      "16": 17,
+      "24": 17
+    },
+    "minGapPx": 22.0,
+    "jsonPixelMatch": true,
+    "sourceManifestSha256": "50182dee52cce5d978304e98508e5ce3c672784d8a94cadecbbb3f5094f29927",
+    "sha256": {
+      "04_tam_manh_RGBA.png": "dc53dbbbd8c399708ae9d97f8c8b6d80f651728c0f21797f8cd908a9b7143eb1",
+      "alpha_on_light_dark.jpg": "292a1469fb9fe97c9be58c4b3eba79ff403c69207a18252ea01a5e816c464f6c",
+      "blank.png": "ee30a57436ebdd1266ae27d917b303335d0b4c8a7be360aaae3c1654afabf750",
+      "checker.png": "6ca0ffcf06be3a52cb96afa1d4b494c0bbc40a1f363fb99708f03e0e6878e9d5",
+      "demo.png": "bef7b764b3e9884d1ad0db3e6b2df5b0914ae10d647e97c2c0482d54de48f0f3",
+      "layout.json": "ad5e01584ba67161a141339cda32c530c3772bdc5add323b97043b99c4495e23",
+      "material.zip": "19a293eb28467e2aa59cc52c6729cc26b98ecca93cb17d7d1ca4aa6874f44b83",
+      "source-qa.json": "80f25bf7d68f2c0bcbc9daadb1d9ed8d4878c7098b14d46e2704378c10f831b0",
+      "tinixposter_qa.json": "11714d6339463efd32ee76cfe64cde65b39a8f87d001bfc2edda63577fb9210a"
+    }
+  },
+  {
+    "demoId": "C",
+    "styleQa": {
+      "status": "pass",
+      "allSixWindows": true,
+      "frames": {
+        "F01": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.6947,
+          "reflectionMismatch": 0.07,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0396,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        },
+        "F02": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9699,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1365,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F03": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.979,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1447,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F04": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9652,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": true,
+          "bottomPaperRatio": 0.1987,
+          "stampNotches": 2,
+          "stampOrTicket": false
+        },
+        "F05": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.7261,
+          "reflectionMismatch": 0.0505,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0406,
+          "stampNotches": 0,
+          "stampOrTicket": false
+        },
+        "F06": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9888,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": true,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.2115,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        }
+      },
+      "silhouettePairs": [
+        {
+          "frames": [
+            "F01",
+            "F05"
+          ],
+          "mismatch": 0.1659,
+          "distinct": true
+        }
+      ],
+      "polaroids": [
+        "F06"
+      ],
+      "stampsOrTickets": [
+        "F02",
+        "F03"
+      ],
+      "notebooks": [
+        "F04"
+      ],
+      "visualReviewRequired": true
+    },
+    "sourceQa": "pass",
+    "sentinels": {
+      "SUBJECT": {
+        "onPageMaskPx": 159881,
+        "visibleMaskPx": 159881,
+        "changedPx": 159860,
+        "outsideMaskPx": 0
+      },
+      "F06": {
+        "onPageMaskPx": 52896,
+        "visibleMaskPx": 51245,
+        "changedPx": 50450,
+        "outsideMaskPx": 0
+      },
+      "F05": {
+        "onPageMaskPx": 44181,
+        "visibleMaskPx": 42693,
+        "changedPx": 42053,
+        "outsideMaskPx": 0
+      },
+      "F04": {
+        "onPageMaskPx": 47074,
+        "visibleMaskPx": 46677,
+        "changedPx": 46064,
+        "outsideMaskPx": 0
+      },
+      "F03": {
+        "onPageMaskPx": 41969,
+        "visibleMaskPx": 26001,
+        "changedPx": 25777,
+        "outsideMaskPx": 0
+      },
+      "F02": {
+        "onPageMaskPx": 60188,
+        "visibleMaskPx": 59072,
+        "changedPx": 58182,
+        "outsideMaskPx": 0
+      },
+      "F01": {
+        "onPageMaskPx": 42760,
+        "visibleMaskPx": 41979,
+        "changedPx": 41325,
+        "outsideMaskPx": 0
+      }
+    },
+    "pieces": 17,
+    "componentsByAlpha": {
+      "1": 17,
+      "8": 17,
+      "16": 17,
+      "24": 17
+    },
+    "minGapPx": 22.0,
+    "jsonPixelMatch": true,
+    "sourceManifestSha256": "60d4e2c76f0cc02add4cd4c6934e9e1e85e0e4fe21bcc5859f8d9999d26da216",
+    "sha256": {
+      "04_tam_manh_RGBA.png": "fc4fb9997b2a0bab1cfe060b5a51f176e42111ffc3bfd0bc66452eb1d82691b8",
+      "alpha_on_light_dark.jpg": "141b4cd997823222128687061542f3e52a3d82fe13ba039e575d51bdbf75bbe1",
+      "blank.png": "e4612b141b8e12f9cb245496ec3a18baf8dedba0156cafb3b4dd0303f07c532e",
+      "checker.png": "3eedae710cf3562266ce508cab79a29aacfb452fee3b6692413262586c8273fb",
+      "demo.png": "526ff1af78dd84f295999f9f0d189b53b90fa343bca82c439d6fcf16a19e5754",
+      "layout.json": "6ef32806ba367b363bec7269f6ae5ad97d0727d7528b14be4721a3de34071faf",
+      "material.zip": "8d86d135ad8336543ecdfb04dd12a86e41ccda7b33701ccdd40fbf3fdae9a772",
+      "source-qa.json": "9ec5e43102cf1250b3e3652864f258f1654b718b54e732b9a1135e16162afaf3",
+      "tinixposter_qa.json": "91335113a455d63fb70b9ab8d2b8cf7e0ba982411ff01b6d6089112a0c981149"
+    }
+  },
+  {
+    "demoId": "D",
+    "styleQa": {
+      "status": "pass",
+      "allSixWindows": true,
+      "frames": {
+        "F01": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9699,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1365,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F02": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.979,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.1447,
+          "stampNotches": 7,
+          "stampOrTicket": true
+        },
+        "F03": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9652,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": false,
+          "notebookRuling": true,
+          "bottomPaperRatio": 0.1987,
+          "stampNotches": 2,
+          "stampOrTicket": false
+        },
+        "F04": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.7261,
+          "reflectionMismatch": 0.0505,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0406,
+          "stampNotches": 0,
+          "stampOrTicket": false
+        },
+        "F05": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.9888,
+          "reflectionMismatch": 0.0,
+          "asymmetricSilhouette": false,
+          "polaroidFoot": true,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.2115,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        },
+        "F06": {
+          "closedAlphaZeroHoles": 1,
+          "validWindow": true,
+          "openingFillRatio": 0.6947,
+          "reflectionMismatch": 0.07,
+          "asymmetricSilhouette": true,
+          "polaroidFoot": false,
+          "notebookRuling": false,
+          "bottomPaperRatio": 0.0396,
+          "stampNotches": 1,
+          "stampOrTicket": false
+        }
+      },
+      "silhouettePairs": [
+        {
+          "frames": [
+            "F04",
+            "F06"
+          ],
+          "mismatch": 0.1659,
+          "distinct": true
+        }
+      ],
+      "polaroids": [
+        "F05"
+      ],
+      "stampsOrTickets": [
+        "F01",
+        "F02"
+      ],
+      "notebooks": [
+        "F03"
+      ],
+      "visualReviewRequired": true
+    },
+    "sourceQa": "pass",
+    "sentinels": {
+      "SUBJECT": {
+        "onPageMaskPx": 159881,
+        "visibleMaskPx": 159881,
+        "changedPx": 159859,
+        "outsideMaskPx": 0
+      },
+      "F06": {
+        "onPageMaskPx": 46351,
+        "visibleMaskPx": 43080,
+        "changedPx": 42481,
+        "outsideMaskPx": 0
+      },
+      "F05": {
+        "onPageMaskPx": 44421,
+        "visibleMaskPx": 35715,
+        "changedPx": 35298,
+        "outsideMaskPx": 0
+      },
+      "F04": {
+        "onPageMaskPx": 40668,
+        "visibleMaskPx": 40317,
+        "changedPx": 39719,
+        "outsideMaskPx": 0
+      },
+      "F03": {
+        "onPageMaskPx": 38224,
+        "visibleMaskPx": 36104,
+        "changedPx": 35940,
+        "outsideMaskPx": 0
+      },
+      "F02": {
+        "onPageMaskPx": 57760,
+        "visibleMaskPx": 50462,
+        "changedPx": 49771,
+        "outsideMaskPx": 0
+      },
+      "F01": {
+        "onPageMaskPx": 54545,
+        "visibleMaskPx": 53307,
+        "changedPx": 52403,
+        "outsideMaskPx": 0
+      }
+    },
+    "pieces": 17,
+    "componentsByAlpha": {
+      "1": 17,
+      "8": 17,
+      "16": 17,
+      "24": 17
+    },
+    "minGapPx": 22.0,
+    "jsonPixelMatch": true,
+    "sourceManifestSha256": "5cd846216b5ccffa05b62bb841333d092cb3835d53c39f054534bf751b733883",
+    "sha256": {
+      "04_tam_manh_RGBA.png": "651c6c542b82377740a36862e0628b6df79a0bde9bf1240431e80717cbc75170",
+      "alpha_on_light_dark.jpg": "6bef81a9c320c7f4cedf2eea111676e6a943ff51769e2f80bdfcf2f09b245d8b",
+      "blank.png": "8bcba007e6eaae0202d3f79da0f6fa7866cd3a1959f7c3a22aa925c331a138f4",
+      "checker.png": "660197c575fe7ac082c5a6e1a0351a8024709336bc30c3a98bb312002bf70731",
+      "demo.png": "43bbeb3907e87283bc3349fc400c4da017724c6fe5c51efaf329e7cc221794bd",
+      "layout.json": "ee5deb56cd253283fc1ab489d9243adaf829313fcf0843a40779acad458d6822",
+      "material.zip": "e9bacc2b768bff3472e72c6e6add5dc0300c5999f5455f690f04e9d614a8d2b5",
+      "source-qa.json": "a7122605a71dc6b0d9a2faf0c2107bdba9e3943b5aa11cce2c80ec76f6a45645",
+      "tinixposter_qa.json": "d11a37b9b52670eab7569f65c528268e61250136d76c9b63ed649229e52c105b"
+    }
+  }
+]

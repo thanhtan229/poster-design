@@ -1,7 +1,7 @@
 // [TINIX] Exercise real MCP discovery and persistent rejected operations without a renderer or approved ZIP.
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
@@ -44,6 +44,37 @@ test('discovery, version verification and no replay with a different payload', a
     await server.close()
     if (previous === undefined) delete process.env.TINIX_STUDIO_SKILL_ARCHIVE
     else process.env.TINIX_STUDIO_SKILL_ARCHIVE = previous
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+// [TINIX] A visually reviewed but geometrically invalid candidate cannot receive a pass.
+test('source QA pass does not bypass the Mixed Handcut geometry gate', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'tinix-style-contract-'))
+  const workflowId = randomUUID()
+  const home = path.join(root, '.workflows', workflowId)
+  await mkdir(home, { recursive: true })
+  await writeFile(path.join(home, 'workflow.json'), JSON.stringify({
+    workflowId, sourceQaRequired: true, orchestration: 3,
+    demos: [{ demoId: 'A' }], sourceScreen: { A: { status: 'pass', mixedHandcutGeometry: { status: 'fail' } } },
+  }))
+  await writeFile(path.join(home, 'locks.json'), '[{"demoId":"A"}]')
+  const server = createTinixMcp({ outputRoot: root })
+  const client = new Client({ name: 'p4-ci', version: '1' })
+  const [a, b] = InMemoryTransport.createLinkedPair()
+  try {
+    await server.connect(b)
+    await client.connect(a)
+    const rejected = await client.callTool({ name: 'orchestrate_scrapbook_workflow', arguments: {
+      action: 'review_sources', workflow_id: workflowId, operation_id: randomUUID(),
+      reviews: [{ demo_id: 'A', status: 'pass', notes: 'Test a false visual pass' }],
+    } })
+    assert.equal(rejected.isError, true)
+    assert.match(rejected.content[0].text, /MIXED_HANDCUT_GEOMETRY_BLOCKED: A/)
+    assert.equal(JSON.parse(await readFile(path.join(home, 'workflow.json'), 'utf8')).sourceReviews, undefined)
+  } finally {
+    await client.close()
+    await server.close()
     await rm(root, { recursive: true, force: true })
   }
 })
