@@ -23,7 +23,10 @@ test('discovery, version verification and no replay with a different payload', a
     await client.connect(a)
     const { tools } = await client.listTools()
     assert.equal(client.getServerVersion().version, '1.3.0')
-    assert.equal(new Set(tools.map(tool => tool.name)).size, 18)
+    assert.equal(new Set(tools.map(tool => tool.name)).size, 19)
+    const exporter = tools.find(tool => tool.name === 'export_material_draft')
+    assert.deepEqual(exporter.inputSchema.required, ['job_id'])
+    assert.deepEqual(exporter._meta['openai/fileParams'], ['source_material'])
     const name = 'orchestrate_scrapbook_workflow'
     const old = JSON.parse(await readFile(new URL('./evidence/p0/mcp-local-tools.json', import.meta.url), 'utf8'))
     for (const tool of old) assert.deepEqual(tools.find(row => row.name === tool.name), tool)
