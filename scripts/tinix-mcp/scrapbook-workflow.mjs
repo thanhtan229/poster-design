@@ -294,7 +294,9 @@ async function repairSource(root, directory, state, args, signal) {
     const revision = { parentWorkflowId: state.workflowId, parentJobId: state.currentJobId, demoId: demo, layer: code,
       beforeSha256: beforeHash, afterSha256: selected.sha256, reason: reason.trim(), approvalRequired: true,
       parentDemoSha256: digest(await readFile(demoFile(directory, demo, true))),
-      trustedStaticHashes: [...new Set([...await staticTrust(directory, state, demo),
+      // [TINIX] A rejected parent's digest must not propagate into the revision.
+      trustedStaticHashes: [...new Set([...before.report.layers.filter(item => item.status === 'pass' && item.provenanceVerified)
+        .map(item => item.sha256),
         ...donorAudit.layers.map(item => item.sha256)])] }
     await python(['export', manifest, path.join(files, demo)], signal, sourceQa)
     const lock = { demoId: demo, ...await sourceLock(stage, demo, true, true) }

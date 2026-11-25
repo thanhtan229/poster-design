@@ -789,3 +789,5 @@ Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX
 ## Scrapbook A–Z · P2
 
 [TINIX] `audit_scrapbook_source` kiểm bằng alpha trong kit, kiểm nguồn tĩnh và bảy sentinel. `repair_scrapbook_source_asset` chỉ thay từ nguồn sạch đã kiểm lên một workflow mới, giữ hash và báo cáo trước/sau để duyệt. Xem điều kiện bàn giao và lệnh thử trong `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
+
+[TINIX] Bằng chứng RGB trùng ảnh minh họa chặn bàn giao và chặn dùng làm donor ngay cả khi hash nguồn đã được đánh dấu tin cậy. Nền được kiểm trên màu RGB thật sau bước exporter bỏ alpha.

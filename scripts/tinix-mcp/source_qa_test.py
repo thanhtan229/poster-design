@@ -21,7 +21,7 @@ def texture(seed):
     return Image.fromarray(generator.integers(20, 230, (155, 120, 3), dtype=np.uint8), "RGB")
 
 
-def contaminate(parent, candidate, code, layer, *, scaled=False, visible=False):
+def contaminate(parent, candidate, code, layer, *, scaled=False, visible=False, hidden_rgb=False):
     candidate.mkdir()
     shutil.copytree(parent/"assets",candidate/"assets")
     source = candidate/(code+".source.json")
@@ -47,7 +47,12 @@ def contaminate(parent, candidate, code, layer, *, scaled=False, visible=False):
             raise ValueError("Test layer needs room for the reference tile inside opaque pixels")
         y,x = entries[len(entries)//2]
         position = (int(x)-patch.width//2,int(y)-patch.height//2)
-    image.alpha_composite(patch,position)
+    if hidden_rgb and layer == "BACKGROUND":
+        # [TINIX] A transparent PNG pixel still contributes its RGB when exported as the clean background.
+        patch.putalpha(0)
+        image.paste(patch,position)
+    else:
+        image.alpha_composite(patch,position)
     image.save(file)
     source.write_text(json.dumps(manifest),encoding="utf-8")
     export(source,candidate/code/"material",placeholders=True,review_dir=candidate/code)
@@ -70,6 +75,13 @@ class SourceQaTest(unittest.TestCase):
         return inspect(folder/"A.source.json",folder/"A/material.zip",self.root/name,
                        self.trust if trust is None else trust)
 
+    def audit_with_trusted_layer(self, home, name, code):
+        manifest = json.loads((home/"A.source.json").read_text(encoding="utf-8"))
+        asset = manifest["background"] if code == "BACKGROUND" else next(
+            item["asset"] for item in manifest["frames"]+manifest["decorations"] if item["code"] == code)
+        poisoned_hash = digest((home/asset).read_bytes())
+        return self.audit(home,name,self.trust | {poisoned_hash})
+
     def test_clean_and_unknown(self):
         result = self.audit(self.clean,"clean-audit")
         self.assertEqual(result["status"],"pass",result["issues"])
@@ -83,15 +95,29 @@ class SourceQaTest(unittest.TestCase):
         result = self.audit(home,"background-audit")
         self.assertIn({"layer":"BACKGROUND","status":"fail","reason":"exact_illustration_fragment"},
                       [{key: issue[key] for key in ("layer","status","reason")} for issue in result["issues"]])
+        trusted = self.audit_with_trusted_layer(home,"trusted-background-audit","BACKGROUND")
+        self.assertEqual(trusted["status"],"fail",trusted["issues"])
+        self.assertTrue(any(issue["layer"] == "BACKGROUND" and issue["reason"] == "exact_illustration_fragment"
+                            and issue["provenanceVerified"] for issue in trusted["issues"]))
 
     def test_frame_under_rotation_and_decoration(self):
         for name, code in (("frame","F02"),("decoration","D01")):
             with self.subTest(layer=name):
                 home = self.root/name
                 contaminate(self.clean,home,"A",code)
-                result = self.audit(home,name+"-audit")
+                result = self.audit_with_trusted_layer(home,name+"-audit",code)
+                self.assertEqual(result["status"],"fail",result["issues"])
                 self.assertTrue(any(row["layer"] == code and row["reason"] == "exact_illustration_fragment"
+                                    and row["provenanceVerified"]
                                     for row in result["issues"]), result)
+
+    def test_trusted_transparent_background_rgb_is_visible_after_export(self):
+        home = self.root/"hidden-rgb"
+        contaminate(self.clean,home,"A","BACKGROUND",hidden_rgb=True)
+        result = self.audit_with_trusted_layer(home,"hidden-rgb-audit","BACKGROUND")
+        self.assertEqual(result["status"],"fail",result["issues"])
+        self.assertTrue(any(issue["reason"] == "exact_illustration_fragment" and issue["provenanceVerified"]
+                            for issue in result["issues"]))
 
     def test_resampled_illustration_is_never_approved_by_absence(self):
         home = self.root/"scaled"

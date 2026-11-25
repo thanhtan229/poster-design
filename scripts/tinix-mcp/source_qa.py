@@ -19,6 +19,7 @@ from tinixposter_v1 import (DELIVERY, check_layout_schema, checkerboard, export,
 
 CODES = [f"F{i:02d}" for i in range(1, 7)]
 COLORS = ("#ea326e", "#3056e4", "#00aa79", "#f0b511", "#7829b8", "#f36814", "#06a6ca")
+MAX_MATCH_EDGE = 1800  # [TINIX] Bound matching cost without silently passing unscanned large layers.
 Image.MAX_IMAGE_PIXELS = 32_000_000
 
 
@@ -115,7 +116,7 @@ def reference_tiles(illustrations):
 
 
 def locate_reference(sprite, tiles):
-    if sprite.width < 24 or sprite.height < 24 or max(sprite.size) > 1800:
+    if sprite.width < 24 or sprite.height < 24 or max(sprite.size) > MAX_MATCH_EDGE:
         return None
     rgba = np.asarray(sprite.convert("RGBA"))
     rgb = np.ascontiguousarray(rgba[:,:,:3])
@@ -146,33 +147,47 @@ def inspect(source, kit, destination, trusted):
     photo_paths["SUBJECT"] = local_asset(root,manifest["subject"]["asset"])
     photo_hashes = {digest(f.read_bytes()) for f in photo_paths.values()}
     photos = {code: Image.open(p).convert("RGBA") for code,p in photo_paths.items()}
-    tiles = None
+    tiles = reference_tiles(photos)
+    inspected = {}
     suspects = []
     for code, layer in sources.items():
         file = local_asset(root, layer["asset"])
         fingerprint = digest(file.read_bytes())
+        known_source = fingerprint in trusted  # [TINIX] Provenance is independent of visible content.
+        scan = "not_run"
         status = "pass"
         if fingerprint in photo_hashes:
             status = "fail"
             issue(code,status,"illustration_used_as_static_source")
-        elif fingerprint not in trusted:
-            status = "uncertain"
+        else:
+            cache_key = (fingerprint, code == "BACKGROUND", json.dumps(layer.get("crop"), sort_keys=True))
             try:
-                sprite = (Image.open(file).convert("RGBA") if code == "BACKGROUND" else load_asset(layer,root,code))
+                if cache_key not in inspected:
+                    # [TINIX] The exporter drops background alpha. Scan the RGB it actually puts on the page.
+                    sprite = (Image.open(file).convert("RGB") if code == "BACKGROUND" else load_asset(layer,root,code))
+                    coverage = ("size_limit" if max(sprite.size) > MAX_MATCH_EDGE else
+                                "insufficient_reference_tiles" if not tiles else
+                                "below_tile_size" if min(sprite.size) < 24 else "scanned")
+                    match = locate_reference(sprite, tiles) if coverage == "scanned" else None
+                    inspected[cache_key] = (sprite.size, coverage, match)
+                sprite_size, scan, match = inspected[cache_key]
             except (ValueError, OSError):
                 issue(code,"fail","invalid_static_alpha_or_image")
-                layers.append({"layer":code,"sha256":fingerprint,"status":"fail"})
+                layers.append({"layer":code,"sha256":fingerprint,"status":"fail",
+                               "provenanceVerified":known_source,"referenceScan":scan})
                 continue
-            if tiles is None:
-                tiles = reference_tiles(photos)
-            match = locate_reference(sprite, tiles)
             if match:
                 status = "fail"
-                issue(code,status,"exact_illustration_fragment", match=match)
-                suspects.append((sprite.size, layer.get("target"), match))
-            else:
+                issue(code,status,"exact_illustration_fragment", match=match, provenanceVerified=known_source)
+                suspects.append((sprite_size, layer.get("target"), match))
+            elif not known_source:
+                status = "uncertain"
                 issue(code,status,"static_asset_without_verified_provenance")
-        layers.append({"layer":code,"sha256":fingerprint,"status":status})
+            elif scan == "size_limit":
+                status = "uncertain"
+                issue(code,status,"static_reference_scan_size_limit")
+        layers.append({"layer":code,"sha256":fingerprint,"status":status,
+                       "provenanceVerified":known_source,"referenceScan":scan})
 
     subject = photos["SUBJECT"]
     low, high = subject.getchannel("A").getextrema()

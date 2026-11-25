@@ -53,7 +53,7 @@ try {
   assert.equal(clean.sentinels.SUBJECT.outsideMaskPx, 0)
   assert.equal(clean.kitSha256, prepared.demos[0].materialSha256)
 
-  // Create an untrusted legacy workflow around an intentionally contaminated but structurally valid kit.
+  // [TINIX] Simulate a trusted generator having recorded clean provenance for contaminated bytes.
   const parent = randomUUID()
   const folder = workflowFolder(parent)
   const legacy = path.join(folder, 'compositions')
@@ -67,16 +67,39 @@ try {
   poisonKit = initial[2]
   const diagnosed = (await invoke('build_material_draft', { file: { file_id: 'fixture', file_name: 'poisoned.zip',
     download_url: base } })).structuredContent
-  await writeFile(path.join(folder, 'workflow.json'), JSON.stringify({ workflowId: parent, mode: 'template',
-    demos: [{ demoId: 'A' }], currentJobId: diagnosed.jobId, artifacts: {} }))
+  const manifest = JSON.parse(initial[0])
+  const inputs = [...new Set([manifest.background, manifest.subject.asset, ...manifest.frames.flatMap(
+    layer => [layer.asset, layer.photo]), ...manifest.decorations.map(layer => layer.asset)])].sort()
+  const lock = { demoId: 'A', demoSha256: hash(initial[1]), manifestSha256: hash(initial[0]),
+    materialSha256: hash(initial[2]), inputs: await Promise.all(inputs.map(async name =>
+      [name, hash(await readFile(path.join(legacy, name)))])) }
+  const evidence = await Promise.all(['blank.png', 'checker.png'].map(async name =>
+    hash(await readFile(path.join(legacy, 'A', name)))))
+  const parentState = { workflowId: parent, mode: 'template', generated: true, integrationFixture: true,
+    demos: [{ demoId: 'A' }], approvedDemoId: null, currentJobId: diagnosed.jobId,
+    qaStatus: 'awaiting_demo', sourceQaRequired: true, sourceReviews: [{ demoId: 'A', status: 'pass', evidence }],
+    stepStatus: { prepare: 'done', sourceQa: 'done', approval: 'waiting' }, artifacts: {} }
+  const workflowFile = path.join(folder, 'workflow.json')
+  const lockFile = path.join(folder, 'locks.json')
+  await writeFile(workflowFile, JSON.stringify(parentState), { flag: 'wx' })
+  await writeFile(lockFile, JSON.stringify([lock]), { flag: 'wx' })
+  const protectedFiles = [...evidencePaths, workflowFile, lockFile]
+  const protectedHashes = await Promise.all(protectedFiles.map(async file => hash(await readFile(file))))
   const dirty = await inspect(parent, 'A')
   assert.equal(dirty.status, 'fail')
-  assert.ok(dirty.issues.some(i => i.layer === 'BACKGROUND' && i.reason === 'exact_illustration_fragment'))
+  assert.ok(dirty.issues.some(i => i.layer === 'BACKGROUND' && i.reason === 'exact_illustration_fragment' && i.provenanceVerified))
+  const blocked = await call(advance, { workflow_id: parent, approved_demo_id: 'A' })
+  assert.ok(blocked.isError)
+  assert.match(blocked.content[0].text, /SOURCE_QA_FAIL/)
 
-  const repaired = (await invoke('repair_scrapbook_source_asset', {
-    workflow_id: parent, demo_id: 'A', layer: 'BACKGROUND', donor_workflow_id: donor, donor_demo_id: 'A',
-    donor_layer: 'BACKGROUND', reason: 'Replace the synthetic ghost with a verified generated background.',
-  })).structuredContent
+  const repairTool = 'repair_scrapbook_source_asset'
+  const repair = { workflow_id: parent, demo_id: 'A', layer: 'BACKGROUND', donor_workflow_id: donor, donor_demo_id: 'A',
+    donor_layer: 'BACKGROUND', reason: 'Replace the synthetic ghost with a verified generated background.' }
+  const rejectedDonor = await call(repairTool, { ...repair, donor_workflow_id: parent })
+  assert.ok(rejectedDonor.isError)
+  assert.match(rejectedDonor.content[0].text, /SOURCE_QA_FAIL/)
+
+  const repaired = (await invoke(repairTool, repair)).structuredContent
   assert.notEqual(repaired.workflowId, parent)
   assert.equal(repaired.after.status, 'pass', JSON.stringify(repaired.after.issues))
   assert.equal(repaired.before.status, 'fail')
@@ -95,7 +118,7 @@ try {
   assert.equal(accepted.qaStatus, 'passed', JSON.stringify(accepted.qa))
   const after = await inspect(revised, 'A')
   assert.equal(after.status, 'pass')
-  assert.deepEqual(await Promise.all(evidencePaths.map(file => readFile(file))), initial)
+  assert.deepEqual(await Promise.all(protectedFiles.map(async file => hash(await readFile(file)))), protectedHashes)
   await copyFile(path.join(resultFolder(diagnosed.jobId), 'render.png'), path.join(output, 'before.png'))
   await copyFile(path.join(resultFolder(built.currentJobId), 'render.png'), path.join(output, 'after.png'))
   const [beforePixels, afterPixels] = await Promise.all(['before.png', 'after.png'].map(name =>
@@ -127,9 +150,10 @@ try {
     }
   }
   await writeFile(path.join(output, 'verification.json'), JSON.stringify({ clean, dirty, after, demoD,
-    originalUnchanged: true, imports: { before: diagnosed.jobId, after: built.currentJobId }, revision: repaired.revision }, null, 2))
+    originalUnchanged: true, manualApprovalBlocked: true, contaminatedDonorBlocked: true, donor,
+    imports: { before: diagnosed.jobId, after: built.currentJobId }, revision: repaired.revision }, null, 2))
   console.log(JSON.stringify({ clean: clean.status, dirty: dirty.status, repaired: after.status, demoD: demoD?.status,
-    before: diagnosed.jobId, after: built.currentJobId, donor, revised }))
+    before: diagnosed.jobId, after: built.currentJobId, parent, donor, revised }))
 } finally {
   await client.close()
   await server.close()

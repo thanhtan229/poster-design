@@ -9,6 +9,8 @@
 
 P1 generated template cần QA nguồn tự động `pass` để dựng. Template nhập kiểu cũ vẫn có thể dựng bản nháp chẩn đoán và so bố cục. Khi thiếu bằng chứng nguồn, workflow chặn bàn giao render và kit. Luồng customer và thao tác dựng ZIP thô vẫn phục vụ chẩn đoán và thử nghiệm, chưa chứng nhận template sạch. Giữ thẩm định hình ảnh ở bước layout review, gồm chất giấy, viền trắng, ren, chữ, bóng và SUBJECT. Nếu sai khác tổng thể vượt ngưỡng sàng lọc, workflow báo ngoại lệ. Độ khác biệt nhỏ không thay cho thẩm định hình ảnh.
 
+[TINIX] Ghi nhận nguồn đã xác minh bằng `provenanceVerified` và phạm vi dò bằng `referenceScan` trên từng lớp. Kết quả khớp ảnh luôn trả `fail`, kể cả khi SHA-256 nằm trong danh sách tin cậy. Với nền, dò RGB sau khi bỏ alpha theo đúng exporter. Lớp vượt giới hạn dò trả `uncertain`. Revision chỉ kế thừa hash các lớp cha đã xác minh và đạt audit. Bộ dò exact RGB không chứng minh đã loại mọi dấu vết sau khi đổi cỡ hoặc đổi màu.
+
 Lệnh thử cục bộ với server ở localhost:7001, chạy trong checkout riêng và dùng tên thư mục đích mới.
 
 ```sh
