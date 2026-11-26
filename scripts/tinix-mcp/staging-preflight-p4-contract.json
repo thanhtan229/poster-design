@@ -1,0 +1,23 @@
+{
+  "baselineCommit": "2da8c1a7f8bc6a80bbec7730df654ea7751748d6",
+  "tools": {
+    "advance_scrapbook_workflow": "7d275a6b6f366cd02e54c62133dfdbf62163b7c3e7ef6604df6ea9a40770fe4b",
+    "apply_material_photo_crops": "c471cea12bb682ce580f94365eec79e64da1f1cda02675344656c4b18e225a30",
+    "audit_scrapbook_source": "c08da291a332677fa945c31fb9468cbebf53d2befb85d3504e521020ff970994",
+    "build_material_draft": "36cc4b1a362ba2fcf335f69ff33052dd828b2410410583af52f82e0533ba3038",
+    "compare_material_draft_to_approved_demo": "9fccdbf9ce697fa570508a72b19b50c4a749d0cbda18b01118baf264b2e109a1",
+    "edit_material_subject_mask": "823090ebfac59d49420ccca2423bd51430721dd06ddeca4285896bc00a02ad79",
+    "fill_material_draft_photos": "1e6033b64f310f57f294777d21caa6b6b4675cbea6d4e0822e9d94cebcb6e8a7",
+    "get_material_draft_render": "2d6c00c9f03479d3e4b9422c9857f7fad700d9c0a80fe15855037dcb0536ba8c",
+    "get_material_feedback_result": "9020e91a0e7e2437cacf75331b1f9bfe9166520996ea1701582b68c1beec8b62",
+    "get_scrapbook_workflow": "edcc93eee25b30b8342747b84a393c4d5eee825dd83c5e98504aa5607708bfaf",
+    "orchestrate_scrapbook_workflow": "e1d35b72372d7650b7f05698336def0007fd5cadce5e252a42fa350ea08aaa7b",
+    "prepare_generated_scrapbook_workflow": "16ba6a157a52916489a4e2896748951fb11751a3d74f47e31105da2711ee0c78",
+    "prepare_scrapbook_workflow": "54adf1af55bf722ba9a65dda148d4865fcd9416626ec3022db5ce06e4b2d3a61",
+    "preview_material_subject_cutout": "aae7e23aa712663268641f728c122d467179a0973abb9ba1b07911e3a63d8291",
+    "repair_scrapbook_source_asset": "ce506ed8e7b82af839a569de37231c9575f38ca91f7616d8eb0defeef68f356f",
+    "review_material_photo_crops": "a5423e864eced1b6fb7c785b4949522566f060668d483c6c2a6fbeb29d53b934",
+    "review_scrapbook_template_sources": "2e53272f9acbccec0bb84c84bc8e520e1da439dea82e1dbb7ef0fc5990cf3d80",
+    "submit_material_feedback": "2666a8fe0a67b8a53584daaaccf27f652374483a518fd9bc730265a38038cc56"
+  }
+}

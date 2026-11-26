@@ -13,6 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
+from mixed_handcut_qa import inspect_geometry  # [TINIX]
 from tinixposter_v1 import (DELIVERY, check_layout_schema, checkerboard, export,
                             load_asset, make_photo_layer, place, prep_subject,
                             render_scene, validate_sheet)
@@ -208,6 +209,7 @@ def inspect(source, kit, destination, trusted, procedural=frozenset()):  # [TINI
     if str(manifest.get("guide",{}).get("sourceType","")).casefold() == "ai_flat_image":
         issue("BACKGROUND","uncertain","flattened_ai_source_cannot_prove_clean")
 
+    geometry = None
     try:
         if kit is None:
             export(source,destination/"material",destination/"export-qa",placeholders=True,review_dir=destination)
@@ -222,6 +224,9 @@ def inspect(source, kit, destination, trusted, procedural=frozenset()):  # [TINI
         if not np.array_equal(background,np.asarray(Image.open(local_asset(root,manifest["background"])).convert("RGB"))):
             issue("BACKGROUND","fail","kit_background_differs_from_source")
         structural = validate_sheet(layout,sheet)
+        if manifest.get("mixedHandcutGeometryVersion") == 1:  # [TINIX] Separate geometry from contamination QA.
+            geometry = inspect_geometry(
+                layout, sheet, require_notebook=manifest.get("mixedHandcutRequireNotebook", True))  # [TINIX]
         if [x["code"] for x in layout["frames"]] != CODES:
             issue("FRAMES","fail","expected_six_frames")
         declared = manifest["frames"]+manifest.get("decorations",[])
@@ -278,6 +283,8 @@ def inspect(source, kit, destination, trusted, procedural=frozenset()):  # [TINI
               "manifestSha256":digest(source.read_bytes()),"kitSha256":digest(kit.read_bytes()) if kit else None,
               "layers":layers,"issues":issues,"sentinels":sentinel,"structural":structural,
               "visualReviewRequired":["text", "lace", "shadows", "subject_edges_and_occlusion", "stored_render"]}
+    if manifest.get("mixedHandcutGeometryVersion") == 1:  # [TINIX]
+        report["mixedHandcutGeometry"] = geometry or {"status":"fail", "visualReviewRequired":True}
     (destination/"source-qa.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
     return report
 

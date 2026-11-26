@@ -21,6 +21,8 @@ const sourceQa = fileURLToPath(new URL('./source_qa.py', import.meta.url)) // [T
 const studioSha256 = 'be9d6da6777fd4789319abe351d1213ee560ebba2c1c27f24a376516e4f0a0fc'
 const id = { type: 'string', pattern: '^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$' }
 const demos = ['A', 'B', 'C']
+const embroideredLace = 'embroidered_pastel' // [TINIX]
+const candidateKinds = ['demo', 'blank', 'checker', 'materials_zip']
 const templateDemos = ['A', 'B', 'C', 'D', 'E', 'F'] // [TINIX]
 const frames = ['F01', 'F02', 'F03', 'F04', 'F05', 'F06']
 const checks = ['design', 'subject', 'crop']
@@ -111,12 +113,15 @@ export function workflowTools(attachment) {
     }),
   }, { // [TINIX] Stateful entry point for the P3 producer without changing existing tool schemas.
     name: 'orchestrate_scrapbook_workflow', title: 'Điều phối sản xuất scrapbook từ brief',
-    description: 'Prepare a batch with automatic source QA, resume, record visual source review, advance an approved demo, or repair one asset on a revision. Use a fresh operation_id for each distinct action; reuse it unchanged on retry. Read completed artifacts via get_scrapbook_workflow.',
+    description: 'Prepare a batch with automatic source QA, resume, record visual source review, advance an approved demo, repair one asset on a revision, or read a preapproval image/ZIP with preview_artifact. Use a fresh operation_id for each distinct action; reuse it unchanged on retry. Read completed artifacts via get_scrapbook_workflow.',
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
     _meta: { 'openai/fileParams': ['illustrations'] },
     inputSchema: schema(['action', 'workflow_id', 'operation_id'], {
-      action: { type: 'string', enum: ['prepare', 'review_sources', 'advance', 'repair', 'status'] },
+      action: { type: 'string', enum: ['prepare', 'review_sources', 'advance', 'repair', 'status', 'preview_artifact'] },
       workflow_id: id, operation_id: id,
+      lace_style: { type: 'string', enum: [embroideredLace] },
+      preview_kind: { type: 'string', enum: candidateKinds },
+      expected_material_sha256: { type: 'string', pattern: '^[a-f0-9]{64}$' },
       brief: { type: 'string', minLength: 1, maxLength: 3000 },
       title: { type: 'string', maxLength: 70 }, theme: { type: 'string', enum: ['pastel', 'vintage', 'coastal'] },
       demo_count: { type: 'integer', minimum: 2, maximum: 6 },
@@ -283,6 +288,10 @@ async function repairSource(root, directory, state, args, signal, revisionId = r
       typeof reason !== 'string' || !reason.trim() || reason.length > 2000) throw new Error('Cần mã lớp, mảnh thay cùng loại và lý do sửa.')
   const donorDir = path.join(path.dirname(directory), uuid(args.donor_workflow_id))
   const donorState = await json(path.join(donorDir, stateFile))
+  // [TINIX] A repaired candidate must not inherit an embroidered identity from a legacy D04.
+  if (state.laceStyle && code === 'D04' && (donorState.laceStyle !== state.laceStyle || donorCode !== 'D04')) {
+    throw new Error('REPAIR_BLOCKED: D04 cần donor cùng tùy chọn ren.')
+  }
   validateCandidate(donorState, donorDemo)
   const source = await json(path.join(packageDir(directory), demo + '.source.json'))
   const donor = await json(path.join(packageDir(donorDir), donorDemo + '.source.json'))
@@ -350,17 +359,19 @@ async function repairSource(root, directory, state, args, signal, revisionId = r
     const lock = { demoId: demo, ...await sourceLock(stage, demo, true, true) }
     const draft = { workflowId: revisionId, mode: 'template', generated: true, revision, sourceQaRequired: true,
       ...(state.orchestration && { orchestration: state.orchestration, skillProof: state.skillProof }),
+      ...(state.laceStyle && { laceStyle: state.laceStyle }),
       approvedDemoId: null, currentJobId: null, parentJobId: state.currentJobId, qaStatus: 'awaiting_source_qa',
       retryCount: 0, artifacts: {}, demos: [{ demoId: demo, demoSha256: lock.demoSha256,
-        manifestSha256: lock.manifestSha256, materialSha256: lock.materialSha256 }],
+        manifestSha256: lock.manifestSha256, materialSha256: lock.materialSha256,
+        ...(state.laceStyle && { reviewImageSha256: await sourceEvidence(stage, demo) }) }],
       stepStatus: { prepare: 'done', sourceQa: 'waiting', approval: 'waiting' } }
     const after = await auditSource(root, stage, draft, demo, signal)
-    if (after.report.status === 'pass') {
-      draft.sourceReviews = [{ demoId: demo, status: 'pass', evidence: await sourceEvidence(stage, demo),
+    if (after.report.status === 'pass' && geometryPasses(after.report, source.mixedHandcutGeometryVersion === 1)) { // [TINIX]
+      if (!state.laceStyle) draft.sourceReviews = [{ demoId: demo, status: 'pass', evidence: await sourceEvidence(stage, demo),
         notes: 'Automated source QA. Review the revision before approval.' }]
       draft.qaStatus = 'awaiting_demo'
       draft.stepStatus.sourceQa = 'done'
-    } else draft.qaStatus = 'source_qa_failed'
+    } else draft.qaStatus = after.report.status === 'pass' ? 'style_qa_failed' : 'source_qa_failed'
     if (draft.orchestration) draft.sourceScreen = { [demo]: after.report } // [TINIX]
     await save(path.join(stage, 'locks.json'), [lock])
     await save(path.join(stage, 'repair.json'), { revision, before: before.report, after: after.report })
@@ -371,8 +382,26 @@ async function repairSource(root, directory, state, args, signal, revisionId = r
   } finally { await rm(stage, { recursive: true, force: true }) }
 }
 
+function geometryPasses(report, required) { // [TINIX] Older composition revisions have no geometry contract.
+  return report?.mixedHandcutGeometry?.status === 'pass' || (!required && report?.mixedHandcutGeometry === undefined)
+}
+
+async function geometryRequired(directory, state, demoId) {
+  if (!state.generated) return false
+  // [TINIX] The locked manifest distinguishes legacy workflows from new P4 batches and repairs.
+  const manifest = await json(path.join(packageDir(directory), demoId + '.source.json'))
+  return manifest.mixedHandcutGeometryVersion === 1
+}
+
+function candidateGeometry(state, demoId) {
+  return state.sourceScreen?.[demoId] ?? state.batch?.kits?.find(kit => kit.demoId === demoId)
+}
+
 async function previews(directory, state) {
-  const eligible = state.orchestration ? state.demos.filter(demo => state.sourceScreen?.[demo.demoId]?.status === 'pass') : state.demos
+  const checks = await Promise.all(state.demos.map(async ({ demoId }) =>
+    (!state.orchestration || state.sourceScreen?.[demoId]?.status === 'pass') &&
+    geometryPasses(candidateGeometry(state, demoId), await geometryRequired(directory, state, demoId))))
+  const eligible = state.demos.filter((_, index) => checks[index])
   const panels = await Promise.all(eligible.map(async ({ demoId: demo }) => {
     const preview = file => sharp(file).resize(700, 900, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 92 }).toBuffer()
     const original = state.mode === 'template' ? await preview(demoFile(directory, demo, true))
@@ -403,6 +432,9 @@ async function reviewTemplateSources(directory, state, reviews) { // [TINIX]
     if (state.orchestration && status === 'pass' && state.sourceScreen?.[demoId]?.status !== 'pass') {
       throw new Error('SOURCE_QA_BLOCKED: ' + demoId)
     }
+    if (status === 'pass' && !geometryPasses(candidateGeometry(state, demoId), await geometryRequired(directory, state, demoId))) { // [TINIX]
+      throw new Error('MIXED_HANDCUT_GEOMETRY_BLOCKED: ' + demoId)
+    }
     delete expected.proceduralStaticSha256 // [TINIX] Generation proof is persisted separately from the byte lock.
     if (JSON.stringify(await sourceLock(directory, demoId, true, state.generated === true)) !== JSON.stringify(expected)) throw new Error('Nguồn demo đã thay đổi.')
     return { demoId, status, notes: notes.trim(), evidence: await sourceEvidence(directory, demoId) }
@@ -415,7 +447,7 @@ async function reviewTemplateSources(directory, state, reviews) { // [TINIX]
 
 // [TINIX] Store each proposed kit once and keep it tied to exactly one request and source.
 async function prepareGenerated(directory, workflowId, args, dependencies, signal, skillProof) {
-  const { brief, title, theme, demo_count: count = 3, aspect_ratio: aspect = '1:1',
+  const { brief, title, theme, lace_style: laceStyle, demo_count: count = 3, aspect_ratio: aspect = '1:1',
     skill_version: skillVersion, skill_source_sha256: skillSourceSha256, illustrations } = args
   if (skillVersion !== '1.2.13' || skillSourceSha256 !== studioSha256) {
     throw new Error('SKILL_SOURCE_MISMATCH: Cần đúng gói Scrapbook Story Studio v1.2.13 đã duyệt.')
@@ -430,7 +462,11 @@ async function prepareGenerated(directory, workflowId, args, dependencies, signa
   if (illustrations !== undefined && (!Array.isArray(illustrations) || illustrations.length !== 7 ||
       illustrations.some(file => !nonempty(file?.file_id, 512)) ||
       new Set(illustrations.map(file => file.file_id)).size !== 7)) throw new Error('Cần đúng bảy ảnh minh họa riêng theo thứ tự F01–F06, SUBJECT.')
-  const config = { brief: brief.trim(), title: title?.trim(), theme, demoCount: count, aspectRatio: aspect, skillVersion, skillSourceSha256 }
+  if (laceStyle !== undefined && (laceStyle !== embroideredLace || theme !== 'pastel' || !skillProof)) {
+    throw new Error('LACE_STYLE_UNSUPPORTED: Chọn theme pastel và dùng orchestrate_scrapbook_workflow.')
+  }
+  const config = { brief: brief.trim(), title: title?.trim(), theme, demoCount: count, aspectRatio: aspect,
+    skillVersion, skillSourceSha256, ...(laceStyle && { laceStyle }) }
   const requestSha256 = digest(JSON.stringify([config, illustrations?.map(file => file.file_id),
     ...(skillProof ? [skillProof.sha256] : [])]))
   const existing = await json(path.join(directory, stateFile)).catch(error => { if (error.code !== 'ENOENT') throw error })
@@ -460,11 +496,13 @@ async function prepareGenerated(directory, workflowId, args, dependencies, signa
     const state = {
       workflowId, mode: 'template', generated: true, requestSha256, brief: config.brief, aspectRatio: aspect,
       ...(skillProof && { orchestration: 3, skillProof, sourceScreen: {} }),
+      ...(laceStyle && { laceStyle }),
       skillVersion, skillSourceSha256, batch, approvedDemoId: null, currentJobId: null, parentJobId: null,
       qaStatus: 'awaiting_source_qa', sourceQaRequired: true, retryCount: 0, artifacts: {},
       stepStatus: { prepare: 'done', sourceQa: 'waiting', approval: 'waiting' },
-      demos: locks.map(({ demoId, demoSha256, manifestSha256, materialSha256 }) =>
-        ({ demoId, demoSha256, manifestSha256, materialSha256 })),
+      demos: await Promise.all(locks.map(async ({ demoId, demoSha256, manifestSha256, materialSha256 }) =>
+        ({ demoId, demoSha256, manifestSha256, materialSha256,
+          ...(laceStyle && { reviewImageSha256: await sourceEvidence(stage, demoId) }) }))),
     }
     await save(path.join(stage, 'locks.json'), locks)
     await save(path.join(stage, stateFile), state)
@@ -576,6 +614,14 @@ async function advance(root, directory, state, args, dependencies, signal) {
     throw new Error('Workflow mẫu dùng layout_review và chỉ sửa vị trí lớp; không xử lý ảnh khách.')
   }
   if (changes.length > 1) throw new Error('Gửi một nhóm sửa mỗi lượt để kiểm lại tác động.')
+  if (state.laceStyle && (!state.approvedDemoId || args.expected_material_sha256 !== undefined)) {
+    const demoId = state.approvedDemoId ?? args.approved_demo_id
+    const expected = state.demos.find(row => row.demoId === demoId)?.materialSha256
+    if (!expected || args.expected_material_sha256 !== expected ||
+        digest(await readFile(material(directory, demoId))) !== expected) {
+      throw new Error('APPROVED_KIT_HASH_MISMATCH: Chọn demo và cung cấp SHA-256 ZIP đã xem.')
+    }
+  }
   if (!state.approvedDemoId) {
     if (!state.demos.some(({ demoId }) => demoId === args.approved_demo_id)) throw new Error('Cần chọn đúng một demo có trong workflow.') // [TINIX]
     if (state.sourceQaRequired) {
@@ -587,6 +633,9 @@ async function advance(root, directory, state, args, dependencies, signal) {
     }
     if (state.generated) { // [TINIX] A manual pass cannot override an automated fail or uncertain.
       state.automatedSourceQa = await requireCleanSource(root, directory, state, args.approved_demo_id, signal)
+      if (!geometryPasses(state.automatedSourceQa, await geometryRequired(directory, state, args.approved_demo_id))) {
+        throw new Error('MIXED_HANDCUT_GEOMETRY_BLOCKED: ' + args.approved_demo_id)
+      }
     }
     state.approvedDemoId = args.approved_demo_id
     state.policy = Object.fromEntries(policyKeys.map(key => [key, args.policy?.[key] === true]))
@@ -862,9 +911,10 @@ async function verifyStudioSource() {
 }
 
 const actionFields = { // [TINIX]
-  prepare: ['brief', 'title', 'theme', 'demo_count', 'aspect_ratio', 'illustrations'],
+  prepare: ['brief', 'title', 'theme', 'demo_count', 'aspect_ratio', 'illustrations', 'lace_style'],
   review_sources: ['reviews'],
-  advance: ['approved_demo_id', 'layout_review'],
+  advance: ['approved_demo_id', 'layout_review', 'expected_material_sha256'],
+  preview_artifact: ['demo_id', 'preview_kind'],
   repair: ['demo_id', 'layer', 'donor_workflow_id', 'donor_demo_id', 'donor_layer', 'reason'],
   status: [],
 }
@@ -879,14 +929,42 @@ async function screenCandidates(root, directory, state, signal) { // [TINIX] Che
     if (state.sourceScreen[demoId]) continue
     const { report } = await auditSource(root, directory, state, demoId, signal)
     state.sourceScreen[demoId] = { status: report.status, issues: report.issues,
-      manifestSha256: report.manifestSha256, kitSha256: report.kitSha256 }
+      manifestSha256: report.manifestSha256, kitSha256: report.kitSha256,
+      ...(report.mixedHandcutGeometry && { mixedHandcutGeometry: report.mixedHandcutGeometry }) } // [TINIX]
     await save(path.join(directory, stateFile), state)
   }
-  const eligible = Object.values(state.sourceScreen).some(row => row.status === 'pass')
-  state.stepStatus.sourceScreen = eligible ? 'done' : 'blocked'
-  if (!eligible) state.qaStatus = 'source_qa_failed'
+  const clean = Object.entries(state.sourceScreen).filter(([, row]) => row.status === 'pass')
+  const geometry = await Promise.all(clean.map(async ([demoId, row]) =>
+    geometryPasses(row, await geometryRequired(directory, state, demoId))))
+  state.stepStatus.sourceScreen = clean.length ? 'done' : 'blocked'
+  if (!clean.length) state.qaStatus = 'source_qa_failed'
+  else if (!geometry.some(Boolean)) state.qaStatus = 'style_qa_failed' // [TINIX]
   await save(path.join(directory, stateFile), state)
   return previews(directory, state)
+}
+
+// [TINIX] Return only verified, locked bytes for an eligible candidate, with no approval or job state.
+async function candidateArtifact(directory, state, demoId, kind) {
+  const demo = state.demos.find(row => row.demoId === demoId)
+  const screen = state.sourceScreen?.[demoId]
+  if (!state.laceStyle || !demo || screen?.status !== 'pass' ||
+      !geometryPasses(screen, await geometryRequired(directory, state, demoId)) ||
+      !candidateKinds.includes(kind)) throw new Error('CANDIDATE_ARTIFACT_UNAVAILABLE')
+  const files = {
+    demo: [demoFile(directory, demoId, true), demo.demoSha256],
+    blank: [sourceFiles(directory, demoId)[0], demo.reviewImageSha256[0]],
+    checker: [sourceFiles(directory, demoId)[1], demo.reviewImageSha256[1]],
+    materials_zip: [material(directory, demoId), demo.materialSha256],
+  }
+  const [file, sha256] = files[kind]
+  const bytes = await readFile(file)
+  if (digest(bytes) !== sha256) throw new Error('CANDIDATE_ARTIFACT_HASH_MISMATCH')
+  const meta = { workflowId: state.workflowId, demoId, laceStyle: state.laceStyle, artifact: kind,
+    sha256, bytes: bytes.length }
+  return response(meta, [kind === 'materials_zip'
+    ? { type: 'resource', resource: { uri: 'tinixposter://workflow/' + state.workflowId + '/' + demoId + '/materials_zip',
+      mimeType: 'application/zip', blob: bytes.toString('base64') } }
+    : image(bytes)])
 }
 
 async function orchestrate(root, directory, workflowId, args, dependencies, signal) { // [TINIX]
@@ -898,6 +976,7 @@ async function orchestrate(root, directory, workflowId, args, dependencies, sign
     throw new Error('Tham số không phù hợp với thao tác workflow.')
   }
   const load = () => json(path.join(directory, stateFile))
+  if (action === 'preview_artifact') return candidateArtifact(directory, await load(), args.demo_id, args.preview_kind)
   const operationRoot = path.join(root, '.workflow-operations', workflowId)
   const operationFile = path.join(operationRoot, operationId + '.json')
   if (action === 'status') {
