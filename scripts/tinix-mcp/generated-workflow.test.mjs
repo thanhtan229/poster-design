@@ -9,10 +9,13 @@ import { promisify } from 'node:util'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { createTinixMcp } from './server.mjs'
+import { assertYuNetPreflight } from './face-model-preflight.mjs'
 
 const folder = process.argv[2]
 assert(folder, 'Usage: node scripts/tinix-mcp/generated-workflow.test.mjs <new-evidence-directory>')
 const output = path.resolve(folder)
+// Verify model and OpenCV BEFORE allocating a QA directory or generating a demo.
+await assertYuNetPreflight()
 await mkdir(output)
 const bytesById = new Map()
 let downloads = 0
