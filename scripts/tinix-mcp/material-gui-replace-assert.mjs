@@ -7,6 +7,25 @@ export const FRAME_KEYS = [
   'slot', 'printGroup', 'printRole',
 ]
 
+// Compare the browser's loaded layer inventory to the imported ZIP draft, not a fixed fixture size.
+// Counts alone are insufficient: a missing layer can be masked by an extra one.
+export function assertImportedLayers(importedLayers, guiLayers) {
+  assert.ok(Array.isArray(importedLayers) && importedLayers.length > 0, 'IMPORTED_LAYERS_INVALID')
+  assert.ok(Array.isArray(guiLayers), 'GUI_LAYERS_INVALID')
+  const ids = (layers, source) => layers.map(layer => {
+    const uuid = layer?.uuid
+    assert.ok(typeof uuid === 'string' && uuid.length > 0, source + '_LAYER_UUID_INVALID')
+    return uuid
+  })
+  const expected = ids(importedLayers, 'IMPORTED')
+  const actual = ids(guiLayers, 'GUI')
+  assert.equal(new Set(expected).size, expected.length, 'IMPORTED_LAYER_UUID_DUPLICATE')
+  assert.equal(new Set(actual).size, actual.length, 'GUI_LAYER_UUID_DUPLICATE')
+  assert.equal(actual.length, expected.length, 'MATERIAL_LAYER_COUNT_MISMATCH')
+  assert.deepEqual(actual, expected, 'MATERIAL_LAYER_ORDER_OR_ID_MISMATCH')
+  return { expected: expected.length, actual: actual.length }
+}
+
 export function assertOneSlot(before, after, uuid, kind) {
   assert.equal(before.pageHash, after.pageHash, 'PAGE_GLOBAL_CHANGED')
   const a = before.layers
