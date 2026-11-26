@@ -17,6 +17,7 @@ import math
 import sys
 import zipfile
 from pathlib import Path
+from time import perf_counter  # [TINIX]
 from typing import Any
 
 import cv2
@@ -355,7 +356,7 @@ def render_guide(layout: dict, sheet: Image.Image, bg: Image.Image, subject_asse
     return page
 
 
-def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, preview_only=False, placeholders=False):
+def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, preview_only=False, placeholders=False, review_dir: Path | None = None):  # [TINIX]
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     basedir = manifest_file.parent
     page = manifest["page"]
@@ -391,16 +392,22 @@ def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, pr
     subject_prepped=prep_subject(subject_img,layout["subject"]["target"],layout["subject"].get("borderMm",0),layout["print"]["dpi"])
     photo_paths={it["code"]:(basedir/it["photo"]).resolve() for it in fs}
     # [TINIX] Render the approval image with the same atlas and placement code as export.
-    if preview_only:
-        out_dir.mkdir(parents=True, exist_ok=True)
-        render_scene(layout,sheet,bg,photo_paths,subject_prepped).convert("RGB").save(out_dir/"demo.png")
+    demo_ms = None
+    if preview_only or review_dir is not None:  # [TINIX] Same packed layers generate the demo and the kit.
+        preview_started = perf_counter()
+        evidence = out_dir if preview_only else review_dir
+        evidence.mkdir(parents=True, exist_ok=True)
+        render_scene(layout,sheet,bg,photo_paths,subject_prepped).convert("RGB").save(evidence/"demo.png")
+        demo_ms = round((perf_counter() - preview_started) * 1000)
         # [TINIX] Reuse the same layer order and transforms with all seven illustrations removed.
-        render_scene(layout,sheet,bg,None,None).convert("RGB").save(out_dir/"blank.png")
+        render_scene(layout,sheet,bg,None,None).convert("RGB").save(evidence/"blank.png")
         check = checkerboard(192, 192)
         target = layout["subject"]["target"]
         subject_check = checkerboard(int(target["width"]), int(target["height"])).convert("RGBA")
-        render_scene(layout,sheet,bg,dict.fromkeys(photo_paths, check),subject_check).convert("RGB").save(out_dir/"checker.png")
-        return
+        render_scene(layout,sheet,bg,dict.fromkeys(photo_paths, check),subject_check).convert("RGB").save(evidence/"checker.png")
+        if preview_only:
+            return
+    kit_started = perf_counter()  # [TINIX] Measure the package separately from demo and evidence previews.
     if placeholders:
         photo_paths = dict.fromkeys(photo_paths)
     placed_subject = None if placeholders else subject_prepped
@@ -453,6 +460,8 @@ def export(manifest_file: Path, out_dir: Path, qa_out: Path | None = None, *, pr
     with zipfile.ZipFile(zip_file) as z:
         require(sorted(z.namelist())==sorted(DELIVERY) and z.testzip() is None, "Invalid export ZIP")
     print(json.dumps({"status":"PASS","zip":str(zip_file),**qa},ensure_ascii=False,indent=2))
+    if review_dir is not None:  # [TINIX]
+        return {"demoPreviewMs": demo_ms, "kitExportMs": round((perf_counter() - kit_started) * 1000)}
 
 
 def validate(folder: Path, qa_out: Path | None=None):

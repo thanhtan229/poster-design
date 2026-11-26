@@ -1,0 +1,913 @@
+[
+  {
+    "name": "build_material_draft",
+    "title": "Kiểm ZIP và dựng bản nháp TinixPoster",
+    "description": "Send the actual TinixPoster material ZIP attached to this chat. Returns diagnostics or a rendered draft with replaceable photo slots. Creates local draft files.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_id",
+            "download_url"
+          ],
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string"
+            },
+            "mime_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "openai/fileParams": [
+        "file"
+      ]
+    }
+  },
+  {
+    "name": "fill_material_draft_photos",
+    "title": "Thay sáu ảnh khung và ảnh chủ đạo TinixPoster",
+    "description": "Fill a copy of a rendered TinixPoster material draft. Use the jobId from build_material_draft and six attached photos in F01–F06 order. With subject_mode=birefnet, pass the original subject photo to remove its background locally and place the full-resolution cutout. Otherwise pass a transparent subject PNG. For old drafts lacking photoSlots, pass six explicit slot IDs in the same order.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string"
+        },
+        "photos": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "file_id",
+              "download_url"
+            ],
+            "properties": {
+              "file_id": {
+                "type": "string"
+              },
+              "download_url": {
+                "type": "string"
+              },
+              "mime_type": {
+                "type": "string"
+              },
+              "file_name": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_id",
+            "download_url"
+          ],
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string"
+            },
+            "mime_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          }
+        },
+        "subject_mode": {
+          "type": "string",
+          "enum": [
+            "transparent_png",
+            "birefnet"
+          ],
+          "default": "transparent_png"
+        },
+        "photo_slot_ids": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "job_id",
+        "photos",
+        "subject"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "openai/fileParams": [
+        "photos",
+        "subject"
+      ]
+    }
+  },
+  {
+    "name": "preview_material_subject_cutout",
+    "title": "Xem trước tách nền SUBJECT bằng BiRefNet",
+    "description": "Use local TinixPoster BiRefNet to remove the background of the original attached photo. Returns a transparent PNG preview. Show it to the user and wait for approval before filling any draft. This tool does not edit drafts.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_id",
+            "download_url"
+          ],
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string"
+            },
+            "mime_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "file"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "openai/fileParams": [
+        "file"
+      ]
+    }
+  },
+  {
+    "name": "compare_material_draft_to_approved_demo",
+    "title": "Đối chiếu bản dựng ZIP với demo đã duyệt",
+    "description": "Compare the actual stored placeholder render from build_material_draft with the original approved demo attached to chat (not the ZIP reference image). Exclude visible photo openings and the SUBJECT from scoring. Return ranked layer differences, the page background and an annotated comparison. Run before filling photos.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string"
+        },
+        "approved_demo": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_id",
+            "download_url"
+          ],
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string"
+            },
+            "mime_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [
+        "job_id",
+        "approved_demo"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "openai/fileParams": [
+        "approved_demo"
+      ]
+    }
+  },
+  {
+    "name": "submit_material_feedback",
+    "title": "Gửi phản hồi bản render cho Codex",
+    "description": "Record observations for the exact rendered jobId. Returns a feedbackId for reading the result. Send text only, without customer details or attachment URLs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "issues": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "layer",
+              "observed",
+              "expected"
+            ],
+            "properties": {
+              "layer": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "description": "F01–F06, SUBJECT, or the affected layer name"
+              },
+              "observed": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "expected": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "job_id",
+        "summary"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_material_feedback_result",
+    "title": "Đọc kết quả kiểm tra của Codex",
+    "description": "Read one review by its exact rendered job ID and feedback ID. Pending means Codex has not posted a result yet.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "feedback_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        }
+      },
+      "required": [
+        "job_id",
+        "feedback_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "review_material_photo_crops",
+    "title": "Kiểm crop sáu khung ảnh",
+    "description": "Review the six photos on a rendered TinixPoster draft. Returns per-frame suggestions, exposed percentages, a page preview and a reviewId. Use safe_area_frame_codes to include original-photo overlays for specific frames. Ask which suggested frame codes to apply.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "safe_area_frame_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "F01",
+              "F02",
+              "F03",
+              "F04",
+              "F05",
+              "F06"
+            ]
+          }
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "apply_material_photo_crops",
+    "title": "Áp dụng crop đã chọn vào bản sao",
+    "description": "Apply only explicitly selected safe frame codes from a crop review. Use the same jobId and the reviewId returned by review_material_photo_crops. Returns a new rendered draft. SUBJECT stays independent.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "review_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "frame_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "F01",
+              "F02",
+              "F03",
+              "F04",
+              "F05",
+              "F06"
+            ]
+          }
+        }
+      },
+      "required": [
+        "job_id",
+        "review_id",
+        "frame_codes"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_material_draft_render",
+    "title": "Xem ảnh render đã lưu của bản nháp",
+    "description": "Return the actual stored render for this job, without rerendering or simulating crop suggestions. May downscale for display. Set include_subject_source to see the original and current transparent cutout for mask editing; the response gives their source pixel dimensions.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "include_subject_source": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "edit_material_subject_mask",
+    "title": "Sửa mặt nạ SUBJECT trên bản sao",
+    "description": "After user approval, restore or erase closed polygon regions on the independent SUBJECT and render a new draft copy. Use polygon coordinates [x,y] in pixels of the full-size original SUBJECT, starting at the top-left. Use get_material_draft_render with include_subject_source to see the photo and dimensions; scale any preview coordinates to original pixels. Restores original photo pixels. Returns the before and after renders and leaves the source job and frame crops intact.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "job_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$"
+        },
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "points"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "restore",
+                  "erase"
+                ]
+              },
+              "points": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 128,
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "job_id",
+        "operations"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "prepare_scrapbook_workflow",
+    "title": "Chuẩn bị ba demo scrapbook",
+    "description": "Send layered Studio v1.2.13 compositions and source assets in a ZIP. Default customer mode needs six photos and original SUBJECT. In template mode send 2–6 compositions named A.json onwards, each referencing six illustration images and a transparent SUBJECT asset inside the ZIP. Inspect the blank and checkerboard evidence with review_scrapbook_template_sources, then show only candidates that passed. Reuse request_id when retrying.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$"
+        },
+        "compositions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_id",
+            "download_url"
+          ],
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string"
+            },
+            "mime_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          }
+        },
+        "photos": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "file_id",
+              "download_url"
+            ],
+            "properties": {
+              "file_id": {
+                "type": "string"
+              },
+              "download_url": {
+                "type": "string"
+              },
+              "mime_type": {
+                "type": "string"
+              },
+              "file_name": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_id",
+            "download_url"
+          ],
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "download_url": {
+              "type": "string"
+            },
+            "mime_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": "string"
+            }
+          }
+        },
+        "mode": {
+          "enum": [
+            "customer",
+            "template"
+          ],
+          "default": "customer"
+        },
+        "brief": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        },
+        "demo_count": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 6,
+          "default": 3
+        },
+        "aspect_ratio": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,3}:[1-9][0-9]{0,3}$"
+        }
+      },
+      "required": [
+        "request_id",
+        "compositions"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": true
+    },
+    "_meta": {
+      "openai/fileParams": [
+        "compositions",
+        "photos",
+        "subject"
+      ]
+    }
+  },
+  {
+    "name": "review_scrapbook_template_sources",
+    "title": "Kiểm lớp mẫu trước khi đưa demo ra chọn",
+    "description": "Inspect the blank and checkerboard previews from prepare for every template demo before offering any demo to the user. Record per-demo pass, fail or uncertain with observed evidence. Fail if any original illustration survives in static layers. Only passed candidates can be approved.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$"
+        },
+        "reviews": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "demo_id",
+              "status",
+              "notes"
+            ],
+            "properties": {
+              "demo_id": {
+                "enum": [
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "E",
+                  "F"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "pass",
+                  "fail",
+                  "uncertain"
+                ]
+              },
+              "notes": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "workflow_id",
+        "reviews"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "advance_scrapbook_workflow",
+    "title": "Chạy hoặc tiếp tục sản xuất scrapbook",
+    "description": "After the user chooses one of the prepared demos, lock that demo and agreed policy once. On awaiting_layout_qa inspect the comparison and send layout_review. Template mode delivers placeholders after this gate. In customer mode, inspect saved render, original SUBJECT and crop rows on awaiting_visual_qa and send visual_review. Supply only authorized targeted repairs with evidence.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$"
+        },
+        "approved_demo_id": {
+          "type": "string",
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "F"
+          ]
+        },
+        "policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "layer_position": {
+              "type": "boolean"
+            },
+            "subject_mask": {
+              "type": "boolean"
+            },
+            "crop": {
+              "type": "boolean"
+            }
+          }
+        },
+        "layout_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "job_id",
+            "status",
+            "notes"
+          ],
+          "properties": {
+            "job_id": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$"
+            },
+            "status": {
+              "enum": [
+                "pass",
+                "uncertain",
+                "fail"
+              ]
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        },
+        "visual_review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "job_id",
+            "design",
+            "subject",
+            "crop",
+            "notes"
+          ],
+          "properties": {
+            "job_id": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$"
+            },
+            "design": {
+              "enum": [
+                "pass",
+                "uncertain",
+                "fail"
+              ]
+            },
+            "subject": {
+              "enum": [
+                "pass",
+                "uncertain",
+                "fail"
+              ]
+            },
+            "crop": {
+              "enum": [
+                "pass",
+                "uncertain",
+                "fail"
+              ]
+            },
+            "notes": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        },
+        "layer_repairs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "dx",
+              "dy"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "pattern": "^(F0[1-6]|D[0-9]{2})$"
+              },
+              "dx": {
+                "type": "number",
+                "minimum": -12,
+                "maximum": 12
+              },
+              "dy": {
+                "type": "number",
+                "minimum": -12,
+                "maximum": 12
+              }
+            }
+          }
+        },
+        "subject_operations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "points"
+            ],
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "restore",
+                  "erase"
+                ]
+              },
+              "points": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 128,
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "crop_frame_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "F01",
+              "F02",
+              "F03",
+              "F04",
+              "F05",
+              "F06"
+            ]
+          }
+        }
+      },
+      "required": [
+        "workflow_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_scrapbook_workflow",
+    "title": "Đọc trạng thái và sản phẩm scrapbook",
+    "description": "Read the saved workflow status and QA. After delivery, request final_render, materials_zip, comparison or qa_report for the actual artifact.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "workflow_id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$"
+        },
+        "artifact": {
+          "enum": [
+            "final_render",
+            "materials_zip",
+            "comparison",
+            "qa_report"
+          ]
+        }
+      },
+      "required": [
+        "workflow_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "openWorldHint": false
+    }
+  }
+]

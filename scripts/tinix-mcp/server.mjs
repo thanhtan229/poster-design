@@ -2,7 +2,7 @@
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { createWriteStream } from 'node:fs'
-import { mkdir, mkdtemp, readFile, rm, rmdir, writeFile } from 'node:fs/promises' // [TINIX]
+import { access, copyFile, mkdir, mkdtemp, readFile, rm, rmdir, writeFile } from 'node:fs/promises' // [TINIX]
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { Readable, Transform } from 'node:stream'
@@ -18,6 +18,7 @@ import { previewSubject } from './subject-preview.mjs' // [TINIX]
 import { subjectEditTools, runSubjectEditTool } from './subject-edit.mjs' // [TINIX]
 import { compareApprovedDemo } from './approved-demo.mjs' // [TINIX]
 import { runScrapbookWorkflow, workflowTools } from './scrapbook-workflow.mjs' // [TINIX]
+import { materialExportTool, runMaterialExport } from './material-export.mjs' // [TINIX]
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const runFile = promisify(execFile)
@@ -211,11 +212,12 @@ async function runDraft(input, output, signal) {
 
 export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root, '.runtime', 'mcp-material'),
   additionalHosts = new Set() } = {}) {
-  const server = new Server({ name: 'tinixposter-material', version: '1.0.0' }, { capabilities: { tools: {} } })
+  const server = new Server({ name: 'tinixposter-material', version: '1.3.0' }, { capabilities: { tools: {} } }) // [TINIX] Adds persistent P3 orchestration.
   let busy = false
   const attachmentTools = [tool, photoTool, subjectPreviewTool, demoComparisonTool] // [TINIX]
+  const extraTools = [materialExportTool] // [TINIX]
   const workflows = workflowTools(attachmentSchema) // [TINIX]
-  server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: [...attachmentTools, ...feedbackTools, ...cropTools, ...subjectEditTools, ...workflows] })) // [TINIX]
+  server.setRequestHandler(ListToolsRequestSchema, () => ({ tools: [...attachmentTools, ...feedbackTools, ...cropTools, ...subjectEditTools, ...workflows, ...extraTools] })) // [TINIX]
   server.setRequestHandler(CallToolRequestSchema, async ({ params }, { signal }) => {
     if (feedbackTools.some(({ name }) => name === params.name)) {
       try {
@@ -228,10 +230,41 @@ export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root,
     const cropTool = cropTools.find(item => item.name === params.name)
     const subjectEditTool = subjectEditTools.find(item => item.name === params.name) // [TINIX]
     const workflow = workflows.find(item => item.name === params.name) // [TINIX]
-    if (!attachmentTools.some(item => item.name === params.name) && !cropTool && !subjectEditTool && !workflow) return { isError: true, content: [{ type: 'text', text: 'Công cụ chưa được hỗ trợ.' }] } // [TINIX]
+    if (!attachmentTools.some(item => item.name === params.name) && !cropTool && !subjectEditTool && !workflow && !extraTools.some(item => item.name === params.name)) return { isError: true, content: [{ type: 'text', text: 'Công cụ chưa được hỗ trợ.' }] } // [TINIX]
     if (busy) return { isError: true, content: [{ type: 'text', text: 'TinixPoster đang xử lý bản nháp. Hãy thử lại sau.' }] }
     busy = true
     try {
+      if (params.name === materialExportTool.name) {
+        const jobId = params.arguments?.job_id
+        if (typeof jobId !== 'string' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(jobId)) {
+          throw new Error('INVALID_JOB_ID')
+        }
+        let temporary
+        let source
+        try {
+          if (params.arguments?.source_material) {
+            const url = validateFile(params.arguments.source_material, additionalHosts, 'zip')
+            await mkdir(outputRoot, { recursive: true })
+            temporary = await mkdtemp(path.join(outputRoot, 'material-export-source-'))
+            source = path.join(temporary, 'source.zip')
+            await downloadAttachment(url, source, fetchFile, signal)
+          } else {
+            let ancestor = jobId
+            const seen = new Set()
+            while (ancestor && !seen.has(ancestor)) {
+              seen.add(ancestor)
+              const candidate = path.join(outputRoot, ancestor, 'material-source.zip')
+              if (await access(candidate).then(() => true, () => false)) { source = candidate; break }
+              const report = JSON.parse(await readFile(path.join(outputRoot, ancestor, 'result', 'report.json'), 'utf8'))
+              ancestor = report.sourceJobId
+            }
+            if (!source) throw new Error('SOURCE_ARCHIVE_UNAVAILABLE: Đính kèm ZIP vật liệu gốc cho job này.')
+          }
+          return await runMaterialExport(outputRoot, jobId, source, signal)
+        } finally {
+          if (temporary) await rm(temporary, { recursive: true, force: true })
+        }
+      }
       if (workflow) return await runScrapbookWorkflow(outputRoot, params.name, params.arguments, signal, {
         build: runDraft,
         download: (file, destination, signal, kind) => downloadAttachment(validateFile(file, additionalHosts, kind),
@@ -285,6 +318,7 @@ export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root,
         const archiveName = file.file_name?.split(/[/\\]/).at(-1)?.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 160) || archive
         const report = { ...details, archive: archiveName, jobId }
         if (raw.status === 'render-failed') report.detail = 'Bản nháp đã tạo. Kiểm tra dịch vụ render của TinixPoster.'
+        if (report.status === 'rendered') await copyFile(input, path.join(job, 'material-source.zip')) // [TINIX] Persist validated source for later material export.
         return await draftToolResult(report, output)
       } finally {
         await rm(input, { force: true })
