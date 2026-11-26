@@ -1,5 +1,9 @@
 # TinixPoster — hiệu ứng ảnh và nền liên kết
 
+## Kiểm tra tự động trên GitHub
+
+[TINIX] Workflow `.github/workflows/tinix-ci.yml` chạy trên PR vào `main` và sau mỗi lần cập nhật `main`. Runner Ubuntu dùng Node 24, cài phụ thuộc từ hai lockfile và chạy lint, kiểm kiểu Vue/service, Vite build và `npm run tinix:test`. Bộ test dùng dữ liệu tạm và bao gồm xuất lại cùng tờ JPG sau HTTP 408. Các bài cần trình duyệt dùng Chrome cài sẵn trên runner để tương thích với sandbox của Ubuntu 24.04. Xem kết quả ở tab **Checks** của PR.
+
 ## Cắt dán ảnh thật · bản đầu
 
 ### Quản lý đơn khách
