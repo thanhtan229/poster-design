@@ -73,4 +73,27 @@ test('backup command preserves prior data through failures, timestamp collisions
   for(const dir of [backup,mirror]) assert.deepEqual(fs.readdirSync(dir).sort(),['20260102-010203','20260102-010204'])
   assert.deepEqual(fs.readFileSync(dbPath),originalDb)
   for(const [name,value] of Object.entries(files)) assert.equal(fs.readFileSync(path.join(staticDir,name),'utf8'),value)
+
+  if (process.platform === 'win32') {
+    // [TINIX] Exercise Unicode through backup, retention, mirror and offline restore.
+    const unicodeFile = 'favorites/Ảnh QA/日本-🚀.png'
+    const sourceFile = path.join(staticDir, unicodeFile)
+    fs.mkdirSync(path.dirname(sourceFile), { recursive: true })
+    fs.writeFileSync(sourceFile, 'synthetic Unicode')
+    const unicode = run(5)
+    assert.equal(unicode.status, 0, unicode.stderr)
+    for (const dir of [backup, mirror]) {
+      assert.deepEqual(fs.readdirSync(dir).sort(), ['20260102-010204', '20260102-010205'])
+    }
+    for (const name of ['poster.db', 'static.tar.gz']) {
+      assert.deepEqual(fs.readFileSync(path.join(backup, '20260102-010205', name)),
+        fs.readFileSync(path.join(mirror, '20260102-010205', name)))
+    }
+    const out = path.join(work, 'restored-unicode')
+    const helper = fileURLToPath(new URL('./tinix-backup-unicode.py', import.meta.url))
+    const restored = spawnSync(process.env.TINIX_BACKUP_PYTHON || 'python',
+      ['-B', helper, 'restore', path.join(backup, '20260102-010205', 'static.tar.gz'), out], { encoding: 'utf8' })
+    assert.equal(restored.status, 0, restored.stderr)
+    assert.deepEqual(fs.readFileSync(path.join(out, unicodeFile)), fs.readFileSync(sourceFile))
+  }
 })

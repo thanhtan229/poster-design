@@ -68,5 +68,9 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      # [TINIX] The Unicode branch uses the stdlib UTF-8/PAX reader on Windows.
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
       - run: npm ci --prefix service
       - run: node --test scripts/tinix-backup-archive.test.mjs scripts/tinix-backup-process.test.mjs
