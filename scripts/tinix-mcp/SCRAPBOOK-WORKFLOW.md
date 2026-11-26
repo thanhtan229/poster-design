@@ -7,6 +7,21 @@
 Mọi nghiệm thu trên host phải ghi SHA đầy đủ, phiên bản MCP và số tool, địa chỉ renderer QA cách ly, kết quả khôi phục sau HTTP 408, bốn artifact cùng SHA-256/byte, trạng thái source QA và revision, kiểm sáu crop + SUBJECT, cùng hash dữ liệu gốc trước/sau. Với luồng kiểm P1/P2 có BiRefNet mô phỏng phải ghi rõ `mocked`, không coi là kiểm model thật. Không sử dụng ảnh khách trong repo CI, không merge vào `main` hoặc cập nhật production/connector/Skill khi chưa có phê duyệt riêng.
 
 
+## [TINIX] Preflight staging nhanh
+
+Trong linked worktree độc lập đã cài dependencies, chạy một lệnh.
+
+```sh
+node scripts/tinix-mcp/staging-preflight.mjs
+```
+
+Cần Node 24, Python 3.11+ có Pillow, NumPy, SciPy, OpenCV và ZIP Scrapbook Story Studio v1.2.13 đã duyệt. Dùng `TINIX_STUDIO_PYTHON` khi Python cần chỉ định và `TINIX_STUDIO_SKILL_ARCHIVE` khi ZIP nằm ngoài `~/Downloads/skill (8).zip`. MCP tự xác minh hash của ZIP Skill. Lệnh không nhận URL renderer, đường dẫn dữ liệu hoặc job ID. Lệnh từ chối checkout chính, worktree có Materials runtime/tunnel và các biến override renderer/DB/static/backup.
+
+Preflight kết nối SDK MCP trong cùng tiến trình để dùng riêng workflow home mới trong thư mục tạm. Nó gọi `listTools`, so 18 hợp đồng của checkout P4 `2da8c1a` và kiểm tool export thứ 19, chạy `prepare` với hai demo pastel tổng hợp, rồi nhận ZIP của demo A qua MCP. Kiểm đủ 4 PNG và `layout.json`, dựng lại ảnh giữ chỗ từ ZIP và so từng pixel. Lượt thử tráo ZIP phải bị chặn trước khi có job. Không gọi renderer, BiRefNet, API AI, tài nguyên đính kèm hoặc connector.
+
+Lệnh in `PASS` / `BLOCKED` / `FAIL`, thời gian từng bước và đường dẫn `report.json`. Thời gian worktree đo từ lúc gọi lệnh trong checkout đã có. Thời gian dependencies đo kiểm Python và nạp MCP, không tính cài đặt. Chỉ JSON được giữ trong thư mục tạm đã xác minh. So `catalog.sha256` và `artifact.payloadSha256` giữa hai lượt cùng commit. Hash ZIP thô có thể khác do timestamp của ZIP, còn hash nội dung năm tệp phải khớp. CI kiểm guard, schema, bytes/hash và ZIP lỗi bằng fixture công khai. Chạy riêng Windows E2E/GUI nếu thay đổi hành vi nguồn.
+
+
 ## P3 · Điều phối từ brief đến bàn giao
 
 **Tích hợp sau khi merge PR #83 vào P3:** MCP giữ version `1.3.0` và có **19 tools**, gồm `export_material_draft`. Trước đó P3 có 18 tools. Hai bài E2E `orchestrator.test.mjs` và `generated-workflow.test.mjs` cần nhận diện 19 tools trên cùng phiên host. CI của PR P3 → P2 giờ chạy cả **Scrapbook source QA** và **Material export QA**; CI không thay thế chạy E2E thực với renderer/BiRefNet trên máy Windows. Đợt kiểm tra nguồn, khôi phục asset và cleanup của PR #83 đã được nghiệm thu riêng; cần giữ job gốc bất biến.

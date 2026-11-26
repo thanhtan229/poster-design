@@ -26,6 +26,7 @@ jobs:
       - name: Run source and ghost regressions
         run: |
           python -B scripts/tinix-mcp/workflow_compositions_test.py
+          python -B scripts/tinix-mcp/staging_preflight_zip_test.py # [TINIX] Safe ZIP membership and cleanup guards.
           python -B scripts/tinix-mcp/source_qa_test.py > source-qa.log 2>&1 || (tail -100 source-qa.log && exit 1)
           grep -E '^Ran [[:digit:]]+ tests|^OK$' source-qa.log
       - name: Verify all four Mixed Handcut demos
@@ -63,3 +64,4 @@ jobs:
       - run: node --check scripts/tinix-mcp/face-model-preflight.mjs
       - run: node --test scripts/tinix-mcp/face-model-preflight.test.mjs
       - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs
+      - run: node --test scripts/tinix-mcp/staging-preflight.test.mjs # [TINIX] Real MCP discovery without a private Skill archive.

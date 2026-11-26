@@ -807,3 +807,5 @@ QA dựng ngược ghép nền PNG bán trong suốt lên trắng như bộ nh�
 [TINIX] Harness GUI thay ảnh bảy lớp dùng menu Tệp để lưu/mở lại tệp dự án trong thư mục tạm. Sau khi xóa design QA, harness truy vấn lại đúng ID để xác nhận bản ghi đã biến mất.
 
 [TINIX] Hợp đồng P4 giữ preview trước duyệt và khóa SHA cho preset ren thêu đã bật. Nguồn có manifest Mixed Handcut v1 phải trả kết quả hình học đạt qua các cổng kiểm. Stdio trả SHA checkout và generator cho prepare/status để đối chiếu runtime.
+
+[TINIX] Preflight staging một lệnh kiểm 19 công cụ MCP, prepare hai demo tổng hợp, ZIP SHA-256 và dựng ngược từ layout. Chạy trong linked worktree riêng không có Materials runtime, chỉ giữ báo cáo QA, không gọi renderer. Xem lệnh trong `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
