@@ -21,6 +21,22 @@ Host đọc và băm ZIP Skill v1.2.13 tại `TINIX_STUDIO_SKILL_ARCHIVE`, mặc
 
 Hash khóa chứng minh bytes bất biến. Khi dò RGB không đủ mẫu, QA chỉ chấp nhận thêm biên nhận băm từ bộ sinh procedural chạy trên host. Với các workflow procedural cũ chưa có biên nhận, host sinh lại riêng lớp tĩnh trong thư mục QA và đối chiếu hash. Thiếu bằng chứng trả `uncertain`. Bộ dò RGB chính xác có giới hạn khi ảnh đã xoay, cắt, đổi cỡ hay màu.
 
+### YuNet preflight bắt buộc trước các E2E Windows
+
+Hai harness `orchestrator.test.mjs` và `generated-workflow.test.mjs` gọi chung `face-model-preflight.mjs` **trước khi tạo thư mục QA/dựng demo**. Bước này kiểm chính đường dẫn runtime sử dụng theo `scripts/lib/photo-faces.cjs`: ưu tiên `TINIX_FACE_MODEL`, nếu không có thì `.runtime/face-crop/yunet.onnx` trong worktree. Model phải là tệp thường, đọc được, có dữ liệu; Python (`TINIX_FACE_PYTHON` hoặc `python`) phải import được `cv2` và khởi tạo được `cv2.FaceDetectorYN` từ model đã chọn. Không tải/sao chép/ghi đè model; model không được commit vào Git.
+
+Trên Windows PowerShell, trước khi chạy test:
+
+```powershell
+$env:TINIX_FACE_MODEL = "<DUONG_DAN_TUYET_DOI_CUA_YUNET_ONNX_TREN_HOST>"
+$env:TINIX_FACE_PYTHON = "python" # Hoặc đường dẫn đến Python đã có OpenCV trên host
+node scripts/tinix-mcp/face-model-preflight.mjs
+```
+
+Thay đường dẫn mẫu bằng tệp YuNet **thật đang có trên máy**, không tự giả định vị trí file. Khi thất bại, script trả mã lỗi như `YUNET_MODEL_MISSING`, `YUNET_MODEL_EMPTY`, `YUNET_PYTHON_MISSING`, `YUNET_OPENCV_MISSING`, `YUNET_FACEDETECTORYN_MISSING`, hoặc `YUNET_MODEL_LOAD_FAILED` kèm hướng khắc phục. Đây là **lỗi điều kiện host** cần sửa trước khi chạy E2E; không sửa thuật toán crop hoặc làm lệch QA để vượt test.
+
+Sau khi preflight đạt, chạy `orchestrator.test.mjs` và `generated-workflow.test.mjs` trên worktree thử độc lập và hai thư mục đầu ra chưa tồn tại. Ghi bằng chứng vào runtime cục bộ; không push model, dữ liệu khách hoặc ảnh bằng chứng chứa khách. CI có unit test cho preflight; CI không chứng minh YuNet host đã sẵn sàng.
+
 Chạy integration bằng `node scripts/tinix-mcp/orchestrator.test.mjs .runtime/scrapbook-p3-test .runtime/mcp-material` với app cục bộ, Python và gói Skill host. Tham số cuối là tùy chọn để kiểm fixture P2. `node --test scripts/tinix-mcp/orchestrator-contract.test.mjs` kiểm hợp đồng MCP trên CI. Nếu tiến trình bị tắt cưỡng bức trong khi giữ khóa thư mục, quản trị viên cần xác minh tiến trình đã dừng trước khi xử lý khóa mồ côi.
 
 ## P2 · Kiểm nguồn và sửa trên bản sao
