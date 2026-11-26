@@ -1,6 +1,6 @@
 // [TINIX] Expose draft and review tools. All rendering is owned by the existing CLI.
 import { execFile } from 'node:child_process'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto' // [TINIX]
 import { createWriteStream } from 'node:fs'
 import { access, copyFile, mkdir, mkdtemp, readFile, rm, rmdir, writeFile } from 'node:fs/promises' // [TINIX]
 import { createRequire } from 'node:module'
@@ -211,7 +211,7 @@ async function runDraft(input, output, signal) {
 }
 
 export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root, '.runtime', 'mcp-material'),
-  additionalHosts = new Set() } = {}) {
+  additionalHosts = new Set(), generatorRuntime } = {}) { // [TINIX]
   const server = new Server({ name: 'tinixposter-material', version: '1.3.0' }, { capabilities: { tools: {} } }) // [TINIX] Adds persistent P3 orchestration.
   let busy = false
   const attachmentTools = [tool, photoTool, subjectPreviewTool, demoComparisonTool] // [TINIX]
@@ -265,11 +265,18 @@ export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root,
           if (temporary) await rm(temporary, { recursive: true, force: true })
         }
       }
-      if (workflow) return await runScrapbookWorkflow(outputRoot, params.name, params.arguments, signal, {
-        build: runDraft,
-        download: (file, destination, signal, kind) => downloadAttachment(validateFile(file, additionalHosts, kind),
-          destination, fetchFile, signal, kind === 'zip' ? maxZipBytes : maxPhotoBytes),
-      }) // [TINIX]
+      if (workflow) { // [TINIX] Preserve the runtime identity returned by the P4 tunnel checkout.
+        const result = await runScrapbookWorkflow(outputRoot, params.name, params.arguments, signal, {
+          build: runDraft,
+          download: (file, destination, signal, kind) => downloadAttachment(validateFile(file, additionalHosts, kind),
+            destination, fetchFile, signal, kind === 'zip' ? maxZipBytes : maxPhotoBytes),
+        })
+        if (!generatorRuntime || !result.structuredContent || params.name !== 'orchestrate_scrapbook_workflow' ||
+            !['status', 'prepare'].includes(params.arguments?.action)) return result
+        const structuredContent = { ...result.structuredContent, ...generatorRuntime }
+        return { ...result, structuredContent,
+          content: [{ type: 'text', text: JSON.stringify(structuredContent) }, ...result.content.slice(1)] }
+      }
       if (subjectEditTool) return await runSubjectEditTool(outputRoot, params.name, params.arguments, signal) // [TINIX]
       if (cropTool) {
         const { report, image, safeAreas = [] } = await runCropTool(outputRoot, cropTool.name, params.arguments, signal)
@@ -336,5 +343,13 @@ export function createTinixMcp({ fetchFile = fetch, outputRoot = path.join(root,
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   // Additional trusted file CDN hostnames can be configured by the server operator.
   const additionalHosts = new Set((process.env.TINIX_MCP_FILE_HOSTS ?? '').split(',').map(host => host.trim().toLowerCase()).filter(Boolean))
-  await createTinixMcp({ additionalHosts }).connect(new StdioServerTransport())
+  // [TINIX] Snapshot the serving generator's checkout and source bytes at startup.
+  const [{ stdout }, source] = await Promise.all([
+    runFile('git', ['-C', root, 'rev-parse', '--verify', 'HEAD'], { windowsHide: true, timeout: 3000 })
+      .catch(() => ({ stdout: '' })),
+    readFile(new URL('./generate_compositions.py', import.meta.url)),
+  ])
+  const generatorRuntime = { generatorCommitSha: stdout.trim() || null,
+    generatorSourceSha256: createHash('sha256').update(source).digest('hex') }
+  await createTinixMcp({ additionalHosts, generatorRuntime }).connect(new StdioServerTransport())
 }

@@ -366,7 +366,7 @@ async function repairSource(root, directory, state, args, signal, revisionId = r
         ...(state.laceStyle && { reviewImageSha256: await sourceEvidence(stage, demo) }) }],
       stepStatus: { prepare: 'done', sourceQa: 'waiting', approval: 'waiting' } }
     const after = await auditSource(root, stage, draft, demo, signal)
-    if (after.report.status === 'pass' && geometryPasses(after.report)) { // [TINIX]
+    if (after.report.status === 'pass' && geometryPasses(after.report, source.mixedHandcutGeometryVersion === 1)) { // [TINIX]
       if (!state.laceStyle) draft.sourceReviews = [{ demoId: demo, status: 'pass', evidence: await sourceEvidence(stage, demo),
         notes: 'Automated source QA. Review the revision before approval.' }]
       draft.qaStatus = 'awaiting_demo'
@@ -382,8 +382,15 @@ async function repairSource(root, directory, state, args, signal, revisionId = r
   } finally { await rm(stage, { recursive: true, force: true }) }
 }
 
-function geometryPasses(report) { // [TINIX] Older composition revisions have no geometry contract.
-  return !report?.mixedHandcutGeometry || report.mixedHandcutGeometry.status === 'pass'
+function geometryPasses(report, required) { // [TINIX] Older composition revisions have no geometry contract.
+  return report?.mixedHandcutGeometry?.status === 'pass' || (!required && report?.mixedHandcutGeometry === undefined)
+}
+
+async function geometryRequired(directory, state, demoId) {
+  if (!state.generated) return false
+  // [TINIX] The locked manifest distinguishes legacy workflows from new P4 batches and repairs.
+  const manifest = await json(path.join(packageDir(directory), demoId + '.source.json'))
+  return manifest.mixedHandcutGeometryVersion === 1
 }
 
 function candidateGeometry(state, demoId) {
@@ -391,9 +398,10 @@ function candidateGeometry(state, demoId) {
 }
 
 async function previews(directory, state) {
-  const eligible = state.demos.filter(({ demoId }) =>
+  const checks = await Promise.all(state.demos.map(async ({ demoId }) =>
     (!state.orchestration || state.sourceScreen?.[demoId]?.status === 'pass') &&
-    geometryPasses(candidateGeometry(state, demoId)))
+    geometryPasses(candidateGeometry(state, demoId), await geometryRequired(directory, state, demoId))))
+  const eligible = state.demos.filter((_, index) => checks[index])
   const panels = await Promise.all(eligible.map(async ({ demoId: demo }) => {
     const preview = file => sharp(file).resize(700, 900, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 92 }).toBuffer()
     const original = state.mode === 'template' ? await preview(demoFile(directory, demo, true))
@@ -424,7 +432,7 @@ async function reviewTemplateSources(directory, state, reviews) { // [TINIX]
     if (state.orchestration && status === 'pass' && state.sourceScreen?.[demoId]?.status !== 'pass') {
       throw new Error('SOURCE_QA_BLOCKED: ' + demoId)
     }
-    if (status === 'pass' && !geometryPasses(candidateGeometry(state, demoId))) { // [TINIX]
+    if (status === 'pass' && !geometryPasses(candidateGeometry(state, demoId), await geometryRequired(directory, state, demoId))) { // [TINIX]
       throw new Error('MIXED_HANDCUT_GEOMETRY_BLOCKED: ' + demoId)
     }
     delete expected.proceduralStaticSha256 // [TINIX] Generation proof is persisted separately from the byte lock.
@@ -625,7 +633,9 @@ async function advance(root, directory, state, args, dependencies, signal) {
     }
     if (state.generated) { // [TINIX] A manual pass cannot override an automated fail or uncertain.
       state.automatedSourceQa = await requireCleanSource(root, directory, state, args.approved_demo_id, signal)
-      if (!geometryPasses(state.automatedSourceQa)) throw new Error('MIXED_HANDCUT_GEOMETRY_BLOCKED: ' + args.approved_demo_id)
+      if (!geometryPasses(state.automatedSourceQa, await geometryRequired(directory, state, args.approved_demo_id))) {
+        throw new Error('MIXED_HANDCUT_GEOMETRY_BLOCKED: ' + args.approved_demo_id)
+      }
     }
     state.approvedDemoId = args.approved_demo_id
     state.policy = Object.fromEntries(policyKeys.map(key => [key, args.policy?.[key] === true]))
@@ -923,10 +933,12 @@ async function screenCandidates(root, directory, state, signal) { // [TINIX] Che
       ...(report.mixedHandcutGeometry && { mixedHandcutGeometry: report.mixedHandcutGeometry }) } // [TINIX]
     await save(path.join(directory, stateFile), state)
   }
-  const clean = Object.values(state.sourceScreen).filter(row => row.status === 'pass')
+  const clean = Object.entries(state.sourceScreen).filter(([, row]) => row.status === 'pass')
+  const geometry = await Promise.all(clean.map(async ([demoId, row]) =>
+    geometryPasses(row, await geometryRequired(directory, state, demoId))))
   state.stepStatus.sourceScreen = clean.length ? 'done' : 'blocked'
   if (!clean.length) state.qaStatus = 'source_qa_failed'
-  else if (!clean.some(geometryPasses)) state.qaStatus = 'style_qa_failed' // [TINIX]
+  else if (!geometry.some(Boolean)) state.qaStatus = 'style_qa_failed' // [TINIX]
   await save(path.join(directory, stateFile), state)
   return previews(directory, state)
 }
@@ -935,7 +947,8 @@ async function screenCandidates(root, directory, state, signal) { // [TINIX] Che
 async function candidateArtifact(directory, state, demoId, kind) {
   const demo = state.demos.find(row => row.demoId === demoId)
   const screen = state.sourceScreen?.[demoId]
-  if (!state.laceStyle || !demo || screen?.status !== 'pass' || !geometryPasses(screen) ||
+  if (!state.laceStyle || !demo || screen?.status !== 'pass' ||
+      !geometryPasses(screen, await geometryRequired(directory, state, demoId)) ||
       !candidateKinds.includes(kind)) throw new Error('CANDIDATE_ARTIFACT_UNAVAILABLE')
   const files = {
     demo: [demoFile(directory, demoId, true), demo.demoSha256],
