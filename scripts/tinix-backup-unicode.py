@@ -122,6 +122,9 @@ def scan_or_extract(archive, destination=None, expected=None):
 
 def restore(archive, destination, target_layout=None, expected_dirs=None):
     # No restore destination is created until every member and collision is inspected.
+    ordinary(archive, "file")
+    for parent in destination.absolute().parents:
+        ordinary(parent, "dir")
     source = archive.stat()
     expected = scan_or_extract(archive)
     if expected_dirs is not None:
@@ -172,6 +175,7 @@ def main():
     parser.add_argument("destination", type=Path)
     args = parser.parse_args()
     try:
+        require(sys.version_info >= (3, 11), "TAR_UTF8_PYTHON_311_REQUIRED")
         if args.action == "create":
             inventory = json.loads(sys.stdin.buffer.read())
             members = create(args.source, args.destination, inventory)

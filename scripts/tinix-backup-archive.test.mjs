@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, readdirSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, readdirSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { archiveStatic, tarCandidates } from './tinix-backup-archive.mjs'
@@ -221,4 +221,18 @@ test('Windows Unicode needs a real Python verifier and fails closed without it',
   const runner = () => ({ status: null, error: Object.assign(new Error('spawn ENOENT'), { code: 'ENOENT' }) })
   assert.throws(() => archiveStatic({ staticDir, dest, runner, platform: 'win32', env: {} }), /TAR_UTF8_PYTHON_NOT_FOUND/)
   assert.equal(existsSync(path.join(dest, 'static.tar.gz')), false)
+})
+
+test('UTF-8 restore refuses a Windows junction in the output path', { skip: process.platform !== 'win32' }, t => {
+  const { dest } = fixture(t)
+  const archive = path.join(dest, 'safe.tar.gz')
+  syntheticArchive(archive, [{ name: 'safe.txt', content: 'synthetic' }])
+  const untouched = path.join(dest, 'untouched')
+  mkdirSync(untouched)
+  const junction = path.join(dest, 'junction')
+  symlinkSync(untouched, junction, 'junction')
+  const result = runPython(['-B', helper, 'restore', archive, path.join(junction, 'restore')])
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /TAR_NON_REGULAR_ENTRY/)
+  assert.deepEqual(readdirSync(untouched), [])
 })
