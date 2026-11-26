@@ -29,6 +29,11 @@ assert(['127.0.0.1', 'localhost'].includes(base.hostname), 'TEST_SERVICE_MUST_BE
 assert(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(jobId || ''), 'JOB_ID_REQUIRED')
 assert.equal(base.pathname, '/', 'TEST_SERVICE_MUST_BE_ORIGIN')
 const origin = base.origin
+// Vite port 7183 serves the UI; its /design and /api endpoints normally live on port 7001.
+const apiBase = new URL(process.env.TINIX_API_URL || 'http://127.0.0.1:7001')
+assert.equal(apiBase.protocol, 'http:')
+assert(['127.0.0.1', 'localhost'].includes(apiBase.hostname), 'API_MUST_BE_LOOPBACK')
+assert.equal(apiBase.pathname, '/')
 const sourceDir = path.join(runtime, jobId, 'result')
 const kit = path.join(runtime, jobId, 'material-export', 'material.zip')
 const output = path.join(runtime, jobId, 'material-export', 'gui-seven-qa')
@@ -66,7 +71,7 @@ function pageSnapshot() {
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function capture(page) { return page.evaluate(pageSnapshot()) }
 async function rest(route, body) {
-  const r = await fetch(origin + route, { method: 'POST', redirect:'error',
+  const r = await fetch(apiBase.origin + route, { method: 'POST', redirect:'error',
     headers: {'content-type':'application/json'}, body:JSON.stringify(body),
     signal:AbortSignal.timeout(120000) })
   const res = await r.json()
