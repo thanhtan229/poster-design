@@ -1,0 +1,59 @@
+{
+  "workflowId": null,
+  "skillVersion": "1.2.13",
+  "mcpVersion": null,
+  "aspectRatio": "1:1",
+  "requestedDemoCount": 4,
+  "illustrationCodeOrder": ["F01", "F02", "F03", "F04", "F05", "F06", "SUBJECT"],
+  "attachment": {
+    "broker": null,
+    "calls": [],
+    "illustrationHashes": null,
+    "downloadCountIfObserved": null
+  },
+  "imageGeneration": {
+    "calls": [],
+    "callCountIfKnown": null,
+    "imageCountReturnedIfKnown": null,
+    "imageCountUsed": null,
+    "totalElapsedMsIfKnown": null,
+    "totalCostIfKnown": { "amount": null, "currency": null, "source": null }
+  },
+  "tinixPoster": {
+    "operationId": null,
+    "prepareWallMs": null,
+    "batchMs": null,
+    "assetCacheHits": null,
+    "sharedIllustrations": null,
+    "illustrationReuses": null,
+    "aiCallsByTinixPoster": null,
+    "upstreamAiCalls": null,
+    "kits": []
+  },
+  "qa": {
+    "events": [],
+    "sourceAutomatic": { "pass": null, "fail": null, "uncertain": null },
+    "sourceVisual": { "pass": null, "fail": null, "uncertain": null },
+    "importLayout": { "pass": null, "fail": null, "uncertain": null },
+    "elapsedMsIfKnown": null
+  },
+  "repair": {
+    "events": [],
+    "distinctAttemptCount": null,
+    "createdRevisionCount": null,
+    "blockedCount": null
+  },
+  "approval": {
+    "waitingMsIfKnown": null,
+    "approvedDemoId": null,
+    "approvedDemoSha256": null,
+    "approvedKitSha256": null,
+    "publishedJobsBeforeApproval": null,
+    "publishedJobsAfterApproval": null
+  },
+  "delivery": {
+    "jobId": null,
+    "importedKitSha256": null,
+    "artifacts": []
+  }
+}
