@@ -809,3 +809,5 @@ QA dựng ngược ghép nền PNG bán trong suốt lên trắng như bộ nh�
 [TINIX] Hợp đồng P4 giữ preview trước duyệt và khóa SHA cho preset ren thêu đã bật. Nguồn có manifest Mixed Handcut v1 phải trả kết quả hình học đạt qua các cổng kiểm. Stdio trả SHA checkout và generator cho prepare/status để đối chiếu runtime.
 
 [TINIX] Preflight staging một lệnh kiểm 19 công cụ MCP, prepare hai demo tổng hợp, ZIP SHA-256 và dựng ngược từ layout. Chạy trong linked worktree riêng không có Materials runtime, chỉ giữ báo cáo QA, không gọi renderer. Xem lệnh trong `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
+
+<!-- [TINIX] Backup timestamp directories are claimed exclusively. Archive verification matches every eligible file and verifies restored bytes before retention. An empty eligible tree is valid only if the source inventory is empty. -->
