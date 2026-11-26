@@ -2,10 +2,11 @@
 name: Material export QA
 on:
   pull_request:
-    # Keep material export regressions gated as the stack integrates P3 -> P2 -> P1.
-    branches: [codex/scrapbook-p3, codex/scrapbook-p2, codex/scrapbook-p1]
+    # Preserve exporter regression gates throughout the stacked merges and main release PR.
+    branches: [codex/scrapbook-p3, codex/scrapbook-p2, codex/scrapbook-p1, main]
   push:
-    branches: [codex/material-export-from-job, codex/scrapbook-p3]
+    # Run the same non-customer-data checks after main receives an approved merge.
+    branches: [codex/material-export-from-job, codex/scrapbook-p3, main]
 permissions:
   contents: read
 jobs:
