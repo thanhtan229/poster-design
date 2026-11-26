@@ -2,7 +2,6 @@
 // The checker only removes exact, job-owned filenames absent in the pre-run
 // snapshot, and exact restored asset paths confirmed created by this run.
 // It never deletes template library or pre-existing customer assets.
-import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { lstat, readFile, readdir, realpath, unlink } from 'node:fs/promises'
 import path from 'node:path'
@@ -62,6 +61,20 @@ export async function resolveRestoredAsset(root, url) {
   if (!resolved.startsWith(trusted + path.sep)) throw Error('ASSET_OUTSIDE_STATIC_ROOT')
   const relative = path.relative(trusted, resolved).split(path.sep)
   if (!['photos', 'collage', 'user', 'favorites'].includes(relative[0])) throw Error('UNSAFE_ASSET_DIRECTORY')
+  // Never traverse an existing symlinked parent: even a lexically safe
+  // /static/photos/X can point outside the static tree.
+  let parent=path.dirname(resolved)
+  while (parent!==trusted) {
+    try {
+      const item=await lstat(parent)
+      if (!item.isDirectory() || item.isSymbolicLink()) throw Error('UNSAFE_ASSET_PARENT')
+    } catch(e) {
+      if (e?.code!=='ENOENT') throw e
+    }
+    const next=path.dirname(parent)
+    if(next===parent) throw Error('ASSET_PARENT_ROOT_MISMATCH')
+    parent=next
+  }
   return resolved
 }
 
