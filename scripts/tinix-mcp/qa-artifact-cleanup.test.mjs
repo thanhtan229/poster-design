@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mkdtemp, mkdir, writeFile, readFile, lstat, rm } from 'node:fs/promises'
+import { mkdtemp, mkdir, writeFile, readFile, lstat, rm, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { staticRootOf, matchesQaScreenshot, snapshotStatic, resolveRestoredAsset,
@@ -112,5 +112,28 @@ test('rejects unknown static root and unsafe asset path',async()=>{
     await assert.rejects(resolveRestoredAsset(root,'/static/photos/a%2fprivate.png'),/UNSAFE_QA_ASSET_URL/)
     await assert.rejects(resolveRestoredAsset(root,'/static/templates/image.png'),/UNSAFE_QA_ASSET_URL/)
     await assert.rejects(resolveRestoredAsset(root,'https://example.com/static/photos/x.png'),/UNSAFE_QA_ASSET_URL/)
+  })
+})
+
+
+test('rejects symlinked asset directory so cleanup cannot escape root',async()=>{
+  await fixture(async root=>{
+    const outside=join(root,'..','private')
+    await mkdir(outside)
+    await symlink(outside,join(root,'photos'),'dir')
+    await assert.rejects(resolveRestoredAsset(root,'/static/photos/customer.png'),/UNSAFE_ASSET_PARENT/)
+  })
+})
+
+test('pre-existing design-ID cover is never removed, blocks success',async()=>{
+  await fixture(async root=>{
+    await writeFile(join(root,'901-cover.jpg'),'existing cover')
+    const baseline=await snapshotStatic(root)
+    await writeFile(join(root,'901-screenshot.png'),'fresh')
+    const report=await cleanupQaArtifacts({staticRoot:root,designId:901,
+      baselineNames:baseline,coverReady:{complete:true}})
+    assert.equal(report.status,'blocked')
+    assert(await exists(join(root,'901-cover.jpg')))
+    assert(!await exists(join(root,'901-screenshot.png')))
   })
 })
