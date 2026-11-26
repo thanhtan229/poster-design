@@ -805,3 +805,4 @@ Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX
 QA dựng ngược ghép nền PNG bán trong suốt lên trắng như bộ nhập trước khi so với render đã lưu. Smoke test gắn lại ảnh với thuộc tính crop của từng khung trong job rồi so alpha SUBJECT sau giải mã. Gói nguyên liệu v1 vẫn dùng khung giữ chỗ. Bản nháp QA có ảnh khách chỉ nằm trong runtime cục bộ.
 
 [TINIX] Harness GUI thay ảnh bảy lớp dùng menu Tệp để lưu/mở lại tệp dự án trong thư mục tạm. Sau khi xóa design QA, harness truy vấn lại đúng ID để xác nhận bản ghi đã biến mất.
+<!-- [TINIX] Backup timestamp directories are claimed exclusively. Archive verification matches every eligible file and verifies restored bytes before retention. An empty eligible tree is valid only if the source inventory is empty. -->

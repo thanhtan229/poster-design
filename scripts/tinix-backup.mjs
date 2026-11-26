@@ -37,7 +37,16 @@ const pad = (n) => String(n).padStart(2, '0')
 const d = new Date()
 const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`
 const dest = path.join(backupRoot, stamp)
-fs.mkdirSync(dest, { recursive: true })
+// [TINIX] Claim the timestamp atomically. A collision must never arm cleanup.
+function claimSnapshot(dir) {
+  fs.mkdirSync(path.dirname(dir), { recursive: true })
+  try { fs.mkdirSync(dir) }
+  catch (error) {
+    if (error.code === 'EEXIST') throw Error('BACKUP_DESTINATION_EXISTS: ' + dir)
+    throw error
+  }
+}
+claimSnapshot(dest)
 // Bản sao không hợp lệ (DB hỏng, nén lỗi, hoặc script bị ngắt giữa chừng) không được để lại thư mục dở dang: nó sẽ được tính vào
 // "giữ N bản" ở lần sau và đẩy bản tốt cũ ra khỏi danh sách. Chỉ giữ lại khi đã kiểm tra xong DB + static.
 let snapshotValid = false
@@ -47,6 +56,8 @@ process.on('exit', () => {
     console.error(`✗ Đã dọn bản sao dở dang ${stamp}`)
   }
 })
+const pending = '.backup-in-progress'
+fs.writeFileSync(path.join(dest, pending), '', { flag: 'wx' })
 // Approved print JPGs are permanent production records outside disposable static assets.
 const approvedDir = path.join(path.dirname(dbPath), 'approved-prints')
 
@@ -139,7 +150,13 @@ else {
 
 // giữ `keep` bản mới nhất trong `dir`
 function prune(dir, label) {
-  const all = fs.readdirSync(dir).filter((n) => /^\d{8}-\d{6}$/.test(n)).sort()
+  const all = fs.readdirSync(dir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory() && /^\d{8}-\d{6}$/.test(entry.name))
+    .map(entry => entry.name).filter(name => {
+      const folder = path.join(dir, name)
+      return !fs.existsSync(path.join(folder, pending)) &&
+        fs.existsSync(path.join(folder, 'poster.db')) && fs.existsSync(path.join(folder, 'static.tar.gz'))
+    }).sort()
   for (const old of all.slice(0, Math.max(0, all.length - keep))) {
     fs.rmSync(path.join(dir, old), { recursive: true, force: true })
     console.log(`- xóa bản cũ ${old} (${label})`)
@@ -147,15 +164,22 @@ function prune(dir, label) {
   return Math.min(all.length, keep)
 }
 
+if (ok) fs.unlinkSync(path.join(dest, pending))
 snapshotValid = ok // bản sao tại chỗ đã đầy đủ và toàn vẹn (nếu chép sang nơi khác lỗi thì bản này vẫn dùng được)
 
 // bản sao thứ hai sang nơi khác (chống hỏng ổ đĩa) — chỉ khi bản mới tốt
 if (ok && copyTo) {
+  const target = path.join(copyTo, stamp)
+  let claimed = false
   try {
-    fs.mkdirSync(copyTo, { recursive: true })
-    fs.cpSync(dest, path.join(copyTo, stamp), { recursive: true })
-    console.log(`✓ đã chép sang ${path.join(copyTo, stamp)}`)
+    claimSnapshot(target)
+    claimed = true
+    fs.writeFileSync(path.join(target, pending), '', { flag: 'wx' })
+    fs.cpSync(dest, target, { recursive: true, force: false, errorOnExist: true })
+    fs.unlinkSync(path.join(target, pending))
+    console.log(`✓ đã chép sang ${target}`)
   } catch (e) {
+    if (claimed) fs.rmSync(target, { recursive: true, force: true })
     ok = false
     console.error(`✗ Không chép được sang ${copyTo}: ${e.message}`)
   }
