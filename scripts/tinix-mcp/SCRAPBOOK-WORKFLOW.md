@@ -1,5 +1,12 @@
 # Dựng scrapbook qua MCP với một lần duyệt
 
+## Release gates · P1/P2/P3 → main
+
+[TINIX] Trước khi đề nghị merge nhánh chứa P1/P2/P3 và Material Export vào `main`, kiểm cùng một commit bằng **ba workflow GitHub Actions**: `TinixPoster CI` (lint, Vue/service typecheck, Vite build, `npm run tinix:test`), `Scrapbook source QA` (kiểm nguồn, contamination/provenance, MCP contract, YuNet preflight), và `Material export QA` (xuất bộ vật liệu, tái dựng, hợp đồng MCP). Các workflow đều là điều kiện CI kỹ thuật, **không thay thế** nghiệm thu E2E renderer/GUI trên Windows cô lập hay kiểm khám phá/tải artifact từ ChatGPT web sau khi triển khai connector.
+
+Mọi nghiệm thu trên host phải ghi SHA đầy đủ, phiên bản MCP và số tool, địa chỉ renderer QA cách ly, kết quả khôi phục sau HTTP 408, bốn artifact cùng SHA-256/byte, trạng thái source QA và revision, kiểm sáu crop + SUBJECT, cùng hash dữ liệu gốc trước/sau. Với luồng kiểm P1/P2 có BiRefNet mô phỏng phải ghi rõ `mocked`, không coi là kiểm model thật. Không sử dụng ảnh khách trong repo CI, không merge vào `main` hoặc cập nhật production/connector/Skill khi chưa có phê duyệt riêng.
+
+
 ## P3 · Điều phối từ brief đến bàn giao
 
 **Tích hợp sau khi merge PR #83 vào P3:** MCP giữ version `1.3.0` và có **19 tools**, gồm `export_material_draft`. Trước đó P3 có 18 tools. Hai bài E2E `orchestrator.test.mjs` và `generated-workflow.test.mjs` cần nhận diện 19 tools trên cùng phiên host. CI của PR P3 → P2 giờ chạy cả **Scrapbook source QA** và **Material export QA**; CI không thay thế chạy E2E thực với renderer/BiRefNet trên máy Windows. Đợt kiểm tra nguồn, khôi phục asset và cleanup của PR #83 đã được nghiệm thu riêng; cần giữ job gốc bất biến.
