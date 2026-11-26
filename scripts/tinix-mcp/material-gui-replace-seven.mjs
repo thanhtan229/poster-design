@@ -16,6 +16,8 @@ import { instantiate } from '../tinix-instantiate.mjs'
 import { prepareMaterialDraft } from '../lib/material-archive-cli.mjs'
 import { readMaterialJob } from './subject-edit.mjs'
 import { CODES, assertOneSlot, assertPersisted } from './material-gui-replace-assert.mjs'
+import { staticRootOf, snapshotStatic, awaitCoverSettled, cleanupQaArtifacts,
+  startQaAssetTracking, recordRestoredAsset } from './qa-artifact-cleanup.mjs'
 
 const require = createRequire(import.meta.url)
 const puppeteer = require('../../service/node_modules/puppeteer')
@@ -139,6 +141,10 @@ async function choosePicker(page, index) {
     {timeout:30000})
 }
 async function main() {
+  // The host MUST provide the same static root configured for the local backend.
+  // Refuse to create a QA design if cleanup ownership cannot be established.
+  const staticRoot = await staticRootOf(process.env.TINIX_QA_STATIC_ROOT)
+  const baselineNames = await snapshotStatic(staticRoot)
   await mkdir(output,{recursive:true})
   const originalFiles = await Promise.all(['draft.json','render.png','report.json'].map(n=>readFile(path.join(sourceDir,n))))
   const originalChecksums = originalFiles.map(sha)
@@ -150,6 +156,7 @@ async function main() {
   assert.equal(opened.report.photoSlots?.length,6,'EXPORTED_KIT_MISSING_PHOTOS')
   const work=await mkdtemp(path.join(tmpdir(),'tinix-gui-seven-'))
   let browser=null, designId=null, failure=null, cleanupError=null
+  const assetAttempts = new WeakMap(), restoredAssets = [], assetTasks = []
   const result = { status:'blocked',jobId, app:origin, cases:[], testDesignDeleted:false,
     sourceJobUnchanged:false, imagesStoredInLibrary:false,
     mediaRequestsMocked:true, realBiRefNetTested:false,
@@ -214,6 +221,17 @@ async function main() {
     browser=await puppeteer.launch({headless:true,args:['--no-first-run'],protocolTimeout:180000})
     const page=await browser.newPage(),errors=[]
     page.on('pageerror',err=>errors.push(String(err.message||err)))
+    page.on('response',res => {
+      const attempt=assetAttempts.get(res.request())
+      if(!attempt)return
+      const task=(async()=>{
+        if(!res.ok())throw Error('QA_LOCAL_ASSET_RESTORE_FAILED_HTTP')
+        const response=await res.json()
+        const recorded=await recordRestoredAsset(staticRoot,attempt,response)
+        if(recorded)restoredAssets.push(recorded)
+      })().catch(e=>errors.push('RESTORED_ASSET:'+String(e.message||e)))
+      assetTasks.push(task)
+    })
     await page.setViewport({width:1700,height:1200})
     await page.setRequestInterception(true)
     page.on('request',async req=>{
@@ -222,6 +240,12 @@ async function main() {
         if(req.method()==='OPTIONS' && /\/api\/(file\/upload|tinix\/cutout\/birefnet)$/.test(url.pathname)) {
           return await req.respond({status:204,headers:{'access-control-allow-origin':'*',
             'access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'}})
+        }
+        // Track exact assets a local .tinix.zip open may write. Only delete if
+        // absent before this request, server said written:true and hash still matches.
+        if(url.pathname==='/api/tinix/local-asset' && req.method()==='PUT') {
+          const attempt=await startQaAssetTracking(staticRoot,url.searchParams.get('path'),req.postDataBuffer())
+          assetAttempts.set(req,attempt)
         }
         if(url.pathname.includes('/design/user/image') && req.method()==='GET') {
           pickerCalls++
@@ -300,6 +324,7 @@ async function main() {
     await sleep(650)
     const reopened=await capture(page)
     result.persisted=assertPersisted(saved,reopened)
+    await Promise.allSettled(assetTasks)
     assert.deepEqual(errors,[],'BROWSER_ERRORS_AFTER_SAVE_REOPEN')
     result.guiClicks=7
     result.mocks={pickerCalls,cutouts,uploads}
@@ -307,22 +332,38 @@ async function main() {
   }catch(e){failure=String(e?.stack||e);result.error=String(e?.message||e);result.status='blocked'}
   finally {
     try{if(browser)await browser.close()}catch(e){cleanupError='BROWSER_CLOSE_FAILED:'+String(e?.message||e)}
+    try{await Promise.allSettled(assetTasks)}catch{}
+    let coverReady={complete:false,reason:'NO_DESIGN'}
     if(designId) {
+      try { coverReady=await awaitCoverSettled(staticRoot,designId) }
+      catch(e){cleanupError='COVER_WAIT_FAILED:'+String(e?.message||e)}
       try{
         await rest('/design/poster/del',{id:designId})
         result.testDesignDeleted=true
       }catch(e){cleanupError='TEMP_DESIGN_DELETE_FAILED:'+String(e?.message||e)}
+      if(result.testDesignDeleted) {
+        try {
+          result.artifactCleanup=await cleanupQaArtifacts({
+            staticRoot,designId,baselineNames,restoredAssets,coverReady,
+          })
+          if(result.artifactCleanup.status!=='pass')cleanupError='QA_ARTIFACT_CLEANUP_BLOCKED'
+        }catch(e){cleanupError='QA_ARTIFACT_CLEANUP_FAILED:'+String(e?.message||e)}
+      }
     }
-    await rm(work,{recursive:true,force:true})
-    const current=await Promise.all(['draft.json','render.png','report.json'].map(n=>readFile(path.join(sourceDir,n))))
-    result.sourceJobUnchanged=originalChecksums.every((h,i)=>sha(current[i])===h)
+    try{await rm(work,{recursive:true,force:true})}
+    catch(e){cleanupError='TEMP_WORKSPACE_REMOVE_FAILED:'+String(e?.message||e)}
+    try{
+      const current=await Promise.all(['draft.json','render.png','report.json'].map(n=>readFile(path.join(sourceDir,n))))
+      result.sourceJobUnchanged=originalChecksums.every((h,i)=>sha(current[i])===h)
+    }catch(e){result.sourceJobUnchanged=false;cleanupError='SOURCE_JOB_HASH_RECHECK_FAILED'}
     if(!result.sourceJobUnchanged)cleanupError='SOURCE_JOB_CHANGED'
     if(cleanupError){result.cleanupError=cleanupError;result.status='blocked'}
-    if(!result.testDesignDeleted)result.status='blocked'
+    if(!result.testDesignDeleted || result.artifactCleanup?.status!=='pass')result.status='blocked'
     await writeFile(outputReport,JSON.stringify(result,null,2))
     console.log(JSON.stringify({status:result.status,jobId,guiClicks:result.guiClicks||0,
       cases:result.cases,persisted:result.persisted,sourceJobUnchanged:result.sourceJobUnchanged,
-      testDesignDeleted:result.testDesignDeleted,qaFile:outputReport,
+      testDesignDeleted:result.testDesignDeleted,artifactCleanup:result.artifactCleanup,
+      qaFile:outputReport,
       ...result.error?{error:result.error}:{},
       ...result.cleanupError?{cleanupError:result.cleanupError}:{}},null,2))
     if(result.status!=='pass')process.exitCode=2
