@@ -41,5 +41,7 @@ jobs:
       - run: node --check scripts/tinix-mcp/material-gui-replace-seven.mjs
       - run: node --check scripts/tinix-mcp/qa-artifact-cleanup.mjs
       - run: node --test scripts/tinix-mcp/qa-artifact-cleanup.test.mjs
+      - run: node --check scripts/tinix-mcp/material-missing-asset-live-qa.mjs
+      - run: node --test scripts/tinix-mcp/qa-project-zip.test.mjs
       - run: node --test scripts/tinix-mcp/material-gui-replace-assert.test.mjs
       - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs
