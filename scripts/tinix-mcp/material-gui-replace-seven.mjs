@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { instantiate } from '../tinix-instantiate.mjs'
 import { prepareMaterialDraft } from '../lib/material-archive-cli.mjs'
 import { readMaterialJob } from './subject-edit.mjs'
-import { CODES, assertOneSlot, assertPersisted } from './material-gui-replace-assert.mjs'
+import { CODES, assertImportedLayers, assertOneSlot, assertPersisted } from './material-gui-replace-assert.mjs'
 import { staticRootOf, snapshotStatic, awaitCoverSettled, cleanupQaArtifacts,
   startQaAssetTracking, recordRestoredAsset } from './qa-artifact-cleanup.mjs'
 
@@ -313,7 +313,8 @@ async function main() {
     await page.goto(origin+'/home?id='+designId,{waitUntil:'domcontentloaded',timeout:120000})
     await page.waitForSelector('.w-image',{timeout:120000})
     const initial=await capture(page)
-    assert(initial.layers.length>35,'MATERIAL_LAYERS_NOT_LOADED')
+    // Verify every layer from the imported ZIP draft reached the GUI, including UUIDs and order.
+    result.layerInventory = assertImportedLayers(reimported.layout.layers, initial.layers)
     for(let i=0;i<CODES.length;i++) {
       const code=CODES[i],uuid=expectedIds[code]
       result.activeCase=code
