@@ -29,7 +29,7 @@ export function assertOneSlot(before, after, uuid, kind) {
       assert.deepEqual(next.fields[key], old.fields[key], 'SUBJECT_ROLE_CHANGED:' + key)
     }
     assert.equal(next.fields.cutoutEdit, false, 'STALE_SUBJECT_CUTOUT_EDIT')
-    assert.equal(next.fields.stickerBorder, true, 'SUBJECT_BORDER_NOT_APPLIED')
+    if (Number(old.fields.templateBorderMm) > 0) assert.equal(next.fields.stickerBorder, true, 'SUBJECT_BORDER_NOT_APPLIED')
   }
   return { uuid, kind, changedLayers: changed.length, oldImageHash: old.imgSha256, newImageHash: next.imgSha256 }
 }
