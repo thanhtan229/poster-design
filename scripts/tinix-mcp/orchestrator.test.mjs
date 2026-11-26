@@ -7,10 +7,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { createTinixMcp } from './server.mjs'
 import { runScrapbookWorkflow } from './scrapbook-workflow.mjs'
+import { assertYuNetPreflight } from './face-model-preflight.mjs'
 
 assert(process.argv[2], 'Usage: node scripts/tinix-mcp/orchestrator.test.mjs <new-output-directory> [P2 fixture MCP root]')
 const output = path.resolve(process.argv[2])
 const fixture = process.argv[3] && path.resolve(process.argv[3])
+// Verify model and OpenCV BEFORE allocating a QA directory or generating a demo.
+await assertYuNetPreflight()
 await mkdir(output)
 const hash = bytes => createHash('sha256').update(bytes).digest('hex')
 const json = async name => JSON.parse(await readFile(name, 'utf8'))
