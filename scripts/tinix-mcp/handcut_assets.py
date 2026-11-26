@@ -33,11 +33,11 @@ def torn_rect(x0,y0,x1,y1,seed=1,jitter=3,step=13,stamp=False):
     return points
 
 
-def points_mask(size,pts,smooth=3):
+def points_mask(size,pts,smooth=3,resample=Image.Resampling.LANCZOS):  # [TINIX]
     w,h=size; sf=smooth
     mask=Image.new('L',(w*sf,h*sf))
     ImageDraw.Draw(mask).polygon([(int(round(x*sf)),int(round(y*sf))) for x,y in pts],fill=255)
-    return mask.resize(size,Image.Resampling.LANCZOS)
+    return mask.resize(size,resample)
 
 
 def grain_fill(w,h,seed=2,base=(247,232,205),amp=10):
@@ -60,8 +60,51 @@ def alpha_from_masks(outer,inner,base,white='paper',seed=3):
     return image
 
 
-def make_frame(kind,w,h,seed=11,note='',photo_ratio=None):
+# [TINIX] Two freehand photo apertures, defined by different cubic contours.
+# They carry their own paper edge so the cutline follows the actual photo.
+FREEHAND_CONTOURS = {
+    'swept-arch': (
+        (.18,.39), ((.24,.25),(.39,.10),(.59,.11)),
+        ((.79,.10),(.90,.21),(.92,.39)), ((.94,.56),(.83,.69),(.74,.73)),
+        ((.59,.75),(.43,.86),(.24,.89)), ((.10,.90),(.08,.76),(.14,.65)),
+        ((.24,.54),(.10,.50),(.18,.39)),
+    ),
+    'petal-cutout': (
+        (.12,.36), ((.09,.20),(.25,.13),(.37,.20)),
+        ((.45,.23),(.48,.20),(.51,.16)), ((.62,.03),(.84,.13),(.83,.30)),
+        ((.83,.36),(.88,.37),(.90,.40)), ((.98,.46),(.93,.61),(.78,.63)),
+        ((.69,.65),(.74,.69),(.72,.76)), ((.69,.94),(.47,.93),(.40,.84)),
+        ((.35,.76),(.31,.82),(.26,.81)), ((.07,.83),(.05,.66),(.14,.55)),
+        ((.21,.48),(.14,.44),(.12,.36)),
+    ),
+}
+
+
+def freehand_frame(kind, w, h, seed):
+    start, *curves = FREEHAND_CONTOURS[kind]
+    rng = random.Random(seed)
+    points = []
+    for a, b, end in curves:
+        for i in range(24):
+            t = i / 24
+            u = 1 - t
+            x, y = (u**3*p + 3*u*u*t*q + 3*u*t*t*r + t**3*s
+                    for p,q,r,s in zip(start,a,b,end))
+            points.append((x*w + rng.uniform(-.55,.55), y*h + rng.uniform(-.55,.55)))
+        start = end
+    hole = points_mask((w,h), points, resample=Image.Resampling.BOX)
+    unit = max(1, round(min(w,h) / 52))
+    paper = hole.filter(ImageFilter.MaxFilter(2*unit+1))
+    outer = hole.filter(ImageFilter.MaxFilter(4*unit+1))
+    frame = alpha_from_masks(outer,paper,(248,234,208),seed=seed)
+    frame.putalpha(Image.fromarray(np.minimum(frame.getchannel('A'), 255-np.asarray(hole))))
+    return frame
+
+
+def make_frame(kind,w,h,seed=11,note='',photo_ratio=None,*,mixed_handcut=False):
     # 3:4 irregular photo frame sprites. Source sprites have no sample images, only a closed alpha=0 window.
+    if kind in FREEHAND_CONTOURS:
+        return freehand_frame(kind,w,h,seed)
     rng=random.Random(seed)
     if kind=='torn':
         outer=torn_rect(8,8,w-8,h-8,seed,4,12)
@@ -89,13 +132,29 @@ def make_frame(kind,w,h,seed=11,note='',photo_ratio=None):
         hole=torn_rect(28,27,w-28,h-51,seed+2,1.5,16)
         base=(251,229,189)
     else: raise ValueError(kind)
-    m_out=points_mask((w,h),outer)
-    m_paper=points_mask((w,h),paper)
-    m_hole=points_mask((w,h),hole)
+    # [TINIX] Coverage sampling prevents Lanczos ringing from closing tiny false alpha holes.
+    resample = Image.Resampling.BOX if mixed_handcut else Image.Resampling.LANCZOS
+    m_out=points_mask((w,h),outer,resample=resample)
+    m_paper=points_mask((w,h),paper,resample=resample)
+    m_hole=points_mask((w,h),hole,resample=resample)
+    if mixed_handcut and kind == 'stamp':  # [TINIX] Punch visible semicircles while preserving the paper edge.
+        radius = max(3, round(min(w,h)*.026))
+        punches = Image.new('L',(w*3,h*3))
+        punch = ImageDraw.Draw(punches)
+        for pos in np.linspace(.14,.86,9):
+            for x,y in ((w*pos,8),(w*pos,h-9),(7,h*pos),(w-9,h*pos)):
+                punch.ellipse(tuple(round(v*3) for v in (x-radius,y-radius,x+radius,y+radius)),fill=255)
+        notches = punches.resize((w,h),Image.Resampling.BOX)
+        m_out = Image.fromarray(np.minimum(m_out,255-np.asarray(notches)))
+        m_paper = Image.fromarray(np.minimum(m_paper,m_out.filter(ImageFilter.MinFilter(9))))
     frame=alpha_from_masks(m_out,m_paper,base,seed=seed)
     arr=np.array(frame)
     arr[:,:,3]=np.minimum(arr[:,:,3],255-np.array(m_hole))
     frame=Image.fromarray(arr,'RGBA')
+    if mixed_handcut and kind == 'notebook':  # [TINIX] Printed ruling stays inside the paper rather than adding cut holes.
+        ruling = ImageDraw.Draw(frame)
+        for fraction in (.85,.90):
+            ruling.line((.15*w,fraction*h,.85*w,fraction*h),fill=(190,159,137,255),width=1)
     if kind in ('polaroid','notebook','ticket') and note:
         txt=Image.new('RGBA',(w,h))
         d=ImageDraw.Draw(txt)
