@@ -2,6 +2,9 @@
 
 ## P3 · Điều phối từ brief đến bàn giao
 
+**Tích hợp sau khi merge PR #83 vào P3:** MCP giữ version `1.3.0` và có **19 tools**, gồm `export_material_draft`. Trước đó P3 có 18 tools. Hai bài E2E `orchestrator.test.mjs` và `generated-workflow.test.mjs` cần nhận diện 19 tools trên cùng phiên host. CI của PR P3 → P2 giờ chạy cả **Scrapbook source QA** và **Material export QA**; CI không thay thế chạy E2E thực với renderer/BiRefNet trên máy Windows. Đợt kiểm tra nguồn, khôi phục asset và cleanup của PR #83 đã được nghiệm thu riêng; cần giữ job gốc bất biến.
+
+
 [TINIX] MCP 1.3.0 thêm `orchestrate_scrapbook_workflow` và giữ schema các tool P1/P2. Mỗi thao tác ghi kết quả theo cặp `workflow_id` và `operation_id` (UUID). Dùng lại cùng ID và đầu vào khi lỗi tạm thời. Thao tác mới dùng ID mới. ID job được lưu khi duyệt. ID thao tác sửa đồng thời là ID revision.
 
 | Action | Cách dùng |
