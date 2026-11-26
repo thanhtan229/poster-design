@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { assertOneSlot, assertPersisted } from './material-gui-replace-assert.mjs'
+import { assertImportedLayers, assertOneSlot, assertPersisted } from './material-gui-replace-assert.mjs'
 
 const frame = (uuid, sha, img) => ({
   uuid, sha256:sha, imgSha256:img, fields:{
@@ -56,4 +56,51 @@ test('save/reopen must preserve every layer',()=>{
   assert.equal(assertPersisted(a,b).persisted,3)
   b.layers[1].sha256='unexpected'
   assert.throws(()=>assertPersisted(a,b),/LAYER_CONTENT_CHANGED_AFTER_REOPEN/)
+})
+
+// Fixture size is not a release criterion. The ZIP's own UUID inventory is.
+const importedLayers = count => Array.from({ length: count }, (_, i) => ({ uuid: 'layer-' + i }))
+
+test('valid 30-layer ZIP loads completely without a fixed 35-layer minimum', () => {
+  const imported = importedLayers(30)
+  assert.deepEqual(assertImportedLayers(imported, structuredClone(imported)), { expected: 30, actual: 30 })
+})
+
+test('valid 38-layer ZIP still loads completely', () => {
+  const imported = importedLayers(38)
+  assert.deepEqual(assertImportedLayers(imported, structuredClone(imported)), { expected: 38, actual: 38 })
+})
+
+test('missing GUI layer is rejected before replacing any photo', () => {
+  const imported = importedLayers(30)
+  assert.throws(() => assertImportedLayers(imported, imported.slice(0, -1)), /MATERIAL_LAYER_COUNT_MISMATCH/)
+})
+
+test('unexpected extra GUI layer is rejected', () => {
+  const imported = importedLayers(30)
+  assert.throws(() => assertImportedLayers(imported, [...imported, { uuid: 'extra' }]), /MATERIAL_LAYER_COUNT_MISMATCH/)
+})
+
+test('wrong GUI UUID is rejected even when the number of layers matches', () => {
+  const imported = importedLayers(30), actual = structuredClone(imported)
+  actual[4].uuid = 'unexpected'
+  assert.throws(() => assertImportedLayers(imported, actual), /MATERIAL_LAYER_ORDER_OR_ID_MISMATCH/)
+})
+
+test('duplicate GUI UUID is rejected', () => {
+  const imported = importedLayers(38), actual = structuredClone(imported)
+  actual[10].uuid = actual[0].uuid
+  assert.throws(() => assertImportedLayers(imported, actual), /GUI_LAYER_UUID_DUPLICATE/)
+})
+
+test('duplicate source UUID is rejected instead of accepting an invalid ZIP', () => {
+  const imported = importedLayers(30)
+  imported[1].uuid = imported[0].uuid
+  assert.throws(() => assertImportedLayers(imported, structuredClone(imported)), /IMPORTED_LAYER_UUID_DUPLICATE/)
+})
+
+test('same UUID set with altered GUI layer order is rejected', () => {
+  const imported = importedLayers(30), actual = structuredClone(imported)
+  ;[actual[0], actual[1]] = [actual[1], actual[0]]
+  assert.throws(() => assertImportedLayers(imported, actual), /MATERIAL_LAYER_ORDER_OR_ID_MISMATCH/)
 })
