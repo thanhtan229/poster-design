@@ -48,6 +48,8 @@ jobs:
         run: npm run tinix:typecheck-service
       - name: Build frontend
         run: npx --no-install vite build
+      - name: Verify backup compression and failure handling
+        run: node --test scripts/tinix-backup-archive.test.mjs
       - name: Run TinixPoster tests
         run: |
           "$PUPPETEER_EXECUTABLE_PATH" --version

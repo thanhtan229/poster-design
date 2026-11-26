@@ -12,9 +12,9 @@
 // các bản cũ (để một lần sao lưu hỏng không làm mất bản tốt). Biến môi trường (dùng cho kiểm thử): TINIX_DB, TINIX_BACKUP_DIR, TINIX_STATIC_DIR.
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { archiveStatic } from './tinix-backup-archive.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const serviceDir = path.join(root, 'service')
@@ -120,18 +120,21 @@ if (fs.existsSync(staticDir)) {
       }
     }
   }
-  const tarArgs = ['-czf', 'static.tar.gz', '--exclude=./fonts', '--exclude=./font-previews']
-  // keepFiles = null (không có DB/bảng để biết ảnh nào được dùng) thì giữ cả photos/ + user/ thay vì làm mất ảnh
-  if (keepFiles && skipped.length) {
-    fs.writeFileSync(path.join(dest, 'loai-tru.txt'), skipped.map((x) => './' + x).join('\n') + '\n')
-    tarArgs.push('-X', 'loai-tru.txt')
+  try {
+    const archived = archiveStatic({ staticDir, dest, skipped })
+    console.log('✓ static.tar.gz verified (' + archived.members + ' members, ' +
+      archived.bytes + ' bytes; command=' + archived.bin + '; used uploaded images=' +
+      keptCount + '; unused=' + skipped.length + ')')
+  } catch (error) {
+    ok = false
+    console.error('✗ STATIC_ARCHIVE_FAILED: ' + String(error?.message || error))
+    console.error('✗ Không xóa bản sao tốt trước đó; xem tar stderr ở trên.')
   }
-  // chạy trong thư mục đích + đường dẫn tương đối: GNU tar coi 'D:\...' là tên máy từ xa
-  const r = spawnSync('tar', [...tarArgs, '-C', staticDir, '.'], { stdio: 'inherit', cwd: dest })
-  fs.rmSync(path.join(dest, 'loai-tru.txt'), { force: true })
-  if (r.status === 0 && fs.existsSync(path.join(dest, 'static.tar.gz'))) {
-    console.log(`✓ static.tar.gz (không gồm fonts/, font-previews/; ảnh tải lên: giữ ${keptCount} tệp đang được dùng, bỏ ${skipped.length} tệp không dùng, ~${(skippedBytes / 1048576).toFixed(0)} MB)`)
-  } else { ok = false; console.error('✗ Không nén được thư mục static (cần lệnh tar). Đã có bản sao DB.') }
+}
+
+else {
+  ok = false
+  console.error('✗ STATIC_ROOT_MISSING: ' + staticDir + '; backup không hoàn chỉnh.')
 }
 
 // giữ `keep` bản mới nhất trong `dir`
