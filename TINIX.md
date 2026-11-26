@@ -795,3 +795,9 @@ Trong bảng **Dựng theo ảnh mẫu**, mở **Tách mảnh từ PNG**. [TINIX
 ## Scrapbook A–Z · P3
 
 [TINIX] MCP 1.3.0 thêm `orchestrate_scrapbook_workflow` với QA nguồn trước preview, biên nhận từng thao tác và bàn giao theo hash. QA yêu cầu biên nhận sinh thủ tục khi thiếu mẫu RGB. Công cụ băm gói Skill thật trên host trước khi tạo batch. Xem hợp đồng tại `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
+
+## [TINIX] Nghiệm thu xuất ZIP từ job đã thay ảnh
+
+QA dựng ngược ghép nền PNG bán trong suốt lên trắng như bộ nhập trước khi so với render đã lưu. Smoke test gắn lại ảnh với thuộc tính crop của từng khung trong job rồi so alpha SUBJECT sau giải mã. Gói nguyên liệu v1 vẫn dùng khung giữ chỗ. Bản nháp QA có ảnh khách chỉ nằm trong runtime cục bộ.
+
+[TINIX] Harness GUI thay ảnh bảy lớp dùng menu Tệp để lưu/mở lại tệp dự án trong thư mục tạm. Sau khi xóa design QA, harness truy vấn lại đúng ID để xác nhận bản ghi đã biến mất.
