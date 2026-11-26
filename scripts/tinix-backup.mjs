@@ -175,7 +175,11 @@ if (ok && copyTo) {
     claimSnapshot(target)
     claimed = true
     fs.writeFileSync(path.join(target, pending), '', { flag: 'wx' })
-    fs.cpSync(dest, target, { recursive: true, force: false, errorOnExist: true })
+    for (const name of fs.readdirSync(dest)) {
+      fs.cpSync(path.join(dest, name), path.join(target, name), {
+        recursive: true, force: false, errorOnExist: true,
+      })
+    }
     fs.unlinkSync(path.join(target, pending))
     console.log(`✓ đã chép sang ${target}`)
   } catch (e) {
