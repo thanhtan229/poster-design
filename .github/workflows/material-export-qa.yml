@@ -2,8 +2,8 @@
 name: Material export QA
 on:
   pull_request:
-    # Test PR #83 on P3 and carry exporter regression into PR #74 (P3 -> P2).
-    branches: [codex/scrapbook-p3, codex/scrapbook-p2]
+    # Keep material export regressions gated as the stack integrates P3 -> P2 -> P1.
+    branches: [codex/scrapbook-p3, codex/scrapbook-p2, codex/scrapbook-p1]
   push:
     branches: [codex/material-export-from-job, codex/scrapbook-p3]
 permissions:
