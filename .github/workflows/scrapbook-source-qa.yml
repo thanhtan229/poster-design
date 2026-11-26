@@ -51,4 +51,6 @@ jobs:
       # Host E2E scripts require a real renderer and approved Skill ZIP; syntax-check them here.
       - run: node --check scripts/tinix-mcp/orchestrator.test.mjs
       - run: node --check scripts/tinix-mcp/generated-workflow.test.mjs
+      - run: node --check scripts/tinix-mcp/face-model-preflight.mjs
+      - run: node --test scripts/tinix-mcp/face-model-preflight.test.mjs
       - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs
