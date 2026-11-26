@@ -9,10 +9,13 @@ import { promisify } from 'node:util'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { createTinixMcp } from './server.mjs'
+import { assertYuNetPreflight } from './face-model-preflight.mjs'
 
 const folder = process.argv[2]
 assert(folder, 'Usage: node scripts/tinix-mcp/generated-workflow.test.mjs <new-evidence-directory>')
 const output = path.resolve(folder)
+// Verify model and OpenCV BEFORE allocating a QA directory or generating a demo.
+await assertYuNetPreflight()
 await mkdir(output)
 const bytesById = new Map()
 let downloads = 0
@@ -136,8 +139,9 @@ async function checkOldCustomer(source) {
 try {
   const previous = await json(new URL('./evidence/p0/mcp-local-tools.json', import.meta.url))
   const { tools } = await client.listTools()
-  assert.equal(client.getServerVersion().version, '1.2.0') // [TINIX]
-  assert.equal(new Set(tools.map(tool => tool.name)).size, 17) // [TINIX]
+  assert.equal(client.getServerVersion().version, '1.3.0') // [TINIX]
+  assert.equal(new Set(tools.map(tool => tool.name)).size, 19) // [TINIX] P3 + material-export tool
+  assert.ok(tools.some(tool => tool.name === 'export_material_draft'))
   for (const old of previous) assert.deepEqual(tools.find(tool => tool.name === old.name), old, old.name)
   assert.ok(tools.some(tool => tool.name === prepare))
   assert.ok((await call(prepare, { ...base, request_id: randomUUID(), skill_version: '1.2.6' })).isError)

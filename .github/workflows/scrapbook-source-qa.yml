@@ -3,7 +3,7 @@ name: Scrapbook source QA
 
 on:
   pull_request:
-    branches: [main, codex/scrapbook-p1]
+    branches: [main, codex/scrapbook-p1, codex/scrapbook-p2] # [TINIX] Include the stacked P3 PR.
   push:
     branches: [main]
 
@@ -28,3 +28,29 @@ jobs:
           python -B scripts/tinix-mcp/workflow_compositions_test.py
           python -B scripts/tinix-mcp/source_qa_test.py > source-qa.log 2>&1 || (tail -100 source-qa.log && exit 1)
           grep -E '^Ran [[:digit:]]+ tests|^OK$' source-qa.log
+
+  # [TINIX] Exercises discovery and the operation journal without private fixtures.
+  orchestrator-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            service/package-lock.json
+            scripts/tinix-mcp/package-lock.json
+      - run: npm ci --prefix service
+      - run: npm ci --prefix scripts/tinix-mcp
+      # Host E2E scripts require a real renderer and approved Skill ZIP; syntax-check them here.
+      - run: node --check scripts/tinix-mcp/orchestrator.test.mjs
+      - run: node --check scripts/tinix-mcp/generated-workflow.test.mjs
+      - run: node --check scripts/tinix-mcp/face-model-preflight.mjs
+      - run: node --test scripts/tinix-mcp/face-model-preflight.test.mjs
+      - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs

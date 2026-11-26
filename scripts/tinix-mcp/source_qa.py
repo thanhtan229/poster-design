@@ -130,7 +130,7 @@ def locate_reference(sprite, tiles):
     return None
 
 
-def inspect(source, kit, destination, trusted):
+def inspect(source, kit, destination, trusted, procedural=frozenset()):  # [TINIX]
     source = source.resolve()
     manifest = json.loads(source.read_text(encoding="utf-8"))
     destination.mkdir(parents=True, exist_ok=False)
@@ -154,6 +154,7 @@ def inspect(source, kit, destination, trusted):
         file = local_asset(root, layer["asset"])
         fingerprint = digest(file.read_bytes())
         known_source = fingerprint in trusted  # [TINIX] Provenance is independent of visible content.
+        clean_generation = known_source and fingerprint in procedural
         scan = "not_run"
         status = "pass"
         if fingerprint in photo_hashes:
@@ -186,8 +187,12 @@ def inspect(source, kit, destination, trusted):
             elif scan == "size_limit":
                 status = "uncertain"
                 issue(code,status,"static_reference_scan_size_limit")
+            elif scan != "scanned" and not clean_generation:  # [TINIX] A lock alone never substitutes for a missing scan.
+                status = "uncertain"
+                issue(code,status,"static_reference_scan_incomplete",coverage=scan)
         layers.append({"layer":code,"sha256":fingerprint,"status":status,
-                       "provenanceVerified":known_source,"referenceScan":scan})
+                       "provenanceVerified":known_source,"referenceScan":scan,
+                       "proceduralGenerationVerified":clean_generation})
 
     subject = photos["SUBJECT"]
     low, high = subject.getchannel("A").getextrema()
@@ -283,5 +288,7 @@ if __name__ == "__main__":
         export(source,folder/"material",folder/"qa",placeholders=True,review_dir=folder)
         sys.exit(0)
     source, kit, destination, trust_file = sys.argv[1:]
-    trusted = set(json.loads(Path(trust_file).read_text(encoding="utf-8")))
-    inspect(Path(source),Path(kit) if kit else None,Path(destination),trusted)
+    proof = json.loads(Path(trust_file).read_text(encoding="utf-8"))  # [TINIX]
+    trusted = set(proof if isinstance(proof,list) else proof["trusted"])
+    procedural = set() if isinstance(proof,list) else set(proof["procedural"])
+    inspect(Path(source),Path(kit) if kit else None,Path(destination),trusted,procedural)

@@ -1,5 +1,44 @@
 # Dựng scrapbook qua MCP với một lần duyệt
 
+## P3 · Điều phối từ brief đến bàn giao
+
+**Tích hợp sau khi merge PR #83 vào P3:** MCP giữ version `1.3.0` và có **19 tools**, gồm `export_material_draft`. Trước đó P3 có 18 tools. Hai bài E2E `orchestrator.test.mjs` và `generated-workflow.test.mjs` cần nhận diện 19 tools trên cùng phiên host. CI của PR P3 → P2 giờ chạy cả **Scrapbook source QA** và **Material export QA**; CI không thay thế chạy E2E thực với renderer/BiRefNet trên máy Windows. Đợt kiểm tra nguồn, khôi phục asset và cleanup của PR #83 đã được nghiệm thu riêng; cần giữ job gốc bất biến.
+
+
+[TINIX] MCP 1.3.0 thêm `orchestrate_scrapbook_workflow` và giữ schema các tool P1/P2. Mỗi thao tác ghi kết quả theo cặp `workflow_id` và `operation_id` (UUID). Dùng lại cùng ID và đầu vào khi lỗi tạm thời. Thao tác mới dùng ID mới. ID job được lưu khi duyệt. ID thao tác sửa đồng thời là ID revision.
+
+| Action | Cách dùng |
+|---|---|
+| `prepare` | Gửi `brief`, tùy chọn số demo 2–6 (mặc định 3), tỷ lệ, theme, title và bảy `illustrations` F01–F06, SUBJECT. Tạo N kit và QA nguồn trước khi trả ảnh các demo đạt. |
+| `status` | Đọc workflow và biên nhận của operation ID nếu có. Gọi lại `prepare` với đầu vào cũ để nhận preview. |
+| `review_sources` | ChatGPT gửi `reviews` với `demo_id`, `status` và `notes` cho cả batch. Soi viền trắng, ren, chữ, bóng đổ, mép SUBJECT và chi tiết che. Cổng tự động chặn ghi pass cho ứng viên lỗi hoặc chưa đủ chứng cứ. |
+| `advance` | Gửi `approved_demo_id` sau khi người dùng chọn. Tại `awaiting_layout_qa`, kiểm render và gửi thao tác mới với `layout_review` gồm job_id, status và notes. Nếu đạt, trả manifest bàn giao gồm SHA-256 và kích thước của từng tệp. |
+| `repair` | Gửi demo_id, layer, donor_workflow_id, donor_demo_id, donor_layer và reason. Nếu an toàn, tạo revision riêng và kiểm lại. Revision yêu cầu duyệt mới trước khi dựng. |
+
+Gọi `get_scrapbook_workflow` để nhận bytes của `final_render`, `materials_zip`, `comparison` và `qa_report` qua MCP. Lượt nghiệm thu ChatGPT web cần tải thử và đối chiếu hash của cả bốn tệp.
+
+Host đọc và băm ZIP Skill v1.2.13 tại `TINIX_STUDIO_SKILL_ARCHIVE`, mặc định `Downloads/skill (8).zip` của tài khoản chạy server. Gói khác trả `SKILL_SOURCE_MISMATCH`. Bằng chứng này xác nhận nguồn host, còn Skill đang hoạt động trong ChatGPT được ghi `not_verified` cho tới khi kiểm trên web. Tool không nhận chuỗi hash Skill từ client. TinixPoster dùng chung bảy hình cho toàn batch và ghi số lượt AI của mình riêng với số phía ChatGPT.
+
+Hash khóa chứng minh bytes bất biến. Khi dò RGB không đủ mẫu, QA chỉ chấp nhận thêm biên nhận băm từ bộ sinh procedural chạy trên host. Với các workflow procedural cũ chưa có biên nhận, host sinh lại riêng lớp tĩnh trong thư mục QA và đối chiếu hash. Thiếu bằng chứng trả `uncertain`. Bộ dò RGB chính xác có giới hạn khi ảnh đã xoay, cắt, đổi cỡ hay màu.
+
+### YuNet preflight bắt buộc trước các E2E Windows
+
+Hai harness `orchestrator.test.mjs` và `generated-workflow.test.mjs` gọi chung `face-model-preflight.mjs` **trước khi tạo thư mục QA/dựng demo**. Bước này kiểm chính đường dẫn runtime sử dụng theo `scripts/lib/photo-faces.cjs`: ưu tiên `TINIX_FACE_MODEL`, nếu không có thì `.runtime/face-crop/yunet.onnx` trong worktree. Model phải là tệp thường, đọc được, có dữ liệu; Python (`TINIX_FACE_PYTHON` hoặc `python`) phải import được `cv2` và khởi tạo được `cv2.FaceDetectorYN` từ model đã chọn. Không tải/sao chép/ghi đè model; model không được commit vào Git.
+
+Trên Windows PowerShell, trước khi chạy test:
+
+```powershell
+$env:TINIX_FACE_MODEL = "<DUONG_DAN_TUYET_DOI_CUA_YUNET_ONNX_TREN_HOST>"
+$env:TINIX_FACE_PYTHON = "python" # Hoặc đường dẫn đến Python đã có OpenCV trên host
+node scripts/tinix-mcp/face-model-preflight.mjs
+```
+
+Thay đường dẫn mẫu bằng tệp YuNet **thật đang có trên máy**, không tự giả định vị trí file. Khi thất bại, script trả mã lỗi như `YUNET_MODEL_MISSING`, `YUNET_MODEL_EMPTY`, `YUNET_PYTHON_MISSING`, `YUNET_OPENCV_MISSING`, `YUNET_FACEDETECTORYN_MISSING`, hoặc `YUNET_MODEL_LOAD_FAILED` kèm hướng khắc phục. Đây là **lỗi điều kiện host** cần sửa trước khi chạy E2E; không sửa thuật toán crop hoặc làm lệch QA để vượt test.
+
+Sau khi preflight đạt, chạy `orchestrator.test.mjs` và `generated-workflow.test.mjs` trên worktree thử độc lập và hai thư mục đầu ra chưa tồn tại. Ghi bằng chứng vào runtime cục bộ; không push model, dữ liệu khách hoặc ảnh bằng chứng chứa khách. CI có unit test cho preflight; CI không chứng minh YuNet host đã sẵn sàng.
+
+Chạy integration bằng `node scripts/tinix-mcp/orchestrator.test.mjs .runtime/scrapbook-p3-test .runtime/mcp-material` với app cục bộ, Python và gói Skill host. Tham số cuối là tùy chọn để kiểm fixture P2. `node --test scripts/tinix-mcp/orchestrator-contract.test.mjs` kiểm hợp đồng MCP trên CI. Nếu tiến trình bị tắt cưỡng bức trong khi giữ khóa thư mục, quản trị viên cần xác minh tiến trình đã dừng trước khi xử lý khóa mồ côi.
+
 ## P2 · Kiểm nguồn và sửa trên bản sao
 
 [TINIX] Server MCP 1.2.0 thêm hai công cụ, giữ schema của 15 công cụ trước.
