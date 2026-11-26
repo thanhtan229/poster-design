@@ -69,7 +69,9 @@ def verify(source, evidence_dir=None, max_mae=4.0, max_bad_fraction=.05):
     zs = [item["z"] for item in pieces] + [layout["subjectZ"]]
     if len(set(zs)) != len(zs):
         raise StaticMismatch("DUPLICATE_Z")
-    static = background.copy()
+    # [TINIX] The browser normalizes reference images over white before compositing.
+    static = Image.new("RGBA", background.size, "white")
+    static.alpha_composite(background)
     unknown = Image.new("RGBA", background.size, (0, 0, 0, 0))
     for part in sorted(pieces, key=lambda item: item["z"]):
         r = part["source"]

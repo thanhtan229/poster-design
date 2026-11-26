@@ -7,7 +7,7 @@
 // Requires: <root>/<job>/material-export/material.zip, TinixPoster GUI + renderer on local host.
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFile, writeFile, mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { createRequire } from 'node:module'
@@ -140,6 +140,25 @@ async function choosePicker(page, index) {
     .some(d=>d.getBoundingClientRect().width>0 && d.querySelector('.img-list-wrap')),
     {timeout:30000})
 }
+
+// [TINIX] The editor persists projects through the File menu as a local ZIP.
+async function chooseFileMenu(page, label) {
+  await page.$eval('.sd-wenjian', icon => icon.closest('.operation-item').click())
+  const item = await page.waitForFunction(label => [...document.querySelectorAll('.el-dropdown-menu__item')]
+    .find(el => el.getBoundingClientRect().width > 0 && el.textContent?.trim().startsWith(label)),
+  { timeout: 10000 }, label)
+  await item.evaluate(el => el.click())
+}
+
+async function findSavedProject(directory) {
+  const deadline = Date.now() + 30000
+  while (Date.now() < deadline) {
+    const archive = (await readdir(directory)).find(name => name.endsWith('.tinix.zip'))
+    if (archive) return path.join(directory, archive)
+    await sleep(250)
+  }
+  throw Error('GUI_PROJECT_DOWNLOAD_MISSING')
+}
 async function main() {
   // The host MUST provide the same static root configured for the local backend.
   // Refuse to create a QA design if cleanup ownership cannot be established.
@@ -155,8 +174,8 @@ async function main() {
   assert.equal(opened.report?.status,'ready','EXPORTED_KIT_FAILED_IMPORT')
   assert.equal(opened.report.photoSlots?.length,6,'EXPORTED_KIT_MISSING_PHOTOS')
   const work=await mkdtemp(path.join(tmpdir(),'tinix-gui-seven-'))
-  let browser=null, designId=null, failure=null, cleanupError=null
-  const assetAttempts = new WeakMap(), restoredAssets = [], assetTasks = []
+  let browser=null, designId=null, cleanupError=null
+  const assetAttempts = new Map(), restoredAssets = [], assetTasks = []
   const result = { status:'blocked',jobId, app:origin, cases:[], testDesignDeleted:false,
     sourceJobUnchanged:false, imagesStoredInLibrary:false,
     mediaRequestsMocked:true, realBiRefNetTested:false,
@@ -220,6 +239,15 @@ async function main() {
     let uploads=0,cutouts=0,pickerCalls=0
     browser=await puppeteer.launch({headless:true,args:['--no-first-run'],protocolTimeout:180000})
     const page=await browser.newPage(),errors=[]
+    const blockedExternalHosts=new Set()
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true })
+      Object.defineProperty(window, 'showOpenFilePicker', { value: undefined, configurable: true })
+    })
+    const downloadDir=path.join(work,'downloads')
+    await mkdir(downloadDir)
+    const cdp=await page.createCDPSession()
+    await cdp.send('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloadDir})
     page.on('pageerror',err=>errors.push(String(err.message||err)))
     page.on('response',res => {
       const attempt=assetAttempts.get(res.request())
@@ -229,6 +257,8 @@ async function main() {
         const response=await res.json()
         const recorded=await recordRestoredAsset(staticRoot,attempt,response)
         if(recorded)restoredAssets.push(recorded)
+        else if(response.written===true && !attempt.beforeExisted)throw Error('QA_RESTORED_ASSET_NOT_VERIFIED')
+        assetAttempts.delete(res.request())
       })().catch(e=>errors.push('RESTORED_ASSET:'+String(e.message||e)))
       assetTasks.push(task)
     })
@@ -244,12 +274,15 @@ async function main() {
         // Track exact assets a local .tinix.zip open may write. Only delete if
         // absent before this request, server said written:true and hash still matches.
         if(url.pathname==='/api/tinix/local-asset' && req.method()==='PUT') {
-          const attempt=await startQaAssetTracking(staticRoot,url.searchParams.get('path'),req.postDataBuffer())
+          const bytes=await req.content()
+          const attempt=await startQaAssetTracking(staticRoot,url.searchParams.get('path'),bytes && Buffer.from(bytes))
           assetAttempts.set(req,attempt)
         }
         if(url.pathname.includes('/design/user/image') && req.method()==='GET') {
           pickerCalls++
-          return await req.respond(responseJson({list:images,total:7}))
+          // [TINIX] Mimic the end of pagination when the picker is reopened.
+          const list=Number(url.searchParams.get('page') || 1) === 1 ? images : []
+          return await req.respond(responseJson({list,total:7}))
         }
         if(fixtures.has(url.pathname) && req.method()==='GET') {
           return await req.respond({status:200,contentType:'image/png',body:fixtures.get(url.pathname),
@@ -268,8 +301,11 @@ async function main() {
             url:origin+'/__tinix_qa__/'+(uploads===1?'subject-cutout.png':'subject-border.png')
           }))
         }
-        if(url.protocol==='http:'||url.protocol==='https:') {
-          assert(['localhost','127.0.0.1'].includes(url.hostname),'EXTERNAL_REQUEST_BLOCKED')
+        if((url.protocol==='http:'||url.protocol==='https:') &&
+          !['localhost','127.0.0.1'].includes(url.hostname)) {
+          // [TINIX] Local QA deliberately blocks public assets without treating a blocked fetch as a page exception.
+          blockedExternalHosts.add(url.hostname)
+          return await req.abort()
         }
         return await req.continue()
       } catch(err){errors.push('INTERCEPT:'+String(err.message||err));try{await req.abort()}catch{}}
@@ -280,6 +316,7 @@ async function main() {
     assert(initial.layers.length>35,'MATERIAL_LAYERS_NOT_LOADED')
     for(let i=0;i<CODES.length;i++) {
       const code=CODES[i],uuid=expectedIds[code]
+      result.activeCase=code
       assert(initial.layers.some(l=>l.uuid===uuid),'IMPORTED_SLOT_NOT_RENDERED:'+code)
       await selectLayer(page,uuid)
       await sleep(200)
@@ -300,6 +337,7 @@ async function main() {
         'WRONG_PICKER_IMAGE:'+code)
       result.cases.push({code,ok:true,changedLayers:test.changedLayers,
         cropUnchanged:code!=='SUBJECT',subjectCutoutMocked:code==='SUBJECT'})
+      result.guiClicks=result.cases.length
       if(process.env.TINIX_QA_CAPTURE==='1')await page.screenshot({
         path:path.join(output,code+'-local-evidence.png'),fullPage:false})
     }
@@ -309,36 +347,56 @@ async function main() {
     assert.equal(uploads,Number(entry.subject.templateBorderMm)>0?2:1,'SUBJECT_UPLOAD_FLOW_NOT_EXERCISED')
     assert.deepEqual(errors,[],'BROWSER_ERRORS')
     const saved=await capture(page)
-    const savePromise=page.waitForResponse(r=>r.url().includes('/design/save')&&r.request().method()==='POST',
-      {timeout:120000})
-    await page.evaluate(()=>{
-      const button=[...document.querySelectorAll('button')].find(b=>b.getBoundingClientRect().width>0 &&
-        b.textContent?.trim()==='Lưu')
-      if(!button)throw Error('GUI_SAVE_BUTTON_NOT_FOUND')
-      button.click()
-    })
-    const savedResponse=await savePromise
-    assert.equal(savedResponse.ok(),true,'GUI_SAVE_FAILED')
-    await page.goto(origin+'/home?id='+designId,{waitUntil:'domcontentloaded',timeout:120000})
-    await page.waitForSelector('.w-image',{timeout:120000})
-    await sleep(650)
+    result.activeCase='save-reopen'
+    await chooseFileMenu(page,'Lưu dự án')
+    const savedProject=await findSavedProject(downloadDir)
+    result.savedProjectSha256=sha(await readFile(savedProject))
+    result.activeCase='reopen'
+    await page.goto(origin+'/home',{waitUntil:'domcontentloaded',timeout:120000})
+    await page.waitForSelector('.sd-wenjian',{timeout:30000})
+    const [chooser]=await Promise.all([
+      page.waitForFileChooser({timeout:10000}),chooseFileMenu(page,'Mở dự án'),
+    ])
+    await chooser.accept([savedProject])
+    await page.waitForFunction(uuid=>!!document.getElementById(uuid),{timeout:30000},expectedIds.F01)
     const reopened=await capture(page)
     result.persisted=assertPersisted(saved,reopened)
     await Promise.allSettled(assetTasks)
+    if(process.env.TINIX_QA_CAPTURE==='1') await page.screenshot({
+      path:path.join(output,'reopened-local-evidence.png'),fullPage:false})
     assert.deepEqual(errors,[],'BROWSER_ERRORS_AFTER_SAVE_REOPEN')
     result.guiClicks=7
     result.mocks={pickerCalls,cutouts,uploads}
+    result.blockedExternalHosts=[...blockedExternalHosts].sort()
+    result.browserErrors=errors
+    delete result.activeCase
     result.status='pass'
-  }catch(e){failure=String(e?.stack||e);result.error=String(e?.message||e);result.status='blocked'}
+  }catch(e){result.error=String(e?.message||e);result.status='blocked'}
   finally {
     try{if(browser)await browser.close()}catch(e){cleanupError='BROWSER_CLOSE_FAILED:'+String(e?.message||e)}
-    try{await Promise.allSettled(assetTasks)}catch{}
+    await Promise.allSettled(assetTasks)
     let coverReady={complete:false,reason:'NO_DESIGN'}
     if(designId) {
-      try { coverReady=await awaitCoverSettled(staticRoot,designId) }
+      try {
+        coverReady=await awaitCoverSettled(staticRoot,designId,{
+          // [TINIX] The backend records the cover only after its screenshot request completes.
+          ready:async()=>{
+            const response=await fetch(apiBase.origin+'/design/poster?id='+designId,{signal:AbortSignal.timeout(5000)})
+            const data=await response.json()
+            return response.ok && data.code===200 && Number(data.result?.id)===designId &&
+              data.result?.cover==='/static/'+designId+'-cover.jpg'
+          },
+        })
+      }
       catch(e){cleanupError='COVER_WAIT_FAILED:'+String(e?.message||e)}
       try{
         await rest('/design/poster/del',{id:designId})
+        // [TINIX] Confirm the exact temporary design is no longer retrievable.
+        const lookup=await fetch(apiBase.origin+'/design/poster?id='+designId,{signal:AbortSignal.timeout(10000)})
+        const deleted=await lookup.json()
+        assert.notEqual(deleted.code,200,'TEMP_DESIGN_STILL_EXISTS')
+        assert.match(JSON.stringify(deleted),/Thiết kế không tồn tại/,'TEMP_DESIGN_DELETE_UNVERIFIED')
+        result.testDesignDeleteVerifiedByLookup=true
         result.testDesignDeleted=true
       }catch(e){cleanupError='TEMP_DESIGN_DELETE_FAILED:'+String(e?.message||e)}
       if(result.testDesignDeleted) {
@@ -350,11 +408,18 @@ async function main() {
         }catch(e){cleanupError='QA_ARTIFACT_CLEANUP_FAILED:'+String(e?.message||e)}
       }
     }
+    if(assetAttempts.size) {
+      result.unverifiedAssetWrites=[...assetAttempts.values()].map(attempt=>attempt.url)
+      if(result.artifactCleanup) result.artifactCleanup.status='blocked'
+      cleanupError='QA_ASSET_WRITES_UNVERIFIED'
+    }
     try{await rm(work,{recursive:true,force:true})}
     catch(e){cleanupError='TEMP_WORKSPACE_REMOVE_FAILED:'+String(e?.message||e)}
     try{
       const current=await Promise.all(['draft.json','render.png','report.json'].map(n=>readFile(path.join(sourceDir,n))))
-      result.sourceJobUnchanged=originalChecksums.every((h,i)=>sha(current[i])===h)
+      result.sourceHashes=Object.fromEntries(['draft.json','render.png','report.json'].map((name,i)=>
+        [name,{before:originalChecksums[i],after:sha(current[i])}]))
+      result.sourceJobUnchanged=Object.values(result.sourceHashes).every(hash=>hash.before===hash.after)
     }catch(e){result.sourceJobUnchanged=false;cleanupError='SOURCE_JOB_HASH_RECHECK_FAILED'}
     if(!result.sourceJobUnchanged)cleanupError='SOURCE_JOB_CHANGED'
     if(cleanupError){result.cleanupError=cleanupError;result.status='blocked'}

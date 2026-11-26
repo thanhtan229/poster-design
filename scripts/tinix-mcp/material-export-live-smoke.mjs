@@ -5,7 +5,7 @@
 // node scripts/tinix-mcp/material-export-live-smoke.mjs JOB_ID SOURCE_KIT.zip [MCP_RUNTIME_ROOT]
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
@@ -22,6 +22,7 @@ const ID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
 const FILE = fileURLToPath(import.meta.url)
 const repoRoot = path.resolve(path.dirname(FILE), '../..')
 const [jobId, sourceZip, runtime] = process.argv.slice(2)
+const cropFields = ['fit', 'zoom', 'cropX', 'cropY', 'transform'] // [TINIX]
 
 function fromData(url) {
   if (typeof url !== 'string' || !url.startsWith('data:image/png;base64,')) {
@@ -55,6 +56,11 @@ async function compare(a, b) {
 async function main() {
   if (!ID.test(jobId || '') || !sourceZip) throw new Error('Usage: node material-export-live-smoke.mjs JOB_ID SOURCE_KIT.zip [RUNTIME_ROOT]')
   const root = runtime ? path.resolve(runtime) : path.join(repoRoot, '.runtime', 'mcp-material')
+  // [TINIX] Fail before creating any export state when the required original ZIP is absent.
+  await access(path.resolve(sourceZip)).catch(error => {
+    if (error.code === 'ENOENT') throw new Error('SOURCE_KIT_NOT_FOUND: ' + path.basename(sourceZip))
+    throw error
+  })
   const original = await readMaterialJob(root, jobId)
   assert.equal(original.report.status, 'rendered')
   assert.equal(original.report.photoSlots?.length, 6)
@@ -67,11 +73,11 @@ async function main() {
   const opened = await prepareMaterialDraft(kit)
   assert.equal(opened.report?.status, 'ready', 'MATERIAL_REIMPORT_FAILED')
   assert.equal(opened.report.photoSlots?.length, 6)
-  const sourcePhotoByCode = new Map()
+  const originalPhotos = new Map()
   for (const slot of original.report.photoSlots) {
     const layer = original.layout.layers.find(layer => layer.uuid === slot.id && layer.templateRole === 'photo')
     if (!layer?.imgUrl) throw new Error('PHOTO_SLOT_MISSING:' + slot.code)
-    sourcePhotoByCode.set(slot.code, fromData(layer.imgUrl))
+    originalPhotos.set(slot.code, layer)
   }
   const temporary = await mkdtemp(path.join(tmpdir(), 'tinix-material-live-'))
   try {
@@ -79,7 +85,7 @@ async function main() {
     for (let i = 1; i <= 6; i++) {
       const code = 'F' + String(i).padStart(2,'0')
       const dest = path.join(temporary, code + '.png')
-      await writeFile(dest, sourcePhotoByCode.get(code))
+      await writeFile(dest, fromData(originalPhotos.get(code).imgUrl))
       const slot = opened.report.photoSlots.find(slot => slot.code === code)
       assert.ok(slot?.id, 'REIMPORTED_SLOT_MISSING:' + code)
       frameBindings[slot.id] = { file: dest }
@@ -93,7 +99,36 @@ async function main() {
     frameBindings[id] = { source, cutout: alpha, mm: original.subject.templateBorderMm ?? .9 }
     const instantiated = await instantiate(opened.draft,
       { customer: 'TinixPoster local QA only', slots: frameBindings }, temporary)
+    // [TINIX] The v1 archive declares placeholder geometry. Rebind the saved crop
+    // settings with the saved images, and verify the edited cutout before rendering.
+    const crop = {}
+    for (const slot of opened.report.photoSlots) {
+      const assigned = instantiated.layout.layers.find(layer => layer.uuid === instantiated.idMap[slot.id])
+      assert.ok(assigned, 'REBOUND_PHOTO_SLOT_MISSING:' + slot.code)
+      const saved = originalPhotos.get(slot.code)
+      for (const field of cropFields) {
+        if (Object.hasOwn(saved, field)) assigned[field] = saved[field]
+        else delete assigned[field]
+      }
+      crop[slot.code] = Object.fromEntries(cropFields.map(field => [field, assigned[field] ?? null]))
+    }
+    const reboundSubject = instantiated.layout.layers.find(layer => layer.uuid === instantiated.idMap[id])
+    assert.ok(reboundSubject?.cutoutEdit, 'REBOUND_SUBJECT_MASK_MISSING')
+    // Compare decoded alpha pixels because placeCutout re-encodes the PNG.
+    const alphaMask = value => sharp(fromData(value)).ensureAlpha().extractChannel('alpha').raw()
+      .toBuffer({ resolveWithObject: true })
+    const [savedMask, reboundMask] = await Promise.all([
+      alphaMask(original.subject.cutoutEdit.cutoutUrl),
+      alphaMask(reboundSubject.cutoutEdit.cutoutUrl),
+    ])
+    assert.equal(reboundMask.info.width, savedMask.info.width, 'SUBJECT_MASK_WIDTH_CHANGED')
+    assert.equal(reboundMask.info.height, savedMask.info.height, 'SUBJECT_MASK_HEIGHT_CHANGED')
+    assert.deepEqual(reboundMask.data, savedMask.data, 'EDITED_SUBJECT_ALPHA_CHANGED')
+    // [TINIX] Keep the rebound draft in the private QA runtime for editor verification.
+    const evidenceDir = path.join(root, jobId, 'material-export')
+    await writeFile(path.join(evidenceDir, 'host-live-reimport.draft.json'), JSON.stringify(instantiated.layout))
     const newRender = await renderMaterialLayout(instantiated.layout, AbortSignal.timeout(150000))
+    await writeFile(path.join(root, jobId, 'material-export', 'host-live-reimport.png'), newRender)
     const similarity = await compare(original.png, newRender)
     const fullPass = similarity.imageMae255 <= 5 && similarity.badFractionAbove30 <= .05
     const report = {
@@ -102,6 +137,9 @@ async function main() {
       zipSha256: exportResult.structuredContent.sha256,
       staticQa: exportResult.structuredContent.qa.staticReconstruction,
       ...similarity,
+      reboundPhotoCrop: crop,
+      editedSubjectAlphaPixelIdentical: true,
+      editedSubjectAlphaSize: [savedMask.info.width, savedMask.info.height],
       guiInteraction: 'not_verified',
       persistedCustomerTemplate: false,
     }

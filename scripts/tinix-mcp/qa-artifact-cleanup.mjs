@@ -15,6 +15,10 @@ export async function staticRootOf(explicitPath) {
     throw Error('TINIX_QA_STATIC_ROOT_REQUIRED_ABSOLUTE')
   }
   const root = await realpath(explicitPath)
+  const comparePath = value => process.platform==='win32' ? value.toLowerCase() : value
+  if (comparePath(path.resolve(explicitPath))!==comparePath(root)) {
+    throw Error('TINIX_QA_STATIC_ROOT_MUST_BE_CANONICAL')
+  }
   if (!['static', 'cache'].includes(path.basename(root).toLowerCase())) {
     throw Error('TINIX_QA_STATIC_ROOT_MUST_END_STATIC_OR_CACHE')
   }
@@ -44,11 +48,21 @@ async function fileInfo(file) {
   try {
     const stat = await lstat(file)
     if (!stat.isFile() || stat.isSymbolicLink()) throw Error('QA_CLEANUP_NOT_PLAIN_FILE:' + path.basename(file))
-    return { size:stat.size, mtime:stat.mtimeMs }
+    return {dev:stat.dev, ino:stat.ino, size:stat.size, mtime:stat.mtimeMs, ctime:stat.ctimeMs}
   } catch (error) {
     if (error?.code === 'ENOENT') return null
     throw error
   }
+}
+
+const sameInfo = (a,b) => Boolean(a && b && Object.keys(a).every(key => a[key]===b[key]))
+
+async function fingerprint(file) {
+  const before=await fileInfo(file)
+  if (!before) return null
+  const bytes=await readFile(file)
+  if (!sameInfo(before,await fileInfo(file))) throw Error('QA_FILE_CHANGED_WHILE_HASHING:'+path.basename(file))
+  return {...before,sha256:checksum(bytes)}
 }
 
 export async function resolveRestoredAsset(root, url) {
@@ -90,25 +104,35 @@ export async function startQaAssetTracking(root, url, bytes) {
 export async function recordRestoredAsset(root, attempt, response) {
   if (!attempt || response?.written !== true || attempt.beforeExisted) return null
   const dest = await resolveRestoredAsset(root, attempt.url)
-  const bytes = await readFile(dest)
-  if (checksum(bytes) !== attempt.sha256) throw Error('RESTORED_ASSET_HASH_MISMATCH')
-  return { url:attempt.url, sha256:attempt.sha256 }
+  const recorded=await fingerprint(dest)
+  if (recorded?.sha256 !== attempt.sha256) throw Error('RESTORED_ASSET_HASH_MISMATCH')
+  return {url:attempt.url,...recorded}
 }
 
 // Avoid racing asynchronous server cover generation: require both ID-specific
 // cover and screenshot outputs stable before deleting any generated QA file.
-export async function awaitCoverSettled(root, id, {timeoutMs=35000, pollMs=300, stableMs=900}={}) {
+export async function awaitCoverSettled(root, id, {timeoutMs=35000, pollMs=300, stableMs=900, ready,
+  ownedScreenshotNames=[]}={}) {
   const trusted = await staticRootOf(root)
   const prefix = designIdOf(id)
-  const a=path.join(trusted,prefix+'-cover.jpg')
-  const b=path.join(trusted,prefix+'-screenshot.png')
+  const required=[prefix+'-cover.jpg',prefix+'-screenshot.png']
+  if (ownedScreenshotNames.some(name=>!matchesQaScreenshot(name,prefix))) throw Error('UNSAFE_QA_SCREENSHOT_NAME')
+  const owned=new Set([...required,...ownedScreenshotNames])
   const started=Date.now()
   let last='', stableSince=0
+  let acknowledged=false
   while (Date.now()-started < timeoutMs) {
-    const [fa,fb]=await Promise.all([fileInfo(a),fileInfo(b)])
-    const key=fa&&fb?fa.size+':'+fa.mtime+':'+fb.size+':'+fb.mtime:''
+    // [TINIX] Start measuring stability only after the server acknowledges completion.
+    acknowledged ||= ready ? await ready() : true
+    const names=acknowledged ? (await readdir(trusted)).filter(name=>owned.has(name)).sort() : []
+    const infos=await Promise.all(names.map(name=>fileInfo(path.join(trusted,name))))
+    const key=names.length===owned.size && infos.every(Boolean) ? JSON.stringify([names,infos]) : ''
     if (key && key===last && Date.now()-stableSince>=stableMs) {
-      return { complete:true, files:[path.basename(a),path.basename(b)] }
+      const files=await Promise.all(names.map(async(name,i)=>{
+        const record=await fingerprint(path.join(trusted,name))
+        return sameInfo(infos[i],record) ? {name,...record} : null
+      }))
+      if (files.every(Boolean)) return {complete:true,files}
     }
     if (key!==last) {last=key;stableSince=Date.now()}
     await pause(pollMs)
@@ -123,22 +147,31 @@ export async function cleanupQaArtifacts({staticRoot, designId, baselineNames, r
   const names=(await readdir(root)).filter(name=>matchesQaScreenshot(name,id)).sort()
   const before=new Set(names)
   const removed=[], retained=[]
+  const fingerprints=new Map(coverReady?.complete ? (coverReady.files ?? []).map(file=>[file.name,file]) : [])
   for (const name of names) {
     if (baselineNames.has(name)) {
       retained.push({name,reason:'PRE_EXISTING'})
       continue
     }
     const file=path.join(root,name)
-    const stat=await fileInfo(file)
-    if (!stat) continue
+    const recorded=fingerprints.get(name)
+    if (!recorded) {
+      retained.push({name,reason:'OWNERSHIP_UNVERIFIED'})
+      continue
+    }
+    const current=await fingerprint(file)
+    if (!sameInfo(current,recorded)) {
+      retained.push({name,reason:'CONTENT_CHANGED'})
+      continue
+    }
     await unlink(file)
     removed.push(name)
   }
   for (const entry of restoredAssets) {
     const target=await resolveRestoredAsset(root,entry.url)
-    const stat=await fileInfo(target)
-    if (!stat) {retained.push({name:entry.url,reason:'ALREADY_ABSENT'});continue}
-    if (checksum(await readFile(target))!==entry.sha256) {
+    const current=await fingerprint(target)
+    if (!current) {retained.push({name:entry.url,reason:'ALREADY_ABSENT'});continue}
+    if (!sameInfo(current,entry)) {
       retained.push({name:entry.url,reason:'CONTENT_CHANGED'})
       continue
     }
@@ -146,11 +179,11 @@ export async function cleanupQaArtifacts({staticRoot, designId, baselineNames, r
     removed.push(entry.url)
   }
   await pause(500)
-  const remaining=(await readdir(root)).filter(name=>matchesQaScreenshot(name,id)&&!baselineNames.has(name))
+  const remaining=(await readdir(root)).filter(name=>matchesQaScreenshot(name,id)&&!baselineNames.has(name)).sort()
   const stillRestored=[]
   for(const entry of restoredAssets)if(await fileInfo(await resolveRestoredAsset(root,entry.url)))stillRestored.push(entry.url)
   const pass=Boolean(coverReady?.complete) && remaining.length===0 && stillRestored.length===0 &&
-    !retained.some(x=>x.reason==='CONTENT_CHANGED'||x.reason==='PRE_EXISTING') &&
+    !retained.some(x=>x.reason!=='ALREADY_ABSENT') &&
     removed.some(name=>name===id+'-cover.jpg') && removed.some(name=>name===id+'-screenshot.png')
   return {
     status:pass?'pass':'blocked',

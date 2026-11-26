@@ -21,9 +21,11 @@ def bytes_png(img):
     return stream.getvalue()
 
 
-def fixture(path):
+def fixture(path, translucent=False):
     width, height = 640, 480
     background = Image.new('RGBA', (width, height), '#efe4d1')
+    if translucent:
+        background.putalpha(124)
     sheet = Image.new('RGBA', (700, 220), (0, 0, 0, 0))
     draw = ImageDraw.Draw(sheet)
     layout = {'version': 1,
@@ -48,7 +50,8 @@ def fixture(path):
     layout['decorations'].append({'code': 'D01',
         'source': {'x': 10, 'y': 120, 'width': 161, 'height': 51},
         'target': {'x': 320, 'y': 40, 'width': 161, 'height': 51, 'angle': 0}, 'z': 8})
-    rendered = background.copy()
+    rendered = Image.new('RGBA', background.size, 'white')
+    rendered.alpha_composite(background)
     for item in sorted(layout['frames'] + layout['decorations'], key=lambda item: item['z']):
         src = item['source']
         sprite = sheet.crop((src['x'],src['y'],src['x']+src['width'],src['y']+src['height']))
@@ -71,6 +74,14 @@ class ReverseCompositionTest(unittest.TestCase):
             self.assertEqual(result['staticMae255'], 0)
             self.assertGreater(result['testedPixels'], 10000)
             self.assertTrue((Path(directory) / 'evidence' / 'static_diff.png').exists())
+
+    def test_translucent_background_uses_editor_white_matte(self):
+        with tempfile.TemporaryDirectory() as directory:
+            kit = Path(directory) / 'material.zip'
+            fixture(kit, translucent=True)
+            result = qa.verify(kit)
+            self.assertEqual(result['status'], 'pass')
+            self.assertEqual(result['staticMae255'], 0)
 
     def test_corrupted_background_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

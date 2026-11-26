@@ -12,6 +12,7 @@ Canvas nguồn 1500 x 1500, render job 1504 x 1504. Giữ nguyên F01/F05 và SU
 
 1. Sao lưu .runtime/mcp-material và xác nhận renderer tại http://127.0.0.1:7001.
 2. Checkout nhánh PR #83 trong working tree riêng; chưa restart production. Cài:
+   - npm ci (Vite ở gốc repo dùng để bundle importer)
    - npm ci --prefix service
    - npm ci --prefix scripts/tinix-mcp
    - python3 -m pip install pillow numpy scipy opencv-python-headless
@@ -28,6 +29,9 @@ Canvas nguồn 1500 x 1500, render job 1504 x 1504. Giữ nguyên F01/F05 và SU
    - RUNTIME_ROOT/JOB/material-export/static-qa/reconstruction_qa.json
    - RUNTIME_ROOT/JOB/material-export/static-qa/static_diff.png
    - RUNTIME_ROOT/JOB/material-export/host-live-qa.json
+   - RUNTIME_ROOT/JOB/material-export/host-live-reimport.png
+
+   [TINIX] ZIP v1 giữ hình học khung trống. Harness gắn lại crop của từng ảnh và cutout SUBJECT từ job nguồn để kiểm render. Kiểm GUI phải dùng cùng ảnh và mask, đồng thời đối chiếu tham số crop trong báo cáo.
 7. Kiểm GUI TinixPoster độc lập: nhập material.zip vào giao diện thử nghiệm, xác nhận F01/F05 và SUBJECT không lệch; thay từng F01–F06 và SUBJECT; zoom mép giày/chân và kiểm thanh ghế; không lưu mẫu ảnh khách vào thư viện. Bằng chứng QA chứa ảnh người chỉ giữ cục bộ.
 
 ## B. Kiểm CI

@@ -31,9 +31,9 @@ Windows PowerShell, đứng tại worktree của PR #83:
 3. Qua Puppeteer, mở /home?id=<QA_ID>, chọn từng slot theo ID trên canvas, bấm **Thay ảnh** thật và chọn ảnh thử nhận diện F01...F06, SUBJECT trong hộp ảnh. Test không gọi thao tác upload ảnh thử thật: danh sách picker được intercept.
 4. Sau mỗi lần thay: chỉ một layer được đổi; kiểm đủ UUID/thứ tự layer, page metadata, các ảnh khác và 21 lớp D không đổi; khung F01–F06 không đổi fit, zoom, cropX/Y, rotate, transform, mask, position, print metadata.
 5. SUBJECT phải đi qua cutout request 1 lần; thay ảnh SUBJECT không làm đổi sáu ảnh. BiRefNet trả **mask synthetic có alpha** để kiểm cơ chế xử lý GUI, còn sticker border dùng upload giả lập (1–2 requests). Trạng thái cutout cũ phải bị xóa để tránh giữ nhầm mask người trước.
-6. Bấm **Lưu** từ GUI, mở lại design ID tạm, so hash toàn bộ layer. Nếu có sai khác, chặn, không nhận pass.
-7. Trong `finally`: chờ backend sinh xong **cả** `<DESIGN_ID>-cover.jpg` và `<DESIGN_ID>-screenshot.png`, xóa design QA tạm qua API, dọn **đúng** tệp đã phát sinh ở static root theo ID tạm và tệp cache được chứng minh tạo mới trong chính lần test (backend trả `written:true`, hash file không đổi). Không xóa file đã tồn tại trước lượt QA hoặc file đã bị sửa sau khi sinh; mọi trường hợp đó đều blocked. Kiểm thêm SHA-256 của report.json, render.png và draft.json của **job thật** trước/sau không đổi. Nếu xóa design không thành công, QA bị blocked và cần xử lý thủ công ID được ghi trong report.
-8. Giữ `report.json` và screenshot bằng chứng trong `material-export/gui-seven-qa/`; đây là bằng chứng QA, không phải cache bị dọn.
+6. Bấm **Tệp → Lưu dự án** để tải tệp `.tinix.zip` vào thư mục tạm. Sau đó mở tệp bằng **Tệp → Mở dự án** và so hash toàn bộ layer. Nếu có sai khác, chặn, không nhận pass.
+7. Trong `finally`, chờ backend xác nhận đã sinh ảnh bìa, đợi ảnh bìa và screenshot ổn định rồi ghi hash. Xóa design QA và xác nhận qua API chi tiết. Chỉ dọn file mới theo ID đã ghi hash và cache được backend xác nhận ghi trong chính lượt QA. File đã tồn tại, đã thay đổi hoặc chưa xác minh được phải được giữ lại và báo blocked. Dọn thư mục dự án tạm và kiểm SHA-256 của ba tệp job nguồn.
+8. Giữ `report.json` và ảnh bằng chứng trong `material-export/gui-seven-qa/`.
 
 Lưu report tại:
 

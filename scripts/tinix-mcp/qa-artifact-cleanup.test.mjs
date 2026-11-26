@@ -13,6 +13,7 @@ async function fixture(fn) {
   try{await fn(root)}finally{await rm(outer,{recursive:true,force:true})}
 }
 async function exists(p){try{await lstat(p);return true}catch(e){if(e.code==='ENOENT')return false;throw e}}
+const settle=(root,id,options)=>awaitCoverSettled(root,id,{timeoutMs:1200,pollMs:25,stableMs:80,...options})
 
 test('strict ID ownership, negative and similar ID filenames are protected',async()=>{
   assert(matchesQaScreenshot('701-cover.jpg',701))
@@ -34,7 +35,7 @@ test('cleanup keeps unrelated and pre-existing files, deletes only new QA output
     await writeFile(join(root,name+'-cover.jpg'),'cover')
     await writeFile(join(root,name+'-screenshot.png'),'full')
     await writeFile(join(root,name+'-screenshot-xyz.png'),'extra')
-    const coverReady=await awaitCoverSettled(root,name,{timeoutMs:800,pollMs:25,stableMs:80})
+    const coverReady=await settle(root,name,{ownedScreenshotNames:[name+'-screenshot-xyz.png']})
     assert(coverReady.complete)
     const report=await cleanupQaArtifacts({
       staticRoot:root,designId:name,baselineNames:before,coverReady,
@@ -74,7 +75,7 @@ test('restored assets deleted only with recorded new-file hash and successful ba
     await writeFile(join(root,'900-cover.jpg'),'cover')
     await writeFile(join(root,'900-screenshot.png'),'shot')
     const check=await cleanupQaArtifacts({staticRoot:root,designId:900,baselineNames:new Set(),
-      restoredAssets:[record],coverReady:{complete:true}})
+      restoredAssets:[record],coverReady:await settle(root,900)})
     assert.equal(check.status,'pass')
     assert(!await exists(file))
     const existing=Buffer.from('original')
@@ -98,7 +99,7 @@ test('changed asset is preserved and blocks QA',async()=>{
     await writeFile(join(root,'811-cover.jpg'),'cover')
     await writeFile(join(root,'811-screenshot.png'),'shot')
     const report=await cleanupQaArtifacts({staticRoot:root,designId:811,baselineNames:new Set(),
-      restoredAssets:[rec],coverReady:{complete:true}})
+      restoredAssets:[rec],coverReady:await settle(root,811)})
     assert.equal(report.status,'blocked')
     assert(await exists(join(dir,'changed.png')))
   })
@@ -120,7 +121,7 @@ test('rejects symlinked asset directory so cleanup cannot escape root',async()=>
   await fixture(async root=>{
     const outside=join(root,'..','private')
     await mkdir(outside)
-    await symlink(outside,join(root,'photos'),'dir')
+    await symlink(outside,join(root,'photos'),process.platform==='win32'?'junction':'dir')
     await assert.rejects(resolveRestoredAsset(root,'/static/photos/customer.png'),/UNSAFE_ASSET_PARENT/)
   })
 })
@@ -131,9 +132,35 @@ test('pre-existing design-ID cover is never removed, blocks success',async()=>{
     const baseline=await snapshotStatic(root)
     await writeFile(join(root,'901-screenshot.png'),'fresh')
     const report=await cleanupQaArtifacts({staticRoot:root,designId:901,
-      baselineNames:baseline,coverReady:{complete:true}})
+      baselineNames:baseline,coverReady:await settle(root,901)})
     assert.equal(report.status,'blocked')
     assert(await exists(join(root,'901-cover.jpg')))
     assert(!await exists(join(root,'901-screenshot.png')))
+  })
+})
+
+test('cover acknowledgment and fingerprints protect changed and late screenshots',async()=>{
+  await fixture(async root=>{
+    const baselineNames=await snapshotStatic(root)
+    const cover=join(root,'902-cover.jpg')
+    const shot=join(root,'902-screenshot.png')
+    const late=join(root,'902-screenshot-late.png')
+    const untracked=join(root,'902-screenshot-untracked.png')
+    await writeFile(cover,'cover')
+    await writeFile(shot,'shot')
+    await writeFile(untracked,'no producer acknowledgment')
+    let checks=0
+    const coverReady=await settle(root,902,{ready:()=>++checks>=3})
+    assert(coverReady.complete)
+    assert(checks>=3)
+    assert.equal(coverReady.files.length,2)
+    await writeFile(shot,'changed')
+    await writeFile(late,'late writer')
+    const result=await cleanupQaArtifacts({staticRoot:root,designId:902,baselineNames,coverReady})
+    assert.equal(result.status,'blocked')
+    assert.deepEqual(result.deleted,['902-cover.jpg'])
+    assert.deepEqual(result.remaining,['902-screenshot-late.png','902-screenshot-untracked.png','902-screenshot.png'])
+    assert.equal((await readFile(shot)).toString(),'changed')
+    assert.equal((await readFile(late)).toString(),'late writer')
   })
 })
