@@ -1,0 +1,48 @@
+# [TINIX] Validate the proposed filled-draft export without touching customer jobs.
+name: Material export QA
+on:
+  pull_request:
+    # Keep material export regressions gated as the stack integrates P3 -> P2 -> P1.
+    branches: [codex/scrapbook-p3, codex/scrapbook-p2, codex/scrapbook-p1]
+  push:
+    branches: [codex/material-export-from-job, codex/scrapbook-p3]
+permissions:
+  contents: read
+jobs:
+  export-unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pillow numpy scipy
+      - run: python -B scripts/tinix-mcp/export_filled_material_test.py -v
+      - run: python -B scripts/tinix-mcp/qa_reconstruction_test.py -v
+  mcp-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            service/package-lock.json
+            scripts/tinix-mcp/package-lock.json
+      - run: npm ci --prefix service
+      - run: npm ci --prefix scripts/tinix-mcp
+      - run: node --check scripts/tinix-mcp/server.mjs
+      - run: node --check scripts/tinix-mcp/material-export.mjs
+      - run: node --check scripts/tinix-mcp/material-export-live-smoke.mjs
+      - run: node --check scripts/tinix-mcp/material-gui-replace-seven.mjs
+      - run: node --check scripts/tinix-mcp/qa-artifact-cleanup.mjs
+      - run: node --test scripts/tinix-mcp/qa-artifact-cleanup.test.mjs
+      - run: node --check scripts/tinix-mcp/material-missing-asset-live-qa.mjs
+      - run: node --test scripts/tinix-mcp/qa-project-zip.test.mjs
+      - run: node --test scripts/tinix-mcp/material-gui-replace-assert.test.mjs
+      - run: node --test scripts/tinix-mcp/orchestrator-contract.test.mjs

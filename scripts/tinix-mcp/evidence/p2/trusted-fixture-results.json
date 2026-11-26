@@ -1,0 +1,42 @@
+{
+  "fixture": "synthetic background with an exact illustration fragment and a trusted hash",
+  "baselineCommit": "bd098e0",
+  "baselineStatus": "pass",
+  "fixtureStatus": "fail",
+  "background": {
+    "layer": "BACKGROUND",
+    "sha256": "104963ce5d162aabe4d510d519daaf85aefa487d56b12033e726354b23f84a99",
+    "status": "fail",
+    "provenanceVerified": true,
+    "referenceScan": "scanned"
+  },
+  "finding": {
+    "layer": "BACKGROUND",
+    "status": "fail",
+    "reason": "exact_illustration_fragment",
+    "match": {
+      "illustration": "F01",
+      "x": 528,
+      "y": 225,
+      "width": 24,
+      "height": 24
+    },
+    "provenanceVerified": true
+  },
+  "donorStatus": "pass",
+  "revisionStatus": "pass",
+  "manualApprovalBlocked": true,
+  "contaminatedDonorBlocked": true,
+  "originalUnchanged": true,
+  "changedBoundsPx": [
+    527,
+    223,
+    561,
+    257
+  ],
+  "beforeSha256": "104963ce5d162aabe4d510d519daaf85aefa487d56b12033e726354b23f84a99",
+  "afterSha256": "d8aa4f5c6a8c54238d01a791b591b7957936124d58bf1d2ccdc3288cd6772d8e",
+  "parentDemoSha256": "963b4e23c4201bf562b17b9df04c2b6cbc793b4b1c89764b62cb407ef7e5be21",
+  "approvalRequired": true,
+  "mcpVerification": "Local MCP SDK with real TinixPoster renderer. ChatGPT web acceptance pending."
+}
