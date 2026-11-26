@@ -40,7 +40,8 @@ async function invoke(client, name, args, error) {
 let session = await connect()
 try {
   const inventory = await session.client.listTools()
-  assert.equal(new Set(inventory.tools.map(tool => tool.name)).size, 18)
+  assert.equal(new Set(inventory.tools.map(tool => tool.name)).size, 19) // P3 + export_material_draft
+  assert.ok(inventory.tools.some(tool => tool.name === 'export_material_draft'))
   assert.equal(session.client.getServerVersion().version, '1.3.0')
   const start = op('prepare', { brief: 'Sinh nhật bé gái, giấy pastel Mixed Handcut' })
   const savedEnv = process.env.TINIX_STUDIO_SKILL_ARCHIVE
