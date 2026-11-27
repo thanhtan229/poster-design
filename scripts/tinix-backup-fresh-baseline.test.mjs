@@ -92,7 +92,15 @@ test('R1A new experimental baseline: DB, collage, approved prints, mirror and ex
   assert.deepEqual(inventory(snapshot), inventory(mirror), 'mirror must match byte for byte')
   assert.deepEqual(inventory(path.join(snapshot, 'approved-prints')), [[printName, printHash]])
 
-  const restoredDb = new Database(path.join(snapshot, 'poster.db'), { readonly: true })
+  // [TINIX] Recover DB and prints into a separate offline root; do not just read the backup in place.
+  const offlineRoot = path.join(work, 'offline-restore')
+  fs.mkdirSync(offlineRoot)
+  fs.copyFileSync(path.join(snapshot, 'poster.db'), path.join(offlineRoot, 'poster.db'))
+  fs.cpSync(path.join(snapshot, 'approved-prints'), path.join(offlineRoot, 'approved-prints'), { recursive: true })
+  assert.equal(sha256(path.join(offlineRoot, 'poster.db')), sha256(path.join(snapshot, 'poster.db')))
+  assert.deepEqual(inventory(path.join(offlineRoot, 'approved-prints')), [[printName, printHash]])
+
+  const restoredDb = new Database(path.join(offlineRoot, 'poster.db'), { readonly: true })
   try {
     assert.equal(restoredDb.pragma('integrity_check', { simple: true }), 'ok')
     assert.equal(restoredDb.prepare('SELECT count(*) AS n FROM designs').get().n, 1)
@@ -104,7 +112,7 @@ test('R1A new experimental baseline: DB, collage, approved prints, mirror and ex
     }
   } finally { restoredDb.close() }
 
-  const restored = path.join(work, 'offline-static')
+  const restored = path.join(offlineRoot, 'static')
   let extract
   if (process.platform === 'win32') {
     extract = spawnSync(process.env.TINIX_BACKUP_PYTHON || 'python', [
