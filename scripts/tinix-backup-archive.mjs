@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 
 export function tarCandidates(env = process.env, platform = process.platform, exists = fs.existsSync) {
   const bins = []
@@ -91,6 +92,26 @@ export function archiveStatic({ staticDir, dest, skipped = [], runner = spawnSyn
   const excluded = name => /^(fonts|font-previews)(\/|$)/.test(name) || skip.has(name)
   const expected = inventory(staticDir, excluded)
   const options = { cwd: dest, encoding: 'utf8', windowsHide: true, maxBuffer: 16 * 1024 * 1024, env }
+  // [TINIX] System32 tar can pollute names when restoring UTF-8 or even crash while packing.
+  // ASCII keeps the original native tar path, including its failure diagnostics.
+  const unicodeWindows = platform === 'win32' &&
+    [...expected.files.keys(), ...expected.directories].some(name => /[^\x00-\x7f]/.test(name))
+  if (unicodeWindows) {
+    const bin = env.TINIX_BACKUP_PYTHON || 'python'
+    const script = fileURLToPath(new URL('./tinix-backup-unicode.py', import.meta.url))
+    const input = JSON.stringify({ files: Object.fromEntries(expected.files), directories: [...expected.directories] })
+    const result = runner(bin, ['-B', script, 'create', path.resolve(staticDir), path.resolve(archive)], { ...options, input })
+    if (result?.error || result?.status !== 0) {
+      const stage = result?.error?.code === 'ENOENT' ? 'TAR_UTF8_PYTHON_NOT_FOUND' : 'TAR_UTF8_CREATE_VERIFY_FAILED'
+      throw Error(reason(stage, bin, result))
+    }
+    const { members } = JSON.parse(result.stdout)
+    if (members !== 1 + expected.files.size + expected.directories.size || !fs.statSync(archive).size) {
+      throw Error('TAR_UTF8_VERIFIED_MEMBER_COUNT_MISMATCH')
+    }
+    verifyContents(inventory(staticDir, excluded).files, expected.files, 'STATIC_SOURCE_CHANGED')
+    return { bin, bytes: fs.statSync(archive).size, members, files: expected.files.size }
+  }
   const args = ['-czf', 'static.tar.gz', '--exclude=./fonts', '--exclude=./font-previews']
   if (skipped.length) {
     fs.writeFileSync(exclusionFile, skipped.map(x => './' + x).join('\n') + '\n')

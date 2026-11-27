@@ -811,3 +811,5 @@ QA dựng ngược ghép nền PNG bán trong suốt lên trắng như bộ nh�
 [TINIX] Preflight staging một lệnh kiểm 19 công cụ MCP, prepare hai demo tổng hợp, ZIP SHA-256 và dựng ngược từ layout. Chạy trong linked worktree riêng không có Materials runtime, chỉ giữ báo cáo QA, không gọi renderer. Xem lệnh trong `scripts/tinix-mcp/SCRAPBOOK-WORKFLOW.md`.
 
 <!-- [TINIX] Backup timestamp directories are claimed exclusively. Archive verification matches every eligible file and verifies restored bytes before retention. An empty eligible tree is valid only if the source inventory is empty. -->
+
+[TINIX] Backup Windows có đường dẫn Unicode dùng Python 3.11+ chuẩn để tạo tar PAX UTF-8 và đối chiếu SHA-256 sau khôi phục cách ly. Ca ASCII giữ System32 tar. Xem điều kiện môi trường và lệnh phục hồi offline trong `scripts/TINIX-BACKUP-RECOVERY.md`.
