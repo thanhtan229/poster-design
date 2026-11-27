@@ -99,7 +99,7 @@ test('R1A new experimental baseline: DB, collage, approved prints, mirror and ex
     assert.equal(restoredDb.prepare('SELECT count(*) AS n FROM user_images').get().n, 1)
     const data = JSON.parse(restoredDb.prepare('SELECT data FROM designs').get().data)
     for (const ref of [data.collage, data.photo]) {
-      const rel = ref.replace(/^\\/static\\//, '')
+      const rel = ref.startsWith('/static/') ? ref.slice('/static/'.length) : ref
       assert.equal(expectedStatic.has(rel), true, 'DB static reference included: ' + rel)
     }
   } finally { restoredDb.close() }
